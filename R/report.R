@@ -16,6 +16,11 @@ report_sintesi <- function(perimetro, debug=FALSE) {
   cp_tot <- perimetro %>% summarise(CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE)) %>% .$CP
   # pag_tot <- perimetro %>% summarise(PAG = sum(TOT_PAGAMENTI, na.rm = TRUE)) %>% .$PAG
 
+  # defactor
+  perimetro <- perimetro %>%
+    mutate(CLASSE = as.character(CLASSE))
+  # MEMO: evita warning quando aggiungo "Totale"
+
   # sintesi
   sintesi <- perimetro %>%
     group_by(x_CICLO, CLASSE) %>%
@@ -59,6 +64,11 @@ report_sintesi <- function(perimetro, debug=FALSE) {
 
 report_macroaree <- function(perimetro, debug=FALSE) {
 
+  # defactor
+  perimetro <- perimetro %>%
+    mutate(CLASSE = as.character(CLASSE))
+  # MEMO: evita warning quando aggiungo "Totale"
+
   # macroaree
   macroaree <- perimetro %>%
     group_by(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, MACROAREA) %>%
@@ -90,7 +100,7 @@ report_macroaree <- function(perimetro, debug=FALSE) {
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     as.data.frame() %>%
-    mutate(CLASSE = factor(CLASSE, levels = livelli_classe)) %>%
+    mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Totale"))) %>%
     mutate(MACROAREA = factor(MACROAREA, levels=c("Sud", "Centro-Nord", "Nazionale", "Trasversale", "Estero"))) %>%
     arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, MACROAREA)
 
@@ -138,6 +148,11 @@ report_macroaree <- function(perimetro, debug=FALSE) {
 
 report_regioni <- function(perimetro, debug=FALSE) {
 
+  # defactor
+  perimetro <- perimetro %>%
+    mutate(CLASSE = as.character(CLASSE))
+  # MEMO: evita warning quando aggiungo "Totale"
+
   # semplifica non-regioni
   reg_cn <- c("001", "002", "003", "004", "005", "006",
               "007", "008", "009", "010", "011", "012")
@@ -182,7 +197,7 @@ report_regioni <- function(perimetro, debug=FALSE) {
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     as.data.frame() %>%
-    mutate(CLASSE = factor(CLASSE, levels = livelli_classe)) %>%
+    mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Totale"))) %>%
     mutate(MACROAREA = factor(MACROAREA, levels=c("Sud", "Centro-Nord", "Nazionale", "Trasversale", "Estero"))) %>%
     mutate(DEN_REGIONE = factor(DEN_REGIONE, levels = c(names(reg_cn), names(reg_sud), "ALTRO TERRITORIO"))) %>%
     arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, MACROAREA, DEN_REGIONE)
@@ -215,6 +230,11 @@ report_regioni <- function(perimetro, debug=FALSE) {
 
 report_programmi <- function(perimetro, debug=FALSE) {
 
+  # defactor
+  perimetro <- perimetro %>%
+    mutate(CLASSE = as.character(CLASSE))
+  # MEMO: evita warning quando aggiungo "Totale"
+
   # programmi
   programmi <- perimetro %>%
     group_by(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, x_PROGRAMMA) %>%
@@ -228,7 +248,7 @@ report_programmi <- function(perimetro, debug=FALSE) {
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     as.data.frame() %>%
-    mutate(CLASSE = factor(CLASSE, levels = livelli_classe)) %>%
+    mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Totale"))) %>%
     arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, x_PROGRAMMA)
 
   if (debug == TRUE) {
@@ -253,6 +273,11 @@ report_programmi <- function(perimetro, debug=FALSE) {
 # nature
 
 report_nature <- function(perimetro, debug=FALSE) {
+
+  # defactor
+  perimetro <- perimetro %>%
+    mutate(CLASSE = as.character(CLASSE))
+  # MEMO: evita warning quando aggiungo "Totale"
 
   # nature
   nature <- perimetro %>%
@@ -285,7 +310,7 @@ report_nature <- function(perimetro, debug=FALSE) {
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     as.data.frame() %>%
-    mutate(CLASSE = factor(CLASSE, levels = livelli_classe)) %>%
+    mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Totale"))) %>%
     mutate(CUP_DESCR_NATURA = factor(CUP_DESCR_NATURA,
                                      levels=c("REALIZZAZIONE DI LAVORI PUBBLICI (OPERE ED IMPIANTISTICA)",
                                               "ACQUISTO DI BENI",
@@ -335,6 +360,11 @@ report_nature <- function(perimetro, debug=FALSE) {
 
 report_dimensioni <- function(perimetro, debug=FALSE) {
 
+  # defactor
+  perimetro <- perimetro %>%
+    mutate(CLASSE = as.character(CLASSE))
+  # MEMO: evita warning quando aggiungo "Totale"
+
   # dimensioni
   dimensioni <- perimetro %>%
     group_by(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, CLASSE_FIN) %>%
@@ -366,7 +396,7 @@ report_dimensioni <- function(perimetro, debug=FALSE) {
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     as.data.frame() %>%
-    mutate(CLASSE = factor(CLASSE, levels = livelli_classe)) %>%
+    mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Totale"))) %>%
     mutate(CLASSE_FIN = factor(CLASSE_FIN, levels = c("0-100k", "100k-500k", "500k-1M", "1M-2M", "2M-5M", "5M-10M", "10M-infty"))) %>%
     arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, CLASSE_FIN)
 
@@ -409,6 +439,11 @@ report_dimensioni <- function(perimetro, debug=FALSE) {
 
 report_dimensioni_nature <- function(perimetro, debug=FALSE) {
 
+  # defactor
+  perimetro <- perimetro %>%
+    mutate(CLASSE = as.character(CLASSE))
+  # MEMO: evita warning quando aggiungo "Totale"
+
   # dimensione per natura
   dimensioni_nature <- perimetro %>%
     group_by(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, CUP_DESCR_NATURA, CLASSE_FIN) %>%
@@ -440,7 +475,7 @@ report_dimensioni_nature <- function(perimetro, debug=FALSE) {
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     as.data.frame() %>%
-    mutate(CLASSE = factor(CLASSE, levels = livelli_classe)) %>%
+    mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Totale"))) %>%
     mutate(CUP_DESCR_NATURA = factor(CUP_DESCR_NATURA,
                                      levels=c("REALIZZAZIONE DI LAVORI PUBBLICI (OPERE ED IMPIANTISTICA)",
                                               "ACQUISTO DI BENI",
@@ -478,6 +513,11 @@ report_dimensioni_nature <- function(perimetro, debug=FALSE) {
 
 report_stati <- function(perimetro, debug=FALSE) {
 
+  # defactor
+  perimetro <- perimetro %>%
+    mutate(CLASSE = as.character(CLASSE))
+  # MEMO: evita warning quando aggiungo "Totale"
+
   # stato per CP
   stati <- perimetro %>%
     group_by(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, OC_STATO_PROGETTO) %>%
@@ -509,7 +549,7 @@ report_stati <- function(perimetro, debug=FALSE) {
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     as.data.frame() %>%
-    mutate(CLASSE = factor(CLASSE, levels = livelli_classe)) %>%
+    mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Totale"))) %>%
     mutate(OC_STATO_PROGETTO = factor(OC_STATO_PROGETTO, levels = c("Concluso", "Liquidato", "In corso", "Non avviato",  "Non determinabile"))) %>%
     arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, OC_STATO_PROGETTO)
 
@@ -554,6 +594,11 @@ report_stati <- function(perimetro, debug=FALSE) {
 
 report_statiproc <- function(perimetro, debug=FALSE) {
 
+  # defactor
+  perimetro <- perimetro %>%
+    mutate(CLASSE = as.character(CLASSE))
+  # MEMO: evita warning quando aggiungo "Totale"
+
   # stato per CP
   statiproc <- perimetro %>%
     group_by(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, STATO_PROCED) %>%
@@ -585,7 +630,7 @@ report_statiproc <- function(perimetro, debug=FALSE) {
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     as.data.frame() %>%
-    mutate(CLASSE = factor(CLASSE, levels = livelli_classe)) %>%
+    mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Totale"))) %>%
     mutate(STATO_PROCED = factor(STATO_PROCED, levels = c("Programmazione", "Avvio", "Progettazione", "Affidamento", "Esecuzione", "Esercizio"))) %>%
     arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, STATO_PROCED)
 
