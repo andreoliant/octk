@@ -35,6 +35,9 @@ export_data <- function(pseudo, focus, bimestre, var_ls, var_add=NULL, chk_today
                 select("COD_LOCALE_PROGETTO", var_ls1),
               by = "COD_LOCALE_PROGETTO") %>%
     # merge con con po_riclass
+    # MEMO:
+    # fa casino se ci sono NA su OC_COD_PROGRAMMA sia in po_riclass che in pseudo/progetti
+    # ad es. per non progetti da add_old_turismo che poi sono diventati non visualizzati
     left_join(po_riclass,
               by = "OC_CODICE_PROGRAMMA") %>%
     # merge variabili di classificazione (da progetti)

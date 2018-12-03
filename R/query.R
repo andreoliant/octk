@@ -226,7 +226,10 @@ make_pseudo <- function(progetti, export=TRUE) {
 add_old_turismo <- function(pseudo, export=TRUE, debug=FALSE) {
 
   perim_old <- read_csv2(file.path(INPUT, "old_perim.csv")) %>%
-    filter(OC_FLAG_VISUALIZZAZIONE == 0)
+    # MEMO: flag vecchio riferito ad aprile
+    filter(OC_FLAG_VISUALIZZAZIONE == 0) %>%
+    # MEMO: semi_join per eliminare nuovi non visualizzati
+    semi_join(progetti, by = "COD_LOCALE_PROGETTO")
 
   pseudo <- pseudo %>%
     bind_rows(perim_old %>%
