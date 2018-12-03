@@ -53,6 +53,7 @@ make_delta_scarti <- function(pseudo, perimetro, path_to_old, debug=FALSE, var_l
     delta_scarti %>%
       write.csv2(file.path(TEMP, "delta_scarti.csv"), na = "", row.names = FALSE)
   }
+
   return(delta_scarti)
 
 }
