@@ -67,38 +67,6 @@ make_perimetro <- function(pseudo, export=TRUE, debug=FALSE, progetti=NULL, var_
 
 
 
-reload_perimetro <- function(focus, bimestre, livelli_classe) {
-
-  # load
-  perimetro <- read_csv2(file.path(OUTPUT, paste0(paste(focus, bimestre, sep = "_"), ".csv")))
-
-  # etc
-  reg_cn <- c("001", "002", "003", "004", "005", "006",
-              "007", "008", "009", "010", "011", "012")
-  names(reg_cn) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
-                     "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
-
-  reg_sud <- c("013", "014", "015", "016", "017", "018", "019", "020")
-  names(reg_sud) <- c("ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA", "SARDEGNA")
-
-  # refactor
-  out <- perimetro %>%
-    mutate(CLASSE_FIN = factor(CLASSE_FIN, levels=c("0-100k", "100k-500k", "500k-1M", "1M-2M", "2M-5M", "5M-10M", "10M-infty")),
-           MACROAREA = factor(MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
-           STATO_PROCED = factor(STATO_PROCED, levels = c("Programmazione", "Avvio", "Progettazione", "Affidamento", "Esecuzione", "Esercizio")),
-           CUP_DESCR_NATURA = factor(CUP_DESCR_NATURA,
-                                     levels=c("REALIZZAZIONE DI LAVORI PUBBLICI (OPERE ED IMPIANTISTICA)",
-                                              "ACQUISTO DI BENI",
-                                              "ACQUISTO O REALIZZAZIONE DI SERVIZI",
-                                              "CONCESSIONE DI INCENTIVI AD UNITA' PRODUTTIVE",
-                                              "CONCESSIONE DI CONTRIBUTI AD ALTRI SOGGETTI (DIVERSI DA UNITA' PRODUTTIVE)",
-                                              "NON CLASSIFICATO")),
-           DEN_REGIONE = factor(DEN_REGIONE, levels = c(names(reg_cn), names(reg_sud), "ALTRO TERRITORIO")),
-           CLASSE = factor(CLASSE, levels = livelli_classe))
-
-}
-
-
 
 # ----------------------------------------------------------------------------------- #
 # Preparazione
