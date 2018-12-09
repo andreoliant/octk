@@ -3,14 +3,6 @@
 
 
 # ----------------------------------------------------------------------------------- #
-# Load
-
-# load progetti
-# OLD: source("loader.R")
-# progetti <- load_progetti(bimestre = "20180630", visualizzati=TRUE)
-
-
-# ----------------------------------------------------------------------------------- #
 # Query CUP
 
 query_cup <- function(progetti) {
