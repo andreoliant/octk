@@ -249,3 +249,48 @@ get_stato_attuazione <- function(df, chk_today, debug_mode=FALSE) {
   }
 }
 
+
+# Aggiunge categoira di regione UE
+get_catreg_UE <- function(df, debug_mode=FALSE) {
+  # DEBUG:
+  # df <- perimetro
+  # DEV: da implementare via progetti e con debug_mode (come per "get_stato_attuazione.R")
+
+  # load progetti
+  # source("loader.R")
+
+  # fix per macroarea
+  rs <- c("001", "002", "003", "004", "005", "006",
+              "007", "008", "009", "010", "011", "012")
+  names(rs) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
+                     "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
+
+  rt <- c("013", "014", "020")
+  names(rt) <- c("ABRUZZO", "MOLISE", "SARDEGNA")
+
+  rms <- c("015", "016", "017", "018", "019")
+  names(rms) <- c("CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA")
+
+  chk_regione <- function(data_vector, test_vector) {
+    # DEBUG:
+    # temp <- c("001:::002", "001:::003", "001:::020")
+    # chk_regione(temp, reg_cn)
+    sapply(data_vector, function(x) {all(unlist(str_split(x, pattern = ":::")) %in% test_vector)})
+  }
+
+  df <- df %>%
+    mutate(CATREG = case_when(COD_REGIONE %in% rs ~ "RS",
+                              COD_REGIONE %in% rt ~ "RT",
+                              COD_REGIONE %in% rms ~ "RMS",
+                              COD_REGIONE == "000" ~ "Nazionale", # AMBITO NAZIONALE
+                              grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, rs) == TRUE ~ "RS",
+                              grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, rt) == TRUE ~ "RT",
+                              grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, rms) == TRUE ~ "RMS",
+                              grepl(":::", COD_REGIONE) ~ "Trasversale", # MEMO: multi-regionale su più macroaree
+                              TRUE ~ "Estero")) %>%
+    mutate(CATREG = factor(CATREG, levels = c("RS", "RT", "RMS", "Trasversale", "Nazionale", "Estero")))
+
+  return(df)
+
+
+}
