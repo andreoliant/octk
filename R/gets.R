@@ -294,3 +294,12 @@ get_catreg_UE <- function(df, debug_mode=FALSE) {
 
 
 }
+
+
+# Aggiunge variabili "X" di riflassificazione dei PO
+get_x_vars <- function(df, debug_mode=FALSE) {
+  df <- df %>%
+    left_join(po_riclass,
+              by = "OC_CODICE_PROGRAMMA")
+  return(df)
+}
