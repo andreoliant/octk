@@ -1,0 +1,207 @@
+---
+title: "OpenCoesione Toolkit"
+author: "Antonio Andreoli"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Il toolkit contiene funzioni e processi per l'analisi dei dati pubblicati nella sezione open data del portale OpenCoesione.
+
+Il workflow di base comprende i seguenti blocchi logici:
+
+- Setup
+- Importazione
+- Perimetrazione (`query.R` per l'estrazione multi-criteri e `perimetro.R` per la verifica e consolidamento)
+- Classificazione (`classi.R` per ...)
+- Esportazione (`export.R` per i dati per progetto e `report.R` per quelli aggregati)
+
+E' dispobile l'utility per l'analisi delle variazioni tra bimestri di monitoraggio (`delta.R`).
+
+Le funzioni assumono l'utilizzo delle denominazioni delle variabili in uso nel portale (vedi [metadati](https://opencoesione.gov.it/media/opendata/metadati_progetti_tracciato_esteso.xls))
+
+I dati sono disponibili [qui](https://opencoesione.gov.it/it/opendata/).
+
+
+## Installazione
+
+Per l'utilizzo del toolkit è necessario il seguente setup locale.
+
+**Folder per dati OC**
+
+    DATI/
+      oc_20180630/
+        progetti_esteso_20180630.csv
+    
+**Folder per package OC**
+
+    OC/
+      R/
+      man/
+      dati/
+    
+**Folder per workarea**
+
+    WORK/
+      main.R
+      temp/
+      input/
+      output/
+
+
+## Setup
+
+Il toolkit è attualmente disponbile solo in development mode. Per l'utilizzo è necessario il package `devtools`.
+
+```{r, echo = TRUE, eval = FALSE}
+bimestre <- "20180630"
+devtools::load_all(path = "/Users/.../oc")
+```
+
+Per ottimizzare l'uso è bene definire anche i seguenti parametri che interessano esportazione e reportistica.
+
+```{r, echo = TRUE, eval = FALSE}
+# Nome del focus di interesse (regola i nomi dei file esportati)
+focus <- "turismo"
+
+# Elenco delle variabili di OC (sono riportate nel file dati esteso)
+var_ls <- c("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO",
+            "OC_COD_CICLO", "OC_COD_FONTE", "FONDO_COMUNITARIO",
+            "CUP_COD_SETTORE",  "CUP_DESCR_SETTORE",  
+            "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE", 
+            "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA",
+            "OC_DESCRIZIONE_PROGRAMMA", "OC_CODICE_PROGRAMMA",
+            "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", 
+            "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA",
+            "OC_FINANZ_TOT_PUB_NETTO", "IMPEGNI", "TOT_PAGAMENTI")
+
+# Livelli di riferimento per la variabile CLASSE
+livelli_classe <- c("Natura", "Cultura", "Turismo")
+```
+
+
+## Importazione
+Il workflow parte con l'importazione di `progetti_esteso.csv`. Il file va scaricato manualmente e collocato nel folder DATI.
+
+```{r, echo = TRUE, eval = FALSE}
+progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
+```
+
+Con il caricamento del package inoltre sono disponibili anche le seguenti fonti di dati:
+
+* elenco settori, sotto-settori e categorie CUP
+* elenco categorie di spesa UE 
+* ...
+* altri asset di OC (TODO)
+
+
+## Perimetro
+L'identificazione del perimetro di progetti utile è effettuata con le funzioni di ricerca del blocco `query_[CRITERIO]`. E' possibile/raccomandato effettuare la ricerca secondo diversi criteri.
+
+L'esecuzione di tali funzioni richiede l'esistenza di specifici input adeguantamente compilati (vedi es. **...TODO...**)
+
+Ogni funzione di ricerca integra i file `pseudo.csv` contenente lo pseudo-perimetro nella sua interezza e i riferimento ai criteri di provenienza.
+
+```{r, echo = TRUE, eval = FALSE}
+peri_cup <- query_cup(progetti)
+peri_po <- query_po(progetti)
+peri_ue <- query_ue(progetti)
+
+
+```
+
+<!-- qui manca funzione che crea TIPO_QUERY (ora è presente solo in make_pseudo) --> 
+
+E' anche disponibile un wrapper per i diversi processi di ricerca.
+
+```{r, echo = TRUE, eval = FALSE}
+pseudo <- make_pseudo(progetti)
+```
+
+E' possibile anche integrare pseudo con righe provenienti da funzioni specifiche create per analisi ricorrenti.
+
+```{r, echo = TRUE, eval = FALSE}
+# Integrazione progetti turismo da precedente metodologia
+pseudo <- add_old_turismo(pseudo, export=TRUE)
+```
+
+Il processo di ricerca è finalizzato con lo scarto dei progetti individuati esclusivamente tramite un criterio dubbio e l'applicazione di rettifiche individuali per:
+
+* salvare il progetto che sarebbe stato eliminato dal perimeto (se inserito in `safelist.csv`)
+* eliminare un progetto che sarebbe rimasto nel perimeto (se inserito in `stoplist.csv`)
+
+```{r, echo = TRUE, eval = FALSE}
+pseudo <- make_perimetro(pseudo, export=TRUE, debug=TRUE, progetti, var_ls)
+```
+
+**Controllo dei risultati**
+
+L'esito del processo è visionabile nel file `scarti_perim.csv` e mediante gli strumenti dedicati disponibli in `analisi.R` per l'esecuzione line-by-line. 
+<!-- questi forse non ci sono più... --> 
+A valle dei controlli è possibile ritornare indietro nel workflow per:
+
+* ridefinire i criteri nel blocco query (ad es. con il passaggio da "2" a "0" di voci rivelatesi sistematicamente erronee)
+* integrare gli elenchi in `safelist.csv` e `stoplist.csv`
+
+Altrimenti si può procedere alla classificazione (se prevista) oppure all'esportazione.
+
+
+## Classificazione
+
+E' disponibile in beta il processo di classificazione in ambiti di secondo livello rispetto al focus del perimetro.
+Anche questa funzione si appoggia sulla struttura di `pseudo.csv` e puo essere utilizzata interattivamete per correzioni puntuali mediante `fixlist.csv`.
+
+```{r, echo = TRUE, eval = FALSE}
+pseudo <- make_classi(pseudo,
+                      classe_jolly="Turismo",
+                      livelli_classe = c("Natura", "Cultura", "Turismo"),
+                      export=TRUE, debug=FALSE)
+```
+
+
+## Esportazione
+
+Il processo di esportazione salva il dataset con il perimetro individuato.
+
+```{r, echo = TRUE, eval = FALSE}
+perimetro <- export_data(pseudo, focus, bimestre, var_ls, var_add=NULL, chk_today="20180731")
+```
+
+Inoltre è possibile esportate la reportistica sintetica.
+
+```{r, echo = TRUE, eval = FALSE}
+export_report(perimetro, use_template=TRUE)
+```
+
+
+## Analisi variazioni
+
+Il processo può essere replicato per ogni bimestre di monitoraggio. Per ridurre l'effort dedicato ad analisi manuali è possibile utilizzare l'utility dedicat all'analisi delle variazioni tra bimestri di monitoraggio, che isola solo il nuovo delta di progetti non censiti né scartati nel precedente esercizio.
+
+
+```{r, echo = TRUE, eval = FALSE}
+delta <- make_delta(perimetro, path_to_old = OLD, debug=TRUE)
+# chk_match(perimetro, delta, id="COD_LOCALE_PROGETTO")
+# chk_match(perimetro, perim_old, id="COD_LOCALE_PROGETTO")
+chk_delta(perimetro, path_to_old = OLD, debug=TRUE)
+make_delta_scarti(pseudo, perimetro, path_to_old = OLD, debug=TRUE, var_ls, min_cp=2000000)
+```
+
+
+
+
+
+
+
+
+
