@@ -91,10 +91,10 @@ livelli_classe <- c("Natura", "Cultura", "Turismo")
 
 
 ## Importazione
-Il workflow parte con l'importazione di `progetti_esteso.csv`. Il file va scaricato manualmente e collocato nel folder DATI.
+Il workflow parte con l'importazione di `progetti_esteso.csv`. Il file va scaricato manualmente dal portale OpenCoesione e collocato nel folder DATI.
 
 ```{r, echo = TRUE, eval = FALSE}
-progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
+progetti <- load_progetti(bimestre = "20180630", visualizzati = TRUE, debug = TRUE)
 ```
 
 Con il caricamento del package inoltre sono disponibili anche le seguenti fonti di dati:

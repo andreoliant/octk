@@ -1,25 +1,24 @@
-# OC > Explorer > Perimetri
-# Loader da "progetti_esteso"
+# OC > Toolkit
+# Loader
 
-load_progetti <- function(bimestre, visualizzati=TRUE) {
-  # DEBUG:
-  # bimestre <- "20180630"
+#' Carica il dataset progetti
+#'
+#' Carica il file progetti_esteso_$BIMESTRE.csv dal folder DATI.
+#'
+#' @param bimestre Stringa in formato "20180630" come da standard per le date in OC.
+#' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
+#' @param debug Logico. Vuoi vedere i totali di progetti e costo pubblico per controllo sul portale OC?
+#' @return Il dataset viene caricato come "progetti" nel Global Environment. Se "progetti" è gia presente compare una notifica.
+load_progetti <- function(bimestre, visualizzati=TRUE, debug=FALSE) {
 
   if (exists("progetti")) {
-    print("progetti_esteso is ready in progetti!")
+    print("Progetti esteso è gia caricato")
+    progetti <- progetti
 
   } else {
-    # load progetti_esteso
-    # ver
-    # bimestre <- "20180430"
 
-    # paths
-    # setwd("/Users/aa/coding/oc_explorer/")
-    # DATA <- file.path("/Users/aa/dati", paste0("oc_", bimestre))
+    # filename
     temp <- paste0("progetti_esteso_", bimestre, ".csv")
-
-    # explore
-    # progetti <- read_csv2(file.path(DATA, temp), n_max = 5)
 
     # load progetti
     if (visualizzati == TRUE) {
@@ -30,34 +29,26 @@ load_progetti <- function(bimestre, visualizzati=TRUE) {
       # MEMO: qui prende anche non visualizzati
     }
 
-    # analisi tipologia colonne
-    # sapply(names(progetti), function(x) {print(paste0(x, " = ", class(progetti[[x]])))})
-    # DEV: fare qualcosa per assegnare ""col_types" sopra
-
-    # Warning:
-    # 143229 parsing failures.
+    # Warning: 143229 parsing failures.
     # no trailing characters
     # number of columns of result is not a multiple of vector length
+    # MEMO: risolto incrementando guess_max
 
-    # chk
-    msg <- progetti %>%
-      summarise(N = n(),
-                FTP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE))
-    message(msg)
+    # analisi tipologia colonne
+    # sapply(names(progetti), function(x) {print(paste0(x, " = ", class(progetti[[x]])))})
 
-
-    # HAND: verificare FTP e Progetti su portale OC
-    # MEMO: FTP = 117279067953 su portale
-
-    # TODO: inserire automazione per controllo con scraping su portale (fare somma di natura cup)
-    # TODO: riscrivere come funzione?
-
-    # DEV: mettere rm(loader)?
-
+    # debug
+    if (debug == TRUE) {
+      msg <- progetti %>%
+        summarise(N = n(),
+                  CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE))
+      message(paste0("Progetti esteso contiene ", format(msg$N, big.mark = ".", decimal.mark = ","),
+                     " progetti per un costo pubblico totale di ",
+                     format(round(msg$CP/1000000000, 1), big.mark = ".", decimal.mark = ","),
+                     " miliardi di euro."))
+    }
     return(progetti)
-
   }
-
 }
 
 
