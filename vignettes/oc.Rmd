@@ -97,12 +97,13 @@ Il workflow parte con l'importazione di `progetti_esteso.csv`. Il file va scaric
 progetti <- load_progetti(bimestre = "20180630", visualizzati = TRUE, debug = TRUE)
 ```
 
-Con il caricamento del package inoltre sono disponibili anche le seguenti fonti di dati:
+Con il caricamento del package inoltre sono disponibili gli asset preparati dal Team di OpenCoesione:
 
-* elenco settori, sotto-settori e categorie CUP
-* elenco categorie di spesa UE 
-* ...
-* altri asset di OC (TODO)
+* `matrix` per facilitare il match tra i dati 
+* supporti per le `query` sulle variabili
+* altri asset (es. riclassificazione)
+
+In /data-raw ci sono gli asset originali (.csv) e lo script di conversione, mentre in /data ci sono le versioni in uso (.rda). Possono essere esportati per condivisione in `oc_asset.xlsx`.
 
 
 ## Perimetro
