@@ -20,28 +20,28 @@ Il toolkit contiene funzioni e processi per l'analisi dei dati pubblicati nella 
 
 Il workflow di base comprende i seguenti blocchi logici:
 
-- Setup
 - Importazione
 - Perimetrazione (`query.R` per l'estrazione multi-criteri e `perimetro.R` per la verifica e consolidamento)
 - Classificazione (`classi.R` per ...)
 - Esportazione (`export.R` per i dati per progetto e `report.R` per quelli aggregati)
 
-E' dispobile l'utility per l'analisi delle variazioni tra bimestri di monitoraggio (`delta.R`).
+E' disponibile l'utility per l'analisi delle variazioni tra bimestri di monitoraggio (`delta.R`).
 
 Le funzioni assumono l'utilizzo delle denominazioni delle variabili in uso nel portale (vedi [metadati](https://opencoesione.gov.it/media/opendata/metadati_progetti_tracciato_esteso.xls))
 
-I dati sono disponibili [qui](https://opencoesione.gov.it/it/opendata/).
+I dati sono pubblicati [qui](https://opencoesione.gov.it/it/opendata/).
 
 
-## Installazione
+## Setup
 
-Per l'utilizzo del toolkit è necessario il seguente setup locale.
+Per l'utilizzo del toolkit è obbligatorio il seguente setup con 3 folder in locale.
 
 **Folder per dati OC**
 
     DATI/
       oc_20180630/
         progetti_esteso_20180630.csv
+        ...
     
 **Folder per package OC**
 
@@ -49,6 +49,7 @@ Per l'utilizzo del toolkit è necessario il seguente setup locale.
       R/
       man/
       dati/
+      ...
     
 **Folder per workarea**
 
@@ -58,22 +59,25 @@ Per l'utilizzo del toolkit è necessario il seguente setup locale.
       input/
       output/
 
-
-## Setup
-
-Il toolkit è attualmente disponbile solo in development mode. Per l'utilizzo è necessario il package `devtools`.
+E' disponibile un wizard per il setup della workarea (crea automaticamente i folder input, output e temp) e la connessione ai dati (un prompt chiede di indicare il path e lo aggiunge al global environment).
+Se i paramentri di setup sono definiti nell'ambiente globale prima del caricamento del package vengono automaticamente utilizzati. Altrimenti intervengono le variabili di default del wizard.
+Il toolkit attualmente funziona solo in development mode. Per l'utilizzo è necessario il package R `devtools`.
 
 ```{r, echo = TRUE, eval = FALSE}
-bimestre <- "20180630"
-devtools::load_all(path = "/Users/.../oc")
+# Parametri di setup
+bimestre <- "20180630"         # Bimestre OC di riferimento
+focus <- "turismo"             # Prefisso per i file da esportare
+workarea <- "/path/to/project" # Path della workarea (es. progetto RStudio)
+data_path <- "/path/to/data"   # Path dei dati 
+
+# Library
+# install.packages("devtools")
+devtools::load_all(path = "/path/to/oc")
 ```
 
 Per ottimizzare l'uso è bene definire anche i seguenti parametri che interessano esportazione e reportistica.
 
 ```{r, echo = TRUE, eval = FALSE}
-# Nome del focus di interesse (regola i nomi dei file esportati)
-focus <- "turismo"
-
 # Elenco delle variabili di OC (sono riportate nel file dati esteso)
 var_ls <- c("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO",
             "OC_COD_CICLO", "OC_COD_FONTE", "FONDO_COMUNITARIO",
