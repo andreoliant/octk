@@ -111,26 +111,51 @@ In /data-raw ci sono gli asset originali (.csv) e lo script di conversione, ment
 
 
 ## Perimetro
-L'identificazione del perimetro di progetti utile è effettuata con le funzioni di ricerca del blocco `query_[CRITERIO]`. E' possibile/raccomandato effettuare la ricerca secondo diversi criteri.
+L'identificazione del perimetro di progetti è effettuata con le funzioni di ricerca del blocco `query_[CRITERIO]`. E' possibile/raccomandato effettuare la ricerca secondo diversi criteri.
 
-L'esecuzione di tali funzioni richiede l'esistenza di specifici input adeguantamente compilati (vedi es. **...TODO...**)
+L'esecuzione di tali funzioni richiede l'esistenza corrispondenti file csv di input adeguatamente nominati e compilati.
+I template sono disponibili all'interno degli `oc_asset` e vanno esportati con la stessa denominazione nella cartella INPUT.
 
-Ogni funzione di ricerca integra i file `pseudo.csv` contenente lo pseudo-perimetro nella sua interezza e i riferimento ai criteri di provenienza.
+```{r, echo = TRUE, eval = FALSE}
+write.csv2(categorie_cup, file.path(INPUT, "categorie_cup.csv"), row.names = FALSE)
+write.csv2(categorie_ue, file.path(INPUT, "categorie_ue.csv"), row.names = FALSE)
+write.csv2(po_linee_azioni, file.path(INPUT, "po_linee_azioni.csv"), row.names = FALSE)
+```
+<!-- serve wizard anche qui -->
+
+La variabile QUERY del template va compilata con i seguenti valori:
+
+* `0` per gli item non pertinenti
+* `1` per gli item sicuramente pertinenti
+* `2` per gli item da valutare a valle in base all'effettivo contenuto dei record
+
+Ogni funzione applica il criterio di ricerca al dataset progetti e restuisce l'elenco dei CLP e la variabile QUERY.
 
 ```{r, echo = TRUE, eval = FALSE}
 peri_cup <- query_cup(progetti)
 peri_po <- query_po(progetti)
 peri_ue <- query_ue(progetti)
-
-
 ```
 
 <!-- qui manca funzione che crea TIPO_QUERY (ora è presente solo in make_pseudo) --> 
+Il file `pseudo.csv` è obbligatorio perché costituisce l'ossatura dell'intero workflow e non solo della sezione relativa alla ricerca. Va creato mediante full_join dei risultati di ricerca e salvato in TEMP. Il file contiene almeno l'elenco dei CLP e i valori di QUERY in corrispondenza di ciascun criterio di ricerca.
 
-E' anche disponibile un wrapper per i diversi processi di ricerca.
+E' anche disponibile un wrapper per aggregare i diversi processi di ricerca. Per ogni funzione di ricerca richiesta il wrapper integra il file `pseudo.csv`.
 
 ```{r, echo = TRUE, eval = FALSE}
-pseudo <- make_pseudo(progetti)
+# creazione manuale di pseudo:
+pseudo <- peri_cup %>%
+    full_join(peri_po) %>%
+    full_join(peri_ue)
+write.csv2(pseudo, file.path(TEMP, "pseudo.csv"), row.names = FALSE)
+
+# creazione di pseudo con il wrapper standard:
+pseudo <- make_pseudo_std(progetti, export=TRUE)
+# MEMO: usa le 3 query
+
+# creazione di pseudo con il wrapper editabile:
+pseudo <- make_pseudo_edit(progetti, query_ls=c("query_cup", "query_po"), export=TRUE)
+# MEMO: seleziona le query desiderate
 ```
 
 E' possibile anche integrare pseudo con righe provenienti da funzioni specifiche create per analisi ricorrenti.

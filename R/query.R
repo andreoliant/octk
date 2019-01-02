@@ -1,14 +1,15 @@
-# OC > Explorer > Perimetri
-# Query su "progetti_esteso"
+# OC > Toolkit
+# Query
 
-
-# ----------------------------------------------------------------------------------- #
-# Query CUP
-
+#' Ricerca progetti per categoria CUP
+#'
+#' Ricerca progetti per settore, sotto-settore e categoria CUP a partire da input in "categorie_cup.csv".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_CUP.
 query_cup <- function(progetti) {
 
   # load matrix
-  # HAND: inserire valori 0:1:n in base al livello di priorità nei file sotto (solo 0 esclude da query)
   matrix_cup <- read_csv2(file.path(INPUT, "categorie_cup.csv"))  %>%
     rename(QUERY_CUP = QUERY) %>%
     mutate(CUP_COD_SETTORE = str_pad(CUP_COD_SETTORE, 2, pad = "0"),
@@ -30,25 +31,15 @@ query_cup <- function(progetti) {
 }
 
 
-# # explore
-# peri_cup %>%
-#   left_join(progetti %>%
-#               select(var_ls),
-#             by = "COD_LOCALE_PROGETTO") %>%
-#   group_by(CUP_COD_CATEGORIA, CUP_DESCR_CATEGORIA) %>%
-#   summarise(N = n(),
-#             FTP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
-#             PAG = sum(TOT_PAGAMENTI, na.rm = TRUE)) %>%
-#   arrange(desc(FTP))
-
-
-# ----------------------------------------------------------------------------------- #
-# Query PO
-
+#' Ricerca progetti per articolazione
+#'
+#' Ricerca progetti per programma, linea (articolazione) e azione (sub-articolazione) a partire da input in "po_linee_azioni.csv".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_PO.
 query_po <- function(progetti) {
 
   # load matrix
-  # HAND: inserire valori 0:1:n in base al livello di priorità nei file sotto (solo 0 esclude da query)
   matrix_po <- read_csv2(file.path(INPUT, "po_linee_azioni.csv")) %>%
     rename(QUERY_PO = QUERY)
 
@@ -59,43 +50,30 @@ query_po <- function(progetti) {
                  filter(QUERY_PO != 0),
                by = c("OC_CODICE_PROGRAMMA", "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_COD_SUBARTICOLAZ_PROGRAMMA")) %>%
     # select(COD_LOCALE_PROGETTO, QUERY_PO) %>%
-    distinct(COD_LOCALE_PROGETTO, QUERY_PO) # WARNING: uso distinct perché si generano dupli per casi tipo "FS0713:::PAC"
+    distinct(COD_LOCALE_PROGETTO, QUERY_PO)
+  # MEMO: uso distinct perché si generano dupli per casi tipo "FS0713:::PAC"
 
   return(peri_po)
 
 }
 
 
-# # controllo dupli
-# peri_po %>%
-#   group_by(COD_LOCALE_PROGETTO) %>%
-#   summarise(N = n()) %>%
-#   filter(N > 1) %>%
-#   arrange(desc(N))
-
-# # explore
-# peri_po %>%
-#   left_join(progetti %>%
-#               select(var_ls),
-#             by = "COD_LOCALE_PROGETTO") %>%
-#   group_by(OC_COD_CICLO, OC_COD_FONTE, OC_DESCRIZIONE_PROGRAMMA) %>%
-#   summarise(N = n(),
-#             FTP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
-#             PAG = sum(TOT_PAGAMENTI, na.rm = TRUE)) %>%
-#   arrange(desc(FTP))
-
-
-# ----------------------------------------------------------------------------------- #
-# Query UE
-
+#' Ricerca progetti per categoria UE
+#'
+#' Ricerca progetti per campo d'intervento UE 2014-2020 e tema prioritario UE 2007-2013 a partire da input in "categorie_ue.csv".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_UE.
+#' @section Warning:
+#' Le variabili di riferimento non sono presenti in progetti e vanno ricercate in "clp_tema_campointervento.csv".
 query_ue <- function(progetti) {
 
   # load matrix
-  # HAND: inserire valori 0:1:n in base al livello di priorità nei file sotto (solo 0 esclude da query)
   matrix_ue <- read_csv2(file.path(INPUT, "categorie_ue.csv")) %>%
     rename(QUERY_UE = QUERY)
 
   # load categorie UE
+  message("Caricamento di clp_tema_campointervento.csv in corso...")
   appo_tema <- read_csv2(file.path(DATA, "clp_tema_campointervento.csv")) %>%
     mutate(OC_COD_CICLO = case_when(TIPO == "CAMPO" ~ 2,
                                     TIPO == "TEMA" ~ 1)) %>%
@@ -111,67 +89,34 @@ query_ue <- function(progetti) {
                  filter(QUERY_UE != 0),
                by = c("OC_COD_CICLO", "COD_TEMA_CAMPO")) %>%
     # select(COD_LOCALE_PROGETTO, QUERY_UE)
-    distinct(COD_LOCALE_PROGETTO, QUERY_UE) # WARNING: uso distinct rimuovere duplicati di CLP con temi molteplici
+    distinct(COD_LOCALE_PROGETTO, QUERY_UE)
+  # WARNING: uso distinct rimuovere duplicati di CLP con temi molteplici
 
   return(peri_ue)
 
 }
 
 
-# # controllo dupli (temi UE molteplici per lo stesso CLP - solo su 1420)
-# appo <- peri_ue %>%
-#   # MEMO: da fare sy "peri_ue" a monte del distinct
-#   group_by(OC_COD_CICLO, COD_LOCALE_PROGETTO) %>%
-#   summarise(N = n()) %>%
-#   filter(N > 1)
-# sum(appo$N)
-# # 303 progetti per 834 temi
-#
-# appo_tema %>%
-#   left_join(appo) %>%
-#   filter(N > 0) %>%
-#   group_by(COD_TEMA_CAMPO, DESCR_TEMA_CAMPO) %>%
-#   summarise(N = n()) %>%
-#   filter(N > 1)
-
-# COD_TEMA_CAMPO DESCR_TEMA_CAMPO                                                                                                        N
-# <chr> <chr>                                                                                                               <int>
-# 1 067 Sviluppo dell'attivitÃ  delle PMI, sostegno all'imprenditorialitÃ  e all'incubazione (compreso il sostegno a spin …   114
-# 2 074 Sviluppo e promozione dei beni turistici nelle PMI                                                                    114
-# 3 075 Sviluppo e promozione dei servizi turistici nelle o per le PMI                                                        301
-# 4 076 Sviluppo e promozione dei beni culturali e creativi nelle PMI                                                         114
-# 5 077 Sviluppo e promozione dei servizi culturali e creativi nelle o per le PMI                                             301
-# CHK: il team "067" non è nel criterio ma è comunque associato ai progetti
-
-# # explore
-# peri_ue %>%
-#   left_join(progetti %>%
-#               select(var_ls),
-#             by = "COD_LOCALE_PROGETTO") %>%
-#   group_by(OC_COD_CICLO, OC_COD_FONTE, OC_DESCRIZIONE_PROGRAMMA) %>%
-#   # MEMO: le variabili per ategoria UE vanno aggiunte
-#   summarise(N = n(),
-#             FTP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
-#             PAG = sum(TOT_PAGAMENTI, na.rm = TRUE)) %>%
-#   arrange(desc(FTP))
-
-
-# ----------------------------------------------------------------------------------- #
-# Query keyword
-
-# MEMO: perdo delle cose rispetto al metodo precedente proprio perché venivano da query con parole chiave
-
+# TODO: integrare query da RA e temi FSC
+# aree_temi_fsc.csv
+# ra.csv
 
 
 
 # ----------------------------------------------------------------------------------- #
 # Intersezioni
-# MEMO: ora è anche wrapper delle funzioni precedenti
-# DEV: da integrare per il blocco keyword
 
-make_pseudo <- function(progetti, export=TRUE) {
+#' Wrapper per query standard su CUP, UE e PO
+#'
+#' Wrapper per query standard su CUP, UE e PO.
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_CUP, QUERY_PO, QUERY_UE e TIPO_QUERY.
+#' @section Warning:
+#' I dati valori NA sono convertiti in 0.
+make_pseudo_std <- function(progetti, export=TRUE) {
 
-  # dati da spostare in input
+  # query
   peri_cup <- query_cup(progetti)
   peri_po <- query_po(progetti)
   peri_ue <- query_ue(progetti)
@@ -208,6 +153,69 @@ make_pseudo <- function(progetti, export=TRUE) {
 #   group_by(TIPO_QUERY) %>%
 #   summarise_if(is.numeric, sum)
 
+
+
+#' Wrapper per query editabile
+#'
+#' Wrapper per esecuzione di una lista di query a composizione libera.
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_[1], QUERY_[2], QUERY_[N] e TIPO_QUERY.
+#' @section Warning:
+#' I dati valori NA sono convertiti in 0.
+#' La valutazione dinamica di TIPO_QUERY è ancora da implementare.
+make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
+
+  # chk <- make_pseudo_2(progetti, query_ls=c("query_cup", "query_po"), export=TRUE)
+
+  # query
+  for (q in query_ls) {
+    print(q)
+    # temp <- match.fun(q)
+    temp <- do.call(q, list(progetti))
+    if (!exists("pseudo", inherits = FALSE)) {
+      # print("primo giro..")
+      pseudo <- temp
+    } else {
+      pseudo <- pseudo %>% full_join(temp)
+    }
+  }
+
+  # clean NA
+  pseudo <- pseudo %>%
+    mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
+
+
+  # query
+  # peri_cup <- query_cup(progetti)
+  # peri_po <- query_po(progetti)
+  # peri_ue <- query_ue(progetti)
+
+  # merge
+  # pseudo <- peri_cup %>%
+  #   select(COD_LOCALE_PROGETTO, QUERY_CUP) %>%
+  #   full_join(peri_po %>%
+  #               select(COD_LOCALE_PROGETTO, QUERY_PO)) %>%
+  #   full_join(peri_ue %>%
+  #               select(COD_LOCALE_PROGETTO, QUERY_UE)) %>%
+  #   mutate(TIPO_QUERY = case_when(is.na(QUERY_PO) & is.na(QUERY_UE) ~ "cup",
+  #                                 is.na(QUERY_CUP) & is.na(QUERY_UE) ~ "po",
+  #                                 is.na(QUERY_PO) & is.na(QUERY_CUP) ~ "ue",
+  #                                 is.na(QUERY_PO) ~ "cup-ue",
+  #                                 is.na(QUERY_CUP) ~ "po-ue",
+  #                                 is.na(QUERY_UE) ~ "cup-po",
+  #                                 TRUE ~ "match")) %>%
+  #   mutate(QUERY_CUP = ifelse(is.na(QUERY_CUP), 0, QUERY_CUP),
+  #          QUERY_PO = ifelse(is.na(QUERY_PO), 0, QUERY_PO),
+  #          QUERY_UE = ifelse(is.na(QUERY_UE), 0, QUERY_UE))
+
+  # https://stackoverflow.com/questions/51644516/dplyr-mutate-new-dynamic-variables-with-case-when
+
+  if (export == TRUE) {
+    write.csv2(pseudo, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
+  }
+  return(pseudo)
+}
 
 
 
