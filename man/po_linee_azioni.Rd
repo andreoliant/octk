@@ -33,8 +33,10 @@ Le variabili sono:
   \item QUERY: variabile guida per query (inserire 1, 2 o 0)
   \item NOTE: ...
 }
+}
+\section{Warning}{
 
-#' @section Warning:
 Dati da aggiornare per ogni bimestre.
 }
+
 \keyword{datasets}

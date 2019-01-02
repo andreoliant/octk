@@ -147,7 +147,7 @@
 #'   \item NOTE: ...
 #' }
 #'
-#'#' @section Warning:
+#' @section Warning:
 #' Dati da aggiornare per ogni bimestre.
 #' @format A data frame
 #' @source Team OC su dati BDU

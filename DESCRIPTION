@@ -1,14 +1,20 @@
 Package: oc
 Type: Package
-Title: Strumenti per l'analisi dei dati di OpenCoesione
+Title: OpenCoesione Toolkit
 Version: 0.1.0
 Author: Antonio Andreoli
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: Wrapper di funzioni che fanno cose...
-    Use four spaces when indenting paragraphs within the Description.
+Maintainer: Antonio Andreoli <antonio.andreoli@opencoesione.team>
+Description: Toolkit
+    ... 
+    ...
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
 Imports:
     tidyverse,
     devtools
+RoxygenNote: 6.1.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

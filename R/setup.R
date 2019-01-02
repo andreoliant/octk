@@ -27,7 +27,7 @@ library(tidyverse)
 if (!exists("workarea")) {
   workarea <- getwd()
   DEV_MODE <- TRUE
-  message("La DEVMODE è attiva!")
+  message("La DEV_MODE è attiva!")
 } else {
   DEV_MODE <- FALSE
 }

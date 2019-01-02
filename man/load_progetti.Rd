@@ -17,5 +17,5 @@ load_progetti(bimestre, visualizzati = TRUE, debug = FALSE)
 Il dataset viene caricato come "progetti" nel Global Environment. Se "progetti" è gia presente compare una notifica.
 }
 \description{
-Carica il file progetti_esteso.csv dal folder DATI.
+Carica il file progetti_esteso_$BIMESTRE.csv dal folder DATI.
 }
