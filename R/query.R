@@ -223,6 +223,15 @@ make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
 # ----------------------------------------------------------------------------------- #
 # Confronta con vecchio perimetro e integra righe
 
+#' Addendum Turismo
+#'
+#' ....
+#'
+#' @param pseudo Dataset "pseudo.csv"
+#' @return Un dataframe pseudo.
+#' @section Warning:
+#' Punta a "old_perim.csv".
+#' Forse non serve nemmeno più...
 add_old_turismo <- function(pseudo, export=TRUE, debug=FALSE) {
 
   perim_old <- read_csv2(file.path(INPUT, "old_perim.csv")) %>%
@@ -259,51 +268,3 @@ add_old_turismo <- function(pseudo, export=TRUE, debug=FALSE) {
 
 
 
-
-
-# ----------------------------------------------------------------------------------- #
-# export temporaneo
-# WARNING_ se cambia "var_ls" vanno rifatti i puntamenti via indice sotto (es. var_ls[2:18])
-# DEV: forse questo blocco va trasformato in funzione (con var_ls come variabile?)
-
-# # semplifciazione categorie UE
-# temp <- pseudo %>%
-#   select(COD_LOCALE_PROGETTO) %>%
-#   left_join(appo_tema,
-#             by = "COD_LOCALE_PROGETTO") %>%
-#   # group_by(COD_LOCALE_PROGETTO, OC_COD_CICLO) %>%
-#   group_by(COD_LOCALE_PROGETTO) %>%
-#   summarise(COD_TEMA_CAMPO = paste(COD_TEMA_CAMPO, collapse=":::"),
-#             DESCR_TEMA_CAMPO = paste(DESCR_TEMA_CAMPO, collapse=":::"))
-# dim(pseudo)[1] == dim(temp)[1]
-#
-# # merge con progetti
-# export <- pseudo %>%
-#   # merge variabili anagrafiche
-#   left_join(progetti %>%
-#               select("COD_LOCALE_PROGETTO", var_ls[2:18]),
-#             by = "COD_LOCALE_PROGETTO") %>%
-#   # merge con categorie UE
-#   left_join(temp,
-#             by = "COD_LOCALE_PROGETTO") %>%
-#   # merge variabili avanzamento
-#   left_join(progetti %>%
-#               select("COD_LOCALE_PROGETTO", var_ls[19:21]),
-#             by = "COD_LOCALE_PROGETTO")
-# dim(pseudo)[1] == dim(export)[1]
-
-
-# ----------------------------------------------------------------------------------- #
-# Export
-
-# write.csv2(pseudo,
-#            file.path(tmp_path, "pseudo.csv"),
-#            na = "", row.names = FALSE)
-
-# write.csv2(export,
-#            file.path(tmp_path, paste0(paste(this_path,"base", oc_ver, sep = "_"), ".csv")),
-#            na = "", row.names = FALSE)
-
-# rm(progetti)
-# rm(peri_cup, peri_po, peri_ue, appo_tema)
-# rm(matrix_cup, matrix_po, matrix_ue)
