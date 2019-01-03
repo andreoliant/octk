@@ -131,3 +131,25 @@ aree_temi_fsc <- read_csv2("data-raw/aree_temi_fsc.csv")
 usethis::use_data(aree_temi_fsc, overwrite = TRUE)
 
 
+# ----------------------------------------------------------------------------------- #
+# fixlist
+
+# stoplist
+stoplist <- read_csv2("data-raw/template_stoplist.csv")
+usethis::use_data(stoplist, overwrite = TRUE)
+
+# safelist
+safelist <- read_csv2("data-raw/template_safelist.csv")
+usethis::use_data(safelist, overwrite = TRUE)
+
+# fixlist
+fixlist <- read_csv2("data-raw/template_fixlist.csv")
+usethis::use_data(fixlist, overwrite = TRUE)
+
+
+
+
+
+
+
+
