@@ -1,8 +1,23 @@
-# OC > Explorer > Perimetri
-# Crea perimetro
-# Focus: turismo
+# OC > Toolkit
+# Loader
 
-make_perimetro <- function(pseudo, export=TRUE, debug=FALSE, progetti=NULL, var_ls=NULL) {
+#' Definizione del perimetro
+#'
+#' Ricerca progetti per settore, sotto-settore e categoria CUP a partire da input in "categorie_cup.csv".
+#'
+#' @param pseudo Dataset "pseudo".
+#' @param export Vuoi salvare pseduo.csv in TEMP?
+#' @param stoplist Dataset con l'elenco dei COD_LOCALE_PROGETTO da eliminare.
+#' @param safelist Dataset con l'elenco dei COD_LOCALE_PROGETTO da conservare anche se sarebbero scartati.
+#' @param debug Vuoi salvare scarti.csv in TEMP, con i progetti non considerati?
+#' @param var_ls Varibili da integrare in caso di debug.
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe "pseudo" con le variabili addizionali "CHK" e "PERI"
+#' #' @section Warning:
+#' Al momento è disponibile solo la versione con QUERY_CUP, QUERY_PO e QUERY_UE.
+make_perimetro <- function(pseudo, export=TRUE,
+                           stoplist=NULL, safelist=NULL,
+                           debug=FALSE, progetti=NULL, var_ls=NULL) {
 
   # forzo
   pseudo <- pseudo %>%
@@ -12,16 +27,19 @@ make_perimetro <- function(pseudo, export=TRUE, debug=FALSE, progetti=NULL, var_
                            TRUE ~ 1))
 
   # loads
-  stoplist <- read_csv2(file.path(INPUT, "stoplist.csv")) %>%
-    filter(!is.na(COD_LOCALE_PROGETTO), CHK == 1) %>%
-    # select(COD_LOCALE_PROGETTO, COD_LOCALE_PROGETTO) %>%
-    .$COD_LOCALE_PROGETTO
+  if (missing(stoplist)) {
+    stoplist <- read_csv2(file.path(INPUT, "stoplist.csv")) %>%
+      filter(!is.na(COD_LOCALE_PROGETTO), CHK == 1) %>%
+      # select(COD_LOCALE_PROGETTO, COD_LOCALE_PROGETTO) %>%
+      .$COD_LOCALE_PROGETTO
+  }
 
-  safelist <- read_csv2(file.path(INPUT, "safelist.csv")) %>%
-    filter(!is.na(COD_LOCALE_PROGETTO), CHK == 1) %>%
-    # select(COD_LOCALE_PROGETTO)
-    .$COD_LOCALE_PROGETTO
-
+  if (missing(safelist)) {
+    safelist <- read_csv2(file.path(INPUT, "safelist.csv")) %>%
+      filter(!is.na(COD_LOCALE_PROGETTO), CHK == 1) %>%
+      # select(COD_LOCALE_PROGETTO)
+      .$COD_LOCALE_PROGETTO
+  }
 
   # definisce perimetro
   pseudo <- pseudo  %>%
@@ -31,35 +49,39 @@ make_perimetro <- function(pseudo, export=TRUE, debug=FALSE, progetti=NULL, var_
     mutate(PERI = case_when(COD_LOCALE_PROGETTO %in% stoplist ~ 0,
                             COD_LOCALE_PROGETTO %in% safelist ~ 1,
                             TRUE ~ PERI))
-
+  # gestione scarti
   if (debug == TRUE) {
-
-    # DEV: progetti e var_ls entrano solo qui
-
+    # defaults
+    if (is.null(progetti)) {
+      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE)
+    }
+    if (is.null(var_ls)) {
+      var_ls <- c("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO",
+                  "OC_COD_CICLO", "OC_COD_FONTE", "FONDO_COMUNITARIO",
+                  "CUP_COD_SETTORE",  "CUP_DESCR_SETTORE",  "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE", "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA",
+                  "OC_DESCRIZIONE_PROGRAMMA", "OC_CODICE_PROGRAMMA",
+                  "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA",
+                  "OC_FINANZ_TOT_PUB_NETTO", "IMPEGNI", "TOT_PAGAMENTI")
+    }
+    # filter
     scarti <- pseudo %>%
       filter(PERI == 0) %>%
       select(-PERI) %>%
       left_join(progetti %>%
                   select(var_ls),
                 by = "COD_LOCALE_PROGETTO")
-
-    # aggiunge categorie UE
-    scarti <- get_categorie_UE(scarti)
-
-
+    if ("QUERY_UE" %in% names(pseudo)) {
+      # aggiunge categorie UE
+      scarti <- get_categorie_UE(scarti)
+      # DEV: serve solo se query_ue è nell'elenco delle query
+    }
+    # export
     write.csv2(scarti, file.path(TEMP, "scarti_perim.csv"), na = "", row.names = FALSE)
   }
 
   if (export == TRUE) {
     write.csv2(pseudo, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
   }
-
-  # count
-  # temp <- pseudo %>%
-  #   filter(PERI == 1) %>%
-  #   count() %>%
-  #   .$n
-  # print(paste0("obs nel perimetro: ", temp))
   return(pseudo)
 }
 

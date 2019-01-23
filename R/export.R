@@ -70,7 +70,7 @@ export_data <- function(pseudo, focus, bimestre, var_ls, var_add=NULL, chk_today
 
   # Stato di attuazione
   # perimetro <- get_stato_attuazione(df = perimetro, chk_today = "20180531")
-  perimetro <- get_stato_attuazione(df = perimetro, chk_today = chk_today)
+  # perimetro <- get_stato_attuazione(df = perimetro, chk_today = chk_today)
 
 
   # ----------------------------------------------------------------------------------- #

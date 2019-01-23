@@ -162,7 +162,7 @@ make_pseudo_std <- function(progetti, export=TRUE) {
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_[1], QUERY_[2], QUERY_[N] e TIPO_QUERY.
 #' @section Warning:
-#' I dati valori NA sono convertiti in 0.
+#' I valori NA sono convertiti in 0.
 #' La valutazione dinamica di TIPO_QUERY è ancora da implementare.
 make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
 

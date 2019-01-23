@@ -696,7 +696,7 @@ export_report <- function(perimetro, use_template=TRUE) {
   dimensioni <- report_dimensioni(perimetro, debug=FALSE)
   dimensioni_nature <- report_dimensioni_nature(perimetro, debug=FALSE)
   stati <- report_stati(perimetro, debug=FALSE)
-  statiproc <- report_statiproc(perimetro, debug=FALSE)
+  # statiproc <- report_statiproc(perimetro, debug=FALSE) # MEMO: opzione sospesa e da allineare a nuova variabile
 
 
   # ----------------------------------------------------------------------------------------- #
@@ -720,10 +720,10 @@ export_report <- function(perimetro, use_template=TRUE) {
                  # dimensioni_cp = dimensioni_cp,
                  # dimensioni_n = dimensioni_n,
                  dimensioni_nature = dimensioni_nature,
-                 stati = stati,
+                 stati = stati
                  # stati_cp = stati_cp,
                  # stati_n = stati_n,
-                 statiproc = statiproc
+                 # statiproc = statiproc # MEMO: opzione sospesa e da allineare a nuova variabile
                  # statiproc_cp = statiproc_cp,
                  # statiproc_n = statiproc_n,
                  )
