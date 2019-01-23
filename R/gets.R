@@ -65,6 +65,44 @@ get_dimensione_fin <- function(df, debug_mode=FALSE) {
 }
 
 
+# Semplifica regione
+get_regione_simply <- function(df) {
+  # MEMO: deve avere struttura di progetti
+
+  reg_cn <- c("001", "002", "003", "004", "005", "006",
+              "007", "008", "009", "010", "011", "012")
+  names(reg_cn) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
+                     "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
+
+  reg_sud <- c("013", "014", "015", "016", "017", "018", "019", "020")
+  names(reg_sud) <- c("ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA", "SARDEGNA")
+
+  temp <- c(names(reg_cn[1:3]), "PA TRENTO", "PA BOLZANO", names(reg_cn[5:12]), names(reg_sud), "ALTRO TERRITORIO")
+
+  # regioni
+  df <- df %>%
+    # fix per denominazione bilingue
+    # mutate(DEN_REGIONE = case_when(COD_REGIONE == "002" ~ "VALLE D'AOSTA",
+    #                                COD_REGIONE == "004" ~ "TRENTINO-ALTO ADIGE",
+    #                                TRUE ~ DEN_REGIONE)) %>%
+    mutate(x_REGIONE = ifelse(COD_REGIONE %in% c(reg_cn, reg_sud), DEN_REGIONE, "ALTRO TERRITORIO")) %>%
+    # fix per preesteso (nomi tranciati di doppie regioni)
+    # mutate(DEN_REGIONE_2 = case_when(DEN_REGIONE == "EMILIA" ~ "EMILIA-ROMAGNA",
+    #                                  DEN_REGIONE == "FRIULI" ~ "FRIULI-VENEZIA GIULIA",
+    #                                  TRUE ~ DEN_REGIONE_2)) %>%
+    # mutate(x_REGIONE = factor(x_REGIONE, levels = c(names(reg_cn), names(reg_sud), "ALTRO TERRITORIO")))
+    mutate(x_REGIONE = case_when(COD_PROVINCIA == "004021" ~ "PA BOLZANO",
+                                 COD_PROVINCIA == "004022" ~ "PA TRENTO",
+                                 # fix
+                                 COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "2BO5-1a-237" ~ "PA BOLZANO", # MEMO: progetto del POR PA Bolzano
+                                 COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "1ML1279" ~ "PA TRENTO", # MEMO: progetto del PON AdS FSE forzato qui
+                                 TRUE ~ x_REGIONE)) %>%
+    mutate(x_REGIONE = factor(x_REGIONE, levels = temp))
+
+  return(df)
+}
+
+
 # Aggiunge macroarea
 get_macroarea <- function(df, debug_mode=FALSE) {
   # DEBUG:
