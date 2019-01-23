@@ -297,30 +297,99 @@ get_catreg_UE <- function(df, debug_mode=FALSE) {
 
 
 # Aggiunge variabili "X" di riflassificazione dei PO
-get_x_vars <- function(df, debug_mode=FALSE) {
+get_x_vars_old <- function(df, debug_mode=FALSE) {
   df <- df %>%
-    left_join(po_riclass,
+    left_join(po_riclass %>%
+                select(-NOTE),
+              by = "OC_CODICE_PROGRAMMA")
+  return(df)
+}
+
+
+
+# Aggiunge variabili "X" di riflassificazione dei PO
+# get_x_vars_new1 <- function(df, debug_mode=FALSE, progetti=NULL) {
+#   # MEMO: nuova versione con "x_AMBITO"
+#   # DEV: definire "bimestre" nella funzione!
+#
+#   temp <- names(df)
+#
+#   df <- df %>%
+#     left_join(po_riclass %>%
+#                 select(-NOTE),
+#               by = "OC_CODICE_PROGRAMMA")
+#
+#   # recupera fondo comunitario da progetti (se assente in df)
+#   if (!(any(names(df) == "FONDO_COMUNITARIO"))) {
+#
+#     if (is.null(progetti)) {
+#       progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
+#     }
+#
+#     df <- df %>%
+#       left_join(progetti %>%
+#                   select(COD_LOCALE_PROGETTO, FONDO_COMUNITARIO),
+#                 by = "COD_LOCALE_PROGETTO")
+#   }
+#
+#   df <- df %>%
+#     mutate(x = gsub("PROGRAMMI ", "", x_FONDO)) %>%
+#     mutate(x_AMBITO = case_when(x == "MISTI" ~ "FESR", # MEMO: privilegio FESR su altro per MISTI
+#                                 x == "FESR-FSE" ~ FONDO_COMUNITARIO, # MEMO: split per programmi pluri-fondo
+#                                 x == "FSC" ~ "FSC",
+#                                 x == "POC" ~ "POC",
+#                                 x == "PAC" ~ "POC", # MEMO: solo per 713
+#                                 x == "ALTRO" ~ "SNAI",
+#                                 TRUE ~ x)) %>%
+#     mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "FEASR", "POC", "FSC", "SNAI")))
+#
+#   # TODO: inserire direttamente in po_riclass.csv (tutto tranne "FESR-FSE" e "MISTI")
+#
+#     # riordina vars
+#     df <- df %>%
+#       select(temp, x_CICLO, x_FONDO, x_AMBITO, x_GRUPPO, x_PROGRAMMA)
+#
+#   return(df)
+# }
+
+
+# Aggiunge variabili "X" di riflassificazione dei PO
+get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
+  # MEMO: nuova versione con "x_AMBITO"
+  # DEV: definire "bimestre" nella funzione!
+
+  temp <- names(df)
+
+  df <- df %>%
+    left_join(po_riclass %>%
+                select(-NOTE),
               by = "OC_CODICE_PROGRAMMA")
 
+  # recupera fondo comunitario da progetti (se assente in df)
+  if (!(any(names(df) == "FONDO_COMUNITARIO"))) {
 
-  # DEV: questo blocco potrei aggiungerlo direttamente a po_riclass
-  # recupera fondo comunitario (se assente)
-  # df <- df %>%
-  #   left_join(progetti %>%
-  #               select(COD_LOCALE_PROGETTO, FONDO_COMUNITARIO),
-  #             by = "COD_LOCALE_PROGETTO")
+    if (is.null(progetti)) {
+      progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
+    }
 
-  # df <- df %>%
-  #   mutate(x = gsub("PROGRAMMI ", "", x_FONDO)) %>%
-  #   # MEMO: privilegio FESR su altro per MISTI
-  #   mutate(x_AMBITO = case_when(x_PROGRAMMA == "PATTO PER LO SVILUPPO REGIONE CAMPANIA:::PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'" ~ "FSC",
-  #                               x == "MISTI" ~ "FESR",
-  #                               x == "FESR-FSE" ~ FONDO_COMUNITARIO, # MEMO: split per programmi pluri-fondo
-  #                               x == "FSC" ~ "FSC",
-  #                               x == "POC" ~ "POC",
-  #                               x == "ALTRO" ~ "SNAI",
-  #                               TRUE ~ x)) %>%
-  #   mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "FEASR", "POC", "FSC", "SNAI")))
+    df <- df %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, FONDO_COMUNITARIO),
+                by = "COD_LOCALE_PROGETTO")
+  }
+
+  df <- df %>%
+    mutate(x_AMBITO = case_when(x_AMBITO == "FESR-FSE" ~ FONDO_COMUNITARIO, # MEMO: split per programmi pluri-fondo
+                                TRUE ~ x_AMBITO)) %>%
+    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "FEASR", "POC", "FSC", "SNAI", "YEI", "CTE", "FEAMP", "FEAD", "FAMI")))
+
+  # TODO: inserire elaboraizone diretta anche su "MISTI"?
+
+  # riordina vars
+  df <- df %>%
+    select(temp, x_CICLO, x_FONDO, x_AMBITO, x_GRUPPO, x_PROGRAMMA)
 
   return(df)
 }
+
+

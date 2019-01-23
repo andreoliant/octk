@@ -15,6 +15,29 @@
 # ----------------------------------------------------------------------------------- #
 # etc
 
+# DEV: sta roba deve tutta lavorare per delta!
+
+# confronta po_riclass
+make_po_riclass <- function(bimestre, file_name="po_riclass_NEW.csv") {
+
+  if (is.null(progetti)) {
+    progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
+  }
+
+  programmi <- progetti %>% distinct(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
+
+  # require("readr")
+
+  out <- po_riclass %>%
+    bind_rows(programmi %>%
+                anti_join(po_riclass))
+
+  write_delim(out, file.path("data-raw", file_name), delim = ";", na = "")
+}
+
+make_po_riclass(bimestre="20181031")
+# HAND: fare aggiornamento a mano
+
 # po_riclass
 po_riclass <- read_csv2("data-raw/po_riclass.csv") %>%
   # MEMO: raw contiene NA per i programmi POC 2014-2020 > fanno casino perché join con progetti è sempre su OC_COD_PROGRAMMA
@@ -59,7 +82,7 @@ usethis::use_data(matrix_ra_temi_fsc, overwrite = TRUE)
 # creare wrapper che riepie direttamente il template
 
 # crea matrix programmi > linee > azioni
-make_matrix_po <- function() {
+make_matrix_po <- function(bimestre, file_name="po_linee_azioni_NEW.csv") {
 
   progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
 
@@ -77,12 +100,15 @@ make_matrix_po <- function() {
     mutate(QUERY = 0,
            NOTE = NA)
 
-  write_delim(out, file.path("data-raw", "po_linee_azioni.csv"), delim = ";", na = "")
+  write_delim(out, file.path("data-raw", file_name), delim = ";", na = "")
 }
+make_matrix_po(bimestre="20183106")
+# HAND: fare aggiornamento a mano
+
 
 
 # crea matrix temi UE
-make_matrix_ue <- function() {
+make_matrix_ue <- function(DATA) {
   # MEMO: questo parte da file custom di Luca (il "Campo" non è più presente nei dati pubblicati)
 
   require("readr")
