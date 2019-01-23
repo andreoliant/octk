@@ -301,5 +301,26 @@ get_x_vars <- function(df, debug_mode=FALSE) {
   df <- df %>%
     left_join(po_riclass,
               by = "OC_CODICE_PROGRAMMA")
+
+
+  # DEV: questo blocco potrei aggiungerlo direttamente a po_riclass
+  # recupera fondo comunitario (se assente)
+  # df <- df %>%
+  #   left_join(progetti %>%
+  #               select(COD_LOCALE_PROGETTO, FONDO_COMUNITARIO),
+  #             by = "COD_LOCALE_PROGETTO")
+
+  # df <- df %>%
+  #   mutate(x = gsub("PROGRAMMI ", "", x_FONDO)) %>%
+  #   # MEMO: privilegio FESR su altro per MISTI
+  #   mutate(x_AMBITO = case_when(x_PROGRAMMA == "PATTO PER LO SVILUPPO REGIONE CAMPANIA:::PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'" ~ "FSC",
+  #                               x == "MISTI" ~ "FESR",
+  #                               x == "FESR-FSE" ~ FONDO_COMUNITARIO, # MEMO: split per programmi pluri-fondo
+  #                               x == "FSC" ~ "FSC",
+  #                               x == "POC" ~ "POC",
+  #                               x == "ALTRO" ~ "SNAI",
+  #                               TRUE ~ x)) %>%
+  #   mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "FEASR", "POC", "FSC", "SNAI")))
+
   return(df)
 }

@@ -156,6 +156,9 @@ pseudo <- make_pseudo_std(progetti, export=TRUE)
 # creazione di pseudo con il wrapper editabile:
 pseudo <- make_pseudo_edit(progetti, query_ls=c("query_cup", "query_po"), export=TRUE)
 # MEMO: seleziona le query desiderate
+
+# ricarica pseudo (ad es. in una nuova sessione)
+pseudo <- read_csv2(file.path(TEMP, "pseudo.csv"))
 ```
 
 E' possibile anche integrare pseudo con righe provenienti da funzioni specifiche create per analisi ricorrenti.
@@ -170,8 +173,19 @@ Il processo di ricerca è finalizzato con lo scarto dei progetti individuati esc
 * salvare il progetto che sarebbe stato eliminato dal perimeto (se inserito in `safelist.csv`)
 * eliminare un progetto che sarebbe rimasto nel perimeto (se inserito in `stoplist.csv`)
 
+I template sono disponibili all'interno degli `oc_asset` e vanno esportati con la stessa denominazione nella cartella INPUT. Le righe di esempio descrivono le regole di compilazione.
+
 ```{r, echo = TRUE, eval = FALSE}
-pseudo <- make_perimetro(pseudo, export=TRUE, debug=TRUE, progetti, var_ls)
+write.csv2(stoplist, file.path(INPUT, "stoplist.csv"), row.names = FALSE)
+write.csv2(safelist, file.path(INPUT, "safelist.csv"), row.names = FALSE)
+```
+<!-- serve wizard anche qui -->
+
+Una volta popolate stoplist e safelist si integra pseudo con la definizione del perimetro. 
+
+```{r, echo = TRUE, eval = FALSE}
+pseudo <- make_perimetro(pseudo, export=TRUE, debug=TRUE)
+# DEV: qui va fatto anche blocco per query editabili
 ```
 
 **Controllo dei risultati**
