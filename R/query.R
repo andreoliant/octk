@@ -208,6 +208,76 @@ query_cipe <- function(progetti) {
 }
 
 
+#' Ricerca progetti per Risultato atteso
+#'
+#' Ricerca progetti per Risultato atteso (RA) a partire da input in "ra.csv".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_RA.
+query_ra <- function(progetti) {
+
+  # load matrix
+  matrix_ra <- read_csv2(file.path(INPUT, "ra.csv"))  %>%
+    rename(QUERY_RA = QUERY)
+
+  # merge
+  peri_ra <- progetti %>%
+    select(COD_LOCALE_PROGETTO, COD_RIS_ATTESO) %>%
+    separate_rows(COD_RIS_ATTESO, sep = ":::") %>%
+    mutate(COD_RIS_ATTESO = case_when(COD_RIS_ATTESO == "06.5.A" ~ "06.5",
+                                      COD_RIS_ATTESO == "06.5.B" ~ "06.5",
+                                      COD_RIS_ATTESO == "06.5.C" ~ "06.5",
+                                      COD_RIS_ATTESO == "06.5.D" ~ "06.5",
+                                      COD_RIS_ATTESO == "06.5.E" ~ "06.5",
+                                      TRUE ~ COD_RIS_ATTESO)) %>%
+    inner_join(matrix_ra %>%
+                 filter(QUERY_RA != 0),
+               by = "COD_RIS_ATTESO") %>%
+    distinct(COD_LOCALE_PROGETTO, QUERY_RA)
+  # MEMO: uso inner_join per tenere QUERY_RA
+
+  return(peri_ra)
+
+}
+
+
+#' Ricerca progetti per tema prioritario FSC
+#'
+#' Ricerca progetti per area e tema prioritario FSC (ATP) a partire da input in "aree_temi_fsc.csv".
+#' Al momento comprende tutte le delibere (non solo quelle FSC).
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_ATP.
+query_atp <- function(progetti) {
+
+  # load ambito FSC
+  ambito_rsc <- read_csv2(file.path(DATA, "ambito_fsc1420.csv"), guess_max = 5000) %>%
+    distinct(COD_LOCALE_PROGETTO,
+             COD_SETTORE_STRATEGICO_FSC, DESCR_SETTORE_STRATEGICO_FSC,
+             COD_ASSE_TEMATICO_FSC, DESCR_ASSE_TEMATICO_FSC)
+
+  # load matrix
+  matrix_atp <- read_csv2(file.path(INPUT, "aree_temi_fsc.csv"))  %>%
+    rename(QUERY_ATP = QUERY)
+
+  # merge
+  peri_atp <- progetti %>%
+    select(COD_LOCALE_PROGETTO) %>%
+    inner_join(ambito_rsc %>%
+                 select(COD_LOCALE_PROGETTO, COD_SETTORE_STRATEGICO_FSC, COD_ASSE_TEMATICO_FSC) %>%
+                 inner_join(matrix_atp %>%
+                              filter(QUERY_ATP != 0),
+                            by = c("COD_SETTORE_STRATEGICO_FSC", "COD_ASSE_TEMATICO_FSC")),
+               by = "COD_LOCALE_PROGETTO") %>%
+    distinct(COD_LOCALE_PROGETTO, QUERY_ATP)
+  # MEMO: uso inner_join per tenere QUERY_ATP
+
+  return(peri_atp)
+
+}
+
+
+
 # ----------------------------------------------------------------------------------- #
 # Intersezioni
 
