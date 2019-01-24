@@ -52,4 +52,29 @@ load_progetti <- function(bimestre, visualizzati=TRUE, debug=FALSE) {
 }
 
 
+#' Fix temporaneo per il dataset progetti in vestione preesteso
+#'
+#' Integra il dataset.
+#'
+#' @param progetti Dataset in formato standard.
+#' @return Il dataset progetti integrato.
+fix_progetti <- function(progetti) {
 
+  #-------- fix ---------#
+  # fix temporaneo per matera
+  progetti <- progetti %>%
+    mutate(OC_CODICE_PROGRAMMA = case_when(is.na(OC_CODICE_PROGRAMMA) ~ "2018MATERAFSC",
+                                           TRUE ~ OC_CODICE_PROGRAMMA),
+           OC_DESCRIZIONE_PROGRAMMA = case_when(is.na(OC_DESCRIZIONE_PROGRAMMA) ~ "MATERA CAPITALE DELLA CULTURA 2019",
+                                                TRUE ~ OC_DESCRIZIONE_PROGRAMMA))
+  # progetti %>% filter(is.na(OC_CODICE_PROGRAMMA))
+
+  progetti <- progetti %>%
+    mutate(DEN_REGIONE = case_when(COD_REGIONE == "002" ~ "VALLE D'AOSTA", # fix per denominazione bilingue
+                                   COD_REGIONE == "004" ~ "TRENTINO-ALTO ADIGE",
+                                   DEN_REGIONE == "EMILIA" ~ "EMILIA-ROMAGNA", # fix per denominazione doppia
+                                   DEN_REGIONE == "FRIULI" ~ "FRIULI-VENEZIA GIULIA",
+                                   TRUE ~ DEN_REGIONE))
+
+  return(progetti)
+}
