@@ -134,6 +134,38 @@ make_matrix_ue <- function(DATA) {
 }
 
 
+# crea matrix strumenti attuativi
+make_matrix_strum <- function(bimestre, file_name="strum_att.csv") {
+
+  progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
+
+  out <- progetti %>%
+    distinct(COD_STRUMENTO, DESCR_STRUMENTO, DESCR_TIPO_STRUMENTO) %>%
+    mutate(QUERY = 0,
+           NOTE = NA)
+
+  write_delim(out, file.path("data-raw", file_name), delim = ";", na = "")
+}
+
+
+# crea matrix delibere cipe
+make_matrix_cipe <- function(bimestre, file_name="delib_cipe.csv") {
+
+  # load finanziamenti
+  temp <- paste0("finanziamenti_esteso_", bimestre, ".csv")
+  delibere <- read_csv2(file.path(DATA, temp), guess_max = 5000)
+
+  out <- delibere %>%
+    # distinct(COD_DEL_CIPE, NUMERO_DEL_CIPE, ANNO_DEL_CIPE, TIPO_QUOTA, DESCRIZIONE_QUOTA, IMPORTO) %>%
+    distinct(NUMERO_DEL_CIPE, ANNO_DEL_CIPE, DESCRIZIONE_QUOTA) %>%
+    mutate(QUERY = 0,
+           NOTE = NA)
+
+  write_delim(out, file.path("data-raw", file_name), delim = ";", na = "")
+}
+
+
+
 # categorie_cup
 categorie_cup <- read_csv2("data-raw/categorie_cup.csv")
 usethis::use_data(categorie_cup, overwrite = TRUE)
@@ -155,6 +187,17 @@ usethis::use_data(ra, overwrite = TRUE)
 # aree_temi_fsc
 aree_temi_fsc <- read_csv2("data-raw/aree_temi_fsc.csv")
 usethis::use_data(aree_temi_fsc, overwrite = TRUE)
+
+# strum_att
+make_matrix_strum(bimestre="20181031")
+strum_att <- read_csv2("data-raw/strum_att.csv")
+usethis::use_data(strum_att, overwrite = TRUE)
+
+# delib_cipe
+make_matrix_cipe(bimestre="20181031")
+delib_cipe <- read_csv2("data-raw/delib_cipe.csv")
+usethis::use_data(delib_cipe, overwrite = TRUE)
+
 
 
 # ----------------------------------------------------------------------------------- #

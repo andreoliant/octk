@@ -2,6 +2,63 @@
 # Classificazione per tematismi
 # Focus: turismo
 
+#' Crea nuova base per riclassificazione lato categorie CUP
+#'
+#' ...
+#'
+#' @param pseudo Dataset "pseudo".
+#' @param file_name Nome file da salvare in INPUT.
+#' @return Un file "classi_cup.csv".
+#' #' @section Warning:
+#' Da rinominare in "classi_cup.csv" e modificare.
+setup_classi_cup <- function(pseudo, file_name="classi_cup_NEW.csv") {
+
+  # intgera pseudo
+  out <- pseudo %>%
+    left_join(progetti %>%
+                select("COD_LOCALE_PROGETTO", "CUP_COD_SETTORE", "CUP_DESCR_SETTORE",
+                       "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE",
+                       "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA"),
+              by = "COD_LOCALE_PROGETTO") %>%
+    filter(PERI == 1) %>% # isola scarti
+    count(CUP_COD_SETTORE, CUP_DESCR_SETTORE, CUP_COD_SOTTOSETTORE, CUP_DESCR_SOTTOSETTORE,
+          CUP_COD_CATEGORIA, CUP_DESCR_CATEGORIA) %>%
+    arrange(desc(n)) %>%
+    mutate(CLASSE = NA)
+
+  write.csv2(out, file.path(INPUT, file_name), row.names = FALSE)
+
+}
+
+
+#' Crea nuova base per riclassificazione lato temi/campi UE
+#'
+#' ...
+#'
+#' @param pseudo Dataset "pseudo".
+#' @param file_name Nome file da salvare in INPUT.
+#' @return Un file "classi_ue.csv".
+#' #' @section Warning:
+#' Da rinominare in "classi_ue.csv" e modificare.
+setup_classi_ue <- function(pseudo, file_name="classi_ue_NEW.csv") {
+
+  # intgera pseudo
+  out <- pseudo %>%
+    left_join(progetti %>%
+                select("COD_LOCALE_PROGETTO", "OC_COD_CATEGORIA_SPESA", "OC_DESCR_CATEGORIA_SPESA"),
+              by = "COD_LOCALE_PROGETTO") %>%
+    filter(PERI == 1) %>% # isola scarti
+    count(OC_COD_CATEGORIA_SPESA, OC_DESCR_CATEGORIA_SPESA) %>%
+    arrange(desc(n)) %>%
+    mutate(CLASSE = NA)
+
+  write.csv2(out, file.path(INPUT, file_name), row.names = FALSE)
+
+}
+
+
+
+
 
 make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe, export=TRUE, debug=FALSE) {
 
@@ -36,8 +93,7 @@ make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe, export=TRU
               by = c("CUP_COD_SETTORE", "CUP_COD_SOTTOSETTORE","CUP_COD_CATEGORIA")) %>%
     # merge lato UE
     left_join(read_csv2(file.path(INPUT, "classi_ue.csv")) %>%
-                select(COD_TEMA_CAMPO, CLASSE) %>%
-                rename(OC_COD_CATEGORIA_SPESA = COD_TEMA_CAMPO),
+                select(OC_COD_CATEGORIA_SPESA, CLASSE),
               by = "OC_COD_CATEGORIA_SPESA",
               suffix = c("_CUP", "_UE")) %>%
     # MEMO: risolve NA per nuovi progetti con categoria CUP anomala e mai censita >>> CHK!!!
@@ -126,7 +182,7 @@ make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe, export=TRU
       count(CLASSE_CUP, CLASSE_UE) %>%
       spread(CLASSE_UE, n) %>%
       rename("CUP/UE" = CLASSE_CUP) %>%
-      write.csv2(file.path(tmp_path, "matrix_classi.csv"), na = "", row.names = FALSE)
+      write.csv2(file.path(TEMP, "matrix_classi.csv"), na = "", row.names = FALSE)
 
   }
 

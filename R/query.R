@@ -143,6 +143,70 @@ query_ue <- function(progetti) {
 # ra.csv
 
 
+#' Ricerca progetti per strumento attuativo
+#'
+#' Ricerca progetti per strumento attuativo a partire da input in "strum_att.csv".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_STRUM.
+query_strum <- function(progetti) {
+
+  # "COD_STRUMENTO"
+  # "DESCR_STRUMENTO"
+  # "DESCR_TIPO_STRUMENTO"
+
+  # load matrix
+  matrix_strum <- read_csv2(file.path(INPUT, "strum_att.csv"))  %>%
+    rename(QUERY_STRUM = QUERY)
+
+  # merge
+  peri_strum <- progetti %>%
+    select(COD_LOCALE_PROGETTO, COD_STRUMENTO) %>%
+    inner_join(matrix_strum %>%
+                 filter(QUERY_STRUM != 0),
+               by = "COD_STRUMENTO") %>%
+    distinct(COD_LOCALE_PROGETTO, QUERY_STRUM)
+  # MEMO: uso inner_join per tenere QUERY_STRUM
+
+  return(peri_strum)
+
+}
+
+
+
+#' Ricerca progetti per delibera CIPE
+#'
+#' Ricerca progetti per delibera CIPE a partire da input in "delib_cipe.csv".
+#' Al momento comprende tutte le delibere (non solo quelle FSC).
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_CIPE.
+query_cipe <- function(progetti) {
+
+  # load finanziamenti
+  temp <- paste0("finanziamenti_esteso_", bimestre, ".csv")
+  delibere <- read_csv2(file.path(DATA, temp), guess_max = 5000)
+
+  # load matrix
+  matrix_cipe <- read_csv2(file.path(INPUT, "delib_cipe.csv"))  %>%
+    rename(QUERY_CIPE = QUERY)
+
+  # merge
+  peri_cipe <- progetti %>%
+    select(COD_LOCALE_PROGETTO) %>%
+    inner_join(delibere %>%
+                 select(COD_LOCALE_PROGETTO, NUMERO_DEL_CIPE, ANNO_DEL_CIPE) %>%
+                 inner_join(matrix_cipe %>%
+                             filter(QUERY_CIPE != 0),
+                           by = c("NUMERO_DEL_CIPE", "ANNO_DEL_CIPE")),
+               by = "COD_LOCALE_PROGETTO") %>%
+    distinct(COD_LOCALE_PROGETTO, QUERY_CIPE)
+  # MEMO: uso inner_join per tenere QUERY_CIPE
+
+  return(peri_cipe)
+
+}
+
 
 # ----------------------------------------------------------------------------------- #
 # Intersezioni
@@ -218,7 +282,9 @@ make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
       # print("primo giro..")
       pseudo <- temp
     } else {
-      pseudo <- pseudo %>% full_join(temp)
+      pseudo <- pseudo %>%
+        full_join(temp,
+                  by = "COD_LOCALE_PROGETTO")
     }
   }
 
