@@ -17,7 +17,7 @@ Wrapper per esecuzione di una lista di query a composizione libera.
 }
 \section{Warning}{
 
-I dati valori NA sono convertiti in 0.
+I valori NA sono convertiti in 0.
 La valutazione dinamica di TIPO_QUERY è ancora da implementare.
 }
 
