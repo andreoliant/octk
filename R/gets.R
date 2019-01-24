@@ -8,35 +8,36 @@
 
 
 # Aggiunge categoria UE
-get_categorie_UE <- function(df) {
-
-  # load categorie UE
-  appo_tema <- read_csv2(file.path(DATA, "clp_tema_campointervento.csv")) %>%
-    mutate(OC_COD_CICLO = case_when(TIPO == "CAMPO" ~ 2,
-                                    TIPO == "TEMA" ~ 1)) %>%
-    select(-TIPO)
-
-  # semplifcazione categorie UE
-  temp_tema <- df %>%
-    select(COD_LOCALE_PROGETTO) %>%
-    left_join(appo_tema,
-              by = "COD_LOCALE_PROGETTO") %>%
-    # group_by(COD_LOCALE_PROGETTO, OC_COD_CICLO) %>%
-    group_by(COD_LOCALE_PROGETTO) %>%
-    # MEMO: serve collapse per 1:N nel campo di intervento 1420 (assente in 713)
-    summarise(COD_TEMA_CAMPO = paste(COD_TEMA_CAMPO, collapse=":::"),
-              DESCR_TEMA_CAMPO = paste(DESCR_TEMA_CAMPO, collapse=":::"))
-
-  # DEBUG:
-  # dim(df)[1] == dim(temp_tema)[1]
-
-  out <- df %>%
-    left_join(temp_tema,
-            by = "COD_LOCALE_PROGETTO")
-
-    return(out)
-
-}
+# DEPRECATED
+# get_categorie_UE <- function(df) {
+#
+#   # load categorie UE
+#   appo_tema <- read_csv2(file.path(DATA, "clp_tema_campointervento.csv")) %>%
+#     mutate(OC_COD_CICLO = case_when(TIPO == "CAMPO" ~ 2,
+#                                     TIPO == "TEMA" ~ 1)) %>%
+#     select(-TIPO)
+#
+#   # semplifcazione categorie UE
+#   temp_tema <- df %>%
+#     select(COD_LOCALE_PROGETTO) %>%
+#     left_join(appo_tema,
+#               by = "COD_LOCALE_PROGETTO") %>%
+#     # group_by(COD_LOCALE_PROGETTO, OC_COD_CICLO) %>%
+#     group_by(COD_LOCALE_PROGETTO) %>%
+#     # MEMO: serve collapse per 1:N nel campo di intervento 1420 (assente in 713)
+#     summarise(COD_TEMA_CAMPO = paste(COD_TEMA_CAMPO, collapse=":::"),
+#               DESCR_TEMA_CAMPO = paste(DESCR_TEMA_CAMPO, collapse=":::"))
+#
+#   # DEBUG:
+#   # dim(df)[1] == dim(temp_tema)[1]
+#
+#   out <- df %>%
+#     left_join(temp_tema,
+#             by = "COD_LOCALE_PROGETTO")
+#
+#     return(out)
+#
+# }
 
 
 # Aggiunge dimensione finanziaria

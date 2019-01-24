@@ -61,6 +61,7 @@ make_perimetro <- function(pseudo, export=TRUE,
                   "CUP_COD_SETTORE",  "CUP_DESCR_SETTORE",  "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE", "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA",
                   "OC_DESCRIZIONE_PROGRAMMA", "OC_CODICE_PROGRAMMA",
                   "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA",
+                  "OC_COD_CATEGORIA_SPESA", "OC_DESCR_CATEGORIA_SPESA",
                   "OC_FINANZ_TOT_PUB_NETTO", "IMPEGNI", "TOT_PAGAMENTI")
     }
     # filter
@@ -70,11 +71,11 @@ make_perimetro <- function(pseudo, export=TRUE,
       left_join(progetti %>%
                   select(var_ls),
                 by = "COD_LOCALE_PROGETTO")
-    if ("QUERY_UE" %in% names(pseudo)) {
-      # aggiunge categorie UE
-      scarti <- get_categorie_UE(scarti)
-      # DEV: serve solo se query_ue è nell'elenco delle query
-    }
+    # if ("QUERY_UE" %in% names(pseudo)) {
+    #   # aggiunge categorie UE
+    #   scarti <- get_categorie_UE(scarti)
+    #   # DEV: serve solo se query_ue è nell'elenco delle query
+    # }
     # export
     write.csv2(scarti, file.path(TEMP, "scarti_perim.csv"), na = "", row.names = FALSE)
   }

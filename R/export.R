@@ -12,7 +12,8 @@ export_data <- function(pseudo, focus, bimestre, var_ls, var_add=NULL, chk_today
   var_ls2 <- c("CUP_COD_SETTORE",  "CUP_DESCR_SETTORE",  "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE", "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA",
                "OC_DESCRIZIONE_PROGRAMMA",
                # "OC_CODICE_PROGRAMMA",
-               "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_SUBARTICOLAZ_PROGRAMMA")
+               "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_SUBARTICOLAZ_PROGRAMMA",
+               "OC_COD_CATEGORIA_SPESA", "OC_DESCR_CATEGORIA_SPESA")
 
   var_ls3 <- c("CUP_COD_NATURA", "CUP_DESCR_NATURA",
 
@@ -49,7 +50,9 @@ export_data <- function(pseudo, focus, bimestre, var_ls, var_add=NULL, chk_today
     # left_join(temp_tema,
     #           by = "COD_LOCALE_PROGETTO") %>%
     # NEW:
-    get_categorie_UE(.) %>%
+    # get_categorie_UE(.) %>%
+
+
     # merge variabili di localizzazione (da progetti)
     left_join(progetti %>%
                 select("COD_LOCALE_PROGETTO", var_ls3),

@@ -16,12 +16,13 @@ make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe, export=TRU
     filter(PERI == 1) # isola scarti
 
   # aggiunge categorie UE
-  appo <- get_categorie_UE(appo)
+  # appo <- get_categorie_UE(appo)
 
   # recupera natura per modifica aiuti con categoria UE
   appo <- appo %>%
     left_join(progetti %>%
-                select(COD_LOCALE_PROGETTO, CUP_COD_NATURA, CUP_DESCR_NATURA),
+                select(COD_LOCALE_PROGETTO, CUP_COD_NATURA, CUP_DESCR_NATURA,
+                       OC_COD_CATEGORIA_SPESA),
               by = "COD_LOCALE_PROGETTO")
 
   # ----------------------------------------------------------------------------------- #
@@ -35,8 +36,9 @@ make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe, export=TRU
               by = c("CUP_COD_SETTORE", "CUP_COD_SOTTOSETTORE","CUP_COD_CATEGORIA")) %>%
     # merge lato UE
     left_join(read_csv2(file.path(INPUT, "classi_ue.csv")) %>%
-                select(COD_TEMA_CAMPO, CLASSE),
-              by = "COD_TEMA_CAMPO",
+                select(COD_TEMA_CAMPO, CLASSE) %>%
+                rename(OC_COD_CATEGORIA_SPESA = COD_TEMA_CAMPO),
+              by = "OC_COD_CATEGORIA_SPESA",
               suffix = c("_CUP", "_UE")) %>%
     # MEMO: risolve NA per nuovi progetti con categoria CUP anomala e mai censita >>> CHK!!!
     # MEMO: risolve NA per progetti 1420 senza tema UE

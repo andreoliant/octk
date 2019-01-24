@@ -66,7 +66,7 @@ query_po <- function(progetti) {
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_UE.
 #' @section Warning:
 #' Le variabili di riferimento non sono presenti in progetti e vanno ricercate in "clp_tema_campointervento.csv".
-query_ue <- function(progetti) {
+query_ue_old <- function(progetti) {
 
   # load matrix
   matrix_ue <- read_csv2(file.path(INPUT, "categorie_ue.csv")) %>%
@@ -88,6 +88,47 @@ query_ue <- function(progetti) {
     inner_join(matrix_ue %>%
                  filter(QUERY_UE != 0),
                by = c("OC_COD_CICLO", "COD_TEMA_CAMPO")) %>%
+    # select(COD_LOCALE_PROGETTO, QUERY_UE)
+    distinct(COD_LOCALE_PROGETTO, QUERY_UE)
+  # WARNING: uso distinct rimuovere duplicati di CLP con temi molteplici
+
+  return(peri_ue)
+
+}
+
+query_ue <- function(progetti) {
+
+  # debug
+  # chk <- progetti %>%
+  #   count(OC_COD_CICLO, OC_COD_CATEGORIA_SPESA, OC_DESCR_CATEGORIA_SPESA) %>%
+  #   separate_rows(OC_COD_CATEGORIA_SPESA, sep = ":::")
+
+  # progetti %>%
+  #   filter(is.na(OC_COD_CATEGORIA_SPESA)) %>%
+  #   count(x_CICLO, x_AMBITO, x_PROGRAMMA)
+
+  # load matrix
+  matrix_ue <- read_csv2(file.path(INPUT, "categorie_ue.csv")) %>%
+    rename(OC_COD_CATEGORIA_SPESA = COD_TEMA_CAMPO,
+           OC_DESCR_CATEGORIA_SPESA = DESCR_TEMA_CAMPO,
+           QUERY_UE = QUERY)
+
+  # load categorie UE
+  # message("Caricamento di clp_tema_campointervento.csv in corso...")
+  # appo_tema <- read_csv2(file.path(DATA, "clp_tema_campointervento.csv")) %>%
+  #   mutate(OC_COD_CICLO = case_when(TIPO == "CAMPO" ~ 2,
+  #                                   TIPO == "TEMA" ~ 1)) %>%
+  #   select(-TIPO)
+
+  # merge
+  peri_ue <- progetti %>%
+    select(COD_LOCALE_PROGETTO, OC_COD_CICLO, OC_COD_CATEGORIA_SPESA) %>%
+    separate_rows(OC_COD_CATEGORIA_SPESA, sep = ":::") %>%
+    # MEMO: fix temporaneo
+    mutate(OC_COD_CATEGORIA_SPESA = gsub(":$", "", OC_COD_CATEGORIA_SPESA)) %>%
+    inner_join(matrix_ue %>%
+                 filter(QUERY_UE != 0),
+               by = c("OC_COD_CICLO", "OC_COD_CATEGORIA_SPESA")) %>%
     # select(COD_LOCALE_PROGETTO, QUERY_UE)
     distinct(COD_LOCALE_PROGETTO, QUERY_UE)
   # WARNING: uso distinct rimuovere duplicati di CLP con temi molteplici
