@@ -114,8 +114,7 @@ get_regione_simply <- function(df) {
                                  COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "2BO5-1a-237" ~ "PA BOLZANO", # MEMO: progetto del POR PA Bolzano
                                  COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "1ML1279" ~ "PA TRENTO", # MEMO: progetto del PON AdS FSE forzato qui
                                  TRUE ~ x_REGIONE)) %>%
-    mutate(x_REGIONE = factor(x_REGIONE, levels = temp)) %>%
-    select(-COD_REGIONE, -DEN_REGIONE, -COD_PROVINCIA)
+    mutate(x_REGIONE = factor(x_REGIONE, levels = temp))
 
   return(df)
 }
@@ -162,8 +161,7 @@ get_macroarea <- function(df, debug_mode=FALSE) {
                                  grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_sud) == TRUE ~ "Sud",
                                  grepl(":::", COD_REGIONE) ~ "Trasversale", # MEMO: multi-regionale su più macroaree
                                  TRUE ~ "Estero")) %>%
-    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")))%>%
-    select(-COD_REGIONE)
+    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")))
 
   return(df)
 

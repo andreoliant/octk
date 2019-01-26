@@ -89,19 +89,40 @@ export_data <- function(pseudo, focus, bimestre, var_ls=NULL, var_add=NULL, expo
 
 # FARE A MANO PERCHE NON FUNZIA...
 
-# library("openxlsx")
-#
-# # MEMO: usato al primo giro per creare template (poi integrato a mano)
-# tab_ls <- list(perimetro = perimetro)
-# # write.xlsx(perimetro, file = file.path(tmp_path, "prova.xlsx"), asTable = TRUE, firstRow = TRUE, overwrite = TRUE)
-# write.xlsx(tab_ls, file = file.path(tmp_path, "prova.xlsx"), asTable = TRUE, firstRow = TRUE, overwrite = TRUE)
-#
-# wb <- loadWorkbook(file.path(src_path, "template.xlsx"))
-# removeTable(wb = wb, sheet = "dati", table = getTables(wb, sheet = "dati"))
-# writeDataTable(wb, sheet = "dati", x = perimetro, stack = TRUE)
-# saveWorkbook(wb, file = file.path(dat_path, paste0(paste(this_path, oc_ver, sep = "_"), ".xlsx")), overwrite = TRUE)
-#
-#
+export_data_xls <- function(perimetro, focus, bimestre, use_template=FALSE) {
+
+  library("openxlsx")
+  temp <- paste0(paste(focus, bimestre, sep = "_"), ".xlsx")
+
+  if (use_template == TRUE) {
+    wb <- loadWorkbook(system.file("extdata", "template.xlsx", package = "oc", mustWork = TRUE))
+    removeTable(wb = wb, sheet = "dati", table = getTables(wb, sheet = "dati"))
+    writeDataTable(wb, sheet = "dati", x = perimetro, stack = TRUE)
+    saveWorkbook(wb, file = file.path(OUTPUT, temp), overwrite = TRUE)
+
+    # for (i in seq_along(tab_ls)) {
+    #   print(names(tab_ls)[i])
+    #   removeTable(wb = wb, sheet = names(tab_ls)[i], table = getTables(wb, sheet = names(tab_ls)[i]))
+    #   writeDataTable(wb, sheet = names(tab_ls)[i], x = tab_ls[[i]], stack = TRUE)
+    # }
+    #
+
+  } else {
+    tab_ls <- list(perimetro = perimetro)
+    write.xlsx(tab_ls, file = file.path(OUTPUT, temp), asTable = TRUE, firstRow = TRUE, overwrite = TRUE)
+  }
+
+
+
+  # wb <- loadWorkbook(file.path(src_path, "template.xlsx"))
+  # removeTable(wb = wb, sheet = "dati", table = getTables(wb, sheet = "dati"))
+  # writeDataTable(wb, sheet = "dati", x = perimetro, stack = TRUE)
+  # saveWorkbook(wb, file = file.path(dat_path, paste0(paste(this_path, oc_ver, sep = "_"), ".xlsx")), overwrite = TRUE)
+
+}
+
+
+
 
 
 # ----------------------------------------------------------------------------------- #
