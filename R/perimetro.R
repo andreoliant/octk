@@ -162,6 +162,7 @@ make_perimetro_edit <- function(pseudo, export=TRUE,
     # }
     # export
     write.csv2(scarti, file.path(TEMP, "scarti_perim.csv"), na = "", row.names = FALSE)
+    print(paste0("Il dataset 'scarti' contiene ", dim(scarti)[1], " progetti esclusi dal perimetro"))
   }
 
   if (export == TRUE) {

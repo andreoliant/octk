@@ -1,6 +1,29 @@
 # OC > Toolkit
 # Query
 
+#' Setup query e stoplist
+#'
+#' Salva i file csv del blocco "query" in INPUT insieme a stoplist.csv e safelist.csv
+#'
+#' @param ...
+#' @return...
+setup_query <- function() {
+
+  write.csv2(categorie_cup, file.path(INPUT, "categorie_cup.csv"), row.names = FALSE)
+  write.csv2(categorie_ue, file.path(INPUT, "categorie_ue.csv"), row.names = FALSE)
+  write.csv2(po_linee_azioni, file.path(INPUT, "po_linee_azioni.csv"), row.names = FALSE)
+  write.csv2(delib_cipe, file.path(INPUT, "delib_cipe.csv"), row.names = FALSE)
+  write.csv2(strum_att, file.path(INPUT, "strum_att.csv"), row.names = FALSE)
+  write.csv2(aree_temi_fsc, file.path(INPUT, "aree_temi_fsc.csv"), row.names = FALSE)
+  write.csv2(ra, file.path(INPUT, "ra.csv"), row.names = FALSE)
+  # DEV: inserire meccanismo per selezione
+
+  write.csv2(stoplist, file.path(INPUT, "stoplist.csv"), row.names = FALSE)
+  write.csv2(safelist, file.path(INPUT, "safelist.csv"), row.names = FALSE)
+
+}
+
+
 #' Ricerca progetti per categoria CUP
 #'
 #' Ricerca progetti per settore, sotto-settore e categoria CUP a partire da input in "categorie_cup.csv".

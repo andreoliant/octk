@@ -57,45 +57,81 @@ setup_classi_ue <- function(pseudo, file_name="classi_ue_NEW.csv") {
 }
 
 
+#' Setup fixlist per classificazione
+#'
+#' Salva fixlist.csv
+#'
+#' @param ...
+#' @return...
+setup_fixlist <- function() {
+
+  # DEV: mettere qui dentro anche setup_classi_cup() e setup_classi_ue()
+
+  write.csv2(fixlist, file.path(INPUT, "fixlist.csv"), row.names = FALSE)
+
+}
 
 
 
-make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe, export=TRUE, debug=FALSE) {
+make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe=NULL, vars_ls=NULL, export=TRUE, debug=FALSE) {
+
+  # if (is.null(var_ls)) {
+  #   var_ls <- c("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO",
+  #               "OC_COD_CICLO", "OC_COD_FONTE", "FONDO_COMUNITARIO",
+  #               "CUP_COD_SETTORE",  "CUP_DESCR_SETTORE",  "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE", "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA",
+  #               "OC_DESCRIZIONE_PROGRAMMA", "OC_CODICE_PROGRAMMA",
+  #               "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA",
+  #               "OC_FINANZ_TOT_PUB_NETTO", "IMPEGNI", "TOT_PAGAMENTI")
+  # }
+  # MEMO: forse va tolto anche sopra
 
   # ----------------------------------------------------------------------------------- #
   # Integra dati perimetro
 
-  # filtra e intgera pseudo (in appo e senza scarti)
+  # filtra pseudo (in appo e senza scarti)
   appo <- pseudo %>%
     # select(-CLASSE) %>%
-    left_join(progetti %>%
-                select(var_ls)) %>%
+    # left_join(progetti %>%
+    #             select(var_ls)) %>%
     filter(PERI == 1) # isola scarti
 
   # aggiunge categorie UE
   # appo <- get_categorie_UE(appo)
 
-  # recupera natura per modifica aiuti con categoria UE
+  # intgera pseudo
   appo <- appo %>%
     left_join(progetti %>%
-                select(COD_LOCALE_PROGETTO, CUP_COD_NATURA, CUP_DESCR_NATURA,
+                select(CUP_COD_SETTORE, CUP_COD_SOTTOSETTORE, CUP_COD_CATEGORIA,
+                        COD_LOCALE_PROGETTO, CUP_COD_NATURA, CUP_DESCR_NATURA,
                        OC_COD_CATEGORIA_SPESA),
               by = "COD_LOCALE_PROGETTO")
+  # MEMO: recupera natura per modifica aiuti con categoria UE
+
 
   # ----------------------------------------------------------------------------------- #
   # Classificazione
 
+  # load
+  classi_cup <- read_csv2(file.path(INPUT, "classi_cup.csv")) %>%
+    select(CUP_COD_SETTORE, CUP_COD_SOTTOSETTORE, CUP_COD_CATEGORIA, CLASSE_CUP = CLASSE)
+
+  classi_ue <- read_csv2(file.path(INPUT, "classi_ue.csv")) %>%
+    select(OC_COD_CATEGORIA_SPESA, CLASSE_UE = CLASSE)
+
+  # switch per livelli_classe e classe_jolly
+  if (is.null(livelli_classe)) {
+    livelli_classe <- unique(c(unique(classi_cup$CLASSE_CUP), c(unique(classi_ue$CLASSE_UE))))
+    classe_jolly <- "NA"
+  }
+
   # merge
   appo <- appo %>%
     # merge lato CUP
-    left_join(read_csv2(file.path(INPUT, "classi_cup.csv")) %>%
-                select(CUP_COD_SETTORE, CUP_COD_SOTTOSETTORE, CUP_COD_CATEGORIA, CLASSE),
+    left_join(classi_cup,
               by = c("CUP_COD_SETTORE", "CUP_COD_SOTTOSETTORE","CUP_COD_CATEGORIA")) %>%
     # merge lato UE
-    left_join(read_csv2(file.path(INPUT, "classi_ue.csv")) %>%
-                select(OC_COD_CATEGORIA_SPESA, CLASSE),
-              by = "OC_COD_CATEGORIA_SPESA",
-              suffix = c("_CUP", "_UE")) %>%
+    left_join(classi_ue,
+              by = "OC_COD_CATEGORIA_SPESA") %>%
     # MEMO: risolve NA per nuovi progetti con categoria CUP anomala e mai censita >>> CHK!!!
     # MEMO: risolve NA per progetti 1420 senza tema UE
     mutate(CLASSE_CUP = ifelse(is.na(CLASSE_CUP), "Altro", CLASSE_CUP),
@@ -110,9 +146,6 @@ make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe, export=TRU
     mutate(CLASSE_CUP = factor(CLASSE_CUP, levels = c(livelli_classe, "Altro")),
            CLASSE_UE = factor(CLASSE_UE, levels = c(livelli_classe, "Altro"))) %>%
     mutate(CHK_CLASSE = CLASSE_CUP == CLASSE_UE)
-
-
-
 
   # analisi
   # chk <- appo %>%
@@ -147,7 +180,7 @@ make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe, export=TRU
   # load fix
   fixlist <- read_csv2(file.path(INPUT, "fixlist.csv")) %>%
     filter(!is.na(COD_LOCALE_PROGETTO), CHK == 1) %>%
-    mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Altro"))) %>%
+    # mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Altro"))) %>%
     select(COD_LOCALE_PROGETTO, CLASSE)
 
   # fixlist %>%
@@ -157,10 +190,13 @@ make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe, export=TRU
 
   # fix
   appo <- appo %>%
+    mutate(CLASSE = as.character(CLASSE)) %>%
     left_join(fixlist,
               by = "COD_LOCALE_PROGETTO") %>%
-    mutate(CLASSE = ifelse(is.na(CLASSE.y), as.factor(CLASSE.x), as.factor(CLASSE.y))) %>%
-    mutate(CLASSE = factor(CLASSE, levels = c(1, 2, 3), labels = livelli_classe)) %>%
+    # mutate(CLASSE = ifelse(is.na(CLASSE.y), as.factor(CLASSE.x), as.factor(CLASSE.y))) %>%
+    mutate(CLASSE = ifelse(is.na(CLASSE.y), CLASSE.x, CLASSE.y)) %>%
+    mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Altro"))) %>%
+    # mutate(CLASSE = factor(CLASSE, levels = c(1, 2, 3), labels = livelli_classe)) %>%
     # CHK: VERIFICARE LABELS
     select(-CLASSE.x, -CLASSE.y)
 
@@ -189,6 +225,7 @@ make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe, export=TRU
   if (export == TRUE) {
 
     write.csv2(pseudo, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
+
   }
 
 
