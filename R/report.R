@@ -71,38 +71,38 @@ report_macroaree <- function(perimetro, debug=FALSE) {
 
   # macroaree
   macroaree <- perimetro %>%
-    group_by(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, MACROAREA) %>%
+    group_by(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, x_MACROAREA) %>%
     summarise(N = n(),
               CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
               PAG = sum(TOT_PAGAMENTI, na.rm = TRUE)) %>%
     # totali per ciclo/fondo + classe/macroarea
     bind_rows(perimetro %>%
-                group_by(x_CICLO, x_FONDO, x_GRUPPO = "TOTALE", CLASSE, MACROAREA) %>%
+                group_by(x_CICLO, x_FONDO, x_GRUPPO = "TOTALE", CLASSE, x_MACROAREA) %>%
                 summarise(N = n(),
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     # totali per ciclo + classe/macroarea
     bind_rows(perimetro %>%
-                group_by(x_CICLO, x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE, MACROAREA) %>%
+                group_by(x_CICLO, x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE, x_MACROAREA) %>%
                 summarise(N = n(),
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     # totali per classe/macroarea
     bind_rows(perimetro %>%
-                group_by(x_CICLO = "TOTALE", x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE, MACROAREA) %>%
+                group_by(x_CICLO = "TOTALE", x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE, x_MACROAREA) %>%
                 summarise(N = n(),
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     # totali per macroarea
     bind_rows(perimetro %>%
-                group_by(x_CICLO = "TOTALE", x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE = "Totale", MACROAREA) %>%
+                group_by(x_CICLO = "TOTALE", x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE = "Totale", x_MACROAREA) %>%
                 summarise(N = n(),
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     as.data.frame() %>%
     mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Totale"))) %>%
-    mutate(MACROAREA = factor(MACROAREA, levels=c("Sud", "Centro-Nord", "Nazionale", "Trasversale", "Estero"))) %>%
-    arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, MACROAREA)
+    mutate(x_MACROAREA = factor(x_MACROAREA, levels=c("Sud", "Centro-Nord", "Nazionale", "Trasversale", "Estero"))) %>%
+    arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, x_MACROAREA)
 
   if (debug == TRUE) {
     sintesi %>%
@@ -121,20 +121,20 @@ report_macroaree <- function(perimetro, debug=FALSE) {
 # #   gather(key = "KEY", value = "VALUE", N, CP, PAG) %>%
 # #   unite("KEY", CLASSE, KEY, sep = "_") %>%
 # #   spread(key = "KEY", value = "VALUE", fill = 0) %>%
-# #   arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, MACROAREA)
+# #   arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, x_MACROAREA)
 #
 # # simply by CP
 # macroaree_cp <- macroaree %>%
 #   select(-N, -PAG) %>%
 #   filter(!(x_GRUPPO == "TOTALE" & x_FONDO != "TOTALE")) %>%
-#   spread(key = MACROAREA, value = CP, fill = 0) %>%
+#   spread(key = x_MACROAREA, value = CP, fill = 0) %>%
 #   arrange(CLASSE)
 #
 # # simply by N
 # macroaree_n <- macroaree %>%
 #   select(-CP, -PAG) %>%
 #   filter(!(x_GRUPPO == "TOTALE" & x_FONDO != "TOTALE")) %>%
-#   spread(key = MACROAREA, value = N, fill = 0) %>%
+#   spread(key = x_MACROAREA, value = N, fill = 0) %>%
 #   arrange(CLASSE)
 
 
@@ -168,39 +168,39 @@ report_regioni <- function(perimetro, debug=FALSE) {
   # MEMO: semplifica DEN_REGIONE diversi da vera Regione in "ALTRO TERRITORIO"
 
   regioni <- appo %>%
-    group_by(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, MACROAREA, DEN_REGIONE) %>%
+    group_by(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, x_MACROAREA, DEN_REGIONE) %>%
     summarise(N = n(),
               CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
               PAG = sum(TOT_PAGAMENTI, na.rm = TRUE)) %>%
     # totali per ciclo/fondo + classe/macroarea/regione
     bind_rows(appo %>%
-                group_by(x_CICLO, x_FONDO, x_GRUPPO = "TOTALE", CLASSE, MACROAREA, DEN_REGIONE) %>%
+                group_by(x_CICLO, x_FONDO, x_GRUPPO = "TOTALE", CLASSE, x_MACROAREA, DEN_REGIONE) %>%
                 summarise(N = n(),
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     # totali per ciclo + classe/macroarea/regione
     bind_rows(appo %>%
-                group_by(x_CICLO, x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE, MACROAREA, DEN_REGIONE) %>%
+                group_by(x_CICLO, x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE, x_MACROAREA, DEN_REGIONE) %>%
                 summarise(N = n(),
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     # totali per classe/macroarea/regione
     bind_rows(appo %>%
-                group_by(x_CICLO = "TOTALE", x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE, MACROAREA, DEN_REGIONE) %>%
+                group_by(x_CICLO = "TOTALE", x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE, x_MACROAREA, DEN_REGIONE) %>%
                 summarise(N = n(),
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     # totali per macroarea/regione
     bind_rows(appo %>%
-                group_by(x_CICLO = "TOTALE", x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE = "Totale", MACROAREA, DEN_REGIONE) %>%
+                group_by(x_CICLO = "TOTALE", x_FONDO = "TOTALE", x_GRUPPO = "TOTALE", CLASSE = "Totale", x_MACROAREA, DEN_REGIONE) %>%
                 summarise(N = n(),
                           CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE),
                           PAG = sum(TOT_PAGAMENTI, na.rm = TRUE))) %>%
     as.data.frame() %>%
     mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Totale"))) %>%
-    mutate(MACROAREA = factor(MACROAREA, levels=c("Sud", "Centro-Nord", "Nazionale", "Trasversale", "Estero"))) %>%
+    mutate(x_MACROAREA = factor(x_MACROAREA, levels=c("Sud", "Centro-Nord", "Nazionale", "Trasversale", "Estero"))) %>%
     mutate(DEN_REGIONE = factor(DEN_REGIONE, levels = c(names(reg_cn), names(reg_sud), "ALTRO TERRITORIO"))) %>%
-    arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, MACROAREA, DEN_REGIONE)
+    arrange(x_CICLO, x_FONDO, x_GRUPPO, CLASSE, x_MACROAREA, DEN_REGIONE)
 
 
   if (debug == TRUE) {

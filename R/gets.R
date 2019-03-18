@@ -84,6 +84,12 @@ get_regione_simply <- function(df) {
       left_join(progetti %>%
                   select(COD_LOCALE_PROGETTO, COD_REGIONE, DEN_REGIONE, COD_PROVINCIA),
                 by = "COD_LOCALE_PROGETTO")
+
+  } else if (!any(names(df) == "DEN_REGIONE")) {
+    df <- df %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, DEN_REGIONE, COD_PROVINCIA),
+                by = "COD_LOCALE_PROGETTO")
   }
 
   reg_cn <- c("001", "002", "003", "004", "005", "006",

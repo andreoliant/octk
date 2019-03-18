@@ -10,17 +10,14 @@
 #' @param gruppo in formato x_GRUPPO.
 #' @param po_ls vettore di PO in formato x_PROGRAMMA.
 #' @param focus nome per file.
-#' @param debug non implementato.
+#' @param export vuoi salvare il file?
 #' @return Un file csv con apertura per regione e fase procedurale.
-report_cd_regioni <- function(perimetro, ciclo=NULL, ambito=NULL, gruppo=NULL, po_ls=NULL, focus="elab", debug=FALSE) {
-
-  # DEV: decidere se tenere solo FSC
+report_cd_regioni <- function(perimetro, ciclo=NULL, ambito=NULL, gruppo=NULL, po_ls=NULL, focus="elab", export=FALSE) {
 
   # DEBUG:
   # ciclo <- "2014-2020"
   # ambito <- "FSC"
   # gruppo <- "PATTI"
-  # report_cd_regioni(perimetro, ciclo=ciclo, ambito=ambito, gruppo=gruppo, po_ls=NULL, focus="elab", debug=FALSE)
 
   # switch
   if (!is.null(po_ls)) {
@@ -93,46 +90,48 @@ report_cd_regioni <- function(perimetro, ciclo=NULL, ambito=NULL, gruppo=NULL, p
   }
 
   # simply per non localizzati
-  appo <- appo %>%
-    mutate(x_REGIONE = as.character(x_REGIONE),
-           x_MACROAREA = as.character(x_MACROAREA)) %>%
-    mutate(x_REGIONE = case_when(x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Centro-Nord" ~ "PLURI-LOCALIZZATI",
-                                 x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Sud" ~ "PLURI-LOCALIZZATI",
-                                 x_REGIONE == "ALTRO TERRITORIO" ~ "AMBITO NAZIONALE",
-                                 TRUE ~ x_REGIONE)) %>%
-    mutate(x_REGIONE = factor(x_REGIONE, levels = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA",
-                                                    "PA TRENTO", "PA BOLZANO",
-                                                    "VENETO", "FRIULI-VENEZIA GIULIA",
-                                                    "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO",
-                                                    "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
-                                                    "CALABRIA", "SICILIA", "SARDEGNA",
-                                                    "PLURI-LOCALIZZATI", "AMBITO NAZIONALE"))) %>%
-    mutate(x_MACROAREA = case_when(x_MACROAREA == "Trasversale" ~ "Ambito nazionale",
-                                   x_MACROAREA == "Nazionale" ~ "Ambito nazionale",
-                                   x_MACROAREA == "Estero" ~ "Ambito nazionale",
-                                   TRUE ~ x_MACROAREA)) %>%
-    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
+  appo <- get_simply_non_loc(appo)
+  # appo <- appo %>%
+  #   mutate(x_REGIONE = as.character(x_REGIONE),
+  #          x_MACROAREA = as.character(x_MACROAREA)) %>%
+  #   mutate(x_REGIONE = case_when(x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Centro-Nord" ~ "PLURI-LOCALIZZATI",
+  #                                x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Sud" ~ "PLURI-LOCALIZZATI",
+  #                                x_REGIONE == "ALTRO TERRITORIO" ~ "AMBITO NAZIONALE",
+  #                                TRUE ~ x_REGIONE)) %>%
+  #   mutate(x_REGIONE = factor(x_REGIONE, levels = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA",
+  #                                                   "PA TRENTO", "PA BOLZANO",
+  #                                                   "VENETO", "FRIULI-VENEZIA GIULIA",
+  #                                                   "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO",
+  #                                                   "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
+  #                                                   "CALABRIA", "SICILIA", "SARDEGNA",
+  #                                                   "PLURI-LOCALIZZATI", "AMBITO NAZIONALE"))) %>%
+  #   mutate(x_MACROAREA = case_when(x_MACROAREA == "Trasversale" ~ "Ambito nazionale",
+  #                                  x_MACROAREA == "Nazionale" ~ "Ambito nazionale",
+  #                                  x_MACROAREA == "Estero" ~ "Ambito nazionale",
+  #                                  TRUE ~ x_MACROAREA)) %>%
+  #   mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
 
   # spalla per avere tutte le regioni
-  spalla <- data_frame(x_MACROAREA = c("Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord",
-                                       "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord",
-                                       "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord",
-                                       "Sud", "Sud", "Sud", "Sud", "Sud", "Sud", "Sud", "Sud", "Sud",
-                                       "Ambito nazionale"),
-                       x_REGIONE = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "PA TRENTO", "PA BOLZANO",
-                                     "VENETO", "FRIULI-VENEZIA GIULIA", "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA",
-                                      "UMBRIA", "MARCHE", "LAZIO",  "PLURI-LOCALIZZATI",
-                                     "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
-                                     "CALABRIA", "SICILIA", "SARDEGNA", "PLURI-LOCALIZZATI",
-                                     "AMBITO NAZIONALE")) %>%
-    mutate(x_REGIONE = factor(x_REGIONE, levels = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA",
-                                                    "PA TRENTO", "PA BOLZANO",
-                                                    "VENETO", "FRIULI-VENEZIA GIULIA",
-                                                    "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO",
-                                                    "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
-                                                    "CALABRIA", "SICILIA", "SARDEGNA",
-                                                    "PLURI-LOCALIZZATI", "AMBITO NAZIONALE"))) %>%
-    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
+  spalla <- get_spalla_regioni()
+  # spalla <- data_frame(x_MACROAREA = c("Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord",
+  #                                      "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord",
+  #                                      "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord",
+  #                                      "Sud", "Sud", "Sud", "Sud", "Sud", "Sud", "Sud", "Sud", "Sud",
+  #                                      "Ambito nazionale"),
+  #                      x_REGIONE = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "PA TRENTO", "PA BOLZANO",
+  #                                    "VENETO", "FRIULI-VENEZIA GIULIA", "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA",
+  #                                     "UMBRIA", "MARCHE", "LAZIO",  "PLURI-LOCALIZZATI",
+  #                                    "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
+  #                                    "CALABRIA", "SICILIA", "SARDEGNA", "PLURI-LOCALIZZATI",
+  #                                    "AMBITO NAZIONALE")) %>%
+  #   mutate(x_REGIONE = factor(x_REGIONE, levels = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA",
+  #                                                   "PA TRENTO", "PA BOLZANO",
+  #                                                   "VENETO", "FRIULI-VENEZIA GIULIA",
+  #                                                   "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO",
+  #                                                   "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
+  #                                                   "CALABRIA", "SICILIA", "SARDEGNA",
+  #                                                   "PLURI-LOCALIZZATI", "AMBITO NAZIONALE"))) %>%
+  #   mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
   # MEMO: serve per tenere fermo ordine in tutti i report (comprese le righe vuote)
   # WARNING: usa la versione riscritta sopra di x_MACROAREA e di x_REGIONE
 
@@ -155,13 +154,13 @@ report_cd_regioni <- function(perimetro, ciclo=NULL, ambito=NULL, gruppo=NULL, p
                                                                                     "In esecuzione",
                                                                                     "Eseguito",
                                                                                     "Non determinabile"))) %>%
-                            spread(OC_STATO_FASI, COE, fill = 0),
+                            spread(OC_STATO_FASI, COE, fill = 0, drop = FALSE),
                           by = c("x_MACROAREA", "x_REGIONE")),
               by = c("x_MACROAREA", "x_REGIONE")) %>%
     # riempie NA con 0
     mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
 
-  if (debug == TRUE) {
+  if (export == TRUE) {
     write.csv2(out, file.path(OUTPUT, temp), row.names = FALSE)
   }
   return(out)
@@ -180,21 +179,12 @@ report_cd_regioni <- function(perimetro, ciclo=NULL, ambito=NULL, gruppo=NULL, p
 #' @param ... ...
 #' @param focus nome per file.
 #' @return Un file xlsx con apertura per regione e fase procedurale.
-export_report_cd_regioni <- function(report, titolo=NULL,
-                                     # foglio=NULL, filename=NULL,
-                                     ciclo=NULL, ambito=NULL, gruppo=NULL,
-                                     focus="elab"
-                                     # use_template=TRUE
-                                     ) {
+export_report_cd_regioni <- function(report, titolo=NULL, focus="elab", ciclo=NULL, ambito=NULL, gruppo=NULL) {
 
-  # MEMO: per ora funziona con un report per volta (fare aggregazione a mano fuori da R)
-
+  # DEV: per ora funziona con un report per volta (fare aggregazione a mano fuori da R)
   # TODO: implementare uso di focus
 
-  # DEV: rendere dinamico il nome pagina (per input dato da lista di report )
-  # DEV: creare versione per N tavole
-
-  # wb3 <- copyWorkbook(wb) ## wrapper for wb$copy()
+  # MEMO: wb3 <- copyWorkbook(wb) ## wrapper for wb$copy()
 
   # libs
   library("openxlsx")
@@ -207,32 +197,48 @@ export_report_cd_regioni <- function(report, titolo=NULL,
     report_data <- report %>%
       select(-x_MACROAREA, -x_REGIONE)
   }
-  # MEMO: toglie spalla sx (uguale a template per costruzione) e ultima colonna a dx (sempre vuota)
+  # MEMO: toglie spalla sx (uguale a template per costruzione) e se esiste ultima colonna a dx (sempre vuota?)
 
   # switch for naming
   if (is.null(titolo)) {
     if (!is.null(gruppo)) {
-      temp_titolo <- paste("PROGRAMMAZIONE", ciclo, "- TOTALE PROGRAMMI", ambito, "- FOCUS", gruppo)
-      temp_file <- paste0("regioni_", ciclo, "_", ambito, "_", gruppo, ".xlsx")
+      if (focus != "elab") {
+        temp_titolo <- paste("PROGRAMMAZIONE", ciclo, "- TOTALE PROGRAMMI", ambito, "- ", gruppo, "- FOCUS", toupper(focus))
+      } else {
+        temp_titolo <- paste("PROGRAMMAZIONE", ciclo, "- TOTALE PROGRAMMI", ambito, "- ", gruppo)
+      }
+      temp_file <- paste0(focus, "_", ciclo, "_", ambito, "_", gruppo, "_regioni.xlsx")
       temp_foglio <- paste0(ambito, " ", ciclo, "-", gruppo)
       print("Report type: gruppo")
       # MEMO: gruppo andrebbe rinominato per esteso
 
     } else if (!is.null(ciclo) & !is.null(ambito)) {
-      temp_titolo <- paste("PROGRAMMAZIONE", ciclo, "- TOTALE PROGRAMMI", ambito)
-      temp_file <- paste0("regioni_", ciclo, "_", ambito, ".xlsx")
+      if (focus != "elab") {
+        temp_titolo <- paste("PROGRAMMAZIONE", ciclo, "- TOTALE PROGRAMMI", ambito, "- FOCUS", toupper(focus))
+      } else {
+        temp_titolo <- paste("PROGRAMMAZIONE", ciclo, "- TOTALE PROGRAMMI", ambito)
+      }
+      temp_file <- paste0(focus, "_", ciclo, "_", ambito, "_regioni.xlsx")
       temp_foglio <- paste0(ambito, " ", ciclo)
       print("Report type: ciclo e ambito")
 
     } else if (!is.null(ciclo) & is.null(ambito)) {
-      temp_titolo <- paste("PROGRAMMAZIONE", ciclo, "- TOTALE")
-      temp_file <- paste0("regioni_", ciclo, ".xlsx")
+      if (focus != "elab") {
+        temp_titolo <- paste("PROGRAMMAZIONE", ciclo, "- TOTALE", "- FOCUS", toupper(focus))
+      } else {
+        temp_titolo <- paste("PROGRAMMAZIONE", ciclo, "- TOTALE")
+      }
+      temp_file <- paste0(focus, "_", ciclo, "_regioni.xlsx")
       temp_foglio <- ciclo
       print("Report type: ciclo")
 
     } else if (is.null(ciclo) & !is.null(ambito)) {
-      temp_titolo <- paste("PROGRAMMAZIONI 2007-2013 E 2014-2020", "- TOTALE PROGRAMMI", ambito)
-      temp_file <- paste0("regioni_", ambito, ".xlsx")
+      if (focus != "elab") {
+        temp_titolo <- paste("PROGRAMMAZIONI 2007-2013 E 2014-2020", "- TOTALE PROGRAMMI", ambito, "- FOCUS", toupper(focus))
+      } else {
+        temp_titolo <- paste("PROGRAMMAZIONI 2007-2013 E 2014-2020", "- TOTALE PROGRAMMI", ambito)
+      }
+      temp_file <- paste0(focus, "_", ambito, "_regioni.xlsx")
       temp_foglio <- ambito
       print("Report type: ambito")
 
@@ -280,9 +286,9 @@ export_report_cd_regioni <- function(report, titolo=NULL,
 #'
 #' @param perimetro Dataset di classe perimetro.
 #' @param focus nome per file.
-#' @param debug non implementato.
+#' @param export vuoi salvare il file?
 #' @return Un file csv con apertura per patto e fase procedurale.
-report_cd_patti <- function(perimetro, focus="elab", debug=FALSE) {
+report_cd_patti <- function(perimetro, focus="elab", export=FALSE) {
 
   appo <- perimetro %>%
     mutate(x_PROGRAMMA = factor(x_PROGRAMMA, levels = c("PATTO EMILIA-ROMAGNA", "PATTO LOMBARDIA", "PATTO LAZIO",
@@ -292,7 +298,7 @@ report_cd_patti <- function(perimetro, focus="elab", debug=FALSE) {
                                                         "PATTO BARI", "PATTO CAGLIARI", "PATTO CATANIA",  "PATTO MESSINA",
                                                         "PATTO NAPOLI", "PATTO PALERMO", "PATTO REGGIO CALABRIA")))
 
-  temp <- paste0("patti_", focus, ".csv")
+  temp <- paste0(focus, "_patti.csv")
 
   # spalla per avere tutte le regioni
   spalla <- data_frame(x_TIPO_PATTI = c("Regioni Centro-Nord", "Regioni Centro-Nord", "Regioni Centro-Nord",
@@ -336,13 +342,13 @@ report_cd_patti <- function(perimetro, focus="elab", debug=FALSE) {
                                                                                     "In esecuzione",
                                                                                     "Eseguito",
                                                                                     "Non determinabile"))) %>%
-                            spread(OC_STATO_FASI, COE, fill = 0),
+                            spread(OC_STATO_FASI, COE, fill = 0, drop = FALSE),
                           by = "x_PROGRAMMA"),
               by = "x_PROGRAMMA") %>%
     # riempie NA con 0
     mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
 
-  if (debug == TRUE) {
+  if (export == TRUE) {
     write.csv2(out, file.path(OUTPUT, temp), row.names = FALSE)
   }
   return(out)
@@ -381,19 +387,19 @@ export_report_cd_patti <- function(report, titolo=NULL, focus=NULL) {
   if (is.null(titolo)) {
     if (!is.null(focus)) {
       temp_titolo <- paste("PROGRAMMAZIONE 2014-2020 - FSC - PATTI PER LO SVILUPPO (REGIONI E CITTA METROPOLITANE) - FOCUS", toupper(focus))
-      temp_file <- paste0("patti_", focus, ".xlsx")
+      temp_file <- paste0(focus, "_patti.xlsx")
       temp_foglio <- paste0("PATTI-", toupper(focus))
     } else {
       temp_titolo <- paste("PROGRAMMAZIONE 2014-2020 - FSC - PATTI PER LO SVILUPPO (REGIONI E CITTA METROPOLITANE)")
-      temp_file <- paste0("patti_custom.xlsx")
+      temp_file <- paste0("custom_patti.xlsx")
       temp_foglio <- "PATTI-CUSTOM"
-      print("Ricordati di rinominare il file patti_custom.xlsx e il foglio PATTI-CUSTOM")
+      print("Ricordati di rinominare il file custom_patti.xlsx e il foglio PATTI-CUSTOM")
     }
   } else {
     temp_titolo <- titolo
-    temp_file <- paste0("patti_custom.xlsx")
+    temp_file <- paste0("custom_patti.xlsx")
     temp_foglio <- "PATTI-CUSTOM"
-    print("Ricordati di rinominare il file patti_custom.xlsx e il foglio PATTI-CUSTOM")
+    print("Ricordati di rinominare il file custom_patti.xlsx e il foglio PATTI-CUSTOM")
   }
   titolo <- data_frame(titolo = c(temp_titolo))
 
@@ -422,13 +428,11 @@ export_report_cd_patti <- function(report, titolo=NULL, focus=NULL) {
 #'
 #' @param perimetro Dataset di classe perimetro.
 #' @param focus nome per file.
-#' @param debug non implementato.
+#' @param export vuoi salvare il file?
 #' @return Un file csv con apertura per piano e fase procedurale.
-report_cd_pianinaz <- function(perimetro, focus="elab", debug=FALSE) {
+report_cd_pianinaz <- function(perimetro, focus="elab", export=FALSE) {
 
-
-  # appo <- perimetro %>%
-  appo <- pianinaz %>%
+  appo <- perimetro %>%
     mutate(x_PROGRAMMA = case_when(x_PROGRAMMA == "PATTO PER LO SVILUPPO REGIONE CAMPANIA:::PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'" ~ "PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'",
                                    grepl("^PS AREE ", x_PROGRAMMA) ~ "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE",
                                    TRUE ~ x_PROGRAMMA)) %>%
@@ -443,7 +447,7 @@ report_cd_pianinaz <- function(perimetro, focus="elab", debug=FALSE) {
                                                 "CULTURA E TURISMO", "DISSESTO IDROG. AREE URBANE", "RICERCA E INNOVAZIONE")))
   # TODO: queste riclassificazioni andrebbero gestite in po_linee_azioni o almeno in get_x_vars
 
-  temp <- paste0("pianinaz_", focus, ".csv")
+  temp <- paste0(focus, "_pianinaz.csv")
 
   # spalla per avere tutte le regioni
   spalla <- data_frame(x_TIPO_PIANI = c("PIANI OPERATIVI NAZIONALI", "PIANI OPERATIVI NAZIONALI", "PIANI OPERATIVI NAZIONALI",  "PIANI OPERATIVI NAZIONALI",
@@ -487,14 +491,14 @@ report_cd_pianinaz <- function(perimetro, focus="elab", debug=FALSE) {
                                                                                     "In esecuzione",
                                                                                     "Eseguito",
                                                                                     "Non determinabile"))) %>%
-                            spread(OC_STATO_FASI, COE, fill = 0),
+                            spread(OC_STATO_FASI, COE, fill = 0, drop = FALSE),
                           by = "x_PROGRAMMA"),
               by = "x_PROGRAMMA") %>%
     # riempie NA con 0
     mutate_if(is.numeric, funs(replace(., is.na(.), 0))) %>%
     select(-x_PROGRAMMA)
 
-  if (debug == TRUE) {
+  if (export == TRUE) {
     write.csv2(out, file.path(OUTPUT, temp), row.names = FALSE)
   }
   return(out)
@@ -531,19 +535,19 @@ export_report_cd_pianinaz <- function(report, titolo=NULL, focus=NULL) {
   if (is.null(titolo)) {
     if (!is.null(focus)) {
       temp_titolo <- paste("PROGRAMMAZIONE 2014-2020 - FSC - PIANI OPERATIVI NAZIONALI - FOCUS", toupper(focus))
-      temp_file <- paste0("piani_", focus, ".xlsx")
+      temp_file <- paste0(focus, "_piani.xlsx")
       temp_foglio <- paste0("PIANI-", toupper(focus))
     } else {
       temp_titolo <- paste("PROGRAMMAZIONE 2014-2020 - FSC - PIANI OPERATIVI NAZIONALI")
-      temp_file <- paste0("piani_custom.xlsx")
+      temp_file <- paste0("custom_piani.xlsx")
       temp_foglio <- "PIANI-CUSTOM"
       print("Ricordati di rinominare il file patti_custom.xlsx e il foglio PIANI-CUSTOM")
     }
   } else {
     temp_titolo <- titolo
-    temp_file <- paste0("piani_custom.xlsx")
+    temp_file <- paste0("custom_piani.xlsx")
     temp_foglio <- "PIANI-CUSTOM"
-    print("Ricordati di rinominare il file patti_custom.xlsx e il foglio PIANI-CUSTOM")
+    print("Ricordati di rinominare il file custom_piani.xlsx e il foglio PIANI-CUSTOM")
   }
   titolo <- data_frame(titolo = c(temp_titolo))
 
@@ -563,3 +567,230 @@ export_report_cd_pianinaz <- function(report, titolo=NULL, focus=NULL) {
   saveWorkbook(wb, file = file.path(OUTPUT, temp_file), overwrite = TRUE)
 
 }
+
+#' Report su totali per ambito (formato CD)
+#'
+#' Report di sintesi con apertura per ambito di progammazione
+#'
+#' @param perimetro Dataset di classe perimetro.
+#' @param ciclo in formato x_CICLO.
+#' @param export vuoi salvare un csv?
+#' @param focus nome per file (se @export == TRUE).
+#' @return Un file csv con apertura per ambito.
+report_cd_totali_ambito <- function(perimetro, export=FALSE, focus=NULL, ciclo=NULL) {
+
+  appo <- c("FESR", "FSE", "POC", "FSC")
+  spalla <- data_frame(x_AMBITO = factor(appo, levels = appo))
+
+  totali_ambito <- spalla %>%
+    left_join(perimetro %>%
+                group_by(x_AMBITO) %>%
+                summarise(N = n(),
+                          CP = sum(CP, na.rm = TRUE),
+                          IMP = sum(IMP, na.rm = TRUE),
+                          PAG = sum(PAG, na.rm = TRUE),
+                          COE = sum(COE, na.rm = TRUE)),
+              by = "x_AMBITO") %>%
+    # riempie NA con 0
+    mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
+
+  if (export == TRUE) {
+    # switch per filename
+    if (!is.null(focus)) {
+      if (!is.null(ciclo)) {
+        temp <- paste0(focus, "_", ciclo, "_totali_ambito.csv")
+      } else {
+        temp <- paste0(focus, "_totali_ambito.csv")
+      }
+    } else {
+      focus <- "elab"
+      if (!is.null(ciclo)) {
+        temp <- paste0(focus, "_", ciclo, "_totali_ambito.csv")
+      } else {
+        temp <- paste0(focus, "_totali_ambito.csv")
+      }
+    }
+    # export
+    write.csv2(totali_ambito, file.path(OUTPUT, temp) , row.names = FALSE)
+    print(paste0("Output salvato in ", temp))
+  }
+  return(totali_ambito)
+}
+
+
+#' Report con sintesi per regione (formato CD)
+#'
+#' Report di sintesi con apertura per regione e ambito di progammazione
+#'
+#' @param perimetro Dataset di classe perimetro.
+#' @param ciclo in formato x_CICLO.
+#' @param export vuoi salvare un csv?
+#' @param focus nome per file (se @export == TRUE).
+#' @return Un file csv con apertura per regione e ambito
+report_cd_regioni_sintesi <- function(perimetro, use_coe=TRUE, export=FALSE, focus=NULL, ciclo=NULL) {
+
+  if (use_coe == FALSE) {
+    perimetro <- perimetro %>%
+      mutate(COE = CP)
+    print("Nota: uso 'Costo pubblico totale' come variabile")
+  }
+
+  perimetro <- get_simply_non_loc(perimetro)
+  spalla <- get_spalla_regioni()
+
+  sintesi_regioni <- spalla %>%
+    left_join(perimetro %>%
+                group_by(x_AMBITO, x_MACROAREA, x_REGIONE) %>%
+                summarise(COE = sum(COE, na.rm = TRUE)) %>%
+                spread(x_AMBITO, COE, fill = 0, drop = FALSE),
+              by = c("x_MACROAREA", "x_REGIONE")) %>%
+    # riempie NA con 0
+    mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
+
+  if (export == TRUE) {
+    # switch per filename
+    if (!is.null(focus)) {
+      if (!is.null(ciclo)) {
+        temp <- paste0(focus, "_", ciclo, "_sintesi_regioni.csv")
+      } else {
+        temp <- paste0(focus, "_sintesi_regioni.csv")
+      }
+    } else {
+      focus <- "elab"
+      if (!is.null(ciclo)) {
+        temp <- paste0(focus, "_", ciclo, "_sintesi_regioni.csv")
+      } else {
+        temp <- paste0(focus, "_sintesi_regioni.csv")
+      }
+    }
+    # export
+    write.csv2(sintesi_regioni, file.path(OUTPUT, temp), row.names = FALSE)
+    print(paste0("Output salvato in ", temp))
+  }
+  return(sintesi_regioni)
+}
+
+
+
+
+#' Report con sintesi per regione e classe (formato CD)
+#'
+#' Report di sintesi con apertura per regione e classe
+#'
+#' @param perimetro Dataset di classe perimetro.
+#' @param ciclo in formato x_CICLO.
+#' @param export vuoi salvare un csv?
+#' @param focus nome per file (se @export == TRUE).
+#' @return Un file csv con apertura per regione e classe
+report_cd_regioni_classi <- function(perimetro, use_coe=TRUE, export=FALSE, focus=NULL, ciclo=NULL) {
+
+  if (use_coe == FALSE) {
+    perimetro <- perimetro %>%
+      mutate(COE = CP)
+    print("Nota: uso 'Costo pubblico totale' come variabile")
+  }
+
+  perimetro <- get_simply_non_loc(perimetro)
+  spalla <- get_spalla_regioni()
+
+  classi_regioni <- spalla %>%
+    left_join(perimetro %>%
+                group_by(CLASSE, x_MACROAREA, x_REGIONE) %>%
+                summarise(COE = sum(COE, na.rm = TRUE)) %>%
+                spread(CLASSE, COE, fill = 0, drop = FALSE),
+              by = c("x_MACROAREA", "x_REGIONE")) %>%
+    # riempie NA con 0
+    mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
+
+  if (export == TRUE) {
+    # switch per filename
+    if (!is.null(focus)) {
+      if (!is.null(ciclo)) {
+        temp <- paste0(focus, "_", ciclo, "_classi_regioni.csv")
+      } else {
+        temp <- paste0(focus, "_classi_regioni.csv")
+      }
+    } else {
+      focus <- "elab"
+      if (!is.null(ciclo)) {
+        temp <- paste0(focus, "_", ciclo, "_classi_regioni.csv")
+      } else {
+        temp <- paste0(focus, "_classi_regioni.csv")
+      }
+    }
+    # export
+    write.csv2(classi_regioni, file.path(OUTPUT, temp), row.names = FALSE)
+    print(paste0("Output salvato in ", temp))
+  }
+  return(classi_regioni)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+# simply per non localizzati
+get_simply_non_loc <- function(perimetro) {
+  perimetro <- perimetro %>%
+    mutate(x_REGIONE = as.character(x_REGIONE),
+           x_MACROAREA = as.character(x_MACROAREA)) %>%
+    mutate(x_REGIONE = case_when(x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Centro-Nord" ~ "PLURI-LOCALIZZATI",
+                                 x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Sud" ~ "PLURI-LOCALIZZATI",
+                                 x_REGIONE == "ALTRO TERRITORIO" ~ "AMBITO NAZIONALE",
+                                 TRUE ~ x_REGIONE)) %>%
+    mutate(x_REGIONE = factor(x_REGIONE, levels = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA",
+                                                    "PA TRENTO", "PA BOLZANO",
+                                                    "VENETO", "FRIULI-VENEZIA GIULIA",
+                                                    "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO",
+                                                    "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
+                                                    "CALABRIA", "SICILIA", "SARDEGNA",
+                                                    "PLURI-LOCALIZZATI", "AMBITO NAZIONALE"))) %>%
+    mutate(x_MACROAREA = case_when(x_MACROAREA == "Trasversale" ~ "Ambito nazionale",
+                                   x_MACROAREA == "Nazionale" ~ "Ambito nazionale",
+                                   x_MACROAREA == "Estero" ~ "Ambito nazionale",
+                                   TRUE ~ x_MACROAREA)) %>%
+    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
+
+  return(perimetro)
+}
+
+# spalla per avere tutte le regioni
+get_spalla_regioni <- function() {
+  spalla <- data_frame(x_MACROAREA = c("Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord",
+                                       "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord",
+                                       "Centro-Nord", "Centro-Nord", "Centro-Nord", "Centro-Nord",
+                                       "Sud", "Sud", "Sud", "Sud", "Sud", "Sud", "Sud", "Sud", "Sud",
+                                       "Ambito nazionale"),
+                       x_REGIONE = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "PA TRENTO", "PA BOLZANO",
+                                     "VENETO", "FRIULI-VENEZIA GIULIA", "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA",
+                                     "UMBRIA", "MARCHE", "LAZIO",  "PLURI-LOCALIZZATI",
+                                     "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
+                                     "CALABRIA", "SICILIA", "SARDEGNA", "PLURI-LOCALIZZATI",
+                                     "AMBITO NAZIONALE")) %>%
+    mutate(x_REGIONE = factor(x_REGIONE, levels = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA",
+                                                    "PA TRENTO", "PA BOLZANO",
+                                                    "VENETO", "FRIULI-VENEZIA GIULIA",
+                                                    "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO",
+                                                    "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
+                                                    "CALABRIA", "SICILIA", "SARDEGNA",
+                                                    "PLURI-LOCALIZZATI", "AMBITO NAZIONALE"))) %>%
+    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
+  return(spalla)
+}
+
+
+
+
+
+
+
+
+
