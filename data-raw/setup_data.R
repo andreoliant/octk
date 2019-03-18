@@ -51,7 +51,8 @@ chk_delta_po_riclass <- function(da="NEW") {
 make_po_riclass(bimestre)
 chk_delta_po_riclass()
 chk_delta_po_riclass("OLD")
-# HAND: fare aggiornamento a mano e rinominare in "po_riclass_NEW.csv" "po_riclass.csv"
+# HAND: fare aggiornamento a mano e rinominare in "po_riclass_NEW.csv" in "po_riclass.csv"
+# WARN: eliminare colonna "OC_DESCR_PROGRAMMA" altrimenti fa conflitto con get_x_vars
 
 # chk
 # chk <- progetti %>% filter(is.na(OC_CODICE_PROGRAMMA))
