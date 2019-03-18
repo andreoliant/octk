@@ -18,7 +18,7 @@
 # DEV: sta roba deve tutta lavorare per delta!
 
 # confronta po_riclass
-make_po_riclass <- function(bimestre, file_name="po_riclass_NEW.csv") {
+make_po_riclass <- function(bimestre) {
 
   if (is.null(progetti)) {
     progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
@@ -32,11 +32,32 @@ make_po_riclass <- function(bimestre, file_name="po_riclass_NEW.csv") {
     bind_rows(programmi %>%
                 anti_join(po_riclass))
 
-  write_delim(out, file.path("data-raw", file_name), delim = ";", na = "")
+  file.rename(file.path("data-raw", "po_riclass.csv"), file.path("data-raw", "po_riclass_OLD.csv"))
+
+  write_delim(out, file.path("data-raw", "po_riclass_NEW.csv"), delim = ";", na = "")
 }
 
-make_po_riclass(bimestre="20181031")
+make_po_riclass(bimestre="20181231")
 # HAND: fare aggiornamento a mano
+
+chk_delta_po_riclass <- function(da="NEW") {
+  old <- read_csv2(file.path("data-raw", "po_riclass_OLD.csv"))
+  new <- read_csv2(file.path("data-raw", "po_riclass_NEW.csv"))
+  if (da == "OLD") {
+    delta <- old %>% anti_join(new, by = "OC_CODICE_PROGRAMMA")
+  } else {
+    delta <- new %>% anti_join(old, by = "OC_CODICE_PROGRAMMA")
+  }
+  return(delta)
+}
+
+chk_delta_po_riclass()
+chk_delta_po_riclass("OLD")
+# HAND: fare aggiornamento a mano e rinominare in "po_riclass.csv"
+
+# chk <- progetti %>% filter(is.na(OC_CODICE_PROGRAMMA))
+# chk <- progetti %>% filter(OC_CODICE_PROGRAMMA == "COMMTARANTOFSC")
+# sum(chk$OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE)
 
 # po_riclass
 po_riclass <- read_csv2("data-raw/po_riclass.csv") %>%
@@ -100,10 +121,31 @@ make_matrix_po <- function(bimestre, file_name="po_linee_azioni_NEW.csv") {
     mutate(QUERY = 0,
            NOTE = NA)
 
+  file.rename(file.path("data-raw", "po_linee_azioni.csv"), file.path("data-raw", "po_linee_azioni_OLD.csv"))
+
   write_delim(out, file.path("data-raw", file_name), delim = ";", na = "")
 }
-make_matrix_po(bimestre="20183106")
+
+make_matrix_po(bimestre="20181231")
 # HAND: fare aggiornamento a mano
+
+
+chk_delta_po <- function(da="NEW") {
+  old <- read_csv2(file.path("data-raw", "po_linee_azioni_OLD.csv"))
+  new <- read_csv2(file.path("data-raw", "po_linee_azioni_NEW.csv"))
+  if (da == "OLD") {
+    delta <- old %>% anti_join(new)
+  } else {
+    delta <- new %>% anti_join(old)
+  }
+  return(delta)
+}
+
+chk <- chk_delta_po()
+chk_delta_po("OLD")
+# HAND: fare aggiornamento a mano e rinominare in "po_riclass.csv"
+
+
 
 
 
@@ -171,7 +213,6 @@ categorie_cup <- read_csv2("data-raw/categorie_cup.csv")
 usethis::use_data(categorie_cup, overwrite = TRUE)
 
 # po_linee_azioni
-make_matrix_po()
 po_linee_azioni <- read_csv2("data-raw/po_linee_azioni.csv")
 usethis::use_data(po_linee_azioni, overwrite = TRUE)
 
