@@ -145,16 +145,16 @@ report_cd_regioni <- function(perimetro, ciclo=NULL, ambito=NULL, gruppo=NULL, p
                           PAG = sum(PAG, na.rm = TRUE),
                           COE = sum(COE, na.rm = TRUE)) %>%
                 left_join(appo %>%
-                            group_by(x_MACROAREA, x_REGIONE, OC_STATO_FASI) %>%
+                            group_by(x_MACROAREA, x_REGIONE, OC_STATO_PROCEDURALE) %>%
                             summarise(COE = sum(COE, na.rm = TRUE)) %>%
-                            mutate(OC_STATO_FASI = factor(OC_STATO_FASI, levels = c("Non avviato",
-                                                                                    "In avvio di progetta",
-                                                                                    "In corso di progetta",
+                            mutate(OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE, levels = c("Non avviato",
+                                                                                    "In avvio di progettazione",
+                                                                                    "In corso di progettazione",
                                                                                     "In affidamento",
                                                                                     "In esecuzione",
                                                                                     "Eseguito",
                                                                                     "Non determinabile"))) %>%
-                            spread(OC_STATO_FASI, COE, fill = 0, drop = FALSE),
+                            spread(OC_STATO_PROCEDURALE, COE, fill = 0, drop = FALSE),
                           by = c("x_MACROAREA", "x_REGIONE")),
               by = c("x_MACROAREA", "x_REGIONE")) %>%
     # riempie NA con 0
@@ -333,16 +333,16 @@ report_cd_patti <- function(perimetro, focus="elab", export=FALSE) {
                           PAG = sum(PAG, na.rm = TRUE),
                           COE = sum(COE, na.rm = TRUE)) %>%
                 left_join(appo %>%
-                            group_by(x_PROGRAMMA, OC_STATO_FASI) %>%
+                            group_by(x_PROGRAMMA, OC_STATO_PROCEDURALE) %>%
                             summarise(COE = sum(COE, na.rm = TRUE)) %>%
-                            mutate(OC_STATO_FASI = factor(OC_STATO_FASI, levels = c("Non avviato",
-                                                                                    "In avvio di progetta",
-                                                                                    "In corso di progetta",
+                            mutate(OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE, levels = c("Non avviato",
+                                                                                    "In avvio di progettazione",
+                                                                                    "In corso di progettazione",
                                                                                     "In affidamento",
                                                                                     "In esecuzione",
                                                                                     "Eseguito",
                                                                                     "Non determinabile"))) %>%
-                            spread(OC_STATO_FASI, COE, fill = 0, drop = FALSE),
+                            spread(OC_STATO_PROCEDURALE, COE, fill = 0, drop = FALSE),
                           by = "x_PROGRAMMA"),
               by = "x_PROGRAMMA") %>%
     # riempie NA con 0
@@ -482,16 +482,16 @@ report_cd_pianinaz <- function(perimetro, focus="elab", export=FALSE) {
                           PAG = sum(PAG, na.rm = TRUE),
                           COE = sum(COE, na.rm = TRUE)) %>%
                 left_join(appo %>%
-                            group_by(x_PROGRAMMA, OC_STATO_FASI) %>%
+                            group_by(x_PROGRAMMA, OC_STATO_PROCEDURALE) %>%
                             summarise(COE = sum(COE, na.rm = TRUE)) %>%
-                            mutate(OC_STATO_FASI = factor(OC_STATO_FASI, levels = c("Non avviato",
-                                                                                    "In avvio di progetta",
-                                                                                    "In corso di progetta",
+                            mutate(OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE, levels = c("Non avviato",
+                                                                                    "In avvio di progettazione",
+                                                                                    "In corso di progettazione",
                                                                                     "In affidamento",
                                                                                     "In esecuzione",
                                                                                     "Eseguito",
                                                                                     "Non determinabile"))) %>%
-                            spread(OC_STATO_FASI, COE, fill = 0, drop = FALSE),
+                            spread(OC_STATO_PROCEDURALE, COE, fill = 0, drop = FALSE),
                           by = "x_PROGRAMMA"),
               by = "x_PROGRAMMA") %>%
     # riempie NA con 0
