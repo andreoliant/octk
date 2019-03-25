@@ -541,7 +541,7 @@ export_report_cd_pianinaz <- function(report, titolo=NULL, focus=NULL) {
       temp_titolo <- paste("PROGRAMMAZIONE 2014-2020 - FSC - PIANI OPERATIVI NAZIONALI")
       temp_file <- paste0("custom_piani.xlsx")
       temp_foglio <- "PIANI-CUSTOM"
-      print("Ricordati di rinominare il file patti_custom.xlsx e il foglio PIANI-CUSTOM")
+      print("Ricordati di rinominare il file custom_piani.xlsx e il foglio PIANI-CUSTOM")
     }
   } else {
     temp_titolo <- titolo
@@ -787,7 +787,7 @@ get_spalla_regioni <- function() {
 }
 
 
-
+# programmazione
 
 
 
