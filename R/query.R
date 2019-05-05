@@ -274,7 +274,7 @@ query_ra <- function(progetti) {
 query_atp <- function(progetti) {
 
   # load ambito FSC
-  ambito_rsc <- read_csv2(file.path(DATA, "ambito_fsc1420.csv"), guess_max = 5000) %>%
+  ambito_rsc <- read_csv2(file.path(DATA, "ambito_FSC1420.csv"), guess_max = 5000) %>%
     distinct(COD_LOCALE_PROGETTO,
              COD_SETTORE_STRATEGICO_FSC, DESCR_SETTORE_STRATEGICO_FSC,
              COD_ASSE_TEMATICO_FSC, DESCR_ASSE_TEMATICO_FSC)
