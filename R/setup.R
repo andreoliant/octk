@@ -74,13 +74,13 @@ oc_init <- function() {
   # }
   if (DEV_MODE) {
     # MEMO: qui lavoro nel folder del package e uso una nuova cartella
-    INPUT <- file.path(workarea, "tests", "input")
-    TEMP <- file.path(workarea, "tests", "temp")
-    OUTPUT <- file.path(workarea, "tests", "output")
+    INPUT <<- file.path(workarea, "tests", "input")
+    TEMP <<- file.path(workarea, "tests", "temp")
+    OUTPUT <<- file.path(workarea, "tests", "output")
   } else {
-    INPUT <- file.path(workarea,  "input")
-    TEMP <- file.path(workarea, "temp")
-    OUTPUT <- file.path(workarea, "output")
+    INPUT <<- file.path(workarea,  "input")
+    TEMP <<- file.path(workarea, "temp")
+    OUTPUT <<- file.path(workarea, "output")
   }
 
   # wizard workarea
@@ -107,10 +107,10 @@ oc_init <- function() {
 
   # wizard dati
   if (!exists("data_path")) {
-    data_path <<- readline("Quale path per la fonte dati? ")
+    data_path <- readline("Quale path per la fonte dati? ")
   }
   # "/Users/aa/dati"
-  DATA <- file.path(data_path, paste0("oc_", bimestre))
+  DATA <<- file.path(data_path, paste0("oc_", bimestre))
   message(paste0("Connetto la fonte dati in ", DATA))
 }
 
