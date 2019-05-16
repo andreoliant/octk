@@ -1,6 +1,5 @@
 # OC > Explorer > Perimetri
 # Classificazione per tematismi
-# Focus: turismo
 
 #' Crea nuova base per riclassificazione lato categorie CUP
 #'

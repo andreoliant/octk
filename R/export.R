@@ -1,6 +1,5 @@
 # OC > Explorer > Perimetri
 # Export finale
-# Focus: turismo
 
 #' Export per il dataset finale
 #'
