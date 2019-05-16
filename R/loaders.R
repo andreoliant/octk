@@ -8,17 +8,22 @@
 #' @param bimestre Stringa in formato "20180630" come da standard per le date in OC.
 #' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
 #' @param debug Logico. Vuoi vedere i totali di progetti e costo pubblico per controllo sul portale OC?
+#' @param light Logico. Vuoi usare la versione light di "progetti.csv"?
 #' @return Il dataset viene caricato come "progetti" nel Global Environment. Se "progetti" è gia presente compare una notifica.
-load_progetti <- function(bimestre, visualizzati=TRUE, debug=FALSE) {
-
+load_progetti <- function(bimestre, visualizzati=TRUE, debug=FALSE, light=FALSE)
+{
   if (exists("progetti")) {
     print("Progetti esteso è gia caricato")
     progetti <- progetti
 
   } else {
 
-    # filename
-    temp <- paste0("progetti_esteso_", bimestre, ".csv")
+    # swithc di filename per progetti_light
+    if (light == TRUE) {
+      temp <- paste0("progetti_light_", bimestre, ".csv")
+    } else {
+      temp <- paste0("progetti_esteso_", bimestre, ".csv")
+    }
 
     # load progetti
     if (visualizzati == TRUE) {

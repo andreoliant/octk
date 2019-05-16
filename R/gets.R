@@ -75,8 +75,12 @@ get_dimensione_fin <- function(df, debug_mode=FALSE) {
 
 
 # Semplifica regione
-get_regione_simply <- function(df) {
+get_regione_simply <- function(df, progetti=NULL) {
   # MEMO: deve avere struttura di progetti
+
+  if (is.null(progetti)) {
+    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  }
 
   # NEW BLOCK
   if (!any(names(df) == "COD_REGIONE")) {
@@ -127,13 +131,17 @@ get_regione_simply <- function(df) {
 
 
 # Aggiunge macroarea
-get_macroarea <- function(df, debug_mode=FALSE) {
+get_macroarea <- function(df, progetti=NULL, debug_mode=FALSE) {
   # DEBUG:
   # df <- perimetro
   # DEV: da implementare via progetti e con debug_mode (come per "get_stato_attuazione.R")
 
   # load progetti
   # source("loader.R")
+
+  if (is.null(progetti)) {
+    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  }
 
   # NEW BLOCK
   if (!any(names(df) == "COD_REGIONE")) {
@@ -319,13 +327,17 @@ get_macroarea <- function(df, debug_mode=FALSE) {
 
 
 # Aggiunge categoira di regione UE
-get_catreg_UE <- function(df, debug_mode=FALSE) {
+get_catreg_UE <- function(df, progetti=NULL, debug_mode=FALSE) {
   # DEBUG:
   # df <- perimetro
   # DEV: da implementare via progetti e con debug_mode (come per "get_stato_attuazione.R")
 
   # load progetti
   # source("loader.R")
+
+  if (is.null(progetti)) {
+    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  }
 
   # NEW BLOCK
   if (!any(names(df) == "COD_REGIONE")) {
@@ -446,7 +458,7 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
   if (!(any(names(df) == "FONDO_COMUNITARIO"))) {
 
     if (is.null(progetti)) {
-      progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
+      progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
     }
 
     df <- df %>%

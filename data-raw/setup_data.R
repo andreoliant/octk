@@ -19,7 +19,7 @@
 make_po_riclass <- function(bimestre) {
 
   if (is.null(progetti)) {
-    progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
+    progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
   }
 
   programmi <- progetti %>% distinct(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
@@ -74,7 +74,7 @@ chk_delta_po_riclass("OLD")
 make_matrix_po <- function(bimestre) {
 
   if (is.null(progetti)) {
-    progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
+    progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
   }
 
   require("readr")
@@ -165,7 +165,9 @@ chk_delta_po("OLD")
 # crea matrix strumenti attuativi
 make_matrix_strum <- function(bimestre, file_name="strum_att.csv") {
 
-  progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE)
+  if (is.null(progetti)) {
+    progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
+  }
 
   out <- progetti %>%
     distinct(COD_STRUMENTO, DESCR_STRUMENTO, DESCR_TIPO_STRUMENTO) %>%
@@ -202,6 +204,12 @@ po_riclass <- read_csv2("data-raw/po_riclass.csv") %>%
   # MEMO: raw contiene NA per i programmi POC 2014-2020 > fanno casino perché join con progetti è sempre su OC_COD_PROGRAMMA
   filter(!is.na(OC_CODICE_PROGRAMMA))
 usethis::use_data(po_riclass, overwrite = TRUE)
+
+# po_riclass
+po_riclass_ext <- read_csv2("data-raw/po_riclass_ext.csv") %>%
+  # MEMO: raw contiene NA per i programmi POC 2014-2020 > fanno casino perché join con progetti è sempre su OC_COD_PROGRAMMA
+  filter(!is.na(OC_CODICE_PROGRAMMA))
+usethis::use_data(po_riclass_ext, overwrite = TRUE)
 
 # matrix_comuni
 matrix_comuni <- read_csv2("data-raw/matrix_comuni.csv")

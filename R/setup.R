@@ -1,9 +1,6 @@
 # OC > Toolkit
 # Setup
 
-# CHK: getwd() è sempre all'interno di oc anche se parto da altro progetto
-# INFO: https://gist.github.com/jennybc/362f52446fe1ebc4c49f
-
 oc_init <- function() {
   # libs
   library(tidyverse)
@@ -12,73 +9,44 @@ oc_init <- function() {
   # print(environment())
   # print(parent.env(environment()))
 
-  # development mode
-  # print(getwd())
-  # temp <- stringr::str_split(getwd(), "/")[[1]]
-  # appo <- temp[length(temp)]
-  # print(appo)
-  # MEMO: prende nome da ultimo item di wd
-  # if (appo == "oc") {
-  #   DEV_MODE <- TRUE
-  #   # MEMO: attiva DEV_MODE se nome è uguale a "oc"
-  # } else {
-  #   DEV_MODE <- FALSE
-  # }
-  # rm(temp)
+  # workarea
   if (!exists("workarea")) {
+    # MEMO la workarea è come una wd ma è diversa da quella del progetto di RStudio
     workarea <- getwd()
     DEV_MODE <- TRUE
-    message("La DEV_MODE è attiva!")
+    message("La DEV_MODE è attiva! La workarea è in ./test")
   } else {
     DEV_MODE <- FALSE
   }
-  temp <- stringr::str_split(workarea, "/")[[1]]
-  appo <- temp[length(temp)]
-  # MEMO: prende nome da ultimo item di workarea
 
-  # defaults
-  if (!exists("bimestre")) {
-    bimestre <- "20180630"
-    # MEMO: da aggiornare con nuova release per nuovo bimestre
-    # DEV: mettere elenco in /data e usare max() qui
-  }
-
+  # focus
   if (!exists("focus")) {
-    # MEMO: focus regola sia workarea che filename di export
+    # MEMO: focus regola naming per export
     if (DEV_MODE) {
-      focus <- "test"
-      # MEMO: usa test perché in DEV_MODE nome è uguale a "oc"
+      focus <- "prova"
+      # MEMO: in DEV_MODE il nome in "appo" (sotto) è "oc" per definzione
     } else {
+      temp <- stringr::str_split(workarea, .Platform$file.sep)[[1]]
+      appo <- temp[length(temp)]
       focus <- appo
-      # MEMO: usa nome perché diverso da "oc"
+      # MEMO: prende nome da ultimo item di workarea
     }
   }
-  rm(appo)
-
-  # if (!exists("data_path")) {
-  #   data_path <- "/Users/aa/dati"
-  #   # DEV: qui potrebbe andare readline ma andrebbe inserito solo all'installazione
-  #   # x <- readline("What is the value of x?")
-  # }
 
   # paths workarea
-  # print(DEV_MODE)
-  # if (DEV_MODE) {
-  #   INPUT <- file.path(getwd(), "tests", "input")
-  #   TEMP <- file.path(getwd(), "tests", "temp")
-  #   OUTPUT <- file.path(getwd(), "tests", "output")
-  # } else {
-  #   INPUT <- file.path(getwd(),  "input")
-  #   TEMP <- file.path(getwd(), "temp")
-  #   OUTPUT <- file.path(getwd(), "output")
-  # }
   if (DEV_MODE) {
-    # MEMO: qui lavoro nel folder del package e uso una nuova cartella
-    INPUT <<- file.path(workarea, "tests", "input")
-    TEMP <<- file.path(workarea, "tests", "temp")
-    OUTPUT <<- file.path(workarea, "tests", "output")
+    # MEMO:
+    # qui lavoro nel folder del package e uso la cartella "test" di sviluppo
+    # oppure lavoro in un folder nella root di un progetto
+    test_dir <- file.path(workarea, "test")
+    if (!dir.exists(test_dir)) {
+      dir.create(test_dir)
+    }
+    INPUT <<- file.path(test_dir, "input")
+    TEMP <<- file.path(test_dir, "temp")
+    OUTPUT <<- file.path(test_dir, "output")
   } else {
-    INPUT <<- file.path(workarea,  "input")
+    INPUT <<- file.path(workarea, "input")
     TEMP <<- file.path(workarea, "temp")
     OUTPUT <<- file.path(workarea, "output")
   }
@@ -107,10 +75,19 @@ oc_init <- function() {
 
   # wizard dati
   if (!exists("data_path")) {
-    data_path <- readline("Quale path per la fonte dati? ")
+    data_path <- readline("Quale path per la fonte dati (scrivi senza \"...\")? ")
   }
+
+  if (!exists("bimestre")) {
+    bimestre <- list.files(data_path) %>%
+      as.numeric() %>%
+      max() %>%
+      as.character()
+    # MEMO: si aggiorna da solo con nuovo bimestre
+  }
+
   # "/Users/aa/dati"
-  DATA <<- file.path(data_path, paste0("oc_", bimestre))
+  DATA <<- file.path(data_path, bimestre)
   message(paste0("Connetto la fonte dati in ", DATA))
 }
 
