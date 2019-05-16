@@ -4,7 +4,8 @@
 \alias{load_progetti}
 \title{Carica il dataset progetti}
 \usage{
-load_progetti(bimestre, visualizzati = TRUE, debug = FALSE)
+load_progetti(bimestre, visualizzati = TRUE, debug = FALSE,
+  light = FALSE)
 }
 \arguments{
 \item{bimestre}{Stringa in formato "20180630" come da standard per le date in OC.}
@@ -12,6 +13,8 @@ load_progetti(bimestre, visualizzati = TRUE, debug = FALSE)
 \item{visualizzati}{Logico. Vuoi solo i progetti visualizzati sul portale OC?}
 
 \item{debug}{Logico. Vuoi vedere i totali di progetti e costo pubblico per controllo sul portale OC?}
+
+\item{light}{Logico. Vuoi usare la versione light di "progetti.csv"?}
 }
 \value{
 Il dataset viene caricato come "progetti" nel Global Environment. Se "progetti" è gia presente compare una notifica.
