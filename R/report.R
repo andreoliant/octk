@@ -1,6 +1,5 @@
 # OC > Explorer > Perimetri
 # Report
-# Focus: turismo
 
 
 

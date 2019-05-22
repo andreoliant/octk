@@ -60,7 +60,6 @@ setup_classi_ue <- function(pseudo, file_name="classi_ue_NEW.csv") {
 #'
 #' Salva fixlist.csv
 #'
-#' @param ...
 #' @return...
 setup_fixlist <- function() {
 

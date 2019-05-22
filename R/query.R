@@ -5,7 +5,6 @@
 #'
 #' Salva i file csv del blocco "query" in INPUT insieme a stoplist.csv e safelist.csv
 #'
-#' @param ...
 #' @return...
 setup_query <- function() {
 
