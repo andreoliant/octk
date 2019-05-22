@@ -2,7 +2,7 @@
 % Please edit documentation in R/programmazione.R
 \name{load_db_temi}
 \alias{load_db_temi}
-\title{Carica il databse della programmazione}
+\title{Carica un dataset dal database della programmazione}
 \usage{
 load_db_temi(ciclo, ambito, simplify_loc = FALSE)
 }
@@ -17,5 +17,5 @@ load_db_temi(ciclo, ambito, simplify_loc = FALSE)
 Il dataset di programmazione per l'ambito richiesto.
 }
 \description{
-Carica il databse della programmazione, con pulizia della codifica di aree tematiche e temi prioritari FSC.
+Carica il dataset richesto della programmazione, con pulizia della codifica di aree tematiche e temi prioritari FSC.
 }

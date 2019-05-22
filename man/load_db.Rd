@@ -2,7 +2,7 @@
 % Please edit documentation in R/programmazione.R
 \name{load_db}
 \alias{load_db}
-\title{Carica il databse della programmazione}
+\title{Carica un dataset dal database della programmazione}
 \usage{
 load_db(ciclo, ambito, simplify_loc = FALSE)
 }
@@ -17,5 +17,5 @@ load_db(ciclo, ambito, simplify_loc = FALSE)
 Il dataset di programmazione per l'ambito richiesto.
 }
 \description{
-Carica il databse della programmazione.
+Carica il datase richiesto dal dataset della programmazione.
 }
