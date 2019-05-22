@@ -10,7 +10,7 @@
 #' @param debug Logico. Vuoi vedere i totali di progetti e costo pubblico per controllo sul portale OC?
 #' @param light Logico. Vuoi usare la versione light di "progetti.csv"?
 #' @return Il dataset viene caricato come "progetti" nel Global Environment. Se "progetti" è gia presente compare una notifica.
-load_progetti <- function(bimestre, visualizzati=TRUE, debug=FALSE, light=FALSE)
+load_progetti <- function(bimestre, visualizzati=TRUE, debug=FALSE, light=FALSE, refactor=FALSE)
 {
   if (exists("progetti")) {
     print("Progetti esteso è gia caricato")
@@ -41,6 +41,21 @@ load_progetti <- function(bimestre, visualizzati=TRUE, debug=FALSE, light=FALSE)
 
     # analisi tipologia colonne
     # sapply(names(progetti), function(x) {print(paste0(x, " = ", class(progetti[[x]])))})
+
+    # refactor
+    # MEMO: si applica solo a light
+    if (light == TRUE & refactor == TRUE) {
+      progetti <- progetti %>%
+        mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
+               x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "SNAI")),
+               OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE, levels = c("Non avviato",
+                                                                              "In avvio di progettazione",
+                                                                              "In corso di progettazione",
+                                                                              "In affidamento",
+                                                                              "In esecuzione",
+                                                                              "Eseguito",
+                                                                              "Non determinabile")))
+    }
 
     # debug
     if (debug == TRUE) {
@@ -83,3 +98,5 @@ fix_progetti <- function(progetti) {
 
   return(progetti)
 }
+
+
