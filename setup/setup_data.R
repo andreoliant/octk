@@ -15,8 +15,8 @@ po_riclass <- read_csv2(file.path(getwd(), "setup", "data-raw", "po_riclass.csv"
 usethis::use_data(po_riclass, overwrite = TRUE)
 
 # po_riclass
-po_riclass_ext <- read_csv2(file.path(getwd(), "setup", "data-raw", "po_riclass_ext.csv"))
-usethis::use_data(po_riclass_ext, overwrite = TRUE)
+# po_riclass_ext <- read_csv2(file.path(getwd(), "setup", "data-raw", "po_riclass_ext.csv"))
+# usethis::use_data(po_riclass_ext, overwrite = TRUE)
 
 # matrix_comuni
 matrix_comuni <- read_csv2(file.path(getwd(), "setup", "data-raw", "matrix_comuni.csv"))

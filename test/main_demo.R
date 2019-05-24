@@ -14,8 +14,6 @@ data_path <- "/Users/aa/dati/oc"
 
 # setup
 oc_init()
-
-
 # pryr::mem_used()
 
 
