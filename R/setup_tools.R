@@ -16,7 +16,7 @@
 setup_light <- function(bimestre) {
   if (exists("DATA", envir = .GlobalEnv)) {
     # loads
-    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
+    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE, fix = FALSE)
 
     # clean
     progetti_light <- progetti %>%
@@ -216,9 +216,11 @@ setup_light <- function(bimestre) {
       )
 
     # clean & fix
-    # progetti_light <- fix_progetti(progetti_light)
+    if (fix == TRUE) {
+      progetti_light <- fix_progetti(progetti_light)
+    }
     progetti_light <- get_x_vars(progetti_light)
-    progetti_light <- get_macroarea(progetti_light)
+    progetti_light <- get_macroarea(progetti_light, real_reg=TRUE)
     progetti_light <- get_regione_simply(progetti_light)
 
     # chk
