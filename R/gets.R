@@ -40,7 +40,13 @@
 # }
 
 
-# Aggiunge dimensione finanziaria
+#' Integra classi di dimensione finanziaria
+#'
+#' Calcola e integra una variabile (CLASSE_FIN) con le classi di dimensione finanziaria.
+#'
+#' @param df Dataset con un perimetro in formato "progetti".
+#' @return Il dataset con la variabile CLASSE_FIN, come factor con levels = c("0-100k", "100k-500k", "500k-1M", "1M-2M", "2M-5M", "5M-10M", "10M-infty")
+#' @note La modalità **debug** non + implementata.
 get_dimensione_fin <- function(df, debug_mode=FALSE) {
   # DEBUG:
   # df <- perimetro
@@ -74,8 +80,16 @@ get_dimensione_fin <- function(df, debug_mode=FALSE) {
 }
 
 
-# Semplifica regione
-get_regione_simply <- function(df, progetti=NULL) {
+#' Semplifica la denominazione di Regioni e Province Autonome
+#'
+#' Crea la variabile x_REGIONE con la denominazione della Regione o della Provincia Autonoma.
+#' Le altre denominazioni sono semplificate in "ALTRO TERRITORIO".
+#'
+#' @param df Dataset con un perimetro in formato "progetti".
+#' @param progetti Dataset "progetti".
+#' @param real_reg Vuoi usare le regioni reali?.
+#' @return Il dataset con la variabile x_REGIONE, come factor.
+get_regione_simply <- function(df, progetti=NULL, real_reg=TRUE) {
   # MEMO: deve avere struttura di progetti
 
   if (is.null(progetti)) {
@@ -96,6 +110,12 @@ get_regione_simply <- function(df, progetti=NULL) {
                 by = "COD_LOCALE_PROGETTO")
   }
 
+  # NEW BLOCK
+  if (real_reg == TRUE) {
+    df <- get_real_reg(df)
+    # MEMO: sovrascrive COD_REGIONE
+  }
+
   reg_cn <- c("001", "002", "003", "004", "005", "006",
               "007", "008", "009", "010", "011", "012")
   names(reg_cn) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
@@ -106,32 +126,74 @@ get_regione_simply <- function(df, progetti=NULL) {
 
   temp <- c(names(reg_cn[1:3]), "PA TRENTO", "PA BOLZANO", names(reg_cn[5:12]), names(reg_sud), "ALTRO TERRITORIO")
 
+  # OLD:
+  # regioni
+  # df <- df %>%
+  #   # fix per denominazione bilingue
+  #   # mutate(DEN_REGIONE = case_when(COD_REGIONE == "002" ~ "VALLE D'AOSTA",
+  #   #                                COD_REGIONE == "004" ~ "TRENTINO-ALTO ADIGE",
+  #   #                                TRUE ~ DEN_REGIONE)) %>%
+  #   mutate(x_REGIONE = ifelse(COD_REGIONE %in% c(reg_cn, reg_sud), DEN_REGIONE, "ALTRO TERRITORIO")) %>%
+  #   # fix per preesteso (nomi tranciati di doppie regioni)
+  #   # mutate(DEN_REGIONE_2 = case_when(DEN_REGIONE == "EMILIA" ~ "EMILIA-ROMAGNA",
+  #   #                                  DEN_REGIONE == "FRIULI" ~ "FRIULI-VENEZIA GIULIA",
+  #   #                                  TRUE ~ DEN_REGIONE_2)) %>%
+  #   # mutate(x_REGIONE = factor(x_REGIONE, levels = c(names(reg_cn), names(reg_sud), "ALTRO TERRITORIO")))
+  #   mutate(x_REGIONE = case_when(COD_PROVINCIA == "004021" ~ "PA BOLZANO",
+  #                                COD_PROVINCIA == "004022" ~ "PA TRENTO",
+  #                                # fix
+  #                                COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "2BO5-1a-237" ~ "PA BOLZANO", # MEMO: progetto del POR PA Bolzano
+  #                                COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "1ML1279" ~ "PA TRENTO", # MEMO: progetto del PON AdS FSE forzato qui
+  #                                TRUE ~ x_REGIONE)) %>%
+  #   mutate(x_REGIONE = factor(x_REGIONE, levels = temp))
+
   # regioni
   df <- df %>%
-    # fix per denominazione bilingue
-    # mutate(DEN_REGIONE = case_when(COD_REGIONE == "002" ~ "VALLE D'AOSTA",
-    #                                COD_REGIONE == "004" ~ "TRENTINO-ALTO ADIGE",
-    #                                TRUE ~ DEN_REGIONE)) %>%
-    mutate(x_REGIONE = ifelse(COD_REGIONE %in% c(reg_cn, reg_sud), DEN_REGIONE, "ALTRO TERRITORIO")) %>%
-    # fix per preesteso (nomi tranciati di doppie regioni)
-    # mutate(DEN_REGIONE_2 = case_when(DEN_REGIONE == "EMILIA" ~ "EMILIA-ROMAGNA",
-    #                                  DEN_REGIONE == "FRIULI" ~ "FRIULI-VENEZIA GIULIA",
-    #                                  TRUE ~ DEN_REGIONE_2)) %>%
-    # mutate(x_REGIONE = factor(x_REGIONE, levels = c(names(reg_cn), names(reg_sud), "ALTRO TERRITORIO")))
-    mutate(x_REGIONE = case_when(COD_PROVINCIA == "004021" ~ "PA BOLZANO",
-                                 COD_PROVINCIA == "004022" ~ "PA TRENTO",
-                                 # fix
-                                 COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "2BO5-1a-237" ~ "PA BOLZANO", # MEMO: progetto del POR PA Bolzano
-                                 COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "1ML1279" ~ "PA TRENTO", # MEMO: progetto del PON AdS FSE forzato qui
-                                 TRUE ~ x_REGIONE)) %>%
+    mutate(x_REGIONE =
+             case_when(
+               COD_REGIONE == "001" ~ "PIEMONTE",
+               COD_REGIONE == "002" ~ "VALLE D'AOSTA",
+               COD_REGIONE == "003" ~ "LOMBARDIA",
+               COD_PROVINCIA == "004021" ~ "PA BOLZANO",
+               COD_PROVINCIA == "004022" ~ "PA TRENTO",
+               COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "2BO5-1a-237" ~ "PA BOLZANO", # MEMO: progetto del POR PA Bolzano
+               COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "1ML1279" ~ "PA TRENTO", # MEMO: progetto del PON AdS FSE forzato qui
+               COD_REGIONE == "004" ~ "PA BOLZANO", # "TRENTINO-ALTO ADIGE"
+               COD_REGIONE == "005" ~ "VENETO",
+               COD_REGIONE == "006" ~ "FRIULI-VENEZIA GIULIA", # "FRIULI-VENEZIA GIULIA"
+               COD_REGIONE == "007" ~ "LIGURIA",
+               COD_REGIONE == "008" ~ "EMILIA-ROMAGNA", # "EMILIA-ROMAGNA"
+               COD_REGIONE == "009" ~ "TOSCANA",
+               COD_REGIONE == "010" ~ "UMBRIA",
+               COD_REGIONE == "011" ~ "MARCHE",
+               COD_REGIONE == "012" ~ "LAZIO",
+               COD_REGIONE == "013" ~ "ABRUZZO",
+               COD_REGIONE == "014" ~ "MOLISE",
+               COD_REGIONE == "020" ~ "SARDEGNA",
+               COD_REGIONE == "015" ~ "CAMPANIA",
+               COD_REGIONE == "016" ~ "PUGLIA",
+               COD_REGIONE == "017" ~ "BASILICATA",
+               COD_REGIONE == "018" ~ "CALABRIA",
+               COD_REGIONE == "019" ~ "SICILIA",
+               TRUE ~ "ALTRO TERRITORIO")) %>%
     mutate(x_REGIONE = factor(x_REGIONE, levels = temp))
 
   return(df)
 }
 
-
-# Aggiunge macroarea
-get_macroarea <- function(df, progetti=NULL, debug_mode=FALSE) {
+#' Definisce la macroarea
+#'
+#' Crea la variabile x_MACROAREA.
+#' Le altre denominazioni sono semplificate in "ALTRO TERRITORIO".
+#'
+#' @param df Dataset con un perimetro in formato "progetti".
+#' @param progetti Dataset "progetti" originale per integrazione.
+#' @param real_reg Vuoi usare le regioni reali?.
+#' @param debug_mode Dataset in formato "progetti".
+#' @return Il dataset con la variabile x_MACROAREA, come factor con levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero").
+#' @note La modalità **debug** non + implementata. La modalità **real_reg** forza tutti i progetti
+#' di un programma regionale sul territorio della Regione e sulla relativa macroarea.
+get_macroarea <- function(df, progetti=NULL, real_reg=TRUE, debug_mode=FALSE) {
   # DEBUG:
   # df <- perimetro
   # DEV: da implementare via progetti e con debug_mode (come per "get_stato_attuazione.R")
@@ -149,6 +211,12 @@ get_macroarea <- function(df, progetti=NULL, debug_mode=FALSE) {
       left_join(progetti %>%
                   select(COD_LOCALE_PROGETTO, COD_REGIONE),
                 by = "COD_LOCALE_PROGETTO")
+  }
+
+  # NEW BLOCK
+  if (real_reg == TRUE) {
+    df <- get_real_reg(df)
+    # MEMO: sovrascrive COD_REGIONE
   }
 
   # fix per macroarea
@@ -326,8 +394,19 @@ get_macroarea <- function(df, progetti=NULL, debug_mode=FALSE) {
 # }
 
 
-# Aggiunge categoira di regione UE
-get_catreg_UE <- function(df, progetti=NULL, debug_mode=FALSE) {
+#' Definisce la categoria di regioni UE
+#'
+#' Crea la variabile x_CATREG con la denominazione della Regione o della Provincia Autonoma.
+#' Le altre denominazioni sono semplificate in "ALTRO TERRITORIO".
+#'
+#' @param df Dataset con un perimetro in formato "progetti".
+#' @param progetti Dataset "progetti" originale per integrazione.
+#' @param real_reg Vuoi usare le regioni reali?.
+#' @param debug_mode Dataset in formato "progetti".
+#' @return Il dataset con la variabile x_CATREG, come factor con levels = c("RS", "RT", "RMS", "Trasversale", "Nazionale", "Estero").
+#' @note La modalità **debug** non + implementata. La modalità **real_reg** forza tutti i progetti
+#' di un programma regionale sul territorio della Regione e sulla relativa macroarea.
+get_catreg_UE <- function(df, progetti=NULL, real_reg=TRUE, debug_mode=FALSE) {
   # DEBUG:
   # df <- perimetro
   # DEV: da implementare via progetti e con debug_mode (come per "get_stato_attuazione.R")
@@ -347,11 +426,17 @@ get_catreg_UE <- function(df, progetti=NULL, debug_mode=FALSE) {
                 by = "COD_LOCALE_PROGETTO")
   }
 
+  # NEW BLOCK
+  if (real_reg == TRUE) {
+    df <- get_real_reg(df)
+    # MEMO: sovrascrive COD_REGIONE
+  }
+
   # fix per macroarea
   rs <- c("001", "002", "003", "004", "005", "006",
-              "007", "008", "009", "010", "011", "012")
+          "007", "008", "009", "010", "011", "012")
   names(rs) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
-                     "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
+                 "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
 
   rt <- c("013", "014", "020")
   names(rt) <- c("ABRUZZO", "MOLISE", "SARDEGNA")
@@ -367,7 +452,7 @@ get_catreg_UE <- function(df, progetti=NULL, debug_mode=FALSE) {
   }
 
   df <- df %>%
-    mutate(CATREG = case_when(COD_REGIONE %in% rs ~ "RS",
+    mutate(x_CATREG = case_when(COD_REGIONE %in% rs ~ "RS",
                               COD_REGIONE %in% rt ~ "RT",
                               COD_REGIONE %in% rms ~ "RMS",
                               COD_REGIONE == "000" ~ "Nazionale", # AMBITO NAZIONALE
@@ -376,8 +461,7 @@ get_catreg_UE <- function(df, progetti=NULL, debug_mode=FALSE) {
                               grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, rms) == TRUE ~ "RMS",
                               grepl(":::", COD_REGIONE) ~ "Trasversale", # MEMO: multi-regionale su più macroaree
                               TRUE ~ "Estero")) %>%
-    mutate(CATREG = factor(CATREG, levels = c("RS", "RT", "RMS", "Trasversale", "Nazionale", "Estero"))) %>%
-    select(-COD_REGIONE)
+    mutate(x_CATREG = factor(x_CATREG, levels = c("RS", "RT", "RMS", "Trasversale", "Nazionale", "Estero")))
 
   return(df)
 
@@ -386,13 +470,13 @@ get_catreg_UE <- function(df, progetti=NULL, debug_mode=FALSE) {
 
 
 # Aggiunge variabili "X" di riflassificazione dei PO
-get_x_vars_old <- function(df, debug_mode=FALSE) {
-  df <- df %>%
-    left_join(po_riclass %>%
-                select(-NOTE),
-              by = "OC_CODICE_PROGRAMMA")
-  return(df)
-}
+# get_x_vars_old <- function(df, debug_mode=FALSE) {
+#   df <- df %>%
+#     left_join(po_riclass %>%
+#                 select(-NOTE),
+#               by = "OC_CODICE_PROGRAMMA")
+#   return(df)
+# }
 
 
 
@@ -441,8 +525,19 @@ get_x_vars_old <- function(df, debug_mode=FALSE) {
 #   return(df)
 # }
 
-
-# Aggiunge variabili "X" di riflassificazione dei PO
+#' Aggiunge variabili "X" di riflassificazione dei PO
+#'
+#' Aggiunge variabili "X" di riflassificazione dei PO per compatibilità con il DB Programmazione.
+#'
+#' @param df Dataset in formato "progetti".
+#' @param progetti Dataset "progetti".
+#' @return Il dataset con le variabili "X", rettificate dove necessario rispetto alla BDU, ovvero:
+#' x_CICLO: ciclo di programmazione
+#' x_AMBITO: ambito di programmazione
+#' x_GRUPPO: gruppo/tipologia di programmi
+#' x_PROGRAMMA: denominazione
+#' x_REGNAZ: utility per distinguere se regionale (con indicazione della Regione) o nazionale
+#' @note La modalità **debug** non è implementata.
 get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
   # MEMO: nuova versione con "x_AMBITO"
   # DEV: definire "bimestre" nella funzione!
@@ -450,7 +545,7 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
   temp <- names(df)
 
   df <- df %>%
-    left_join(po_riclass %>%
+    left_join(octk::po_riclass %>%
                 select(-NOTE),
               by = "OC_CODICE_PROGRAMMA")
 
@@ -476,9 +571,112 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
 
   # riordina vars
   df <- df %>%
-    select(temp, x_CICLO, x_FONDO, x_AMBITO, x_GRUPPO, x_PROGRAMMA)
+    select(temp, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ)
 
   return(df)
 }
 
 
+#' Definisce la regione reale
+#'
+#' Sovrascrive la variabile COD_REGIONE forzando tutti i progetti dei programmi regionali sulla Regione di riferimento.
+#'
+#' @param df Dataset con un perimetro in formato "progetti".
+#' @param progetti Dataset "progetti".
+#' @return Il dataset con la variabile COD_REGIONE modificata.
+#' @note La modalità **debug** non + implementata.
+get_real_reg <- function(df, progetti=NULL, debug_mode=FALSE) {
+
+  # df <- progetti[1000000:1000200, c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "COD_REGIONE")]
+  # df <- get_x_vars(df)
+
+  # MEMO: richiede e sovrascrive COD_REGIONE
+  # MEMO: richiede x_REGNAZ
+
+  if (is.null(progetti)) {
+    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  }
+
+  # NEW BLOCK
+  if (!any(names(df) == "COD_REGIONE")) {
+    df <- df %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, COD_REGIONE, DEN_REGIONE, COD_PROVINCIA),
+                by = "COD_LOCALE_PROGETTO")
+
+  } else if (!any(names(df) == "DEN_REGIONE")) {
+    df <- df %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, DEN_REGIONE, COD_PROVINCIA),
+                by = "COD_LOCALE_PROGETTO")
+  }
+
+  appo <- octk::po_riclass %>%
+    filter(!is.na(OC_CODICE_PROGRAMMA)) %>%
+    select(OC_CODICE_PROGRAMMA, x_REGNAZ) %>%
+    mutate(COD_REGIONE_NEW =
+             case_when(x_REGNAZ == "PIEMONTE" ~ "001",
+                       x_REGNAZ == "VALLE D'AOSTA" ~ "002", # "VALLE D'AOSTA"
+                       x_REGNAZ == "LOMBARDIA" ~ "003",
+                       x_REGNAZ == "PA TRENTO" ~ "004", # "TRENTINO-ALTO ADIGE"
+                       x_REGNAZ == "PA BOLZANO" ~ "004", # "TRENTINO-ALTO ADIGE"
+                       x_REGNAZ == "VENETO" ~ "005",
+                       x_REGNAZ == "FRIULI-VENEZIA GIULIA" ~ "006", # "FRIULI-VENEZIA GIULIA"
+                       x_REGNAZ == "LIGURIA" ~ "007",
+                       x_REGNAZ == "EMILIA-ROMAGNA" ~ "008", # "EMILIA-ROMAGNA"
+                       x_REGNAZ == "TOSCANA" ~ "009",
+                       x_REGNAZ == "UMBRIA" ~ "010",
+                       x_REGNAZ == "MARCHE" ~ "011",
+                       x_REGNAZ == "LAZIO" ~ "012",
+                       x_REGNAZ == "ABRUZZO" ~ "013",
+                       x_REGNAZ == "MOLISE" ~ "014",
+                       x_REGNAZ == "SARDEGNA" ~ "020",
+                       x_REGNAZ == "CAMPANIA" ~ "015",
+                       x_REGNAZ == "PUGLIA" ~ "016",
+                       x_REGNAZ == "BASILICATA" ~ "017",
+                       x_REGNAZ == "CALABRIA" ~ "018",
+                       x_REGNAZ == "SICILIA" ~ "019",
+                       x_REGNAZ == "NAZ" ~ "",
+                       TRUE ~ "CHK"))
+
+  out <- df %>%
+    left_join(appo, by = "OC_CODICE_PROGRAMMA") %>%
+    mutate(COD_REGIONE = case_when(COD_REGIONE_NEW == "" ~  COD_REGIONE,
+                                   TRUE ~ COD_REGIONE_NEW)) %>%
+    select(-COD_REGIONE_NEW)
+
+  return(out)
+}
+
+
+#' Semplifica le localizzazioni per progetti non localizzabili
+#'
+#' Sovrascrive le variabili x_REGIONE e x_MACROAREA semplificando le localizzazioni non reigonalizzabili.
+#'
+#' @param df Dataset con un perimetro in formato "progetti".
+#' @return Il dataset con l le variabili x_REGIONE e x_MACROAREA modificate. In particolare distingue "PLURI-LOCALIZZATI" tra regioni della stessa macroarea e
+#' "AMBITO NAZIONALE" per i progetti di ambito nazionale "puro" oppure con localiuzzazioni regionali molteplici trasversali alle macroare.
+#' @note La modalità **debug** non + implementata.
+get_simply_non_loc <- function(df) {
+  df <- df %>%
+    mutate(x_REGIONE = as.character(x_REGIONE),
+           x_MACROAREA = as.character(x_MACROAREA)) %>%
+    mutate(x_REGIONE = case_when(x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Centro-Nord" ~ "PLURI-LOCALIZZATI",
+                                 x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Sud" ~ "PLURI-LOCALIZZATI",
+                                 x_REGIONE == "ALTRO TERRITORIO" ~ "AMBITO NAZIONALE",
+                                 TRUE ~ x_REGIONE)) %>%
+    mutate(x_REGIONE = factor(x_REGIONE, levels = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA",
+                                                    "PA TRENTO", "PA BOLZANO",
+                                                    "VENETO", "FRIULI-VENEZIA GIULIA",
+                                                    "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO",
+                                                    "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
+                                                    "CALABRIA", "SICILIA", "SARDEGNA",
+                                                    "PLURI-LOCALIZZATI", "AMBITO NAZIONALE"))) %>%
+    mutate(x_MACROAREA = case_when(x_MACROAREA == "Trasversale" ~ "Ambito nazionale",
+                                   x_MACROAREA == "Nazionale" ~ "Ambito nazionale",
+                                   x_MACROAREA == "Estero" ~ "Ambito nazionale",
+                                   TRUE ~ x_MACROAREA)) %>%
+    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
+
+  return(df)
+}

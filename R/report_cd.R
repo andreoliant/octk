@@ -737,30 +737,30 @@ report_cd_regioni_classi <- function(perimetro, use_coe=TRUE, export=FALSE, focu
 
 
 
-# simply per non localizzati
-get_simply_non_loc <- function(perimetro) {
-  perimetro <- perimetro %>%
-    mutate(x_REGIONE = as.character(x_REGIONE),
-           x_MACROAREA = as.character(x_MACROAREA)) %>%
-    mutate(x_REGIONE = case_when(x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Centro-Nord" ~ "PLURI-LOCALIZZATI",
-                                 x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Sud" ~ "PLURI-LOCALIZZATI",
-                                 x_REGIONE == "ALTRO TERRITORIO" ~ "AMBITO NAZIONALE",
-                                 TRUE ~ x_REGIONE)) %>%
-    mutate(x_REGIONE = factor(x_REGIONE, levels = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA",
-                                                    "PA TRENTO", "PA BOLZANO",
-                                                    "VENETO", "FRIULI-VENEZIA GIULIA",
-                                                    "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO",
-                                                    "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
-                                                    "CALABRIA", "SICILIA", "SARDEGNA",
-                                                    "PLURI-LOCALIZZATI", "AMBITO NAZIONALE"))) %>%
-    mutate(x_MACROAREA = case_when(x_MACROAREA == "Trasversale" ~ "Ambito nazionale",
-                                   x_MACROAREA == "Nazionale" ~ "Ambito nazionale",
-                                   x_MACROAREA == "Estero" ~ "Ambito nazionale",
-                                   TRUE ~ x_MACROAREA)) %>%
-    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
-
-  return(perimetro)
-}
+# # simply per non localizzati
+# get_simply_non_loc <- function(perimetro) {
+#   perimetro <- perimetro %>%
+#     mutate(x_REGIONE = as.character(x_REGIONE),
+#            x_MACROAREA = as.character(x_MACROAREA)) %>%
+#     mutate(x_REGIONE = case_when(x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Centro-Nord" ~ "PLURI-LOCALIZZATI",
+#                                  x_REGIONE == "ALTRO TERRITORIO" & x_MACROAREA == "Sud" ~ "PLURI-LOCALIZZATI",
+#                                  x_REGIONE == "ALTRO TERRITORIO" ~ "AMBITO NAZIONALE",
+#                                  TRUE ~ x_REGIONE)) %>%
+#     mutate(x_REGIONE = factor(x_REGIONE, levels = c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA",
+#                                                     "PA TRENTO", "PA BOLZANO",
+#                                                     "VENETO", "FRIULI-VENEZIA GIULIA",
+#                                                     "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO",
+#                                                     "ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA",
+#                                                     "CALABRIA", "SICILIA", "SARDEGNA",
+#                                                     "PLURI-LOCALIZZATI", "AMBITO NAZIONALE"))) %>%
+#     mutate(x_MACROAREA = case_when(x_MACROAREA == "Trasversale" ~ "Ambito nazionale",
+#                                    x_MACROAREA == "Nazionale" ~ "Ambito nazionale",
+#                                    x_MACROAREA == "Estero" ~ "Ambito nazionale",
+#                                    TRUE ~ x_MACROAREA)) %>%
+#     mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
+#
+#   return(perimetro)
+# }
 
 # spalla per avere tutte le regioni
 get_spalla_regioni <- function() {
