@@ -27,10 +27,10 @@ load_progetti <- function(bimestre, visualizzati=TRUE, debug=FALSE, light=FALSE,
 
     # load progetti
     if (visualizzati == TRUE) {
-      progetti <- read_csv2(file.path(DATA, temp), guess_max = 50000) %>%
+      progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000) %>%
         filter(OC_FLAG_VISUALIZZAZIONE == 0)
     } else {
-      progetti <- read_csv2(file.path(DATA, temp), guess_max = 50000)
+      progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000)
       # MEMO: qui prende anche non visualizzati
     }
 
