@@ -73,9 +73,14 @@ oc_init <- function() {
     message(paste0("Connetto il folder OUTPUT in ", OUTPUT))
   }
 
-  # wizard dati
+  # wizard dati attuazione
   if (!exists("data_path")) {
     data_path <- readline("Quale path per la fonte dati (scrivi senza \"...\")? ")
+  }
+
+  # wizard db programmazione
+  if (!exists("db_path")) {
+    db_path <- readline("Quale path per il db di programmazione (scrivi senza \"...\")? ")
   }
 
   if (!exists("bimestre")) {
@@ -87,8 +92,11 @@ oc_init <- function() {
   }
 
   # "/Users/aa/dati"
-  DATA <<- file.path(data_path, bimestre)
+  # DATA <<- file.path(data_path, bimestre) # MEMO: versione prima di GoogleDrive
+  DATA <<- file.path(data_path)
   message(paste0("Connetto la fonte dati in ", DATA))
+  DB <<- file.path(db_path)
+  message(paste0("Connetto il db di programmzione in ", DB))
 }
 
 

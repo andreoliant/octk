@@ -1,4 +1,3 @@
-# OC > Toolkit
 # Programmazione
 
 #' Carica un dataset dal database della programmazione
@@ -31,7 +30,8 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE){
     filename <- paste0(temp, "_0713.xlsx")
   }
 
-  appo <-  read_excel(file.path(DATA, "db", filename), guess_max = 5000)
+  # appo <-  read_excel(file.path(DATA, "db", filename), guess_max = 5000) # MEMO: versione prima di GoogleDrive
+  appo <-  read_excel(file.path(DB, filename), guess_max = 5000)
 
   if (ambito == "FESR" | ambito == "FSE") {
     appo <- appo %>%
@@ -106,7 +106,8 @@ load_db_temi <- function(ciclo, ambito, simplify_loc=FALSE){
   }
 
   # load
-  appo <-  read_excel(file.path(DATA, "db", filename), guess_max = 5000)
+  # appo <-  read_excel(file.path(DATA, "db", filename), guess_max = 5000) # MEMO: verisone prima di GoogleDrive
+  appo <-  read_excel(file.path(DB, filename), guess_max = 5000)
 
   # filter
   if (ambito == "FESR" | ambito == "FSE" | ambito == "YEI") {

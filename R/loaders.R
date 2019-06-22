@@ -22,7 +22,8 @@ load_progetti <- function(bimestre, visualizzati=TRUE, debug=FALSE, light=FALSE,
     if (light == TRUE) {
       temp <- paste0("progetti_light_", bimestre, ".csv")
     } else {
-      temp <- paste0("progetti_esteso_", bimestre, ".csv")
+      # temp <- paste0("progetti_esteso_", bimestre, ".csv")
+      temp <- "PROGETTI_PREESTESO.csv"
     }
 
     # load progetti
