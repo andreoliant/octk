@@ -244,6 +244,7 @@ query_ra <- function(progetti) {
 
   # merge
   peri_ra <- progetti %>%
+    mutate(COD_RIS_ATTESO = COD_RISULTATO_ATTESO) %>%
     select(COD_LOCALE_PROGETTO, COD_RIS_ATTESO) %>%
     separate_rows(COD_RIS_ATTESO, sep = ":::") %>%
     mutate(COD_RIS_ATTESO = case_when(COD_RIS_ATTESO == "06.5.A" ~ "06.5",
