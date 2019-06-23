@@ -38,6 +38,19 @@ oc_init <- function(bimestre, db_ver,
   #   # MEMO: si aggiorna da solo con nuovo bimestre
   # }
 
+  # wizard dati attuazione
+  if (is.null(data_path)) {
+    appo <- readline("Quale path per la fonte dati? ")
+    data_path <- gsub("\\\"", "", appo)
+  }
+  # OLD: DATA <<- file.path(data_path, bimestre) # MEMO: versione prima di GoogleDrive
+
+  # wizard db programmazione
+  # if (is.null(db_path)) {
+  #   appo <- readline("Quale path per il db di programmazione? ")
+  #   db_path <- gsub("\\\"", "", appo)
+  # }
+
   # switch
   if (use_drive == TRUE) {
     message("GoogleDrive in uso")
@@ -45,8 +58,9 @@ oc_init <- function(bimestre, db_ver,
       ROOT <- "/Volumes/GoogleDrive/Drive condivisi"
       # TODO: inserire switch e default per mac/win
     }
-    data_path <- file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART")
-    db_path <- file.path(ROOT, "DATI", bimestre, "PROGRAMMAZIONE", db_ver)
+    # data_path <- file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART")
+    # db_path <- file.path(ROOT, "DATI", bimestre, "PROGRAMMAZIONE", db_ver)
+    db_path <- file.path(ROOT, "DATI", "PROGRAMMAZIONE", db_ver)
 
     # switch per naming
     if (is.null(elab) & is.null(focus)) {
@@ -68,12 +82,12 @@ oc_init <- function(bimestre, db_ver,
   } else {
     message("Lavoro in locale")
 
-    # wizard dati attuazione
-    if (is.null(data_path)) {
-      appo <- readline("Quale path per la fonte dati? ")
-      data_path <- gsub("\\\"", "", appo)
-    }
-    # OLD: DATA <<- file.path(data_path, bimestre) # MEMO: versione prima di GoogleDrive
+    # # wizard dati attuazione
+    # if (is.null(data_path)) {
+    #   appo <- readline("Quale path per la fonte dati? ")
+    #   data_path <- gsub("\\\"", "", appo)
+    # }
+    # # OLD: DATA <<- file.path(data_path, bimestre) # MEMO: versione prima di GoogleDrive
 
     # wizard db programmazione
     if (is.null(db_path)) {
@@ -102,7 +116,8 @@ oc_init <- function(bimestre, db_ver,
   }
 
   # export path in GlobalEnv
-  DATA <<- file.path(data_path)
+  # DATA <<- file.path(data_path)
+  DATA <<- file.path(data_path, bimestre) # MEMO: versione per dati in locale
   message(paste0("Connetto la fonte dati in ", DATA))
 
   DB <<- file.path(db_path)
@@ -142,4 +157,44 @@ oc_init <- function(bimestre, db_ver,
   bimestre <<- bimestre
 }
 
+#' Copia i dati di OC da GoogleDrive
+#'
+#' Copia i dati di OC da GoogleDrive.
+#'
+#' @param bimestre Versione dei dati di attuazione da utilizzare. Stringa in formato "20180630" come da standard per le date in OC.
+#' @param data_path Percorso allla fonte dati (senza folder del bimestre).
+#' @return I file di "progetti_preesteso" sono copiati nel folder DATA.
+oc_init_data <- function(bimestre, data_path=NULL) {
+
+  # finanziamenti_preesteso.sas7bdat
+  # indicatori_pucok.sas7bdat
+  # operazioni_pucok.sas7bdat
+  # PROGETTI_PREESTESO.csv
+  # PROGETTI_PREESTESO.zip
+
+  ROOT <- "/Volumes/GoogleDrive/Drive condivisi"
+
+  # wizard dati attuazione
+  if (is.null(data_path)) {
+    appo <- readline("Quale path per la fonte dati? ")
+    data_path <- gsub("\\\"", "", appo)
+  }
+
+  DATA <- file.path(data_path, bimestre)
+
+  file.copy(from = file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART", "PROGETTI_PREESTESO.zip"),
+            to = file.path(DATA, "PROGETTI_PREESTESO.zip"))
+  unzip(zipfile = file.path(DATA, "PROGETTI_PREESTESO.zip"),
+        exdir = file.path(DATA))
+
+  file.copy(from = file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART", "finanziamenti_preesteso.sas7bdat"),
+            to = file.path(DATA, "finanziamenti_preesteso.sas7bdat"))
+
+  file.copy(from = file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART", "indicatori_pucok.sas7bdat"),
+            to = file.path(DATA, "indicatori_pucok.sas7bdat"))
+
+  file.copy(from = file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART", "operazioni_pucok.sas7bdat"),
+            to = file.path(DATA, "operazioni_pucok.sas7bdat"))
+
+}
 

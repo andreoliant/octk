@@ -10,20 +10,29 @@
 #' @param debug Logico. Vuoi vedere i totali di progetti e costo pubblico per controllo sul portale OC?
 #' @param light Logico. Vuoi usare la versione light di "progetti.csv"?
 #' @return Il dataset viene caricato come "progetti" nel Global Environment. Se "progetti" è gia presente compare una notifica.
-load_progetti <- function(bimestre, visualizzati=TRUE, debug=FALSE, light=FALSE, refactor=FALSE)
+load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FALSE, light=FALSE, refactor=FALSE)
 {
-  if (exists("progetti")) {
+  if (exists("progetti", envir = .GlobalEnv)) {
     print("Progetti esteso è gia caricato")
     progetti <- progetti
 
   } else {
 
-    # swithc di filename per progetti_light
+    # switch di filename per progetti_light
     if (light == TRUE) {
       temp <- paste0("progetti_light_", bimestre, ".csv")
     } else {
-      # temp <- paste0("progetti_esteso_", bimestre, ".csv")
-      temp <- "PROGETTI_PREESTESO.csv"
+      if (as.numeric(bimestre) <= 20181231) {
+        temp <- paste0("progetti_esteso_", bimestre, ".csv")
+      } else {
+        temp <- "PROGETTI_PREESTESO.csv"
+      }
+    }
+
+    # switch
+    if (!is.null(data_path)) {
+      DATA <- data_path
+      # MEMO: sovrascrive data_path a DATA
     }
 
     # load progetti
