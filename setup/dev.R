@@ -5,10 +5,6 @@
 library("devtools")
 
 
-# getwd()
-# "/Users/aa/coding/oc"
-
-
 # ----------------------------------------------------------------------------------- #
 # workflow generale
 # RStudio + GitHub
@@ -21,12 +17,24 @@ library("devtools")
 
 # gestione modifiche
 # $:
+# git pull origin master
+# ...
 # git add .
 # git commit -m "Something"
 # git push -u origin master
-# ...
-# git pull origin master
 # MEMO: su può fare direttamente da RStudio
+
+# clona in altro folder fino a un tag
+# git clone /Users/aa/coding/oc --branch v0.1.0 new_folder
+# git clone <orign_path> --branch <tag_name> <dest_path>
+
+
+# ----------------------------------------------------------------------------------- #
+# add packages
+
+# usethis::use_package("dplyr") # 'tidyverse' is a meta-package and it is rarely a good idea to depend on it
+# usethis::use_package("haven")
+# usethis::use_package("readxl")
 
 
 # ----------------------------------------------------------------------------------- #
@@ -41,32 +49,38 @@ library("devtools")
 # - prep per aggiornare altro in data (OLD: "data-raw/setup_data.R")
 # - setup data nel package
 # - setup di progetti_light.csv >>> upload in Drive
-# - DO SOMETHING WITH DB PROGARAMMAZIONE
+# - build con ...
 # - ...
 # - aggiungere tag in git con $: git tag v0.1.X
+# - copia in bkp/_src/octk_0.1.X e fai zip octk_0.1.X.zip
 # - integra bkp/versioni.csv
-# - build, carica su google drive e invia al team
+# - carica su google drive
+# - invia mail al team
 
 
 # ----------------------------------------------------------------------------------- #
 # init
 
 # libs
-# library("octk")
 devtools::load_all(path = ".")
 
 # setup
-bimestre <- "19000101"
-data_path <- "/Users/aa/dati/oc"
-# MEMO: in DEV_MODE workarea e focus sono in test
+oc_init(
+  bimestre = "20190228",
+  db_ver = "20190620",
+  data_path = "/Users/aa/dati/oc",
+  use_drive=TRUE,
+  DEV_MODE=TRUE
+  )
 
-# setup
-oc_init()
+# MEMO: per il setup bimestrale la workarea è in locale oc/test e i dati sono in GoogleDrive
 
-# CHK:
-# con console in setup.R la workarea viene creata di default qui e persiste:
-# oc::workarea
-# "/private/var/folders/9l/1v3xv9w13_lghflpn0lhsb7m0000gn/T/RtmpPZLaEA/R.INSTALL7c8304103db/oc"
+# copy data from GoogleDrive to local
+oc_init_data(
+  bimestre = "20190228",
+  data_path = "/Users/aa/dati/oc"
+)
+# TODO: serve versione con package "googledrive"
 
 
 # ----------------------------------------------------------------------------------- #
@@ -83,12 +97,12 @@ oc_init()
 # 4: programma censito lato programmazione e ancora da caricare in BDU
 # 9: programma disattivato in BDU
 
-library("haven")
-
 # laod da sas
-ROOT <- "/Volumes/GoogleDrive/Drive del team"
-path <- file.path(ROOT, "DATI", bimestre, "DASAS/DATABASE/oc_programmi.sas7bdat")
+# path <- "/Volumes/GoogleDrive/Drive condivisi/DATI/20190228/DASAS/DATABASE/oc_programmi.sas7bdat"
+path <- file.path(DATA, "oc_programmi.sas7bdat")
 po_sas <- read_sas(path)
+# MEMO: oc_programmi.sas7bdat scaricato a mano e messo in DATA
+
 
 # chk
 chk_match(octk::po_riclass, po_sas, id = "OC_CODICE_PROGRAMMA")
@@ -145,21 +159,157 @@ write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 
 
 # ----------------------------------------------------------------------------------- #
-# altri prep di data
+# chk non visualizzati e delta
+
+# loads
+bimestre_old <- "20181231"
+# OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
+data_path_old <- file.path(dirname(DATA), bimestre_old)
+progetti_all_old <- load_progetti(bimestre = bimestre_old,
+                                  data_path = data_path_old,
+                                  visualizzati = FALSE, debug = TRUE)
+
+progetti_all <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE)
+
+# variazione non visualizzati
+chk <- progetti_all_old %>%
+  get_x_vars(progetti) %>%
+  count(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
+  full_join(progetti_all %>%
+              get_x_vars(progetti) %>%
+              count(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO),
+            by = c("OC_FLAG_VISUALIZZAZIONE", "x_CICLO", "x_AMBITO"), suffix = c(".old", ".new")) %>%
+  mutate(chk = n.old - n.new)
+
+write.csv2(chk, file.path(OUTPUT, "chk_delta_noviz.csv"), row.names = FALSE)
+
+# verifica anomalia 20181231
+# delta_old <- read_csv2(file.path(INPUT, "chk_delta_preesteso.csv"))
+# delta_old %>% semi_join(progetti)
+# # CHK: capire perché questi "non visualizzati" a dicembre sono stati recuperati
+#
+# delta_old %>%
+#   # semi_join(progetti_all) %>%
+#   semi_join(progetti) %>%
+#   filter(X_PROGRAMMA == "PS AREE METROPOLITANE LOMBARDIA")
+# # MEMO: questi 2 sono stati eliminati
+
+rm(progetti_all, progetti_all_old)
+
+
+# ----------------------------------------------------------------------------------- #
+# verifica x_vars
+
+progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
+
+# verifica x_vars
+progetti <- fix_progetti(progetti)
+appo <- get_x_vars(progetti)
+appo %>%
+  count(x_CICLO, X_CICLO, x_AMBITO, X_AMBITO)
+
+chk <- appo %>%
+  filter(is.na(x_AMBITO))
+
+chk %>%
+  count(OC_CODICE_PROGRAMMA, x_PROGRAMMA)
+
+write.csv2(chk, file.path(OUTPUT, "anomalie_calabria.csv"))
+
+# A tibble: 1 x 3
+# OC_CODICE_PROGRAMMA x_PROGRAMMA               n
+# 2014IT16M2OP006     POR CALABRIA FESR-FSE    27
+
+# HAND: aggiorna po_riclass.csv e ricarica con script sotto
+# HAND: aggiorna fix_progetti in loaders.R
+
+chk <- appo %>%
+  count(x_REGNAZ, X_REGNAZ)
+
+chk <- appo %>%
+  filter(x_REGNAZ == "NAZ", X_REGNAZ != "NAZ")
+# MEMO: qui va aggiornato lato SAS
+
+chk %>%
+  count(x_PROGRAMMA)
+
+# test
+appo <- get_macroarea(appo, real_reg=TRUE)
+appo <- get_regione_simply(appo)
+
+chk <- appo %>%
+  count(x_MACROAREA, x_REGNAZ, x_REGIONE)
+
+chk <- appo %>%
+  filter(x_REGNAZ != "PA BOLZANO", x_REGIONE == "PA BOLZANO")
+
+
+# ----------------------------------------------------------------------------------- #
+# verifica data quality
+
+# HAND:: verifica numero di progetti su mail per Stefano
+appo %>%
+  count(x_CICLO, x_AMBITO)
+# x_CICLO        n
+# 2007-2013 949928
+# 2014-2020 296934 >>> 296924 nella mail per Stefano
+
+appo %>%
+  filter(is.na(OC_CODICE_PROGRAMMA)) %>%
+  count(x_CICLO, x_AMBITO)
+
+
+chk <- appo %>%
+  count(DEN_REGIONE)
+
+# verifica mascheramenti
+appo %>%
+  mutate(MASK = grepl("\\*INDIVIDUO\\*", toupper(OC_TITOLO_PROGETTO))) %>%
+  count(CUP_COD_NATURA, CUP_DESCR_NATURA, MASK) %>%
+  spread(MASK, n)
+
+chk <- appo %>%
+  mutate(MASK = grepl("\\*INDIVIDUO\\*", toupper(OC_TITOLO_PROGETTO))) %>%
+  filter(CUP_COD_NATURA == "03" & MASK == TRUE) %>%
+  select(OC_TITOLO_PROGETTO, CUP_DESCR_CATEGORIA)
+
+chk %>%
+  count(CUP_DESCR_CATEGORIA)
+
+
+# verifica cambiamenti nomi variabili
+# "OC_COD_CATEGORIA_SPESA" "OC_DESCR_CATEGORIA_SPESA" >>> peri_query.R >>> query_ue()
+# "COD_RISULTATO_ATTESO" "DESCR_RISULTATO_ATTESO"
+
+appo %>%
+  count(x_CICLO, OC_STATO_PROCEDURALE)
+
+
+
+
+
+
+
+# ----------------------------------------------------------------------------------- #
+# prep di dataset in octk
 
 # TODO: verificare se i nomi sono troncati...
 
-# workflow
-# make_matrix_po(bimestre)
-# chk <- chk_delta_po()
-# chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
-# chk_delta_po("OLD")
-# HAND: fare aggiornamento a mano e rinominare "po_linee_azioni_NEW.csv" in "po_linee_azioni.csv
+# po_linee_azioni.csv
+make_matrix_po(bimestre = "20190228")
+chk <- chk_delta_po("NEW")
+chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
+chk_delta_po("OLD")
+# HAND: rinominare "po_linee_azioni_NEW.csv" in "po_linee_azioni.csv
 
 # TODO: voglio sapere cosa manca in po_linee_azioni rispetto al DB programmazione
 
-# make_matrix_cipe(bimestre)
-# make_matrix_strum(bimestre)
+# strum_att.csv
+make_matrix_strum(bimestre = "20190228")
+
+# delib_cipe.csv
+make_matrix_cipe(bimestre = "20190228")
+
 
 
 # ----------------------------------------------------------------------------------- #
@@ -174,15 +324,16 @@ devtools::load_all(path = ".")
 # progetti_light
 # https://readr.tidyverse.org/articles/readr.html#column-specification
 
-setup_light(bimestre = "20181231")
+setup_light(bimestre = "20190206")
 
+# TODO: aggiungere nuove variabili di progetti
+
+#  oggetto "OC_FINANZ_UE_NETTO" non trovato
 
 
 
 # ----------------------------------------------------------------------------------- #
 # documents
-
-# CHK: non ricordo come funziona!!!
 
 # usethis::use_vignette("oc")
 devtools::document()
@@ -198,9 +349,39 @@ devtools::build(pkg = ".", path = "/Users/aa/coding/oc/bkp")
 # MEMO: build to boundle "oc_0.1.0.tar.gz"
 
 # install
-install.packages("/Users/aa/coding/oc/bkp/octk_0.1.0.tar.gz", repos = NULL, type="source")
+install.packages("/Users/aa/coding/oc/bkp/oc_0.1.0.tar.gz", repos = NULL, type="source")
 
 # build as binary
 # devtools::build(path = "/Users/aa/coding/oc", binary = TRUE)
 # MEMO: build to binary "oc_0.1.0.tgz"
 # WARNING: it is platform specific!
+
+
+# ----------------------------------------------------------------------------------- #
+# backup source
+
+# $:
+# VERS="octk_0.2.0"
+# cp oc.Rproj bkp/_src/$VERS/
+# cp README.md bkp/_src/$VERS/
+# cp DESCRIPTION bkp/_src/$VERS/
+# cp NAMESPACE bkp/_src/$VERS/
+# cp -r setup bkp/_src/$VERS/
+# cp -r R bkp/_src/$VERS/
+# cp -r data bkp/_src/$VERS/
+# cp -r vignettes bkp/_src/$VERS/
+# cp -r man bkp/_src/$VERS/
+# cp -r inst bkp/_src/$VERS/
+
+
+# ----------------------------------------------------------------------------------- #
+# google drive sync
+
+# $:
+# DEV_BKP="/Users/aa/coding/oc/bkp/"
+# GOOGLE='/Volumes/GoogleDrive/Drive condivisi/TOOLS/OCTK'
+# rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"
+
+
+
+

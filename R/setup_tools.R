@@ -4,6 +4,13 @@
 # MEMO: funzione eseguite in "dev.R" per inizializzare i complementi al package per il bimestre
 # WARNING: richiede oc_init
 
+
+# ----------------------------------------------------------------------------------- #
+# chk progetti
+
+# TODO: creare diagnostico generale
+
+
 # ----------------------------------------------------------------------------------- #
 # progetti_light
 
@@ -13,10 +20,10 @@
 #'
 #' @param bimestre Bimestre di riferimento.
 #' @return Il dataset viene salvato in DATA e può essere caricato con load_progetti(light = TRUE).
-setup_light <- function(bimestre) {
+setup_light <- function(bimestre, fix = FALSE) {
   if (exists("DATA", envir = .GlobalEnv)) {
     # loads
-    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE, fix = FALSE)
+    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
 
     # clean
     progetti_light <- progetti %>%
@@ -53,6 +60,12 @@ setup_light <- function(bimestre) {
              COD_STRUMENTO,
              DESCR_STRUMENTO,
              DESCR_TIPO_STRUMENTO,
+
+             COD_PROGETTO_COMPLESSO,
+             DESCRIZIONE_PROGETTO_COMPLESSO,
+             COD_TIPO_COMPLESSITA,
+             DESCR_TIPO_COMPLESSITA,
+
              CUP_COD_NATURA,
              CUP_DESCR_NATURA,
              CUP_COD_TIPOLOGIA,
@@ -97,15 +110,15 @@ setup_light <- function(bimestre) {
              # FINANZ_TOTALE_PUBBLICO,
              # ECONOMIE_TOTALI,
              # ECONOMIE_TOTALI_PUBBLICHE,
-             OC_FINANZ_UE_NETTO,
+             # OC_FINANZ_UE_NETTO, # DA RIPRISTINARE
              # OC_FINANZ_UE_FESR_NETTO,
              # OC_FINANZ_UE_FSE_NETTO,
              # OC_FINANZ_UE_FEASR_NETTO,
              # OC_FINANZ_UE_FEAMP_NETTO,
              # OC_FINANZ_UE_IOG_NETTO,
-             OC_FINANZ_STATO_FONDO_ROT_NETTO,
-             OC_FINANZ_STATO_FSC_NETTO,
-             OC_FINANZ_STATO_PAC_NETTO,
+             # OC_FINANZ_STATO_FONDO_ROT_NETTO, # DA RIPRISTINARE
+             # OC_FINANZ_STATO_FSC_NETTO, # DA RIPRISTINARE
+             # OC_FINANZ_STATO_PAC_NETTO, # DA RIPRISTINARE
              # OC_FINANZ_STATO_COMPL_NETTO,
              # OC_FINANZ_STATO_ALTRI_PROV_NETTO,
              # OC_FINANZ_REGIONE_NETTO,
@@ -178,10 +191,10 @@ setup_light <- function(bimestre) {
              # OC_DESCR_FORMA_GIU_ATTUATORE,
              # OC_TOTALE_ATTUATORI,
              OC_CODFISC_BENEFICIARIO,
-             OC_DENOM_BENEFICIARIO,
-             OC_COD_FORMA_GIU_BENEFICIARIO,
-             OC_DESCR_FORMA_GIU_BENEFICIARIO,
-             OC_TOTALE_BENEFICIARI,
+             OC_DENOM_BENEFICIARIO #,
+             # OC_COD_FORMA_GIU_BENEFICIARIO,  # DA RIPRISTINARE
+             # OC_DESCR_FORMA_GIU_BENEFICIARIO,  # DA RIPRISTINARE
+             # OC_TOTALE_BENEFICIARI,
              # OC_CODFISC_REALIZZATORE,
              # OC_DENOM_REALIZZATORE,
              # OC_COD_FORMA_GIU_REALIZZATORE,
@@ -209,9 +222,9 @@ setup_light <- function(bimestre) {
              # PROGRAMMATO_INDICATORE_4,
              # REALIZZATO_INDICATORE_4,
              # OC_FLAG_REGIONE_UNICA,
-             OC_FLAG_VISUALIZZAZIONE,
+             # OC_FLAG_VISUALIZZAZIONE,
              # OC_FLAG_PAC,
-             DATA_AGGIORNAMENTO #,
+             # DATA_AGGIORNAMENTO,
              # OC_FOCUS
       )
 
@@ -320,15 +333,16 @@ make_matrix_po <- function(bimestre) {
     mutate(QUERY = 0,
            NOTE = NA)
 
-  file.rename(file.path("data-raw", "po_linee_azioni.csv"), file.path("data-raw", "po_linee_azioni_OLD.csv"))
+  file.rename(file.path(getwd(), "setup", "data-raw", "po_linee_azioni.csv"),
+              file.path(getwd(), "setup", "data-raw", "po_linee_azioni_OLD.csv"))
 
-  write_delim(out, file.path("data-raw", "po_linee_azioni_NEW.csv"), delim = ";", na = "")
+  write_delim(out, file.path(getwd(), "setup", "data-raw", "po_linee_azioni_NEW.csv"), delim = ";", na = "")
 }
 
 # confronta programmi_linee_azioni e isola delta
 chk_delta_po <- function(da="NEW") {
-  old <- read_csv2(file.path("data-raw", "po_linee_azioni_OLD.csv"))
-  new <- read_csv2(file.path("data-raw", "po_linee_azioni_NEW.csv"))
+  old <- read_csv2(file.path(getwd(), "setup", "data-raw", "po_linee_azioni_OLD.csv"))
+  new <- read_csv2(file.path(getwd(), "setup", "data-raw", "po_linee_azioni_NEW.csv"))
   if (da == "OLD") {
     delta <- old %>% anti_join(new, by = c("OC_CODICE_PROGRAMMA",
                                            "OC_COD_ARTICOLAZ_PROGRAMMA",
@@ -394,7 +408,7 @@ make_matrix_strum <- function(bimestre, file_name="strum_att.csv") {
     mutate(QUERY = 0,
            NOTE = NA)
 
-  write_delim(out, file.path("data-raw", file_name), delim = ";", na = "")
+  write_delim(out, file.path(getwd(), "setup", "data-raw", file_name), delim = ";", na = "")
 }
 
 
@@ -402,15 +416,21 @@ make_matrix_strum <- function(bimestre, file_name="strum_att.csv") {
 make_matrix_cipe <- function(bimestre, file_name="delib_cipe.csv") {
 
   # load finanziamenti
-  temp <- paste0("finanziamenti_esteso_", bimestre, ".csv")
-  delibere <- read_csv2(file.path(DATA, temp), guess_max = 5000)
+  # temp <- paste0("finanziamenti_esteso_", bimestre, ".csv")
+  # delibere <- read_csv2(file.path(DATA, temp), guess_max = 5000)
+  temp <- file.path(DATA, "finanziamenti_preesteso.sas7bdat")
+  delibere <- read_sas(temp)
 
   out <- delibere %>%
     # distinct(COD_DEL_CIPE, NUMERO_DEL_CIPE, ANNO_DEL_CIPE, TIPO_QUOTA, DESCRIZIONE_QUOTA, IMPORTO) %>%
+    # distinct(NUMERO_DEL_CIPE, ANNO_DEL_CIPE, DESCRIZIONE_QUOTA) %>%
+    rename(NUMERO_DEL_CIPE = numero_del_cipe,
+           ANNO_DEL_CIPE = anno_del_cipe) %>%
     distinct(NUMERO_DEL_CIPE, ANNO_DEL_CIPE, DESCRIZIONE_QUOTA) %>%
     mutate(QUERY = 0,
            NOTE = NA)
 
-  write_delim(out, file.path("data-raw", file_name), delim = ";", na = "")
+  write_delim(out, file.path(getwd(), "setup", "data-raw", file_name), delim = ";", na = "")
 }
+
 
