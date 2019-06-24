@@ -112,4 +112,23 @@ fix_progetti <- function(progetti) {
   return(progetti)
 }
 
+#' Refactor per perimetro di progetti
+#'
+#' Integra un perimetro di progetti appena caricato con i factor per x_MACROAREA, x_AMBITO e OC_STATO_PROCEDURALE.
+#'
+#' @param perimetro Dataset in formato standard.
+#' @return Il dataset integrato.
+refactor_progetti <- function(perimetro) {
 
+  perimetro <- perimetro %>%
+    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
+           x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "SNAI")),
+           OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE, levels = c("Non avviato",
+                                                                          "In avvio di progettazione",
+                                                                          "In corso di progettazione",
+                                                                          "In affidamento",
+                                                                          "In esecuzione",
+                                                                          "Eseguito",
+                                                                          "Non determinabile")))
+  return(perimetro)
+}
