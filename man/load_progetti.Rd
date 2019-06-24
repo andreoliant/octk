@@ -4,8 +4,8 @@
 \alias{load_progetti}
 \title{Carica il dataset progetti}
 \usage{
-load_progetti(bimestre, visualizzati = TRUE, debug = FALSE,
-  light = FALSE, refactor = FALSE)
+load_progetti(bimestre, data_path = NULL, visualizzati = TRUE,
+  debug = FALSE, light = FALSE, refactor = FALSE)
 }
 \arguments{
 \item{bimestre}{Stringa in formato "20180630" come da standard per le date in OC.}

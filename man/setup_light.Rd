@@ -4,7 +4,7 @@
 \alias{setup_light}
 \title{Crea progetti_light.csv}
 \usage{
-setup_light(bimestre)
+setup_light(bimestre, fix = FALSE)
 }
 \arguments{
 \item{bimestre}{Bimestre di riferimento.}

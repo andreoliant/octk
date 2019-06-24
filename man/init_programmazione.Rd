@@ -2,15 +2,17 @@
 % Please edit documentation in R/programmazione.R
 \name{init_programmazione}
 \alias{init_programmazione}
-\title{Inizializza il databse della programmazione}
+\title{Inizializza il database della programmazione}
 \usage{
-init_programmazione(usa_temi = FALSE, export = FALSE)
+init_programmazione(usa_temi = FALSE, export = TRUE)
 }
 \arguments{
-\item{...}{...}
+\item{usa_temi}{Vuoi caricare il dataset FSC con correzione dei temi prioritari?}
+
+\item{export}{Vuoi avere le tabelle del DB nel GlobalEnv?}
 }
 \value{
-L'intero datbase dei programmazione.
+L'intero datbase dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.
 }
 \description{
 Carica il databse della programmazione, con pulizia della codifica di aree tematiche e temi prioritari FSC.
