@@ -154,11 +154,7 @@ get_regione_simply <- function(df, progetti=NULL, real_reg=TRUE) {
                COD_REGIONE == "001" ~ "PIEMONTE",
                COD_REGIONE == "002" ~ "VALLE D'AOSTA",
                COD_REGIONE == "003" ~ "LOMBARDIA",
-               COD_PROVINCIA == "004021" ~ "PA BOLZANO",
-               COD_PROVINCIA == "004022" ~ "PA TRENTO",
-               COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "2BO5-1a-237" ~ "PA BOLZANO", # MEMO: progetto del POR PA Bolzano
-               COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "1ML1279" ~ "PA TRENTO", # MEMO: progetto del PON AdS FSE forzato qui
-               COD_REGIONE == "004" ~ "PA BOLZANO", # "TRENTINO-ALTO ADIGE"
+
                COD_REGIONE == "005" ~ "VENETO",
                COD_REGIONE == "006" ~ "FRIULI-VENEZIA GIULIA", # "FRIULI-VENEZIA GIULIA"
                COD_REGIONE == "007" ~ "LIGURIA",
@@ -175,6 +171,13 @@ get_regione_simply <- function(df, progetti=NULL, real_reg=TRUE) {
                COD_REGIONE == "017" ~ "BASILICATA",
                COD_REGIONE == "018" ~ "CALABRIA",
                COD_REGIONE == "019" ~ "SICILIA",
+
+               COD_PROVINCIA == "004021" ~ "PA BOLZANO",
+               COD_PROVINCIA == "004022" ~ "PA TRENTO",
+               COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "2BO5-1a-237" ~ "PA BOLZANO", # MEMO: progetto del POR PA Bolzano
+               COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "1ML1279" ~ "PA TRENTO", # MEMO: progetto del PON AdS FSE forzato qui
+               # COD_REGIONE == "004" ~ "PA BOLZANO", # "TRENTINO-ALTO ADIGE"
+
                TRUE ~ "ALTRO TERRITORIO")) %>%
     mutate(x_REGIONE = factor(x_REGIONE, levels = temp))
 
