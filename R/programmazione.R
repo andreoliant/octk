@@ -40,15 +40,26 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE){
       filter(OC_FLAG_ULTIMA_DECISIONE == "X")
   }
 
+  if (use_temi == TRUE) {
+    appo <- appo %>%
+      select(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA, OC_TIPOLOGIA_PROGRAMMA,
+             OC_DESCR_FONTE,
+             FINANZ_TOTALE_PUBBLICO,
+             OC_MACROAREA, DEN_REGIONE,
+             # MEMO: questa è per "_temi"
+             DESCR_SETTORE_STRATEGICO_FSC,	DESCR_ASSE_TEMATICO_FSC,	COD_RA,	DESCR_RA,
+             # NEW: inserito per match con SUS
+             OC_COD_ARTICOLAZ_PROGRAMMA)
+  } else {
+    appo <- appo %>%
+      select(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA, OC_TIPOLOGIA_PROGRAMMA,
+             OC_DESCR_FONTE,
+             FINANZ_TOTALE_PUBBLICO,
+             OC_MACROAREA, DEN_REGIONE)
+  }
+
+
   appo <- appo %>%
-    select(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA, OC_TIPOLOGIA_PROGRAMMA,
-           OC_DESCR_FONTE,
-           FINANZ_TOTALE_PUBBLICO,
-           OC_MACROAREA, DEN_REGIONE,
-           # MEMO: questa è per "_temi"
-           DESCR_SETTORE_STRATEGICO_FSC,	DESCR_ASSE_TEMATICO_FSC,	COD_RA,	DESCR_RA,
-           # NEW: inserito per match con SUS
-           OC_COD_ARTICOLAZ_PROGRAMMA) %>%
     mutate(OC_MACROAREA = toupper(OC_MACROAREA),
            DEN_REGIONE = toupper(DEN_REGIONE)) %>%
     mutate(x_MACROAREA = case_when(OC_MACROAREA == "NC" ~ "Nazionale", # MEMO: nel modello è presenta anche "Trasversale"
