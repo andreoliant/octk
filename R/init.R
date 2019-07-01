@@ -57,6 +57,8 @@ oc_init <- function(bimestre, db_ver,
     if (is.null(drive_root)) {
       ROOT <- "/Volumes/GoogleDrive/Drive condivisi"
       # TODO: inserire switch e default per mac/win
+    } else {
+      ROOT <- drive_root
     }
     # data_path <- file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART")
     # db_path <- file.path(ROOT, "DATI", bimestre, "PROGRAMMAZIONE", db_ver)

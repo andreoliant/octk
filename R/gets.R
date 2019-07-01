@@ -89,11 +89,13 @@ get_dimensione_fin <- function(df, debug_mode=FALSE) {
 #' @param progetti Dataset "progetti".
 #' @param real_reg Vuoi usare le regioni reali?.
 #' @return Il dataset con la variabile x_REGIONE, come factor.
-get_regione_simply <- function(df, progetti=NULL, real_reg=TRUE) {
+get_regione_simply <- function(df, progetti, real_reg=TRUE) {
   # MEMO: deve avere struttura di progetti
 
-  if (is.null(progetti)) {
-    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  if (missing(progetti)) {
+    if (!exists("progetti", envir = .GlobalEnv)) {
+      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    }
   }
 
   # NEW BLOCK
@@ -196,7 +198,7 @@ get_regione_simply <- function(df, progetti=NULL, real_reg=TRUE) {
 #' @return Il dataset con la variabile x_MACROAREA, come factor con levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero").
 #' @note La modalità **debug** non + implementata. La modalità **real_reg** forza tutti i progetti
 #' di un programma regionale sul territorio della Regione e sulla relativa macroarea.
-get_macroarea <- function(df, progetti=NULL, real_reg=TRUE, debug_mode=FALSE) {
+get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
   # DEBUG:
   # df <- perimetro
   # DEV: da implementare via progetti e con debug_mode (come per "get_stato_attuazione.R")
@@ -204,8 +206,10 @@ get_macroarea <- function(df, progetti=NULL, real_reg=TRUE, debug_mode=FALSE) {
   # load progetti
   # source("loader.R")
 
-  if (is.null(progetti)) {
-    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  if (missing(progetti)) {
+    if (!exists("progetti", envir = .GlobalEnv)) {
+      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    }
   }
 
   # NEW BLOCK
@@ -588,7 +592,7 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
 #' @param progetti Dataset "progetti".
 #' @return Il dataset con la variabile COD_REGIONE modificata.
 #' @note La modalità **debug** non + implementata.
-get_real_reg <- function(df, progetti=NULL, debug_mode=FALSE) {
+get_real_reg <- function(df, progetti, debug_mode=FALSE) {
 
   # df <- progetti[1000000:1000200, c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "COD_REGIONE")]
   # df <- get_x_vars(df)
@@ -596,22 +600,24 @@ get_real_reg <- function(df, progetti=NULL, debug_mode=FALSE) {
   # MEMO: richiede e sovrascrive COD_REGIONE
   # MEMO: richiede x_REGNAZ
 
-  if (is.null(progetti)) {
-    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  if (missing(progetti)) {
+    if (!exists("progetti", envir = .GlobalEnv)) {
+      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    }
   }
 
   # NEW BLOCK
   if (!any(names(df) == "COD_REGIONE")) {
     df <- df %>%
       left_join(progetti %>%
-                  select(COD_LOCALE_PROGETTO, COD_REGIONE, DEN_REGIONE, COD_PROVINCIA),
+                  select(COD_LOCALE_PROGETTO, COD_REGIONE, DEN_REGIONE),
                 by = "COD_LOCALE_PROGETTO")
 
   } else if (!any(names(df) == "DEN_REGIONE")) {
     df <- df %>%
       left_join(progetti %>%
-                  select(COD_LOCALE_PROGETTO, DEN_REGIONE, COD_PROVINCIA),
-                by = "COD_LOCALE_PROGETTO")
+                  select(COD_LOCALE_PROGETTO, COD_REGIONE, DEN_REGIONE),
+                by = c("COD_LOCALE_PROGETTO", "COD_REGIONE"))
   }
 
   appo <- octk::po_riclass %>%
@@ -640,7 +646,8 @@ get_real_reg <- function(df, progetti=NULL, debug_mode=FALSE) {
                        x_REGNAZ == "CALABRIA" ~ "018",
                        x_REGNAZ == "SICILIA" ~ "019",
                        x_REGNAZ == "NAZ" ~ "",
-                       TRUE ~ "CHK"))
+                       TRUE ~ "CHK")) %>%
+    select(-x_REGNAZ)
 
   out <- df %>%
     left_join(appo, by = "OC_CODICE_PROGRAMMA") %>%

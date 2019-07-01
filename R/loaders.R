@@ -12,11 +12,11 @@
 #' @return Il dataset viene caricato come "progetti" nel Global Environment. Se "progetti" è gia presente compare una notifica.
 load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FALSE, light=FALSE, refactor=FALSE)
 {
-  if (exists("progetti", envir = .GlobalEnv)) {
-    print("Progetti esteso è gia caricato")
-    progetti <- progetti
-
-  } else {
+  # if (exists("progetti", envir = .GlobalEnv)) {
+  #   print("Progetti esteso è gia caricato")
+  #   progetti <- progetti
+  #
+  # } else {
 
     # switch di filename per progetti_light
     if (light == TRUE) {
@@ -55,16 +55,7 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
     # refactor
     # MEMO: si applica solo a light
     if (light == TRUE & refactor == TRUE) {
-      progetti <- progetti %>%
-        mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
-               x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "SNAI")),
-               OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE, levels = c("Non avviato",
-                                                                              "In avvio di progettazione",
-                                                                              "In corso di progettazione",
-                                                                              "In affidamento",
-                                                                              "In esecuzione",
-                                                                              "Eseguito",
-                                                                              "Non determinabile")))
+      progetti <- refactor_progetti(progetti)
     }
 
     # debug
@@ -78,7 +69,7 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
                      " miliardi di euro."))
     }
     return(progetti)
-  }
+  # }
 }
 
 
@@ -104,10 +95,13 @@ fix_progetti <- function(progetti) {
   #                                  DEN_REGIONE == "EMILIA" ~ "EMILIA-ROMAGNA", # fix per denominazione doppia
   #                                  DEN_REGIONE == "FRIULI" ~ "FRIULI-VENEZIA GIULIA",
   #                                  TRUE ~ DEN_REGIONE))
-  progetti <- progetti %>%
-    mutate(FONDO_COMUNITARIO = case_when(OC_CODICE_PROGRAMMA == "2014IT16M2OP006" & is.na(FONDO_COMUNITARIO) ~ "FESR",
-                                         # MEMO: forzo su FESR
-                                         TRUE ~ FONDO_COMUNITARIO))
+
+  # progetti <- progetti %>%
+  #   mutate(FONDO_COMUNITARIO = case_when(OC_CODICE_PROGRAMMA == "2014IT16M2OP006" & is.na(FONDO_COMUNITARIO) ~ "FESR",
+  #                                        # MEMO: forzo su FESR ma c'è anche FSE
+  #                                        TRUE ~ FONDO_COMUNITARIO))
+
+  progetti <- progetti
 
   return(progetti)
 }
@@ -122,7 +116,7 @@ refactor_progetti <- function(perimetro) {
 
   perimetro <- perimetro %>%
     mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
-           x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "SNAI")),
+           x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "YEI", "SNAI")),
            OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE, levels = c("Non avviato",
                                                                           "In avvio di progettazione",
                                                                           "In corso di progettazione",

@@ -33,7 +33,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE){
   # appo <-  read_excel(file.path(DATA, "db", filename), guess_max = 5000) # MEMO: versione prima di GoogleDrive
   appo <-  read_excel(file.path(DB, filename), guess_max = 5000)
 
-  if (ambito == "FESR" | ambito == "FSE") {
+  if (ambito == "FESR" | ambito == "FSE" | ambito == "YEI") {
     appo <- appo %>%
       filter(OC_DESCR_FONTE == ambito) %>%
       # MEMO: questo serve per integrare versione con Asse
@@ -206,5 +206,8 @@ make_risorse <- function(usa_713=FALSE)
     risorse <- risorse %>%
       bind_rows(risorse_713)
   }
+
+  rm(po_fsc, po_fesr, po_fse, po_poc)
+
   return(risorse)
 }
