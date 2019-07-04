@@ -4,7 +4,8 @@
 \alias{export_report_regione}
 \title{Esporta report regionale in Excel}
 \usage{
-export_report_regione(report, regione, bimestre)
+export_report_regione(report, regione, bimestre = bimestre,
+  OUTPUT = OUTPUT)
 }
 \arguments{
 \item{report}{Dataset prodotto con report_regione().}
