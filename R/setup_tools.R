@@ -30,7 +30,7 @@ setup_light <- function(bimestre, fix = FALSE) {
       select(COD_LOCALE_PROGETTO,
              CUP,
              OC_TITOLO_PROGETTO,
-             # OC_SINTESI_PROGETTO,
+             OC_SINTESI_PROGETTO,
              # OC_LINK,
              # OC_COD_CICLO,
              # OC_DESCR_CICLO,
@@ -110,15 +110,15 @@ setup_light <- function(bimestre, fix = FALSE) {
              # FINANZ_TOTALE_PUBBLICO,
              # ECONOMIE_TOTALI,
              # ECONOMIE_TOTALI_PUBBLICHE,
-             # OC_FINANZ_UE_NETTO, # DA RIPRISTINARE
+             OC_FINANZ_UE_NETTO, # DA RIPRISTINARE
              # OC_FINANZ_UE_FESR_NETTO,
              # OC_FINANZ_UE_FSE_NETTO,
              # OC_FINANZ_UE_FEASR_NETTO,
              # OC_FINANZ_UE_FEAMP_NETTO,
              # OC_FINANZ_UE_IOG_NETTO,
-             # OC_FINANZ_STATO_FONDO_ROT_NETTO, # DA RIPRISTINARE
-             # OC_FINANZ_STATO_FSC_NETTO, # DA RIPRISTINARE
-             # OC_FINANZ_STATO_PAC_NETTO, # DA RIPRISTINARE
+             OC_FINANZ_STATO_FONDO_ROT_NETTO, # DA RIPRISTINARE
+             OC_FINANZ_STATO_FSC_NETTO, # DA RIPRISTINARE
+             OC_FINANZ_STATO_PAC_NETTO, # DA RIPRISTINARE
              # OC_FINANZ_STATO_COMPL_NETTO,
              # OC_FINANZ_STATO_ALTRI_PROV_NETTO,
              # OC_FINANZ_REGIONE_NETTO,
@@ -191,9 +191,9 @@ setup_light <- function(bimestre, fix = FALSE) {
              # OC_DESCR_FORMA_GIU_ATTUATORE,
              # OC_TOTALE_ATTUATORI,
              OC_CODFISC_BENEFICIARIO,
-             OC_DENOM_BENEFICIARIO #,
-             # OC_COD_FORMA_GIU_BENEFICIARIO,  # DA RIPRISTINARE
-             # OC_DESCR_FORMA_GIU_BENEFICIARIO,  # DA RIPRISTINARE
+             OC_DENOM_BENEFICIARIO,
+             OC_COD_FORMA_GIU_BENEFICIARIO,  # DA RIPRISTINARE
+             OC_DESCR_FORMA_GIU_BENEFICIARIO,  # DA RIPRISTINARE
              # OC_TOTALE_BENEFICIARI,
              # OC_CODFISC_REALIZZATORE,
              # OC_DENOM_REALIZZATORE,
@@ -222,7 +222,7 @@ setup_light <- function(bimestre, fix = FALSE) {
              # PROGRAMMATO_INDICATORE_4,
              # REALIZZATO_INDICATORE_4,
              # OC_FLAG_REGIONE_UNICA,
-             # OC_FLAG_VISUALIZZAZIONE,
+             OC_FLAG_VISUALIZZAZIONE #,
              # OC_FLAG_PAC,
              # DATA_AGGIORNAMENTO,
              # OC_FOCUS
@@ -432,5 +432,6 @@ make_matrix_cipe <- function(bimestre, file_name="delib_cipe.csv") {
 
   write_delim(out, file.path(getwd(), "setup", "data-raw", file_name), delim = ";", na = "")
 }
+
 
 
