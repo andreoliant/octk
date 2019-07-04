@@ -4,7 +4,7 @@
 \alias{get_real_reg}
 \title{Definisce la regione reale}
 \usage{
-get_real_reg(df, progetti = NULL, debug_mode = FALSE)
+get_real_reg(df, progetti, debug_mode = FALSE)
 }
 \arguments{
 \item{df}{Dataset con un perimetro in formato "progetti".}

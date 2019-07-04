@@ -4,8 +4,7 @@
 \alias{get_macroarea}
 \title{Definisce la macroarea}
 \usage{
-get_macroarea(df, progetti = NULL, real_reg = TRUE,
-  debug_mode = FALSE)
+get_macroarea(df, progetti, real_reg = TRUE, debug_mode = FALSE)
 }
 \arguments{
 \item{df}{Dataset con un perimetro in formato "progetti".}

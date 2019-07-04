@@ -4,7 +4,7 @@
 \alias{get_regione_simply}
 \title{Semplifica la denominazione di Regioni e Province Autonome}
 \usage{
-get_regione_simply(df, progetti = NULL, real_reg = TRUE)
+get_regione_simply(df, progetti, real_reg = TRUE)
 }
 \arguments{
 \item{df}{Dataset con un perimetro in formato "progetti".}

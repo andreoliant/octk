@@ -4,7 +4,7 @@
 \alias{report_regione}
 \title{Crea report regionale}
 \usage{
-report_regione(regione, debug = TRUE)
+report_regione(regione, progetti, debug = TRUE)
 }
 \arguments{
 \item{regione}{Regione di interesse.}
