@@ -161,7 +161,7 @@ report_cd_regioni <- function(perimetro, ciclo=NULL, ambito=NULL, gruppo=NULL, p
     mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
 
   if (export == TRUE) {
-    write.csv2(out, file.path(OUTPUT, temp), row.names = FALSE)
+    write.csv2(out, file.path(TEMP, temp), row.names = FALSE)
   }
   return(out)
 }
@@ -349,7 +349,7 @@ report_cd_patti <- function(perimetro, focus="elab", export=FALSE) {
     mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
 
   if (export == TRUE) {
-    write.csv2(out, file.path(OUTPUT, temp), row.names = FALSE)
+    write.csv2(out, file.path(TEMP, temp), row.names = FALSE)
   }
   return(out)
 }
@@ -499,7 +499,7 @@ report_cd_pianinaz <- function(perimetro, focus="elab", export=FALSE) {
     select(-x_PROGRAMMA)
 
   if (export == TRUE) {
-    write.csv2(out, file.path(OUTPUT, temp), row.names = FALSE)
+    write.csv2(out, file.path(TEMP, temp), row.names = FALSE)
   }
   return(out)
 }
@@ -611,7 +611,7 @@ report_cd_totali_ambito <- function(perimetro, export=FALSE, focus=NULL, ciclo=N
       }
     }
     # export
-    write.csv2(totali_ambito, file.path(OUTPUT, temp) , row.names = FALSE)
+    write.csv2(totali_ambito, file.path(TEMP, temp) , row.names = FALSE)
     print(paste0("Output salvato in ", temp))
   }
   return(totali_ambito)
@@ -664,7 +664,7 @@ report_cd_regioni_sintesi <- function(perimetro, use_coe=TRUE, export=FALSE, foc
       }
     }
     # export
-    write.csv2(sintesi_regioni, file.path(OUTPUT, temp), row.names = FALSE)
+    write.csv2(sintesi_regioni, file.path(TEMP, temp), row.names = FALSE)
     print(paste0("Output salvato in ", temp))
   }
   return(sintesi_regioni)
@@ -719,7 +719,7 @@ report_cd_regioni_classi <- function(perimetro, use_coe=TRUE, export=FALSE, focu
       }
     }
     # export
-    write.csv2(classi_regioni, file.path(OUTPUT, temp), row.names = FALSE)
+    write.csv2(classi_regioni, file.path(TEMP, temp), row.names = FALSE)
     print(paste0("Output salvato in ", temp))
   }
   return(classi_regioni)
@@ -790,6 +790,85 @@ get_spalla_regioni <- function() {
 # programmazione
 
 
+#' Esporta report per Programmi in formato CD
+#'
+#' Report con apertura per programma e fase procedurale rispetto al focus selezionato
+#'
+#' @param perimetro Dataset di classe perimetro.
+#' @param focus nome per file.
+#' @param export vuoi salvare il file?
+#' @return Un file csv con apertura per programma e fase procedurale.
+report_cd_programmi <- function(perimetro, focus="elab", usa_meuro=FALSE, export=FALSE) {
+
+  # TODO:
+  # correggere "FESR-FSE"
+  # inserire verifica bimestre precedente
+
+  # appo <- perimetro %>%
+  #   mutate(x_PROGRAMMA = factor(x_PROGRAMMA, levels = c("PATTO EMILIA-ROMAGNA", "PATTO LOMBARDIA", "PATTO LAZIO",
+  #                                                       "PATTO BOLOGNA", "PATTO FIRENZE", "PATTO GENOVA", "PATTO MILANO", "PATTO VENEZIA",
+  #                                                       "PATTO ABRUZZO", "PATTO BASILICATA", "PATTO CALABRIA",  "PATTO CAMPANIA",
+  #                                                       "PATTO MOLISE", "PATTO PUGLIA", "PATTO SARDEGNA",  "PATTO SICILIA",
+  #                                                       "PATTO BARI", "PATTO CAGLIARI", "PATTO CATANIA",  "PATTO MESSINA",
+  #                                                       "PATTO NAPOLI", "PATTO PALERMO", "PATTO REGGIO CALABRIA")))
+
+  appo <- perimetro
+
+  temp <- paste0(focus, "_programmi.csv")
+
+  programmi <- init_programmazione(usa_temi=FALSE, export=FALSE)
+
+  if (usa_meuro == TRUE) {
+    programmi<- programmi  %>%
+      mutate(RISORSE = round(RISORSE / 1000000, 1))
+  }
+
+  # spalla con risorse (per tutti i programmi)
+  # spalla <- programmi %>%
+  #   group_by(OC_CODICE_PROGRAMMA) %>%
+  #   summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)) %>%
+  #   left_join(octk::po_riclass %>%
+  #               select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA),
+  #             by = "OC_CODICE_PROGRAMMA") %>%
+  #   select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, RISORSE)
+
+  spalla <- octk::po_riclass %>%
+    select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA) %>%
+    filter(x_CICLO != "2000-2006",
+           x_AMBITO != "CTE",
+           x_AMBITO != "FEASR",
+           x_AMBITO != "FEAMP") %>%
+    left_join(programmi %>%
+                group_by(OC_CODICE_PROGRAMMA, x_AMBITO) %>%
+                summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)),
+              by = c("OC_CODICE_PROGRAMMA", "x_AMBITO"))
+
+
+
+  # report
+  out <- spalla %>%
+    # TODO: inserire filtro sopra!!! Non posso usare solo quello con right_join su attuazione
+    full_join(appo %>%
+                group_by(OC_CODICE_PROGRAMMA) %>%
+                summarise(N = n(),
+                          CP = sum(CP, na.rm = TRUE),
+                          IMP = sum(IMP, na.rm = TRUE),
+                          PAG = sum(PAG, na.rm = TRUE),
+                          COE = sum(COE, na.rm = TRUE)) %>%
+                left_join(appo %>%
+                            group_by(OC_CODICE_PROGRAMMA, OC_STATO_PROCEDURALE) %>%
+                            summarise(COE = sum(COE, na.rm = TRUE)) %>%
+                            spread(OC_STATO_PROCEDURALE, COE, fill = 0, drop = FALSE),
+                          by = "OC_CODICE_PROGRAMMA"),
+              by = "OC_CODICE_PROGRAMMA") %>%
+  # riempie NA con 0
+  mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
+
+  if (export == TRUE) {
+    write.csv2(out, file.path(TEMP, temp), row.names = FALSE)
+  }
+  return(out)
+}
 
 
 
