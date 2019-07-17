@@ -4,7 +4,8 @@
 \alias{load_db}
 \title{Carica un dataset dal database della programmazione}
 \usage{
-load_db(ciclo, ambito, simplify_loc = FALSE, use_temi = FALSE)
+load_db(ciclo, ambito, simplify_loc = FALSE, use_temi = FALSE,
+  use_sog = FALSE, use_ue = FALSE)
 }
 \arguments{
 \item{ciclo}{Ciclo di programmazione.}
@@ -14,6 +15,10 @@ load_db(ciclo, ambito, simplify_loc = FALSE, use_temi = FALSE)
 \item{simplify_loc}{Logico. Vuoi semplificare le localizzazioni per compatibilità con lo standard dei Report CD?}
 
 \item{use_temi}{Logico. Vuoi avere anche i temi prioritari FSC?}
+
+\item{use_sog}{Logico. Vuoi avere anche il soggetto programmatore?}
+
+\item{use_eu}{Logico. Vuoi avere anche il finanziamento EU e categoria di regione? (solo per SIE)}
 }
 \value{
 Il dataset di programmazione per l'ambito richiesto, con pulizia delle denominazioni territoriali e

@@ -4,15 +4,20 @@
 \alias{init_programmazione}
 \title{Inizializza il database della programmazione}
 \usage{
-init_programmazione(usa_temi = FALSE, export = TRUE)
+init_programmazione(usa_temi = FALSE, usa_sog = FALSE,
+  use_eu = FALSE, export = TRUE)
 }
 \arguments{
-\item{usa_temi}{Vuoi caricare il dataset FSC con correzione dei temi prioritari?}
+\item{usa_temi}{Vuoi caricare il DB con correzione dei temi prioritari?}
+
+\item{usa_sog}{Vuoi caricare il DB con il soggetto programmatore?}
 
 \item{export}{Vuoi avere le tabelle del DB nel GlobalEnv?}
+
+\item{usa_eu}{Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)}
 }
 \value{
-L'intero datbase dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.
+L'intero database dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.
 }
 \description{
 Carica il databse della programmazione, con pulizia della codifica di aree tematiche e temi prioritari FSC.
