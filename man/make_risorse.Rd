@@ -4,7 +4,7 @@
 \alias{make_risorse}
 \title{Quadro risorse programmate}
 \usage{
-make_risorse(usa_713 = FALSE)
+make_risorse(usa_713 = FALSE, usa_macroaree = FALSE)
 }
 \arguments{
 \item{usa_713}{Vuoi anche le risorse 2007-2013?}

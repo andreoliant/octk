@@ -21,6 +21,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   if (ciclo == "2014-2020") {
     temp <- case_when(ambito == "FESR" ~ "SIE",
                       ambito == "FSE" ~ "SIE",
+                      ambito == "FEASR" ~ "SIE",
                       ambito == "YEI" ~ "SIE", # CHK: decidere se vive
                       TRUE ~ ambito)
     filename <- paste0(temp, "_1420.xlsx")
@@ -35,7 +36,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   # appo <-  read_excel(file.path(DATA, "db", filename), guess_max = 5000) # MEMO: versione prima di GoogleDrive
   appo <-  read_excel(file.path(DB, filename), guess_max = 5000)
 
-  if (ambito == "FESR" | ambito == "FSE" | ambito == "YEI") {
+  if (ambito == "FESR" | ambito == "FSE" | ambito == "YEI" | ambito == "FEASR" ) {
     appo <- appo %>%
       filter(OC_DESCR_FONTE == ambito) %>%
       # MEMO: questo serve per integrare versione con Asse
@@ -61,7 +62,9 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
     #          DESCR_SETTORE_STRATEGICO_FSC,	DESCR_ASSE_TEMATICO_FSC,	COD_RA,	DESCR_RA,
     #          # NEW: inserito per match con SUS
     #          OC_COD_ARTICOLAZ_PROGRAMMA)
-  } else if (use_sog == TRUE) {
+  }
+
+  if (use_sog == TRUE) {
     var_ls <- c(var_ls,
                 "OC_DENOM_PROGRAMMATORE")
     # appo <- appo %>%
@@ -70,17 +73,20 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
     #          FINANZ_TOTALE_PUBBLICO,
     #          OC_MACROAREA, DEN_REGIONE,
     #          OC_DENOM_PROGRAMMATORE)
-  } else if (use_ue == TRUE) {
+  }
+
+  if (use_ue == TRUE) {
     var_ls <- c(var_ls,
                 "FINANZ_UE", "OC_AREA_OBIETTIVO_UE")
-    } else {
-    var_ls <- var_ls
+
     # appo <- appo %>%
     #   select(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA, OC_TIPOLOGIA_PROGRAMMA,
     #          OC_DESCR_FONTE,
     #          FINANZ_TOTALE_PUBBLICO,
     #          OC_MACROAREA, DEN_REGIONE)
   }
+
+  # DEV: prima era seuqenza di if+else esclusivi, ora sono if separati e addizionali
 
   # select
   appo <- appo %>%
