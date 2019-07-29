@@ -12,6 +12,7 @@
 #' @param workarea Percorso per la cartella di lavoro. Se vuoto, va di default nella wd.
 #' @param elab Nome della cartella dedicata al tipo di elebaorazione (solo con use_drive=TRUE)
 #' @param focus Nome della sotto-cartella dedicata all'elebaorazione (solo con use_drive=TRUE). Il nome viene usato anche nel naming dei file in output.
+#' @param ver Nome della sotto-sotto-cartella dedicata alla versione dell'elebaorazione (solo con use_drive=TRUE).
 #' @param use_drive Logico. Vuoi usare GoogleDrive?
 #' @param drive_root Percorso per la cartella di lavoro su GoogleDrive.
 #' @param DEV_MODE Logico. Vuoi usare la DEV_MODE?
@@ -20,7 +21,7 @@
 #' "input", "output" e "temp" nella workarea di progetto denominata come "focus" all'interno di "...".
 oc_init <- function(bimestre, db_ver,
                     data_path=NULL, db_path=NULL,
-                    workarea=NULL, elab=NULL, focus=NULL,
+                    workarea=NULL, elab=NULL, focus=NULL, ver=NULL,
                     use_drive=TRUE, drive_root=NULL,
                     DEV_MODE=FALSE) {
 
@@ -77,7 +78,13 @@ oc_init <- function(bimestre, db_ver,
       }
 
     } else {
-      WORK <- file.path(ROOT, "ELAB", bimestre, elab, focus)
+      if (is.null(ver)) {
+        WORK <- file.path(ROOT, "ELAB", bimestre, elab, focus, ver)
+        # MEMO: si applica solo in Drive
+
+      } else {
+        WORK <- file.path(ROOT, "ELAB", bimestre, elab, focus)
+      }
     }
 
   # go local

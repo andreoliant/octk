@@ -5,8 +5,8 @@
 \title{Inizializza OCTK}
 \usage{
 oc_init(bimestre, db_ver, data_path = NULL, db_path = NULL,
-  workarea = NULL, elab = NULL, focus = NULL, use_drive = TRUE,
-  drive_root = NULL, DEV_MODE = FALSE)
+  workarea = NULL, elab = NULL, focus = NULL, ver = NULL,
+  use_drive = TRUE, drive_root = NULL, DEV_MODE = FALSE)
 }
 \arguments{
 \item{bimestre}{Versione dei dati di attuazione da utilizzare. Stringa in formato "20180630" come da standard per le date in OC.}
@@ -22,6 +22,8 @@ oc_init(bimestre, db_ver, data_path = NULL, db_path = NULL,
 \item{elab}{Nome della cartella dedicata al tipo di elebaorazione (solo con use_drive=TRUE)}
 
 \item{focus}{Nome della sotto-cartella dedicata all'elebaorazione (solo con use_drive=TRUE). Il nome viene usato anche nel naming dei file in output.}
+
+\item{ver}{Nome della sotto-sotto-cartella dedicata alla versione dell'elebaorazione (solo con use_drive=TRUE).}
 
 \item{use_drive}{Logico. Vuoi usare GoogleDrive?}
 
