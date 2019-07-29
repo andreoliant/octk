@@ -4,7 +4,8 @@
 \alias{report_cd_programmi}
 \title{Esporta report per Programmi in formato CD}
 \usage{
-report_cd_programmi(perimetro, focus = "elab", export = FALSE)
+report_cd_programmi(perimetro, focus = "elab", usa_meuro = FALSE,
+  export = FALSE)
 }
 \arguments{
 \item{perimetro}{Dataset di classe perimetro.}
