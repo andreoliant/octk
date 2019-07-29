@@ -78,7 +78,7 @@ oc_init <- function(bimestre, db_ver,
       }
 
     } else {
-      if (is.null(ver)) {
+      if (!is.null(ver)) {
         WORK <- file.path(ROOT, "ELAB", bimestre, elab, focus, ver)
         # MEMO: si applica solo in Drive
 
