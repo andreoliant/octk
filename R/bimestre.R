@@ -140,8 +140,10 @@ make_report_bimestre <- function(bimestre, perimetro, last_bimestre, last_data_p
                 by = c("x_CICLO", "x_AMBITO")) %>%
       arrange(desc(x_CICLO), x_AMBITO) %>%
       mutate_if(is.numeric, funs(replace(., is.na(.), 0))) %>%
-      mutate(COE_DELTA = (COE - COE_LAST) / COE,
-             PAG_DELTA = (PAG - PAG_LAST) / PAG) %>%
+      # mutate(COE_DELTA = (COE - COE_LAST) / COE,
+      #        PAG_DELTA = (PAG - PAG_LAST) / PAG) %>%
+      mutate(COE_DELTA = (COE - COE_LAST) / COE_LAST,
+             PAG_DELTA = (PAG - PAG_LAST) / PAG_LAST) %>%
       mutate(COE_DELTA = if_else(is.infinite(COE_DELTA), 0, COE_DELTA),
              PAG_DELTA = if_else(is.infinite(PAG_DELTA), 0, PAG_DELTA)) %>%
       mutate(COE_DELTA = if_else(COE_DELTA > 1, 1, COE_DELTA),
@@ -268,8 +270,10 @@ delta_programmi <- function(bimestre, programmi, last_bimestre, last_data_path,
               by = "OC_CODICE_PROGRAMMA") %>%
     # riempie NA con 0
     mutate_if(is.numeric, funs(replace(., is.na(.), 0))) %>%
-    mutate(COE_DELTA = (COE - COE_LAST) / COE,
-           PAG_DELTA = (PAG - PAG_LAST) / PAG) %>%
+    # mutate(COE_DELTA = (COE - COE_LAST) / COE,
+    #        PAG_DELTA = (PAG - PAG_LAST) / PAG) %>%
+    mutate(COE_DELTA = (COE - COE_LAST) / COE_LAST,
+           PAG_DELTA = (PAG - PAG_LAST) / PAG_LAST) %>%
     mutate(COE_DELTA = if_else(is.infinite(COE_DELTA), 0, COE_DELTA),
            PAG_DELTA = if_else(is.infinite(PAG_DELTA), 0, PAG_DELTA)) %>%
     mutate(COE_DELTA = if_else(COE_DELTA > 1, 1, COE_DELTA),
