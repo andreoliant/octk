@@ -42,7 +42,7 @@ setup_light <- function(bimestre, fix = FALSE) {
              # OC_DESCR_FONTE,
              FONDO_COMUNITARIO,
              OC_CODICE_PROGRAMMA,
-             # OC_DESCRIZIONE_PROGRAMMA,
+             OC_DESCRIZIONE_PROGRAMMA,
              # COD_OB_TEMATICO,
              # DESCR_OB_TEMATICO,
              # COD_PRIORITA_INVEST,
