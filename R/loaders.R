@@ -116,7 +116,7 @@ refactor_progetti <- function(perimetro) {
 
   perimetro <- perimetro %>%
     mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
-           x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "YEI", "SNAI")),
+           x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "YEI", "SNAI", "FEASR")),
            x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")),
            OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE, levels = c("Non avviato",
                                                                           "In avvio di progettazione",
