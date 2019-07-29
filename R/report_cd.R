@@ -435,6 +435,9 @@ report_cd_pianinaz <- function(perimetro, focus="elab", export=FALSE) {
   appo <- perimetro %>%
     mutate(x_PROGRAMMA = case_when(x_PROGRAMMA == "PATTO PER LO SVILUPPO REGIONE CAMPANIA:::PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'" ~ "PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'",
                                    grepl("^PS AREE ", x_PROGRAMMA) ~ "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE",
+                                   # NEW:
+                                   x_PROGRAMMA == "PIANO STRALCIO DISSESTO IDROGEOLOGICO" ~ "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE",
+                                   x_PROGRAMMA == "PS AREE METROPOLITANE FONDO PROGETTAZIONE" ~ "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE",
                                    TRUE ~ x_PROGRAMMA)) %>%
     mutate(x_PIANI = case_when(x_PROGRAMMA == "PIANO OPERATIVO FSC INFRASTRUTTURE" ~ "INFRASTRUTTURE",
                                x_PROGRAMMA == "PIANO OPERATIVO FSC AMBIENTE" ~ "AMBIENTE",
@@ -442,7 +445,10 @@ report_cd_pianinaz <- function(perimetro, focus="elab", export=FALSE) {
                                x_PROGRAMMA == "PIANO OPERATIVO FSC AGRICOLTURA" ~ "AGRICOLTURA",
                                x_PROGRAMMA == "PIANO STRALCIO CULTURA E TURISMO" ~ "CULTURA E TURISMO",
                                x_PROGRAMMA == "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE" ~ "DISSESTO IDROG. AREE URBANE",
-                               x_PROGRAMMA == "PIANO STRALCIO RICERCA E INNOVAZIONE" ~ "RICERCA E INNOVAZIONE")) %>%
+                               x_PROGRAMMA == "PIANO STRALCIO RICERCA E INNOVAZIONE" ~ "RICERCA E INNOVAZIONE",
+                               # NEW
+                               x_PROGRAMMA == "PIANO STRALCIO DISSESTO IDROGEOLOGICO" ~ "DISSESTO IDROG. AREE URBANE",
+                               x_PROGRAMMA == "PS AREE METROPOLITANE FONDO PROGETTAZIONE" ~ "DISSESTO IDROG. AREE URBANE")) %>%
     mutate(x_PIANI = factor(x_PIANI, levels = c("INFRASTRUTTURE", "AMBIENTE", "IMPRESE E COMPETITIVITA'", "AGRICOLTURA",
                                                 "CULTURA E TURISMO", "DISSESTO IDROG. AREE URBANE", "RICERCA E INNOVAZIONE")))
   # TODO: queste riclassificazioni andrebbero gestite in po_linee_azioni o almeno in get_x_vars
