@@ -134,7 +134,6 @@ query_ue <- function(progetti) {
     rename(OC_COD_CATEGORIA_SPESA = COD_TEMA_CAMPO,
            OC_DESCR_CATEGORIA_SPESA = DESCR_TEMA_CAMPO,
            QUERY_UE = QUERY)
-
   # load categorie UE
   # message("Caricamento di clp_tema_campointervento.csv in corso...")
   # appo_tema <- read_csv2(file.path(DATA, "clp_tema_campointervento.csv")) %>%
@@ -144,13 +143,16 @@ query_ue <- function(progetti) {
 
   # merge
   peri_ue <- progetti %>%
-    select(COD_LOCALE_PROGETTO, OC_COD_CICLO, OC_COD_CATEGORIA_SPESA) %>%
+    # select(COD_LOCALE_PROGETTO, OC_COD_CICLO, OC_COD_CATEGORIA_SPESA) %>%
+    # MEMO: elimino OC_COD_CICLO perché assente in progetti_light
+    select(COD_LOCALE_PROGETTO, OC_COD_CATEGORIA_SPESA) %>%
     separate_rows(OC_COD_CATEGORIA_SPESA, sep = ":::") %>%
     # MEMO: fix temporaneo
     mutate(OC_COD_CATEGORIA_SPESA = gsub(":$", "", OC_COD_CATEGORIA_SPESA)) %>%
     inner_join(matrix_ue %>%
                  filter(QUERY_UE != 0),
-               by = c("OC_COD_CICLO", "OC_COD_CATEGORIA_SPESA")) %>%
+               # by = c("OC_COD_CICLO", "OC_COD_CATEGORIA_SPESA")) %>%
+               by = "OC_COD_CATEGORIA_SPESA") %>%
     # select(COD_LOCALE_PROGETTO, QUERY_UE)
     distinct(COD_LOCALE_PROGETTO, QUERY_UE)
   # WARNING: uso distinct rimuovere duplicati di CLP con temi molteplici
@@ -207,16 +209,25 @@ query_cipe <- function(progetti) {
 
   # load finanziamenti
   temp <- paste0("finanziamenti_esteso_", bimestre, ".csv")
-  delibere <- read_csv2(file.path(DATA, temp), guess_max = 5000)
+  if (file.exists(file.path(DATA, temp))) {
+    delibere <- read_csv2(file.path(DATA, temp), guess_max = 5000)
+    # MEMO: versione per retrocompatibilità
+  } else {
+    delibere <- read_sas(file.path(DATA, "finanziamenti_preesteso.sas7bdat")) %>%
+      rename(NUMERO_DEL_CIPE = numero_del_cipe,
+             ANNO_DEL_CIPE = anno_del_cipe,
+             IMPORTO = importo)
+  }
 
   # load matrix
   matrix_cipe <- read_csv2(file.path(INPUT, "delib_cipe.csv"))  %>%
     rename(QUERY_CIPE = QUERY)
 
   # merge
-  peri_cipe <- progetti %>%
+  appo <- progetti %>%
     select(COD_LOCALE_PROGETTO) %>%
     inner_join(delibere %>%
+                 filter(IMPORTO > 0) %>%
                  select(COD_LOCALE_PROGETTO, NUMERO_DEL_CIPE, ANNO_DEL_CIPE) %>%
                  inner_join(matrix_cipe %>%
                              filter(QUERY_CIPE != 0),
@@ -224,6 +235,14 @@ query_cipe <- function(progetti) {
                by = "COD_LOCALE_PROGETTO") %>%
     distinct(COD_LOCALE_PROGETTO, QUERY_CIPE)
   # MEMO: uso inner_join per tenere QUERY_CIPE
+
+  # appo %>% count(COD_LOCALE_PROGETTO) %>% filter(n>1)
+
+  # isola min per casi con più delibere (altirmenti duplica in pseudo)
+  peri_cipe <- appo %>%
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_CIPE = min(QUERY_CIPE))
+  # peri_cipe %>% count(COD_LOCALE_PROGETTO) %>% filter(n>1)
 
   return(peri_cipe)
 
@@ -240,22 +259,23 @@ query_ra <- function(progetti) {
 
   # load matrix
   matrix_ra <- read_csv2(file.path(INPUT, "ra.csv"))  %>%
-    rename(QUERY_RA = QUERY)
+    rename(QUERY_RA = QUERY,
+           COD_RISULTATO_ATTESO = COD_RIS_ATTESO)
 
   # merge
   peri_ra <- progetti %>%
-    mutate(COD_RIS_ATTESO = COD_RISULTATO_ATTESO) %>%
-    select(COD_LOCALE_PROGETTO, COD_RIS_ATTESO) %>%
-    separate_rows(COD_RIS_ATTESO, sep = ":::") %>%
-    mutate(COD_RIS_ATTESO = case_when(COD_RIS_ATTESO == "06.5.A" ~ "06.5",
-                                      COD_RIS_ATTESO == "06.5.B" ~ "06.5",
-                                      COD_RIS_ATTESO == "06.5.C" ~ "06.5",
-                                      COD_RIS_ATTESO == "06.5.D" ~ "06.5",
-                                      COD_RIS_ATTESO == "06.5.E" ~ "06.5",
-                                      TRUE ~ COD_RIS_ATTESO)) %>%
+    # mutate(COD_RIS_ATTESO = COD_RISULTATO_ATTESO) %>%
+    select(COD_LOCALE_PROGETTO, COD_RISULTATO_ATTESO) %>%
+    separate_rows(COD_RISULTATO_ATTESO, sep = ":::") %>%
+    mutate(COD_RISULTATO_ATTESO = case_when(COD_RISULTATO_ATTESO == "06.5.A" ~ "06.5",
+                                            COD_RISULTATO_ATTESO == "06.5.B" ~ "06.5",
+                                            COD_RISULTATO_ATTESO == "06.5.C" ~ "06.5",
+                                            COD_RISULTATO_ATTESO == "06.5.D" ~ "06.5",
+                                            COD_RISULTATO_ATTESO == "06.5.E" ~ "06.5",
+                                            TRUE ~ COD_RISULTATO_ATTESO)) %>%
     inner_join(matrix_ra %>%
                  filter(QUERY_RA != 0),
-               by = "COD_RIS_ATTESO") %>%
+               by = "COD_RISULTATO_ATTESO") %>%
     distinct(COD_LOCALE_PROGETTO, QUERY_RA)
   # MEMO: uso inner_join per tenere QUERY_RA
 
@@ -274,20 +294,44 @@ query_ra <- function(progetti) {
 query_atp <- function(progetti) {
 
   # load ambito FSC
-  ambito_rsc <- read_csv2(file.path(DATA, "ambito_FSC1420.csv"), guess_max = 5000) %>%
-    distinct(COD_LOCALE_PROGETTO,
-             COD_SETTORE_STRATEGICO_FSC, DESCR_SETTORE_STRATEGICO_FSC,
-             COD_ASSE_TEMATICO_FSC, DESCR_ASSE_TEMATICO_FSC)
+  if (file.exists(file.path(DATA, "ambito_FSC1420.csv"))) {
+    operazioni <- read_csv2(file.path(DATA, "ambito_FSC1420.csv"), guess_max = 5000) %>%
+      distinct(COD_LOCALE_PROGETTO,
+               COD_SETTORE_STRATEGICO_FSC, DESCR_SETTORE_STRATEGICO_FSC,
+               COD_ASSE_TEMATICO_FSC, DESCR_ASSE_TEMATICO_FSC)
+
+  } else {
+    operazioni <- read_sas(file.path(DATA, "operazioni_pucok.sas7bdat")) %>%
+      rename(COD_LOCALE_PROGETTO = cod_locale_progetto,
+             COD_SETTORE_STRATEGICO_FSC = fsc_settore_strategico,
+             DESCR_SETTORE_STRATEGICO_FSC = fsc_descr_settore_strategico,
+             COD_ASSE_TEMATICO_FSC = fsc_asse_tematico,
+             DESCR_ASSE_TEMATICO_FSC = fsc_descr_asse_tematico) %>%
+      distinct(COD_LOCALE_PROGETTO,
+               COD_SETTORE_STRATEGICO_FSC, DESCR_SETTORE_STRATEGICO_FSC,
+               COD_ASSE_TEMATICO_FSC, DESCR_ASSE_TEMATICO_FSC) %>%
+      # fix per matera
+      mutate(COD_SETTORE_STRATEGICO_FSC = case_when(COD_SETTORE_STRATEGICO_FSC == "4.a" ~ "4",
+                                                    COD_SETTORE_STRATEGICO_FSC == "4.b" ~ "4",
+                                                    TRUE ~ COD_SETTORE_STRATEGICO_FSC)) %>%
+      # fix per porto di pozzuoli
+      mutate(COD_ASSE_TEMATICO_FSC = case_when(COD_ASSE_TEMATICO_FSC == "01" ~ "1",
+                                               TRUE ~ COD_ASSE_TEMATICO_FSC))
+  }
+
 
   # load matrix
   matrix_atp <- read_csv2(file.path(INPUT, "aree_temi_fsc.csv"))  %>%
-    rename(QUERY_ATP = QUERY)
+    rename(QUERY_ATP = QUERY) %>%
+    mutate(COD_ASSE_TEMATICO_FSC = as.character(COD_ASSE_TEMATICO_FSC))
 
   # merge
   peri_atp <- progetti %>%
     select(COD_LOCALE_PROGETTO) %>%
-    inner_join(ambito_rsc %>%
+    inner_join(operazioni %>%
+                 filter(COD_ASSE_TEMATICO_FSC != "") %>%
                  select(COD_LOCALE_PROGETTO, COD_SETTORE_STRATEGICO_FSC, COD_ASSE_TEMATICO_FSC) %>%
+                 separate_rows(COD_ASSE_TEMATICO_FSC, sep = ":::") %>%
                  inner_join(matrix_atp %>%
                               filter(QUERY_ATP != 0),
                             by = c("COD_SETTORE_STRATEGICO_FSC", "COD_ASSE_TEMATICO_FSC")),
