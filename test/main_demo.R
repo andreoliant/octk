@@ -2,20 +2,55 @@
 
 rm(list=ls())
 
-# library("devtools")
-devtools::load_all(path = "/Users/aa/coding/oc")
-# library("oc")
+# setup
+bimestre <- "20190228"
+db_ver <- "20190620"
+data_path <- "/Users/aa/dati/oc"
+db_path <- file.path(data_path, bimestre, "db")
+
+oc_init(bimestre, db_ver,
+        data_path = data_path,
+        db_path = db_path,
+        use_drive=FALSE, DEV_MODE=TRUE)
 
 # setup
-bimestre <- "20181231"
+
+# MEMO: in DEV_MODE workarea e focus sono in test
+
+# ROOT <- "/Volumes/GoogleDrive/Drive condivisi"
+bimestre <- "20180228"
+# data_path <- file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART")
+# "/Volumes/GoogleDrive/Drive condivisi/DATI/20190228/DASAS/DATAMART"
+db_ver <- "20190620"
+# db_path <- file.path(ROOT, "DATI", bimestre, "PROGRAMMAZIONE", db_ver)
+# "/Volumes/GoogleDrive/Drive condivisi/DATI/20190228/PROGRAMMAZIONE/20190620"
+
+# QUI SERVE FLEX
+elab <- "TESTA" # root per tipologia di eleaborazione (es. "perimetri")
+focus <- "prova" # work per elaborazione specifica (es. "turismo" in "perimetri/turismo")
+workarea <- file.path(ROOT, "ELAB", bimestre, elab, focus)
+# "/Volumes/GoogleDrive/Drive condivisi/ELAB/20181231/TESTA"
+
+
+# root
+ROOT <- "/Volumes/GoogleDrive/Drive condivisi"
+
+# library("devtools")
+# devtools::load_all(path = "/Users/aa/coding/oc")
+install.packages(pkgs = file.path(ROOT, "TOOLS", "PACKAGE", "octk_0.1.1.tar.gz"), repos = NULL, type="source")
+library("octk")
+
+# setup
+bimestre <- "20190228"
 # focus <- "test"
-data_path <- "/Users/aa/dati/oc"
+# data_path <- "/Users/aa/dati/oc"
+data_path <- file.path(ROOT, "DATI")
 # workarea <- NULL # MEMO: in DEV_MODE non c'è workarea
 
 # setup
 oc_init()
 # pryr::mem_used()
-
+# DATA <- file.path(DATA, "DASAS", "DATAMART")
 
 # etc
 # var_ls <- c("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO",
@@ -29,15 +64,29 @@ oc_init()
 
 
 
+library(googledrive)
+# http://googledrive.tidyverse.org
+# MEMO: confermare auth manualmente
 
+# download csv
+
+
+drive_download_csv <- function(url, repo_path) {
+  library(googledrive)
+  url <- "https://drive.google.com/open?id=1aI1ivKe8UWmOmsJa9z5VVir03McZ2DW1&authuser=antonio.andreoli@opencoesione.team&usp=drive_fs"
+  drive_download(as_id(url), path = file.path(TEMP, "next.csv"), overwrite = TRUE)
+}
 
 # ------------------------------------- #
 
 # load
 
 system.time(
-  progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light=TRUE)
+  progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light=FALSE)
 )
+
+appo <- progetti[1,]
+write_csv2(appo, file.path(DATA, "pippo.csv"))
 
 
 # chk su totali

@@ -73,6 +73,15 @@ oc_init(
   DEV_MODE=TRUE
   )
 
+# /Users/aa/dati/oc
+
+# oc_init(
+#   bimestre = "20181231",
+#   db_ver = "20190620",
+#   data_path = "/Users/aa/dati/oc",
+#   use_drive=TRUE,
+#   DEV_MODE=TRUE
+# )
 # MEMO: per il setup bimestrale la workarea è in locale oc/test e i dati sono in GoogleDrive
 
 # copy data from GoogleDrive to local
@@ -128,7 +137,6 @@ chk_match(octk::po_riclass, po_sas, id = "OC_CODICE_PROGRAMMA")
 
 # chk scarti da DB
 chk_left <- octk::po_riclass %>%
-
   anti_join(po_sas %>%
               select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ),
             by = "OC_CODICE_PROGRAMMA")
@@ -203,18 +211,23 @@ rm(progetti_all, progetti_all_old)
 progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
 
 # verifica x_vars
-progetti <- fix_progetti(progetti)
+# progetti <- fix_progetti(progetti)
 appo <- get_x_vars(progetti)
+# appo <- get_macroarea(appo, real_reg=TRUE)
+# appo <- get_regione_simply(appo)
+# appo <- refactor_progetti(appo)
 appo %>%
   count(x_CICLO, X_CICLO, x_AMBITO, X_AMBITO)
 
 chk <- appo %>%
-  filter(is.na(x_AMBITO))
+  filter(x_AMBITO == "FSC", X_AMBITO == "FESR")
 
-chk %>%
-  count(OC_CODICE_PROGRAMMA, x_PROGRAMMA)
-
-write.csv2(chk, file.path(OUTPUT, "anomalie_calabria.csv"))
+# verifica calabria
+# chk <- appo %>%
+#   filter(is.na(x_AMBITO))
+# chk %>%
+#   count(OC_CODICE_PROGRAMMA, x_PROGRAMMA)
+# write.csv2(chk, file.path(OUTPUT, "anomalie_calabria.csv"))
 
 # A tibble: 1 x 3
 # OC_CODICE_PROGRAMMA x_PROGRAMMA               n
@@ -240,19 +253,21 @@ appo <- get_regione_simply(appo)
 chk <- appo %>%
   count(x_MACROAREA, x_REGNAZ, x_REGIONE)
 
-chk <- appo %>%
-  filter(x_REGNAZ != "PA BOLZANO", x_REGIONE == "PA BOLZANO")
-
 
 # ----------------------------------------------------------------------------------- #
 # verifica data quality
 
 # HAND:: verifica numero di progetti su mail per Stefano
 appo %>%
-  count(x_CICLO, x_AMBITO)
+  # count(x_CICLO, x_AMBITO)
+  count(x_CICLO)
 # x_CICLO        n
 # 2007-2013 949928
 # 2014-2020 296934 >>> 296924 nella mail per Stefano
+
+appo %>%
+  group_by(x_CICLO) %>%
+  summarise(CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE))
 
 appo %>%
   filter(is.na(OC_CODICE_PROGRAMMA)) %>%
@@ -282,6 +297,7 @@ chk %>%
 # "COD_RISULTATO_ATTESO" "DESCR_RISULTATO_ATTESO"
 
 appo %>%
+  filter(x_AMBITO != "FEASR") %>%
   count(x_CICLO, OC_STATO_PROCEDURALE)
 
 
@@ -299,7 +315,7 @@ appo %>%
 make_matrix_po(bimestre = "20190228")
 chk <- chk_delta_po("NEW")
 chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
-chk_delta_po("OLD")
+chk <- chk_delta_po("OLD")
 # HAND: rinominare "po_linee_azioni_NEW.csv" in "po_linee_azioni.csv
 
 # TODO: voglio sapere cosa manca in po_linee_azioni rispetto al DB programmazione
@@ -310,6 +326,7 @@ make_matrix_strum(bimestre = "20190228")
 # delib_cipe.csv
 make_matrix_cipe(bimestre = "20190228")
 
+# TODO: inserire matrix per PATT e per progetto complesso
 
 
 # ----------------------------------------------------------------------------------- #
@@ -324,13 +341,21 @@ devtools::load_all(path = ".")
 # progetti_light
 # https://readr.tidyverse.org/articles/readr.html#column-specification
 
-setup_light(bimestre = "20190206")
-
+# setup_light(bimestre = "20181231")
+setup_light(bimestre = "20190228")
 # TODO: aggiungere nuove variabili di progetti
 
 #  oggetto "OC_FINANZ_UE_NETTO" non trovato
 
+# setup_progetti_descr(bimestre = "20181231")
 
+# analisi peso variabili
+# progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = FALSE)
+# for (var in names(progetti)) {
+#   appo <- progetti %>% select(var)
+#   print(paste0(var, ": ", object.size(appo)))
+#   write.csv2(appo, file.path(TEMP, "prova_peso", paste0(var, ".csv")), row.names = FALSE)
+# }
 
 # ----------------------------------------------------------------------------------- #
 # documents
@@ -339,17 +364,17 @@ setup_light(bimestre = "20190206")
 devtools::document()
 
 
-
 # ----------------------------------------------------------------------------------- #
 # build as bundle
 
 # build
-# devtools::check(path = "/Users/aa/coding/oc")
+devtools::load_all(path = ".")
+devtools::check(path = "/Users/aa/coding/oc")
 devtools::build(pkg = ".", path = "/Users/aa/coding/oc/bkp")
-# MEMO: build to boundle "oc_0.1.0.tar.gz"
+# MEMO: build to boundle "oc_0.2.0.tar.gz"
 
 # install
-install.packages("/Users/aa/coding/oc/bkp/oc_0.1.0.tar.gz", repos = NULL, type="source")
+install.packages("/Users/aa/coding/oc/bkp/oc_0.2.0.tar.gz", repos = NULL, type="source")
 
 # build as binary
 # devtools::build(path = "/Users/aa/coding/oc", binary = TRUE)
