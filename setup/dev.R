@@ -40,10 +40,13 @@ library("devtools")
 # ----------------------------------------------------------------------------------- #
 # workflow per bimestre
 
+# this: 0.2.1 > v0.2.1
+
 # Fare una versione del package per ogni nuovo *bimestre* di monitoraggio.
 # Per la nuova versione:
 # - modifica "X" in DESCRIPTION (es. 0.1.X); solo in caso di altre modifiche rilevanti
 #   salire a livello superiori
+# - HAND: aggiorna DB per coerenza
 # - prep per aggiornare setup/data-raw/po_riclass.csv (con step di confronto manuale con SAS) [non serve "preeteso"]
 # - ...
 # - prep per aggiornare altro in data (OLD: "data-raw/setup_data.R")
@@ -66,8 +69,8 @@ devtools::load_all(path = ".")
 
 # setup
 oc_init(
-  bimestre = "20190228",
-  db_ver = "20190620",
+  bimestre = "20190630",
+  db_ver = "20190901",
   data_path = "/Users/aa/dati/oc",
   use_drive=TRUE,
   DEV_MODE=TRUE
@@ -85,10 +88,10 @@ oc_init(
 # MEMO: per il setup bimestrale la workarea è in locale oc/test e i dati sono in GoogleDrive
 
 # copy data from GoogleDrive to local
-oc_init_data(
-  bimestre = "20190228",
-  data_path = "/Users/aa/dati/oc"
-)
+# oc_init_data(
+#   bimestre = "20190228",
+#   data_path = "/Users/aa/dati/oc"
+# )
 # TODO: serve versione con package "googledrive"
 
 
@@ -107,8 +110,8 @@ oc_init_data(
 # 9: programma disattivato in BDU
 
 # laod da sas
-# path <- "/Volumes/GoogleDrive/Drive condivisi/DATI/20190228/DASAS/DATABASE/oc_programmi.sas7bdat"
-path <- file.path(DATA, "oc_programmi.sas7bdat")
+path <- "/Volumes/GoogleDrive/Drive condivisi/DATI/20190630/DASAS/DATABASE/oc_programmi.sas7bdat"
+# path <- file.path(DATA, "oc_programmi.sas7bdat")
 po_sas <- read_sas(path)
 # MEMO: oc_programmi.sas7bdat scaricato a mano e messo in DATA
 
@@ -165,12 +168,20 @@ write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 # chk <- progetti %>% filter(OC_CODICE_PROGRAMMA == "COMMTARANTOFSC")
 # sum(chk$OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE)
 
+# Legenda per po_riclass$TIPO:
+# 0: programma normale
+# 1: programma misto con ":::"
+# 2: programma duplicato lato IGRUE (2 programmi con CCI diversi ma uno è vuoto)
+# 3: progetti/programma da accorpare (e programma/unione post accorpamento)
+# 4: programma censito lato programmazione e ancora da caricare in BDU
+# 9: programma disattivato in BDU
+
 
 # ----------------------------------------------------------------------------------- #
-# chk non visualizzati e delta
+# chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20181231"
+bimestre_old <- "20190228"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
 progetti_all_old <- load_progetti(bimestre = bimestre_old,
@@ -179,17 +190,48 @@ progetti_all_old <- load_progetti(bimestre = bimestre_old,
 
 progetti_all <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE)
 
-# variazione non visualizzati
+# totali
 chk <- progetti_all_old %>%
-  get_x_vars(progetti) %>%
-  count(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
+  get_x_vars(.) %>%
+  group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
+  summarise(N = n(),
+            CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE)) %>%
   full_join(progetti_all %>%
-              get_x_vars(progetti) %>%
-              count(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO),
+              mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
+                                                   TRUE ~ FONDO_COMUNITARIO)) %>%
+              get_x_vars(.) %>%
+              group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
+              summarise(N = n(),
+                        CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE)),
             by = c("OC_FLAG_VISUALIZZAZIONE", "x_CICLO", "x_AMBITO"), suffix = c(".old", ".new")) %>%
-  mutate(chk = n.old - n.new)
+  mutate(N.chk = N.new - N.old,
+         CP.chk = CP.new - CP.old) %>%
+  select(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO,
+         N.old, N.new, N.chk,
+         CP.old, CP.new, CP.chk)
 
 write.csv2(chk, file.path(OUTPUT, "chk_delta_noviz.csv"), row.names = FALSE)
+
+# singoli progetti
+chk2 <- progetti_all_old %>%
+  get_x_vars(.) %>%
+  group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
+  select(COD_LOCALE_PROGETTO, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO) %>%
+  full_join(progetti_all %>%
+              mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
+                                                   TRUE ~ FONDO_COMUNITARIO)) %>%
+              get_x_vars(.) %>%
+              select(COD_LOCALE_PROGETTO, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO),
+            by = "COD_LOCALE_PROGETTO", suffix = c(".old", ".new")) %>%
+  mutate(CP.chk = CP.new - CP.old)
+
+chk2 %>%
+  arrange(desc(CP.chk))
+
+# OC_CODICE_PROGRAMMA FONDO_COMUNITARIO      n
+# <chr>               <chr>              <int>
+# 1 2014IT05M9OP001     Y.E.I             129868
+# 2 2014IT14MFOP001     NA                    34
 
 # verifica anomalia 20181231
 # delta_old <- read_csv2(file.path(INPUT, "chk_delta_preesteso.csv"))
@@ -312,7 +354,7 @@ appo %>%
 # TODO: verificare se i nomi sono troncati...
 
 # po_linee_azioni.csv
-make_matrix_po(bimestre = "20190228")
+make_matrix_po(bimestre = "20190630")
 chk <- chk_delta_po("NEW")
 chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
 chk <- chk_delta_po("OLD")
@@ -342,7 +384,7 @@ devtools::load_all(path = ".")
 # https://readr.tidyverse.org/articles/readr.html#column-specification
 
 # setup_light(bimestre = "20181231")
-setup_light(bimestre = "20190228")
+setup_light(bimestre = "20190630")
 # TODO: aggiungere nuove variabili di progetti
 
 #  oggetto "OC_FINANZ_UE_NETTO" non trovato
@@ -374,7 +416,7 @@ devtools::build(pkg = ".", path = "/Users/aa/coding/oc/bkp")
 # MEMO: build to boundle "oc_0.2.0.tar.gz"
 
 # install
-install.packages("/Users/aa/coding/oc/bkp/oc_0.2.0.tar.gz", repos = NULL, type="source")
+install.packages("/Users/aa/coding/oc/bkp/octk_0.2.1.tar.gz", repos = NULL, type="source")
 
 # build as binary
 # devtools::build(path = "/Users/aa/coding/oc", binary = TRUE)
@@ -386,7 +428,7 @@ install.packages("/Users/aa/coding/oc/bkp/oc_0.2.0.tar.gz", repos = NULL, type="
 # backup source
 
 # $:
-# VERS="octk_0.2.0"
+# VERS="octk_0.2.1"
 # cp oc.Rproj bkp/_src/$VERS/
 # cp README.md bkp/_src/$VERS/
 # cp DESCRIPTION bkp/_src/$VERS/
