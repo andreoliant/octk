@@ -1,6 +1,9 @@
 # OC > Toolkit
 # development platform
 
+# versione
+oc_ver <- "0.2.2"
+
 # rm(list=ls())
 library("devtools")
 
@@ -197,7 +200,7 @@ chk <- progetti_all_old %>%
   summarise(N = n(),
             CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE)) %>%
   full_join(progetti_all %>%
-              mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
+              mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
                                                    TRUE ~ FONDO_COMUNITARIO)) %>%
               get_x_vars(.) %>%
               group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
@@ -212,21 +215,31 @@ chk <- progetti_all_old %>%
 
 write.csv2(chk, file.path(OUTPUT, "chk_delta_noviz.csv"), row.names = FALSE)
 
+# CHK: qui non funziona qualcosa perché non vedo x_AMBITO su 2014IT14MFOP001
+
 # singoli progetti
 chk2 <- progetti_all_old %>%
   get_x_vars(.) %>%
-  group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
-  select(COD_LOCALE_PROGETTO, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO) %>%
+  # group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
+  select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO) %>%
   full_join(progetti_all %>%
               mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
                                                    TRUE ~ FONDO_COMUNITARIO)) %>%
               get_x_vars(.) %>%
-              select(COD_LOCALE_PROGETTO, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO),
+              select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO),
             by = "COD_LOCALE_PROGETTO", suffix = c(".old", ".new")) %>%
   mutate(CP.chk = CP.new - CP.old)
 
-chk2 %>%
-  arrange(desc(CP.chk))
+chk2 %>% arrange(desc(CP.chk))
+chk2 %>% filter(is.na(x_AMBITO.new), OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_CODICE_PROGRAMMA.new)
+chk2 %>% filter(x_AMBITO.new == "FESR", OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_FLAG_VISUALIZZAZIONE.old)
+
+# chk
+chk_match(progetti_all_old, progetti_all, id = "COD_LOCALE_PROGETTO")
+
+
+
+
 
 # OC_CODICE_PROGRAMMA FONDO_COMUNITARIO      n
 # <chr>               <chr>              <int>
@@ -261,8 +274,8 @@ appo <- get_x_vars(progetti)
 appo %>%
   count(x_CICLO, X_CICLO, x_AMBITO, X_AMBITO)
 
-chk <- appo %>%
-  filter(x_AMBITO == "FSC", X_AMBITO == "FESR")
+# chk <- appo %>%
+#   filter(x_AMBITO == "FSC", X_AMBITO == "FESR")
 
 # verifica calabria
 # chk <- appo %>%
@@ -283,7 +296,7 @@ chk <- appo %>%
 
 chk <- appo %>%
   filter(x_REGNAZ == "NAZ", X_REGNAZ != "NAZ")
-# MEMO: qui va aggiornato lato SAS
+# MEMO: qui va aggiornato lato SAS # ok per 20190630
 
 chk %>%
   count(x_PROGRAMMA)
@@ -363,10 +376,10 @@ chk <- chk_delta_po("OLD")
 # TODO: voglio sapere cosa manca in po_linee_azioni rispetto al DB programmazione
 
 # strum_att.csv
-make_matrix_strum(bimestre = "20190228")
+make_matrix_strum(bimestre = "20190630")
 
 # delib_cipe.csv
-make_matrix_cipe(bimestre = "20190228")
+make_matrix_cipe(bimestre = "20190630")
 
 # TODO: inserire matrix per PATT e per progetto complesso
 
@@ -413,10 +426,11 @@ devtools::document()
 devtools::load_all(path = ".")
 devtools::check(path = "/Users/aa/coding/oc")
 devtools::build(pkg = ".", path = "/Users/aa/coding/oc/bkp")
-# MEMO: build to boundle "oc_0.2.0.tar.gz"
+# MEMO: build to boundle "oc_X.X.X.tar.gz"
 
 # install
-install.packages("/Users/aa/coding/oc/bkp/octk_0.2.1.tar.gz", repos = NULL, type="source")
+temp <- paste0("/Users/aa/coding/oc/bkp/octk_", oc_ver, ".tar.gz")
+install.packages(temp, repos = NULL, type="source")
 
 # build as binary
 # devtools::build(path = "/Users/aa/coding/oc", binary = TRUE)
@@ -426,6 +440,23 @@ install.packages("/Users/aa/coding/oc/bkp/octk_0.2.1.tar.gz", repos = NULL, type
 
 # ----------------------------------------------------------------------------------- #
 # backup source
+
+system(
+  paste0('VERS="octk_', oc_ver, '";',
+         "mkdir bkp/_src/$VERS;",
+         "cp oc.Rproj bkp/_src/$VERS/;",
+         "cp README.md bkp/_src/$VERS/;",
+         "cp DESCRIPTION bkp/_src/$VERS/;",
+         "cp NAMESPACE bkp/_src/$VERS/;",
+         "cp -r setup bkp/_src/$VERS/;",
+         "cp -r R bkp/_src/$VERS/;",
+         "cp -r data bkp/_src/$VERS/;",
+         "cp -r vignettes bkp/_src/$VERS/;",
+         "cp -r man bkp/_src/$VERS/;",
+         "cp -r inst bkp/_src/$VERS/"
+         )
+  )
+
 
 # $:
 # VERS="octk_0.2.1"
@@ -444,8 +475,15 @@ install.packages("/Users/aa/coding/oc/bkp/octk_0.2.1.tar.gz", repos = NULL, type
 # ----------------------------------------------------------------------------------- #
 # google drive sync
 
+system(
+  paste0("DEV_BKP='/Users/aa/coding/oc/bkp/';",
+         "GOOGLE='/Volumes/GoogleDrive/Drive condivisi/TOOLS/OCTK';",
+         'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"'
+  )
+)
+
 # $:
-# DEV_BKP="/Users/aa/coding/oc/bkp/"
+# DEV_BKP='/Users/aa/coding/oc/bkp/'
 # GOOGLE='/Volumes/GoogleDrive/Drive condivisi/TOOLS/OCTK'
 # rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"
 

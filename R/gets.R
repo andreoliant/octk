@@ -575,7 +575,7 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
                                 x_AMBITO == "YEI-FSE" ~ FONDO_COMUNITARIO,
                                 TRUE ~ x_AMBITO)) %>%
     mutate(x_AMBITO = if_else(x_AMBITO == "IOG", "YEI", x_AMBITO)) %>%
-    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "YEI", "SNAI", "FEASR")))
+    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "YEI", "SNAI", "FEASR", "FEAMP")))
 
   # TODO: inserire elaboraizone diretta anche su "MISTI"?
 
