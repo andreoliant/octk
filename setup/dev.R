@@ -213,9 +213,8 @@ chk <- progetti_all_old %>%
          N.old, N.new, N.chk,
          CP.old, CP.new, CP.chk)
 
-write.csv2(chk, file.path(OUTPUT, "chk_delta_noviz.csv"), row.names = FALSE)
+write.csv2(chk, file.path(OUTPUT, paste0("chk_delta_noviz_", bimestre, ".csv")), row.names = FALSE)
 
-# CHK: qui non funziona qualcosa perché non vedo x_AMBITO su 2014IT14MFOP001
 
 # singoli progetti
 chk2 <- progetti_all_old %>%
@@ -488,5 +487,12 @@ system(
 # rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"
 
 
+# ----------------------------------------------------------------------------------- #
+# tag
+
+system(
+  # paste0("git tag v", oc_ver)
+  paste0("git tag v", oc_ver, "-REV.01")
+  )
 
 
