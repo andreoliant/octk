@@ -101,7 +101,10 @@ fix_progetti <- function(progetti) {
   #                                        # MEMO: forzo su FESR ma c'è anche FSE
   #                                        TRUE ~ FONDO_COMUNITARIO))
 
-  progetti <- progetti
+  # fix temporaneo per YEI
+  progetti <- progetti %>%
+    mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
+                                         TRUE ~ FONDO_COMUNITARIO))
 
   return(progetti)
 }
