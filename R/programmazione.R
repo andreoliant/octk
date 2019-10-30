@@ -12,7 +12,7 @@
 #' @param use_eu Logico. Vuoi avere anche il finanziamento EU e categoria di regione? (solo per SIE)
 #' @return Il dataset di programmazione per l'ambito richiesto, con pulizia delle denominazioni territoriali e
 #' della codifica di aree tematiche e temi prioritari FSC.
-load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=FALSE, use_ue=FALSE){
+load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=FALSE, use_ue=FALSE, use_flt=FALSE){
 
   # DEBUG:
   # ciclo <- "2014-2020"
@@ -22,6 +22,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
     temp <- case_when(ambito == "FESR" ~ "SIE",
                       ambito == "FSE" ~ "SIE",
                       ambito == "FEASR" ~ "SIE",
+                      ambito == "FEAMP" ~ "SIE",
                       ambito == "YEI" ~ "SIE", # CHK: decidere se vive
                       TRUE ~ ambito)
     filename <- paste0(temp, "_1420.xlsx")
@@ -36,7 +37,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   # appo <-  read_excel(file.path(DATA, "db", filename), guess_max = 5000) # MEMO: versione prima di GoogleDrive
   appo <-  read_excel(file.path(DB, filename), guess_max = 5000)
 
-  if (ambito == "FESR" | ambito == "FSE" | ambito == "YEI" | ambito == "FEASR" ) {
+  if (ambito == "FESR" | ambito == "FSE" | ambito == "YEI" | ambito == "FEASR" | ambito == "FEAMP" ) {
     appo <- appo %>%
       filter(OC_DESCR_FONTE == ambito) %>%
       # MEMO: questo serve per integrare versione con Asse
@@ -78,6 +79,17 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   if (use_ue == TRUE) {
     var_ls <- c(var_ls,
                 "FINANZ_UE", "OC_AREA_OBIETTIVO_UE")
+
+    # appo <- appo %>%
+    #   select(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA, OC_TIPOLOGIA_PROGRAMMA,
+    #          OC_DESCR_FONTE,
+    #          FINANZ_TOTALE_PUBBLICO,
+    #          OC_MACROAREA, DEN_REGIONE)
+  }
+
+  if (use_flt == TRUE) {
+    var_ls <- c(var_ls,
+                "OC_FLAG_MONITORAGGIO")
 
     # appo <- appo %>%
     #   select(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA, OC_TIPOLOGIA_PROGRAMMA,
@@ -140,9 +152,10 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
 #' @param usa_temi Vuoi caricare il DB con correzione dei temi prioritari?
 #' @param usa_sog Vuoi caricare il DB con il soggetto programmatore?
 #' @param usa_eu Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)
+#' @param usa_713 Vuoi caricare anche il DB per il 2007-2013?
 #' @param export Vuoi avere le tabelle del DB nel GlobalEnv?
 #' @return L'intero database dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.
-init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, export=TRUE)
+init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, usa_flt=FALSE, add_713=FALSE, export=TRUE)
 {
 
   # library("tidyverse")
@@ -166,24 +179,34 @@ init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, exp
     use_eu <- FALSE
   }
 
-
+  if (usa_flt == TRUE) {
+    use_flt <- TRUE
+  } else {
+    use_flt <- FALSE
+  }
 
   # loads
   # if (usa_temi == TRUE) {
   if (export == TRUE) {
-    po_fsc <<- load_db("2014-2020", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu)
-    po_fesr <<- load_db("2014-2020", "FESR", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu)
-    po_fse <<- load_db("2014-2020", "FSE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu)
-    po_poc <<- load_db("2014-2020", "POC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu)
-    po_yei <<- load_db("2014-2020", "YEI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu)
-    message("Il db di programmazione è pronto in 'po_fesr', 'po_fse', 'po_fsc', 'po_poc' e 'po_yei'")
+    po_fsc <<- load_db("2014-2020", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_fesr <<- load_db("2014-2020", "FESR", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_fse <<- load_db("2014-2020", "FSE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_poc <<- load_db("2014-2020", "POC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_yei <<- load_db("2014-2020", "YEI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_feamp <<- load_db("2014-2020", "FEAMP", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    message("Il db di programmazione è pronto in 'po_fesr', 'po_fse', 'po_fsc', 'po_poc', 'po_yei' e 'po_feamp'")
+
+    if (add_713 == TRUE) {
+      print("La programmazione 2007-2013 non è implementata per la modalità 'export'")
+    }
 
   } else {
-    po_fsc <- load_db("2014-2020", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu)
-    po_fesr <- load_db("2014-2020", "FESR", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu)
-    po_fse <- load_db("2014-2020", "FSE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu)
-    po_poc <- load_db("2014-2020", "POC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu)
-    po_yei <- load_db("2014-2020", "YEI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu)
+    po_fsc <- load_db("2014-2020", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_fesr <- load_db("2014-2020", "FESR", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_fse <- load_db("2014-2020", "FSE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_poc <- load_db("2014-2020", "POC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_yei <- load_db("2014-2020", "YEI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_feamp <- load_db("2014-2020", "FEAMP", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
 
     programmi <- po_fsc %>%
       mutate(x_CICLO = "2014-2020",
@@ -200,9 +223,33 @@ init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, exp
       bind_rows(po_yei %>%
                   mutate(x_CICLO = "2014-2020",
                          x_AMBITO = "YEI")) %>%
+      bind_rows(po_feamp %>%
+                  mutate(x_CICLO = "2014-2020",
+                         x_AMBITO = "FEAMP")) %>%
       as.data.frame(.) %>%
-      mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "YEI", "SNAI")),
+      mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI")),
              x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")))
+
+    if (add_713 == TRUE) {
+      po_fsc713 <- load_db("2007-2013", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+      po_fesr713 <- load_db("2007-2013", "FESR", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+      po_fse713 <- load_db("2007-2013", "FSE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+      po_pac713 <- load_db("2007-2013", "POC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+
+      programmi <- programmi %>%
+        bind_rows(po_fsc713 %>%
+                    mutate(x_CICLO = "2007-2013",
+                           x_AMBITO = "FSC")) %>%
+        bind_rows(po_pac713 %>%
+                    mutate(x_CICLO = "2007-2013",
+                           x_AMBITO = "POC")) %>%
+        bind_rows(po_fesr713 %>%
+                    mutate(x_CICLO = "2007-2013",
+                           x_AMBITO = "FESR")) %>%
+        bind_rows(po_fse713 %>%
+                    mutate(x_CICLO = "2007-2013",
+                           x_AMBITO = "FSE"))
+    }
 
     return(programmi)
 
@@ -318,7 +365,7 @@ make_risorse <- function(usa_713=FALSE, usa_macroaree=FALSE)
   #                      x_AMBITO = "YEI")) %>%
   risorse <- programmi %>%
     as.data.frame(.) %>%
-    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "YEI", "SNAI")),
+    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI")),
            x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale"))) %>%
     group_by(x_CICLO, x_AMBITO, x_MACROAREA) %>%
     summarise(RIS = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE))
@@ -346,7 +393,7 @@ make_risorse <- function(usa_713=FALSE, usa_macroaree=FALSE)
                        #         24979.9, 7038.5,
                        #         7419.4, 6343.6)
                        ) %>%
-      mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "YEI", "SNAI")),
+      mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI")),
              x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")),
              x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")))
 
@@ -356,7 +403,7 @@ make_risorse <- function(usa_713=FALSE, usa_macroaree=FALSE)
     if (usa_macroaree == FALSE) {
       risorse <- risorse %>%
         as.data.frame(.) %>%
-        # mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "SNAI", "YEI")),
+        # mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI")),
         #        x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale"))) %>%
         group_by(x_CICLO, x_AMBITO) %>%
         summarise(RIS = sum(RIS, na.rm = TRUE))

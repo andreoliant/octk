@@ -183,12 +183,177 @@ make_report_bimestre <- function(bimestre, perimetro, last_bimestre, last_data_p
 
 
 
-delta_programmi <- function(bimestre, programmi, last_bimestre, last_data_path,
-                            usa_meuro=FALSE, focus="delta", export=FALSE) {
 
-  if (missing(programmi)) {
-    programmi <- report_cd_programmi(perimetro, focus="chk", usa_meuro=usa_meuro, export=FALSE)
+
+#' Esporta report per Programmi
+#'
+#' Report con apertura per programma e fase procedurale rispetto al focus selezionato
+#'
+#' @param perimetro Dataset di classe perimetro.
+#' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro.
+#' @param add_713 Vuoi caricare anche i dati di programmaizone per il 2007-2013?
+#' @param focus nome per file.
+#' @param export vuoi salvare il file?
+#' @return Un file csv con apertura per programma e fase procedurale.
+make_report_programmi <- function(perimetro, usa_meuro=FALSE, add_713=FALSE, focus="elab", export=FALSE) {
+
+  # TODO:
+  # correggere "FESR-FSE"
+  # inserire verifica bimestre precedente
+
+  # appo <- perimetro %>%
+  #   mutate(x_PROGRAMMA = factor(x_PROGRAMMA, levels = c("PATTO EMILIA-ROMAGNA", "PATTO LOMBARDIA", "PATTO LAZIO",
+  #                                                       "PATTO BOLOGNA", "PATTO FIRENZE", "PATTO GENOVA", "PATTO MILANO", "PATTO VENEZIA",
+  #                                                       "PATTO ABRUZZO", "PATTO BASILICATA", "PATTO CALABRIA",  "PATTO CAMPANIA",
+  #                                                       "PATTO MOLISE", "PATTO PUGLIA", "PATTO SARDEGNA",  "PATTO SICILIA",
+  #                                                       "PATTO BARI", "PATTO CAGLIARI", "PATTO CATANIA",  "PATTO MESSINA",
+  #                                                       "PATTO NAPOLI", "PATTO PALERMO", "PATTO REGGIO CALABRIA")))
+
+  appo <- perimetro
+
+  temp <- paste0(focus, "_programmi.csv")
+
+  programmi <- init_programmazione(usa_temi=FALSE, add_713=add_713, export=FALSE)
+
+  if (usa_meuro == TRUE) {
+    programmi<- programmi %>%
+      mutate(FINANZ_TOTALE_PUBBLICO = round(FINANZ_TOTALE_PUBBLICO / 1000000, 1))
   }
+
+  # spalla con risorse (per tutti i programmi)
+  # spalla <- programmi %>%
+  #   group_by(OC_CODICE_PROGRAMMA) %>%
+  #   summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)) %>%
+  #   left_join(octk::po_riclass %>%
+  #               select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA),
+  #             by = "OC_CODICE_PROGRAMMA") %>%
+  #   select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, RISORSE)
+
+  # OLD:
+  # spalla <- octk::po_riclass %>%
+  #   select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA) %>%
+  #   filter(x_CICLO != "2000-2006",
+  #          x_AMBITO != "CTE",
+  #          x_AMBITO != "FEASR" #,
+  #          # x_AMBITO != "FEAMP"
+  #          ) %>%
+  #   left_join(programmi %>%
+  #               group_by(OC_CODICE_PROGRAMMA, x_AMBITO) %>%
+  #               summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)),
+  #             by = c("OC_CODICE_PROGRAMMA", "x_AMBITO"))
+
+  # programmi %>% count(x_CICLO, x_AMBITO, OC_TIPOLOGIA_PROGRAMMA) %>% filter(x_CICLO == "2014-2020")
+  # perimetro %>% count(x_CICLO, x_AMBITO, x_GRUPPO) %>% filter(x_CICLO == "2014-2020")
+  programmi %>% count(x_CICLO, x_AMBITO, OC_TIPOLOGIA_PROGRAMMA) %>% filter(x_CICLO == "2007-2013")
+  perimetro %>% count(x_CICLO, x_AMBITO, x_GRUPPO) %>% filter(x_CICLO == "2007-2013")
+
+  spalla <- programmi %>%
+    mutate(x_GRUPPO = case_when(
+      x_CICLO == "2014-2020" & x_AMBITO == "FESR" & OC_TIPOLOGIA_PROGRAMMA == "PON" ~ "PON",
+      x_CICLO == "2014-2020" & x_AMBITO == "FESR" & OC_TIPOLOGIA_PROGRAMMA == "POR" ~ "POR",
+      x_CICLO == "2014-2020" & x_AMBITO == "FSE" & OC_TIPOLOGIA_PROGRAMMA == "PON" ~ "PON",
+      x_CICLO == "2014-2020" & x_AMBITO == "FSE" & OC_TIPOLOGIA_PROGRAMMA == "POR" ~ "POR",
+      x_CICLO == "2014-2020" & x_AMBITO == "POC" & OC_TIPOLOGIA_PROGRAMMA == "POC Nazionale" ~ "POCN",
+      x_CICLO == "2014-2020" & x_AMBITO == "POC" & OC_TIPOLOGIA_PROGRAMMA == "POC Nazionale Completamenti" ~ "POCN",
+      x_CICLO == "2014-2020" & x_AMBITO == "POC" & OC_TIPOLOGIA_PROGRAMMA == "POC Regionale" ~ "POCR",
+      x_CICLO == "2014-2020" & x_AMBITO == "POC" & OC_TIPOLOGIA_PROGRAMMA == "POC Regionale Completamenti" ~ "POCR",
+      x_CICLO == "2014-2020" & x_AMBITO == "FSC" & OC_TIPOLOGIA_PROGRAMMA == "Piani nazionali" ~ "PIANI",
+      x_CICLO == "2014-2020" & x_AMBITO == "FSC" & OC_TIPOLOGIA_PROGRAMMA == "Patti per lo sviluppo" ~ "PATTI",
+      x_CICLO == "2014-2020" & x_AMBITO == "FSC" & OC_TIPOLOGIA_PROGRAMMA == "Altre assegnazioni CIPE" ~ "ALTRI CIPE",
+      x_CICLO == "2014-2020" & x_AMBITO == "FSC" & OC_TIPOLOGIA_PROGRAMMA == "Altro" ~ "ALTRO",
+      x_CICLO == "2014-2020" & x_AMBITO == "FSC" & OC_TIPOLOGIA_PROGRAMMA == "Cofinanziamento SIE" ~ "ALTRO",
+      x_CICLO == "2014-2020" & x_AMBITO == "FEAMP" ~ "PON",
+      x_CICLO == "2014-2020" & x_AMBITO == "YEI" ~ "YEI",
+      x_CICLO == "2014-2020" & x_AMBITO == "SNAI" ~ "SNAI",
+      x_CICLO == "2007-2013" & x_AMBITO == "FESR" & OC_TIPOLOGIA_PROGRAMMA == "PON" ~ "PON",
+      x_CICLO == "2007-2013" & x_AMBITO == "FESR" & OC_TIPOLOGIA_PROGRAMMA == "POR" ~ "POR",
+      x_CICLO == "2007-2013" & x_AMBITO == "FESR" & OC_TIPOLOGIA_PROGRAMMA == "POIN" ~ "POIN",
+      x_CICLO == "2007-2013" & x_AMBITO == "FSE" & OC_TIPOLOGIA_PROGRAMMA == "PON" ~ "PON",
+      x_CICLO == "2007-2013" & x_AMBITO == "FSE" & OC_TIPOLOGIA_PROGRAMMA == "POR" ~ "POR",
+      x_CICLO == "2007-2013" & x_AMBITO == "POC" & OC_TIPOLOGIA_PROGRAMMA == "PAC Nazionale" ~ "PACN",
+      x_CICLO == "2007-2013" & x_AMBITO == "POC" & OC_TIPOLOGIA_PROGRAMMA == "PAC Regionale" ~ "PACR",
+      # MEMO: per il momento il blocco FSC resta come si trova (e dovrebbe essere coerente con po_riclass)
+      TRUE ~ OC_TIPOLOGIA_PROGRAMMA)) %>%
+    select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, FINANZ_TOTALE_PUBBLICO) %>%
+    filter(x_CICLO != "2000-2006",
+           x_AMBITO != "CTE",
+           x_AMBITO != "FEASR" #,
+           # x_AMBITO != "FEAMP"
+    ) %>%
+    group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO) %>%
+    summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)) %>%
+    left_join(octk::po_riclass %>%
+                distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA),
+              by = "OC_CODICE_PROGRAMMA")
+
+
+  # report
+  out <- spalla %>%
+    # TODO: inserire filtro sopra!!! Non posso usare solo quello con right_join su attuazione
+    full_join(appo %>%
+                group_by(OC_CODICE_PROGRAMMA, x_AMBITO) %>%
+                summarise(N = n(),
+                          CP = sum(CP, na.rm = TRUE),
+                          IMP = sum(IMP, na.rm = TRUE),
+                          PAG = sum(PAG, na.rm = TRUE),
+                          COE = sum(COE, na.rm = TRUE)) %>%
+                left_join(appo %>%
+                            group_by(OC_CODICE_PROGRAMMA, x_AMBITO, OC_STATO_PROCEDURALE) %>%
+                            summarise(COE = sum(COE, na.rm = TRUE)) %>%
+                            spread(OC_STATO_PROCEDURALE, COE, fill = 0, drop = FALSE),
+                          by = c("OC_CODICE_PROGRAMMA", "x_AMBITO")),
+              by = c("OC_CODICE_PROGRAMMA", "x_AMBITO")) %>%
+    # riempie NA con 0
+    mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
+
+  out <- out %>%
+    left_join(octk::po_riclass %>%
+                distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA),
+              by = "OC_CODICE_PROGRAMMA", suffix = c("", ".x")) %>%
+    as_tibble(.) %>%
+    mutate(x_CICLO = as.character(x_CICLO),
+           x_AMBITO = as.character(x_AMBITO)) %>%
+    mutate(x_CICLO = if_else(is.na(x_CICLO), x_CICLO.x, x_CICLO),
+           x_AMBITO = if_else(is.na(x_AMBITO), x_AMBITO.x, x_AMBITO),
+           x_GRUPPO = if_else(is.na(x_GRUPPO), x_GRUPPO.x, x_GRUPPO),
+           x_PROGRAMMA = if_else(is.na(x_PROGRAMMA), x_PROGRAMMA.x, x_PROGRAMMA)) %>%
+    select(-x_CICLO.x, -x_AMBITO.x, -x_GRUPPO.x, -x_PROGRAMMA.x) %>%
+    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE, N, CP, IMP, PAG, COE,
+           `Non avviato`,
+           `In avvio di progettazione`,
+           `In corso di progettazione`,
+           `In affidamento`,
+           `In esecuzione`,
+           `Eseguito`,
+           `Eseguito`)
+
+  if (export == TRUE) {
+    write.csv2(out, file.path(TEMP, temp), row.names = FALSE)
+  }
+  return(out)
+}
+
+
+
+#' Integra report per Programmi con delta da un bimestre precedente
+#'
+#' Integra il report da make_report_programmi() con il confronto con il bimestre indicato.
+#'
+#' @param bimestre Bimestre di riferimento (in formato OC tipo "20181231").
+#' @param programmi Dataset generato con make_report_programmi().
+#' @param last_bimestre Bimestre con cui effettuare il confronto (in formato OC tipo "20181231").
+#' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro.
+#' @param focus nome per file.
+#' @param export vuoi salvare il file?
+#' @return Un file csv con apertura per programma, fase procedurale e bimestre.
+add_delta_programmi <- function(bimestre, programmi, last_bimestre, last_data_path,
+                                 usa_meuro=FALSE, focus="delta", export=FALSE) {
+
+  # if (missing(programmi)) {
+  #
+  #   programmi <- make_report_programmi(perimetro, focus="chk", usa_meuro=usa_meuro, export=FALSE)
+  # }
+  # DEV: eliminato perché non è definito "perimetro"
 
   # ----------------- #
   # bimestre precedente
@@ -261,13 +426,15 @@ delta_programmi <- function(bimestre, programmi, last_bimestre, last_data_path,
   #               summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)),
   #             by = c("OC_CODICE_PROGRAMMA", "x_AMBITO"))
 
+  # MEMO: non serve ripassare per "report_cd_programmi()" perché ho già risorse
+
   # report
   out <- programmi %>%
     full_join(appo %>%
-                group_by(OC_CODICE_PROGRAMMA) %>%
+                group_by(OC_CODICE_PROGRAMMA, x_AMBITO) %>%
                 summarise(COE_LAST = sum(COE, na.rm = TRUE),
                           PAG_LAST = sum(PAG, na.rm = TRUE)),
-              by = "OC_CODICE_PROGRAMMA") %>%
+              by = c("OC_CODICE_PROGRAMMA", "x_AMBITO")) %>%
     # riempie NA con 0
     mutate_if(is.numeric, funs(replace(., is.na(.), 0))) %>%
     # mutate(COE_DELTA = (COE - COE_LAST) / COE,
@@ -276,8 +443,10 @@ delta_programmi <- function(bimestre, programmi, last_bimestre, last_data_path,
            PAG_DELTA = (PAG - PAG_LAST) / PAG_LAST) %>%
     mutate(COE_DELTA = if_else(is.infinite(COE_DELTA), 0, COE_DELTA),
            PAG_DELTA = if_else(is.infinite(PAG_DELTA), 0, PAG_DELTA)) %>%
-    mutate(COE_DELTA = if_else(COE_DELTA > 1, 1, COE_DELTA),
-           PAG_DELTA = if_else(PAG_DELTA > 1, 1, PAG_DELTA))
+    mutate(COE_DELTA = if_else(is.nan(COE_DELTA), 0, COE_DELTA),
+           PAG_DELTA = if_else(is.nan(PAG_DELTA), 0, PAG_DELTA)) %>%
+    mutate(COE_DELTA = if_else(COE_DELTA > 1, 1.01, COE_DELTA),
+           PAG_DELTA = if_else(PAG_DELTA > 1, 1.01, PAG_DELTA))
   # %>%
   #   select(x_CICLO,	x_AMBITO, RIS,	N,	CP,	IMP,	PAG,	COE,	COE_LAST,	COE_DELTA, PAG_LAST, PAG_DELTA)
 
@@ -287,3 +456,8 @@ delta_programmi <- function(bimestre, programmi, last_bimestre, last_data_path,
   }
   return(out)
 }
+
+
+
+
+

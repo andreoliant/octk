@@ -45,7 +45,8 @@ make_lista_patti <- function(patti_list=NULL, progetti, perimetro=NULL,
   if (is.null(patti_list)) {
     # load programmazione FSC
     patti_list <- load_db(ciclo = "2014-2020", ambito = "FSC", simplify_loc=FALSE, use_temi=FALSE) %>%
-      filter(OC_TIPOLOGIA_PROGRAMMA == "Patto Territoriale") %>%
+      # filter(OC_TIPOLOGIA_PROGRAMMA == "Patto Territoriale") %>%
+      filter(OC_TIPOLOGIA_PROGRAMMA == "Patti per lo sviluppo") %>%
       distinct(OC_CODICE_PROGRAMMA) %>%
       .$OC_CODICE_PROGRAMMA
   }
@@ -117,9 +118,12 @@ make_lista_piani <- function(piani_list=NULL, progetti, perimetro=NULL,
 
   if (is.null(piani_list)) {
     if (use_all == TRUE) {
-      test <- c("Piano Operativo", "Altro")
+      # test <- c("Piano Operativo", "Altro")
+      test <- c("Piani nazionali", "Altre assegnazioni CIPE")
+
     } else {
-      test <- c("Piano Operativo")
+      # test <- c("Piano Operativo")
+      test <- c("Piani nazionali")
     }
 
     # load programmazione FSC

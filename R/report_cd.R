@@ -291,6 +291,7 @@ export_report_cd_regioni <- function(report, titolo=NULL, focus="elab", ciclo=NU
 report_cd_patti <- function(perimetro, focus="elab", export=FALSE) {
 
   appo <- perimetro %>%
+    mutate(x_PROGRAMMA = if_else(x_PROGRAMMA == "PATTO + POC CAMPANIA", "PATTO CAMPANIA", x_PROGRAMMA)) %>%
     mutate(x_PROGRAMMA = factor(x_PROGRAMMA, levels = c("PATTO EMILIA-ROMAGNA", "PATTO LOMBARDIA", "PATTO LAZIO",
                                                         "PATTO BOLOGNA", "PATTO FIRENZE", "PATTO GENOVA", "PATTO MILANO", "PATTO VENEZIA",
                                                         "PATTO ABRUZZO", "PATTO BASILICATA", "PATTO CALABRIA",  "PATTO CAMPANIA",
@@ -432,26 +433,46 @@ export_report_cd_patti <- function(report, titolo=NULL, focus=NULL) {
 #' @return Un file csv con apertura per piano e fase procedurale.
 report_cd_pianinaz <- function(perimetro, focus="elab", export=FALSE) {
 
-  appo <- perimetro %>%
-    mutate(x_PROGRAMMA = case_when(x_PROGRAMMA == "PATTO PER LO SVILUPPO REGIONE CAMPANIA:::PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'" ~ "PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'",
-                                   grepl("^PS AREE ", x_PROGRAMMA) ~ "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE",
-                                   # NEW:
-                                   x_PROGRAMMA == "PIANO STRALCIO DISSESTO IDROGEOLOGICO" ~ "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE",
-                                   x_PROGRAMMA == "PS AREE METROPOLITANE FONDO PROGETTAZIONE" ~ "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE",
-                                   TRUE ~ x_PROGRAMMA)) %>%
-    mutate(x_PIANI = case_when(x_PROGRAMMA == "PIANO OPERATIVO FSC INFRASTRUTTURE" ~ "INFRASTRUTTURE",
-                               x_PROGRAMMA == "PIANO OPERATIVO FSC AMBIENTE" ~ "AMBIENTE",
-                               x_PROGRAMMA == "PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'" ~ "IMPRESE E COMPETITIVITA'",
-                               x_PROGRAMMA == "PIANO OPERATIVO FSC AGRICOLTURA" ~ "AGRICOLTURA",
-                               x_PROGRAMMA == "PIANO STRALCIO CULTURA E TURISMO" ~ "CULTURA E TURISMO",
-                               x_PROGRAMMA == "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE" ~ "DISSESTO IDROG. AREE URBANE",
-                               x_PROGRAMMA == "PIANO STRALCIO RICERCA E INNOVAZIONE" ~ "RICERCA E INNOVAZIONE",
-                               # NEW
-                               x_PROGRAMMA == "PIANO STRALCIO DISSESTO IDROGEOLOGICO" ~ "DISSESTO IDROG. AREE URBANE",
-                               x_PROGRAMMA == "PS AREE METROPOLITANE FONDO PROGETTAZIONE" ~ "DISSESTO IDROG. AREE URBANE")) %>%
-    mutate(x_PIANI = factor(x_PIANI, levels = c("INFRASTRUTTURE", "AMBIENTE", "IMPRESE E COMPETITIVITA'", "AGRICOLTURA",
-                                                "CULTURA E TURISMO", "DISSESTO IDROG. AREE URBANE", "RICERCA E INNOVAZIONE")))
+  # appo <- perimetro %>%
+  #   mutate(x_PROGRAMMA = case_when(x_PROGRAMMA == "PATTO PER LO SVILUPPO REGIONE CAMPANIA:::PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'" ~ "PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'",
+  #                                  grepl("^PS AREE ", x_PROGRAMMA) ~ "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE",
+  #                                  # NEW:
+  #                                  x_PROGRAMMA == "PIANO STRALCIO DISSESTO IDROGEOLOGICO" ~ "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE",
+  #                                  x_PROGRAMMA == "PS AREE METROPOLITANE FONDO PROGETTAZIONE" ~ "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE",
+  #                                  TRUE ~ x_PROGRAMMA)) %>%
+  #   mutate(x_PIANI = case_when(x_PROGRAMMA == "PIANO OPERATIVO FSC INFRASTRUTTURE" ~ "INFRASTRUTTURE",
+  #                              x_PROGRAMMA == "PIANO OPERATIVO FSC AMBIENTE" ~ "AMBIENTE",
+  #                              x_PROGRAMMA == "PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'" ~ "IMPRESE E COMPETITIVITA'",
+  #                              x_PROGRAMMA == "PIANO OPERATIVO FSC AGRICOLTURA" ~ "AGRICOLTURA",
+  #                              x_PROGRAMMA == "PIANO STRALCIO CULTURA E TURISMO" ~ "CULTURA E TURISMO",
+  #                              x_PROGRAMMA == "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE" ~ "DISSESTO IDROG. AREE URBANE",
+  #                              x_PROGRAMMA == "PIANO STRALCIO RICERCA E INNOVAZIONE" ~ "RICERCA E INNOVAZIONE",
+  #                              # NEW
+  #                              x_PROGRAMMA == "PIANO STRALCIO DISSESTO IDROGEOLOGICO" ~ "DISSESTO IDROG. AREE URBANE",
+  #                              x_PROGRAMMA == "PS AREE METROPOLITANE FONDO PROGETTAZIONE" ~ "DISSESTO IDROG. AREE URBANE")) %>%
+  #   mutate(x_PIANI = factor(x_PIANI, levels = c("INFRASTRUTTURE", "AMBIENTE", "IMPRESE E COMPETITIVITA'", "AGRICOLTURA",
+  #                                               "CULTURA E TURISMO", "DISSESTO IDROG. AREE URBANE", "RICERCA E INNOVAZIONE")))
   # TODO: queste riclassificazioni andrebbero gestite in po_linee_azioni o almeno in get_x_vars
+
+  appo <- perimetro %>%
+    mutate(x_PROGRAMMA = case_when(x_PROGRAMMA == "PATTO CAMPANIA + PIANO FSC IMPRESE E COMPETITIVITA'" ~ "PIANO FSC IMPRESE E COMPETITIVITA'",
+                                   grepl("^PS AREE ", x_PROGRAMMA) ~ "PIANO FSC DISSESTO IDROGEOLOGICO",
+                                   # NEW:
+                                   x_PROGRAMMA == "PIANO FSC DISSESTO IDROGEOLOGICO" ~ "PIANO FSC DISSESTO IDROGEOLOGICO",
+                                   x_PROGRAMMA == "PIANO FSC DISSESTO IDROGEOLOGICO (FONDO)" ~ "PIANO FSC DISSESTO IDROGEOLOGICO",
+                                   TRUE ~ x_PROGRAMMA)) %>%
+    mutate(x_PIANI = case_when(x_PROGRAMMA == "PIANO FSC INFRASTRUTTURE" ~ "INFRASTRUTTURE",
+                               x_PROGRAMMA == "PIANO FSC AMBIENTE" ~ "AMBIENTE",
+                               x_PROGRAMMA == "PIANO FSC IMPRESE E COMPETITIVITA'" ~ "IMPRESE E COMPETITIVITA'",
+                               x_PROGRAMMA == "PIANO FSC AGRICOLTURA" ~ "AGRICOLTURA",
+                               x_PROGRAMMA == "PIANO FSC CULTURA E TURISMO" ~ "CULTURA E TURISMO",
+                               x_PROGRAMMA == "PIANO FSC DISSESTO IDROGEOLOGICO" ~ "DISSESTO IDROGEOLOGICO",
+                               x_PROGRAMMA == "PIANO FSC RICERCA E INNOVAZIONE" ~ "RICERCA E INNOVAZIONE",
+                               # NEW
+                               # x_PROGRAMMA == "PIANO STRALCIO DISSESTO IDROGEOLOGICO" ~ "DISSESTO IDROG. AREE URBANE",
+                               x_PROGRAMMA == "PIANO FSC DISSESTO IDROGEOLOGICO (FONDO)" ~ "DISSESTO IDROGEOLOGICO")) %>%
+    mutate(x_PIANI = factor(x_PIANI, levels = c("INFRASTRUTTURE", "AMBIENTE", "IMPRESE E COMPETITIVITA'", "AGRICOLTURA",
+                                                "CULTURA E TURISMO", "DISSESTO IDROGEOLOGICO", "RICERCA E INNOVAZIONE")))
 
   temp <- paste0(focus, "_pianinaz.csv")
 
@@ -460,20 +481,20 @@ report_cd_pianinaz <- function(perimetro, focus="elab", export=FALSE) {
                                         "PIANI OPERATIVI NAZIONALI", "PIANI OPERATIVI NAZIONALI", "PIANI OPERATIVI NAZIONALI",  "PIANI OPERATIVI NAZIONALI",
                                         "ALTRI PIANI E PROGRAMMI", "ALTRI PIANI E PROGRAMMI"),
                        x_PIANI = c("INFRASTRUTTURE", "AMBIENTE", "IMPRESE E COMPETITIVITA'", "AGRICOLTURA",
-                                   "CULTURA E TURISMO", "DISSESTO IDROG. AREE URBANE", "SALUTE", "SPORT E PERIFERIFERIE",
+                                   "CULTURA E TURISMO", "DISSESTO IDROGEOLOGICO", "SALUTE", "SPORT E PERIFERIE",
                                    "RICERCA E INNOVAZIONE", "BANDA ULTRA LARGA"),
-                       x_PROGRAMMA = c("PIANO OPERATIVO FSC INFRASTRUTTURE",
-                                       "PIANO OPERATIVO FSC AMBIENTE",
-                                       "PIANO OPERATIVO FSC IMPRESE E COMPETITIVITA'",
-                                       "PIANO OPERATIVO FSC AGRICOLTURA",
-                                       "PIANO STRALCIO CULTURA E TURISMO",
-                                       "PIANO STRALCIO DISSESTO IDROGEOLOGICO AREE METROPOLITANE",
+                       x_PROGRAMMA = c("PIANO FSC INFRASTRUTTURE",
+                                       "PIANO FSC AMBIENTE",
+                                       "PIANO FSC IMPRESE E COMPETITIVITA'",
+                                       "PIANO FSC AGRICOLTURA",
+                                       "PIANO FSC CULTURA E TURISMO",
+                                       "PIANO FSC DISSESTO IDROGEOLOGICO",
                                        "x_SALUTE",
-                                       "x_SPORT E PERIFERIFERIE",
-                                       "PIANO STRALCIO RICERCA E INNOVAZIONE",
-                                       "x_BANDA ULTRA LARGA")) %>%
+                                       "PIANO FSC SPORT E PERIFERIE", # "x_SPORT E PERIFERIFERIE",
+                                       "PIANO FSC RICERCA E INNOVAZIONE",
+                                       "PIANO FSC BANDA ULTRA LARGA")) %>%
     mutate(x_PIANI = factor(x_PIANI, levels = c("INFRASTRUTTURE", "AMBIENTE", "IMPRESE E COMPETITIVITA'", "AGRICOLTURA",
-                                                "CULTURA E TURISMO", "DISSESTO IDROG. AREE URBANE", "SALUTE", "SPORT E PERIFERIFERIE",
+                                                "CULTURA E TURISMO", "DISSESTO IDROGEOLOGICO", "SALUTE", "SPORT E PERIFERIE",
                                                 "RICERCA E INNOVAZIONE", "BANDA ULTRA LARGA"))) %>%
     mutate(x_TIPO_PIANI = factor(x_TIPO_PIANI, levels = c("PIANI OPERATIVI NAZIONALI", "ALTRI PIANI E PROGRAMMI")))
   # MEMO: serve per tenere fermo ordine in tutti i report (comprese le righe vuote)
@@ -793,88 +814,10 @@ get_spalla_regioni <- function() {
 }
 
 
-# programmazione
-
-
-#' Esporta report per Programmi in formato CD
-#'
-#' Report con apertura per programma e fase procedurale rispetto al focus selezionato
-#'
-#' @param perimetro Dataset di classe perimetro.
-#' @param focus nome per file.
-#' @param export vuoi salvare il file?
-#' @return Un file csv con apertura per programma e fase procedurale.
-report_cd_programmi <- function(perimetro, focus="elab", usa_meuro=FALSE, export=FALSE) {
-
-  # TODO:
-  # correggere "FESR-FSE"
-  # inserire verifica bimestre precedente
-
-  # appo <- perimetro %>%
-  #   mutate(x_PROGRAMMA = factor(x_PROGRAMMA, levels = c("PATTO EMILIA-ROMAGNA", "PATTO LOMBARDIA", "PATTO LAZIO",
-  #                                                       "PATTO BOLOGNA", "PATTO FIRENZE", "PATTO GENOVA", "PATTO MILANO", "PATTO VENEZIA",
-  #                                                       "PATTO ABRUZZO", "PATTO BASILICATA", "PATTO CALABRIA",  "PATTO CAMPANIA",
-  #                                                       "PATTO MOLISE", "PATTO PUGLIA", "PATTO SARDEGNA",  "PATTO SICILIA",
-  #                                                       "PATTO BARI", "PATTO CAGLIARI", "PATTO CATANIA",  "PATTO MESSINA",
-  #                                                       "PATTO NAPOLI", "PATTO PALERMO", "PATTO REGGIO CALABRIA")))
-
-  appo <- perimetro
-
-  temp <- paste0(focus, "_programmi.csv")
-
-  programmi <- init_programmazione(usa_temi=FALSE, export=FALSE)
-
-  if (usa_meuro == TRUE) {
-    programmi<- programmi  %>%
-      mutate(RISORSE = round(RISORSE / 1000000, 1))
-  }
-
-  # spalla con risorse (per tutti i programmi)
-  # spalla <- programmi %>%
-  #   group_by(OC_CODICE_PROGRAMMA) %>%
-  #   summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)) %>%
-  #   left_join(octk::po_riclass %>%
-  #               select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA),
-  #             by = "OC_CODICE_PROGRAMMA") %>%
-  #   select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, RISORSE)
-
-  spalla <- octk::po_riclass %>%
-    select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA) %>%
-    filter(x_CICLO != "2000-2006",
-           x_AMBITO != "CTE",
-           x_AMBITO != "FEASR",
-           x_AMBITO != "FEAMP") %>%
-    left_join(programmi %>%
-                group_by(OC_CODICE_PROGRAMMA, x_AMBITO) %>%
-                summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)),
-              by = c("OC_CODICE_PROGRAMMA", "x_AMBITO"))
 
 
 
-  # report
-  out <- spalla %>%
-    # TODO: inserire filtro sopra!!! Non posso usare solo quello con right_join su attuazione
-    full_join(appo %>%
-                group_by(OC_CODICE_PROGRAMMA) %>%
-                summarise(N = n(),
-                          CP = sum(CP, na.rm = TRUE),
-                          IMP = sum(IMP, na.rm = TRUE),
-                          PAG = sum(PAG, na.rm = TRUE),
-                          COE = sum(COE, na.rm = TRUE)) %>%
-                left_join(appo %>%
-                            group_by(OC_CODICE_PROGRAMMA, OC_STATO_PROCEDURALE) %>%
-                            summarise(COE = sum(COE, na.rm = TRUE)) %>%
-                            spread(OC_STATO_PROCEDURALE, COE, fill = 0, drop = FALSE),
-                          by = "OC_CODICE_PROGRAMMA"),
-              by = "OC_CODICE_PROGRAMMA") %>%
-  # riempie NA con 0
-  mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
 
-  if (export == TRUE) {
-    write.csv2(out, file.path(TEMP, temp), row.names = FALSE)
-  }
-  return(out)
-}
 
 
 

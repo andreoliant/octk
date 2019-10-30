@@ -33,6 +33,10 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
     if (!is.null(data_path)) {
       DATA <- data_path
       # MEMO: sovrascrive data_path a DATA
+    } else {
+      data_path=file.path(DATA, "..", bimestre)
+      DATA <- data_path
+      # MEMO: questo serve per puntare a bimestre specifico senza modificare data_path
     }
 
     # load progetti
@@ -119,7 +123,7 @@ refactor_progetti <- function(perimetro) {
 
   perimetro <- perimetro %>%
     mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
-           x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "YEI", "SNAI", "FEASR", "FEAMP")),
+           x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI")),
            x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")),
            OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE, levels = c("Non avviato",
                                                                           "In avvio di progettazione",

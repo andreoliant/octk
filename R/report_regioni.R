@@ -92,21 +92,22 @@ report_regione <- function(regione, progetti, debug = TRUE) {
     # programmazione
 
     # loads
-    init_programmazione(usa_temi=FALSE, export=TRUE)
+    # init_programmazione(usa_temi=FALSE, export=TRUE)
+    programmi <- init_programmazione(usa_temi=FALSE, export=FALSE)
 
     # binds
-    programmi <- po_fsc %>%
-      mutate(x_CICLO = "2014-2020",
-             x_AMBITO = "FSC") %>%
-      bind_rows(po_fesr %>%
-                  mutate(x_CICLO = "2014-2020",
-                         x_AMBITO = "FESR")) %>%
-      bind_rows(po_fse %>%
-                  mutate(x_CICLO = "2014-2020",
-                         x_AMBITO = "FSE")) %>%
-      bind_rows(po_poc %>%
-                  mutate(x_CICLO = "2014-2020",
-                         x_AMBITO = "POC"))
+    # programmi <- po_fsc %>%
+    #   mutate(x_CICLO = "2014-2020",
+    #          x_AMBITO = "FSC") %>%
+    #   bind_rows(po_fesr %>%
+    #               mutate(x_CICLO = "2014-2020",
+    #                      x_AMBITO = "FESR")) %>%
+    #   bind_rows(po_fse %>%
+    #               mutate(x_CICLO = "2014-2020",
+    #                      x_AMBITO = "FSE")) %>%
+    #   bind_rows(po_poc %>%
+    #               mutate(x_CICLO = "2014-2020",
+    #                      x_AMBITO = "POC"))
 
     # rm(po_fesr, po_fse, po_fsc, po_poc)
 

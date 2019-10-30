@@ -71,8 +71,8 @@ get_dimensione_fin <- function(df, debug_mode=FALSE) {
                                   OC_FINANZ_TOT_PUB_NETTO > 1000000 & OC_FINANZ_TOT_PUB_NETTO <= 2000000 ~ "1M-2M",
                                   OC_FINANZ_TOT_PUB_NETTO > 2000000 & OC_FINANZ_TOT_PUB_NETTO <= 5000000 ~ "2M-5M",
                                   OC_FINANZ_TOT_PUB_NETTO > 5000000 & OC_FINANZ_TOT_PUB_NETTO <= 10000000 ~ "5M-10M",
-                                  OC_FINANZ_TOT_PUB_NETTO > 10000000 ~ "10M-infty")) %>%
-    mutate(CLASSE_FIN = factor(CLASSE_FIN, levels=c("0-100k", "100k-500k", "500k-1M", "1M-2M", "2M-5M", "5M-10M", "10M-infty")))
+                                  OC_FINANZ_TOT_PUB_NETTO > 10000000 ~ "10M-inf")) %>%
+    mutate(CLASSE_FIN = factor(CLASSE_FIN, levels=c("0-100k", "100k-500k", "500k-1M", "1M-2M", "2M-5M", "5M-10M", "10M-inf")))
 
   return(df)
 
@@ -222,7 +222,7 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
 
   # NEW BLOCK
   if (real_reg == TRUE) {
-    df <- get_real_reg(df)
+    df <- get_real_reg(df, progetti)
     # MEMO: sovrascrive COD_REGIONE
   }
 
