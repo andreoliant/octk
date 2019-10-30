@@ -5,7 +5,7 @@
 \title{Inizializza il database della programmazione}
 \usage{
 init_programmazione(usa_temi = FALSE, usa_sog = FALSE,
-  usa_eu = FALSE, export = TRUE)
+  usa_eu = FALSE, usa_flt = FALSE, add_713 = FALSE, export = TRUE)
 }
 \arguments{
 \item{usa_temi}{Vuoi caricare il DB con correzione dei temi prioritari?}
@@ -15,6 +15,8 @@ init_programmazione(usa_temi = FALSE, usa_sog = FALSE,
 \item{usa_eu}{Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)}
 
 \item{export}{Vuoi avere le tabelle del DB nel GlobalEnv?}
+
+\item{usa_713}{Vuoi caricare anche il DB per il 2007-2013?}
 }
 \value{
 L'intero database dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.
