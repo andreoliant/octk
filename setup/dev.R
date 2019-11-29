@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.2.2"
+oc_ver <- "0.2.6"
 
 # rm(list=ls())
 library("devtools")
@@ -72,8 +72,8 @@ devtools::load_all(path = ".")
 
 # setup
 oc_init(
-  bimestre = "20190630",
-  db_ver = "20190901",
+  bimestre = "20190831",
+  db_ver = "NIGHTLY",
   data_path = "/Users/aa/dati/oc",
   use_drive=TRUE,
   DEV_MODE=TRUE
@@ -108,19 +108,58 @@ oc_init(
 # 0: programma normale
 # 1: programma misto con ":::"
 # 2: programma duplicato lato IGRUE (2 programmi con CCI diversi ma uno è vuoto)
-# 3: progetti/programma da accorpare (e programma/unione post accorpamento)
+# 3: progetti/programma da accorpare (e programma/unione post accorpamento fino a 0.2.5)
 # 4: programma censito lato programmazione e ancora da caricare in BDU
+# 5: programma/unione post accorpamento (sostituisce casi con 3 da 0.2.6)
+# 6: programma fittizio per completamenti
+# 8: programma da verificare
 # 9: programma disattivato in BDU
 
+# load da DB programmazione
+po <- octk::po_riclass %>%
+  filter(TIPO != 2 & TIPO != 3 & TIPO != 9, # MEMO: elimino programmi accorpati e disttivati
+         x_CICLO != "2000-2006",
+         x_AMBITO != "CTE" & x_AMBITO != "FEASR") %>%
+  filter(!(grepl(":::", OC_CODICE_PROGRAMMA)))
+
+programmi <- init_programmazione(add_713 = TRUE, export = FALSE) %>%
+  count(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
+
+# chk
+chk_match(po, programmi, id = "OC_CODICE_PROGRAMMA")
+
+# chk nuovi da OCTK
+chk_left <- po %>%
+  select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ) %>%
+  anti_join(programmi,
+            by = "OC_CODICE_PROGRAMMA")
+write_csv(chk_left, file.path(TEMP, "chk_left.csv"))
+
+# chk scarti da DB
+chk_right <- programmi %>%
+  anti_join(po %>%
+              select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ),
+            by = "OC_CODICE_PROGRAMMA")
+write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
+
+
+# load in package as .rda
+source(file.path(getwd(), "setup", "setup_data.R"))
+devtools::load_all(path = ".")
+
+
+# ----------------------------------------------------------------------------------- #
+# OLD: verifica su sas
+
 # laod da sas
-path <- "/Volumes/GoogleDrive/Drive condivisi/DATI/20190630/DASAS/DATABASE/oc_programmi.sas7bdat"
+path <- "/Volumes/GoogleDrive/Drive condivisi/DATI/20190831/DASAS/DATABASE/oc_programmi.sas7bdat"
 # path <- file.path(DATA, "oc_programmi.sas7bdat")
 po_sas <- read_sas(path)
 # MEMO: oc_programmi.sas7bdat scaricato a mano e messo in DATA
 
 
 # chk
-chk_match(octk::po_riclass, po_sas, id = "OC_CODICE_PROGRAMMA")
+chk_match(po, po_sas, id = "OC_CODICE_PROGRAMMA")
 #   area         obs obs_na obs_n  id_n obs_m  id_m
 # 1 left         646      0   646   646     0     0
 # 2 right        633      0   633   619    27    13
@@ -184,7 +223,7 @@ write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20190228"
+bimestre_old <- "20190630"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
 progetti_all_old <- load_progetti(bimestre = bimestre_old,
@@ -195,6 +234,8 @@ progetti_all <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug =
 
 # totali
 chk <- progetti_all_old %>%
+  mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
+                                       TRUE ~ FONDO_COMUNITARIO)) %>%
   get_x_vars(.) %>%
   group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
   summarise(N = n(),
@@ -218,6 +259,8 @@ write.csv2(chk, file.path(OUTPUT, paste0("chk_delta_noviz_", bimestre, ".csv")),
 
 # singoli progetti
 chk2 <- progetti_all_old %>%
+  mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
+                                       TRUE ~ FONDO_COMUNITARIO)) %>%
   get_x_vars(.) %>%
   # group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
   select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO) %>%
@@ -233,10 +276,22 @@ chk2 %>% arrange(desc(CP.chk))
 chk2 %>% filter(is.na(x_AMBITO.new), OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_CODICE_PROGRAMMA.new)
 chk2 %>% filter(x_AMBITO.new == "FESR", OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_FLAG_VISUALIZZAZIONE.old)
 
+
+temp <- chk2 %>% filter(x_CICLO.new == "2007-2013", x_AMBITO.new == "FSC", OC_FLAG_VISUALIZZAZIONE.new == 0, CP.chk > 0)
+write_csv2(temp, file.path(TEMP, "chk_fsc713.csv"))
+
 # chk
 chk_match(progetti_all_old, progetti_all, id = "COD_LOCALE_PROGETTO")
 
 
+# chk mismatch con po_riclass
+temp <- chk2 <- progetti_all %>%
+  mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630 e 20190831
+                                       TRUE ~ FONDO_COMUNITARIO)) %>%
+  get_x_vars(.) %>%
+  filter(is.na(x_CICLO))
+
+write_csv2(temp, file.path(TEMP, "chk_missing.csv"))
 
 
 
@@ -295,7 +350,7 @@ chk <- appo %>%
 
 chk <- appo %>%
   filter(x_REGNAZ == "NAZ", X_REGNAZ != "NAZ")
-# MEMO: qui va aggiornato lato SAS # ok per 20190630
+# MEMO: qui va aggiornato lato SAS # ok per 20190630 e seguenti
 
 chk %>%
   count(x_PROGRAMMA)
@@ -366,7 +421,7 @@ appo %>%
 # TODO: verificare se i nomi sono troncati...
 
 # po_linee_azioni.csv
-make_matrix_po(bimestre = "20190630")
+make_matrix_po(bimestre = "20190831")
 chk <- chk_delta_po("NEW")
 chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
 chk <- chk_delta_po("OLD")
@@ -375,10 +430,10 @@ chk <- chk_delta_po("OLD")
 # TODO: voglio sapere cosa manca in po_linee_azioni rispetto al DB programmazione
 
 # strum_att.csv
-make_matrix_strum(bimestre = "20190630")
+make_matrix_strum(bimestre = "20190831")
 
 # delib_cipe.csv
-make_matrix_cipe(bimestre = "20190630")
+make_matrix_cipe(bimestre = "20190831")
 
 # TODO: inserire matrix per PATT e per progetto complesso
 
@@ -396,8 +451,8 @@ devtools::load_all(path = ".")
 # https://readr.tidyverse.org/articles/readr.html#column-specification
 
 # setup_light(bimestre = "20181231")
-setup_light(bimestre = "20190630")
-# TODO: aggiungere nuove variabili di progetti
+setup_light(bimestre = "20190831", fix = FALSE)
+# HAND: aggiungere nuove variabili di progetti
 
 #  oggetto "OC_FINANZ_UE_NETTO" non trovato
 
@@ -490,9 +545,12 @@ system(
 # ----------------------------------------------------------------------------------- #
 # tag
 
+# HAND: fare commit prima di inserire tag
+
 system(
-  # paste0("git tag v", oc_ver)
-  paste0("git tag v", oc_ver, "-REV.01")
+  paste0("git tag v", oc_ver)
+  # paste0("git tag v", oc_ver, "-REV.01")
   )
+
 
 

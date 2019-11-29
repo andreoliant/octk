@@ -21,8 +21,10 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   if (ciclo == "2014-2020") {
     temp <- case_when(ambito == "FESR" ~ "SIE",
                       ambito == "FSE" ~ "SIE",
-                      ambito == "FEASR" ~ "SIE",
-                      ambito == "FEAMP" ~ "SIE",
+                      # ambito == "FEASR" ~ "SIE",
+                      # ambito == "FEAMP" ~ "SIE",
+                      ambito == "FEASR" ~ "FEASR",
+                      ambito == "FEAMP" ~ "FEAMP",
                       ambito == "YEI" ~ "SIE", # CHK: decidere se vive
                       TRUE ~ ambito)
     filename <- paste0(temp, "_1420.xlsx")
@@ -194,6 +196,7 @@ init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, usa
     po_poc <<- load_db("2014-2020", "POC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
     po_yei <<- load_db("2014-2020", "YEI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
     po_feamp <<- load_db("2014-2020", "FEAMP", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_snai <<- load_db("2014-2020", "SNAI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
     message("Il db di programmazione è pronto in 'po_fesr', 'po_fse', 'po_fsc', 'po_poc', 'po_yei' e 'po_feamp'")
 
     if (add_713 == TRUE) {
@@ -207,6 +210,7 @@ init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, usa
     po_poc <- load_db("2014-2020", "POC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
     po_yei <- load_db("2014-2020", "YEI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
     po_feamp <- load_db("2014-2020", "FEAMP", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_snai <- load_db("2014-2020", "SNAI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
 
     programmi <- po_fsc %>%
       mutate(x_CICLO = "2014-2020",
@@ -226,9 +230,10 @@ init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, usa
       bind_rows(po_feamp %>%
                   mutate(x_CICLO = "2014-2020",
                          x_AMBITO = "FEAMP")) %>%
-      as.data.frame(.) %>%
-      mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI")),
-             x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")))
+      bind_rows(po_snai %>%
+                  mutate(x_CICLO = "2014-2020",
+                         x_AMBITO = "SNAI")) %>%
+      as.data.frame(.)
 
     if (add_713 == TRUE) {
       po_fsc713 <- load_db("2007-2013", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
@@ -250,6 +255,10 @@ init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, usa
                     mutate(x_CICLO = "2007-2013",
                            x_AMBITO = "FSE"))
     }
+
+    programmi <- programmi  %>%
+      mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI")),
+             x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")))
 
     return(programmi)
 
