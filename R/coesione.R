@@ -271,7 +271,7 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
   # chk
   if (debug == TRUE) {
     # clean
-    operazioni_1420 <- operazioni_1420 %>%
+    appo <- operazioni_1420 %>%
       select(COD_LOCALE_PROGETTO,
              OC_CODICE_PROGRAMMA,
              x_AMBITO,
@@ -283,7 +283,7 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
              COE_IMP = IMP_AMM,
              COE_PAG = PAG_AMM)
 
-    chk <- operazioni_1420 %>%
+    chk <- appo %>%
       group_by(x_AMBITO, OC_CODICE_PROGRAMMA) %>%
       summarise_if(is.numeric, sum, na.rm = TRUE) %>%
       left_join(octk::po_riclass %>%
@@ -312,17 +312,17 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
     #             COE_PAG = sum(COE_PAG, na.rm = TRUE))
 
 
-  } else {
-
-    # clean
-    operazioni_1420 <- operazioni_1420 %>%
-      select(COD_LOCALE_PROGETTO,
-             OC_CODICE_PROGRAMMA,
-             x_AMBITO,
-             COE,
-             COE_IMP = IMP_AMM,
-             COE_PAG = PAG_AMM)
   }
+
+  # clean
+  operazioni_1420 <- operazioni_1420 %>%
+    select(COD_LOCALE_PROGETTO,
+           OC_CODICE_PROGRAMMA,
+           x_AMBITO,
+           COE,
+           COE_IMP = IMP_AMM,
+           COE_PAG = PAG_AMM)
+
 
 
   # ----------------------------------------------------------------------------------- #
@@ -414,7 +414,7 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
   if (debug == TRUE) {
 
     # clean
-    operazioni_713 <- operazioni_713 %>%
+    appo <- operazioni_713 %>%
       select(COD_LOCALE_PROGETTO,
              OC_CODICE_PROGRAMMA,
              x_AMBITO,
@@ -433,13 +433,11 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
              COE_IMP,
              COE_PAG)
 
-    operazioni_713 %>%
+    appo %>%
       filter(x > 1) %>%
       arrange(desc(x))
 
-    appo0 <- operazioni_713
-
-    appo0 %>%
+    appo %>%
       filter(round(COE_PAG, 0) > round(COE_IMP, 0)) %>%
       count(x_AMBITO)
     # MEMO: prima del fix...
@@ -451,8 +449,7 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
     # 4 POC       3146
     # MEMO: dopo il fix
 
-
-    chk <- operazioni_713 %>%
+    chk <- appo %>%
       select(-x) %>%
       group_by(x_AMBITO, OC_CODICE_PROGRAMMA) %>%
       summarise_if(is.numeric, sum, na.rm = TRUE) %>%
@@ -476,19 +473,16 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
     #             COE_IMP = sum(COE_IMP, na.rm = TRUE),
     #             COE_PAG = sum(COE_PAG, na.rm = TRUE))
 
-  } else {
-
-    # clean
-    operazioni_713 <- operazioni_713 %>%
-      select(COD_LOCALE_PROGETTO,
-             OC_CODICE_PROGRAMMA,
-             x_AMBITO,
-             COE,
-             COE_IMP,
-             COE_PAG)
-
   }
 
+  # clean
+  operazioni_713 <- operazioni_713 %>%
+    select(COD_LOCALE_PROGETTO,
+           OC_CODICE_PROGRAMMA,
+           x_AMBITO,
+           COE,
+           COE_IMP,
+           COE_PAG)
 
 
   # ----------------------------------------------------------------------------------- #
@@ -503,12 +497,16 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
                        !(OC_CODICE_PROGRAMMA == "2017TOPIOMBIFSC" & x_CICLO == "2007-2013")) %>%
                 select(OC_CODICE_PROGRAMMA, x_CICLO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ)) %>%
     # isola visualizzati
+    # MEMO: questo sotto non prende ":::" su OC_CODICE_PROGRAMMA
+    # semi_join(progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 0), by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA"))
     semi_join(progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 0), by = "COD_LOCALE_PROGETTO")
+
+  # chk compatibile con Fabio x Stefano
+  operazioni %>% distinct(COD_LOCALE_PROGETTO, x_CICLO, x_AMBITO) %>% count(x_CICLO, x_AMBITO)
 
   # chk dupli per ciclo da po_riclass
   chk <- operazioni %>% count(COD_LOCALE_PROGETTO, x_CICLO)
   dim(chk)[1] == dim(progetti)[1]
-
 
   # chk
   operazioni %>%
