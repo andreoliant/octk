@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.2.6"
+oc_ver <- "0.2.7"
 
 # rm(list=ls())
 library("devtools")
@@ -72,22 +72,13 @@ devtools::load_all(path = ".")
 
 # setup
 oc_init(
-  bimestre = "20190831",
+  bimestre = "20191031",
   db_ver = "NIGHTLY",
   data_path = "/Users/aa/dati/oc",
   use_drive=TRUE,
   DEV_MODE=TRUE
   )
 
-# /Users/aa/dati/oc
-
-# oc_init(
-#   bimestre = "20181231",
-#   db_ver = "20190620",
-#   data_path = "/Users/aa/dati/oc",
-#   use_drive=TRUE,
-#   DEV_MODE=TRUE
-# )
 # MEMO: per il setup bimestrale la workarea è in locale oc/test e i dati sono in GoogleDrive
 
 # copy data from GoogleDrive to local
@@ -119,7 +110,7 @@ oc_init(
 po <- octk::po_riclass %>%
   filter(TIPO != 2 & TIPO != 3 & TIPO != 9, # MEMO: elimino programmi accorpati e disttivati
          x_CICLO != "2000-2006",
-         x_AMBITO != "CTE" & x_AMBITO != "FEASR") %>%
+         x_AMBITO != "FEASR") %>%
   filter(!(grepl(":::", OC_CODICE_PROGRAMMA)))
 
 programmi <- init_programmazione(add_713 = TRUE, export = FALSE) %>%
@@ -152,36 +143,26 @@ devtools::load_all(path = ".")
 # OLD: verifica su sas
 
 # laod da sas
-path <- "/Volumes/GoogleDrive/Drive condivisi/DATI/20190831/DASAS/DATABASE/oc_programmi.sas7bdat"
-# path <- file.path(DATA, "oc_programmi.sas7bdat")
+# path <- "/Volumes/GoogleDrive/Drive condivisi/DATI/20190831/DASAS/DATABASE/oc_programmi.sas7bdat"
+path <- file.path(DATA, "oc_programmi.sas7bdat")
 po_sas <- read_sas(path)
 # MEMO: oc_programmi.sas7bdat scaricato a mano e messo in DATA
 
 
 # chk
 chk_match(po, po_sas, id = "OC_CODICE_PROGRAMMA")
-#   area         obs obs_na obs_n  id_n obs_m  id_m
-# 1 left         646      0   646   646     0     0
-# 2 right        633      0   633   619    27    13
-# 3 inner        613      0   613   599    27    13
-# 4 semi_left    599      0   599   599     0     0
-# 5 anti_left     47      0    47    47     0     0
-# 6 semi_right   613      0   613   599    27    13
-# 7 anti_right    20      0    20    20     0     0
-# MEMO: valori ante consolidamento
-
-#   area         obs obs_na obs_n  id_n obs_m  id_m
-# 1 left         663      0   663   663     0     0
-# 2 right        633      0   633   619    27    13
-# 3 inner        633      0   633   619    27    13
-# 4 semi_left    619      0   619   619     0     0
-# 5 anti_left     44      0    44    44     0     0
-# 6 semi_right   633      0   633   619    27    13
-# 7 anti_right     0      0     0     0     0     0
-# MEMO: valori post consolidamento
+# area         obs obs_na obs_n  id_n obs_m  id_m
+# <chr>      <int>  <int> <int> <int> <int> <int>
+# 1 left         367      0   367   365     4     2
+# 2 right        652      0   652   638    27    13
+# 3 inner        303      0   303   287    31    15
+# 4 semi_left    289      0   289   287     4     2
+# 5 anti_left     78      0    78    78     0     0
+# 6 semi_right   301      0   301   287    27    13
+# 7 anti_right   351      0   351   351     0     0
 
 # chk scarti da DB
-chk_left <- octk::po_riclass %>%
+chk_left <- po %>%
   anti_join(po_sas %>%
               select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ),
             by = "OC_CODICE_PROGRAMMA")
@@ -190,7 +171,7 @@ write_csv(chk_left, file.path(TEMP, "chk_left.csv"))
 # chk nuovi da SAS
 chk_right <- po_sas %>%
   select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ) %>%
-  anti_join(octk::po_riclass,
+  anti_join(po,
             by = "OC_CODICE_PROGRAMMA")
 write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 
@@ -223,7 +204,7 @@ write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20190630"
+bimestre_old <- "20190831"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
 progetti_all_old <- load_progetti(bimestre = bimestre_old,
@@ -234,15 +215,17 @@ progetti_all <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug =
 
 # totali
 chk <- progetti_all_old %>%
-  mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
-                                       TRUE ~ FONDO_COMUNITARIO)) %>%
+  # mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
+  #                                      TRUE ~ FONDO_COMUNITARIO)) %>%
+  fix_progetti(.) %>%
   get_x_vars(.) %>%
   group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
   summarise(N = n(),
             CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE)) %>%
   full_join(progetti_all %>%
-              mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
-                                                   TRUE ~ FONDO_COMUNITARIO)) %>%
+              # mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
+              #                                      TRUE ~ FONDO_COMUNITARIO)) %>%
+              fix_progetti(.) %>%
               get_x_vars(.) %>%
               group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
               summarise(N = n(),
@@ -259,14 +242,16 @@ write.csv2(chk, file.path(OUTPUT, paste0("chk_delta_noviz_", bimestre, ".csv")),
 
 # singoli progetti
 chk2 <- progetti_all_old %>%
-  mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
-                                       TRUE ~ FONDO_COMUNITARIO)) %>%
+  # mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
+  #                                      TRUE ~ FONDO_COMUNITARIO)) %>%
+  fix_progetti(.) %>%
   get_x_vars(.) %>%
   # group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
   select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO) %>%
   full_join(progetti_all %>%
-              mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
-                                                   TRUE ~ FONDO_COMUNITARIO)) %>%
+              # mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
+              #                                      TRUE ~ FONDO_COMUNITARIO)) %>%
+              fix_progetti(.) %>%
               get_x_vars(.) %>%
               select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO),
             by = "COD_LOCALE_PROGETTO", suffix = c(".old", ".new")) %>%
@@ -276,6 +261,9 @@ chk2 %>% arrange(desc(CP.chk))
 chk2 %>% filter(is.na(x_AMBITO.new), OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_CODICE_PROGRAMMA.new)
 chk2 %>% filter(x_AMBITO.new == "FESR", OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_FLAG_VISUALIZZAZIONE.old)
 
+temp <- chk2 %>% filter(is.na(x_CICLO.old), is.na(x_CICLO.new))
+
+                        # == "2007-2013", x_AMBITO.new == "FSC", OC_FLAG_VISUALIZZAZIONE.new == 0, CP.chk > 0)
 
 temp <- chk2 %>% filter(x_CICLO.new == "2007-2013", x_AMBITO.new == "FSC", OC_FLAG_VISUALIZZAZIONE.new == 0, CP.chk > 0)
 write_csv2(temp, file.path(TEMP, "chk_fsc713.csv"))
@@ -320,7 +308,7 @@ rm(progetti_all, progetti_all_old)
 progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
 
 # verifica x_vars
-# progetti <- fix_progetti(progetti)
+progetti <- fix_progetti(progetti)
 appo <- get_x_vars(progetti)
 # appo <- get_macroarea(appo, real_reg=TRUE)
 # appo <- get_regione_simply(appo)
@@ -328,8 +316,8 @@ appo <- get_x_vars(progetti)
 appo %>%
   count(x_CICLO, X_CICLO, x_AMBITO, X_AMBITO)
 
-# chk <- appo %>%
-#   filter(x_AMBITO == "FSC", X_AMBITO == "FESR")
+chk <- appo %>%
+  filter(x_AMBITO == "POC", X_AMBITO == "FESR-FSE")
 
 # verifica calabria
 # chk <- appo %>%
@@ -421,7 +409,7 @@ appo %>%
 # TODO: verificare se i nomi sono troncati...
 
 # po_linee_azioni.csv
-make_matrix_po(bimestre = "20190831")
+make_matrix_po(bimestre = "20191031")
 chk <- chk_delta_po("NEW")
 chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
 chk <- chk_delta_po("OLD")
@@ -430,7 +418,7 @@ chk <- chk_delta_po("OLD")
 # TODO: voglio sapere cosa manca in po_linee_azioni rispetto al DB programmazione
 
 # strum_att.csv
-make_matrix_strum(bimestre = "20190831")
+make_matrix_strum(bimestre = "20191031")
 
 # delib_cipe.csv
 make_matrix_cipe(bimestre = "20190831")
@@ -450,8 +438,7 @@ devtools::load_all(path = ".")
 # progetti_light
 # https://readr.tidyverse.org/articles/readr.html#column-specification
 
-# setup_light(bimestre = "20181231")
-setup_light(bimestre = "20190831", fix = FALSE)
+setup_light(bimestre = bimestre, fix = TRUE)
 # HAND: aggiungere nuove variabili di progetti
 
 #  oggetto "OC_FINANZ_UE_NETTO" non trovato
@@ -478,7 +465,7 @@ devtools::document()
 
 # build
 devtools::load_all(path = ".")
-devtools::check(path = "/Users/aa/coding/oc")
+# devtools::check(path = "/Users/aa/coding/oc")
 devtools::build(pkg = ".", path = "/Users/aa/coding/oc/bkp")
 # MEMO: build to boundle "oc_X.X.X.tar.gz"
 

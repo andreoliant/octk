@@ -110,6 +110,29 @@ fix_progetti <- function(progetti) {
     mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
                                          TRUE ~ FONDO_COMUNITARIO))
 
+  # fix temporaneo per IOG>YEI
+  progetti <- progetti %>%
+    mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "IOG"~ "YEI",
+                                         TRUE ~ FONDO_COMUNITARIO))
+
+  # # fix temporaneo per ":::OC_CODICE_PROGRAMMA"
+  # progetti <- progetti %>%
+  #   mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == ":::2014IT16RFOP007" ~ "2014IT16RFOP007",
+  #                                          OC_CODICE_PROGRAMMA == ":::2016POCIMPRESE1" ~ "2016POCIMPRESE1",
+  #                                          OC_CODICE_PROGRAMMA == ":::2017FSCRICERCA" ~ "2017FSCRICERCA",
+  #                                          OC_CODICE_PROGRAMMA == ":::2017POCRICERCA1" ~ "2017POCRICERCA1",
+  #                                          OC_CODICE_PROGRAMMA == ":::2017POIMPCOMFSC" ~ "2017POIMPCOMFSC",
+  #                                          TRUE ~ OC_CODICE_PROGRAMMA))
+
+  # fix temporaneo per ":::OC_CODICE_PROGRAMMA" (nuova versione)
+  progetti <- progetti %>%
+    mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == ":::2014IT16RFOP007" ~ "2014IT16RFOP007",
+                                           OC_CODICE_PROGRAMMA == ":::2016POCIMPRESE1" ~ "2014IT16RFOP003", # cambia!
+                                           OC_CODICE_PROGRAMMA == ":::2017FSCRICERCA" ~ "2014IT16M2OP005",  # cambia!
+                                           OC_CODICE_PROGRAMMA == ":::2017POCRICERCA1" ~ "2014IT16M2OP005", # cambia!
+                                           OC_CODICE_PROGRAMMA == ":::2017POIMPCOMFSC" ~ "2017POIMPCOMFSC",
+                                           TRUE ~ OC_CODICE_PROGRAMMA))
+
   return(progetti)
 }
 
@@ -123,7 +146,8 @@ refactor_progetti <- function(perimetro) {
 
   perimetro <- perimetro %>%
     mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
-           x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI")),
+           x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
+                                                  "FEAD", "FAMI", "CTE")),
            x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")),
            OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE, levels = c("Non avviato",
                                                                           "In avvio di progettazione",

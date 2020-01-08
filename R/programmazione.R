@@ -46,6 +46,14 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
       filter(OC_FLAG_ULTIMA_DECISIONE == "X")
   }
 
+  if (ambito == "CTE" ) {
+    appo <- appo %>%
+      filter(OC_DESCR_FONTE == ambito) %>%
+      # MEMO: questo serve per integrare versione con Asse
+      filter(OC_FLAG_ULTIMA_DECISIONE == "X") %>%
+      filter(OC_FLAG_MONITORAGGIO == 1)
+  }
+
   # switch
   var_ls <- c("OC_CODICE_PROGRAMMA", "OC_DESCRIZIONE_PROGRAMMA", "OC_TIPOLOGIA_PROGRAMMA",
               "OC_DESCR_FONTE",
@@ -197,6 +205,7 @@ init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, usa
     po_yei <<- load_db("2014-2020", "YEI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
     po_feamp <<- load_db("2014-2020", "FEAMP", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
     po_snai <<- load_db("2014-2020", "SNAI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_cte <<- load_db("2014-2020", "CTE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
     message("Il db di programmazione è pronto in 'po_fesr', 'po_fse', 'po_fsc', 'po_poc', 'po_yei' e 'po_feamp'")
 
     if (add_713 == TRUE) {
@@ -211,6 +220,7 @@ init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, usa
     po_yei <- load_db("2014-2020", "YEI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
     po_feamp <- load_db("2014-2020", "FEAMP", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
     po_snai <- load_db("2014-2020", "SNAI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
+    po_cte <- load_db("2014-2020", "CTE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt)
 
     programmi <- po_fsc %>%
       mutate(x_CICLO = "2014-2020",
@@ -233,6 +243,9 @@ init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, usa
       bind_rows(po_snai %>%
                   mutate(x_CICLO = "2014-2020",
                          x_AMBITO = "SNAI")) %>%
+      bind_rows(po_cte %>%
+                  mutate(x_CICLO = "2014-2020",
+                         x_AMBITO = "CTE")) %>%
       as.data.frame(.)
 
     if (add_713 == TRUE) {
@@ -257,7 +270,7 @@ init_programmazione <- function(usa_temi=FALSE, usa_sog=FALSE, usa_eu=FALSE, usa
     }
 
     programmi <- programmi  %>%
-      mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI")),
+      mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI", "CTE")),
              x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")))
 
     return(programmi)
@@ -374,7 +387,7 @@ make_risorse <- function(usa_713=FALSE, usa_macroaree=FALSE)
   #                      x_AMBITO = "YEI")) %>%
   risorse <- programmi %>%
     as.data.frame(.) %>%
-    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI")),
+    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI", "CTE")),
            x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale"))) %>%
     group_by(x_CICLO, x_AMBITO, x_MACROAREA) %>%
     summarise(RIS = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE))
@@ -402,7 +415,7 @@ make_risorse <- function(usa_713=FALSE, usa_macroaree=FALSE)
                        #         24979.9, 7038.5,
                        #         7419.4, 6343.6)
                        ) %>%
-      mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI")),
+      mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI", "CTE")),
              x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")),
              x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")))
 

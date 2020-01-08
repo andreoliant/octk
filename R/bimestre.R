@@ -4,6 +4,12 @@
 
 # ----------------------------------------------------------------------------------- #
 
+#' Prepara perimetor progetti
+#'
+#' Prepara perimetor progetti
+#'
+#' @param perimetro Dataset di classe perimetro.
+#' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro.
 prep_perimetro_bimestre <- function(bimestre, usa_meuro=TRUE) {
 
   # TODO: inserire switch per ciclo con calcolo di CP/COE direttamente su operazioni per 1420 (ora si può fare solo per impegni e pagamenti)
@@ -489,7 +495,7 @@ make_report_programmi_2 <- function(perimetro, usa_meuro=FALSE, add_713=FALSE, f
   spalla <- octk::po_riclass %>%
     filter(TIPO != 2 & TIPO != 3 & TIPO != 9, # MEMO: elimino programmi accorpati e disttivati
            x_CICLO != "2000-2006",
-           x_AMBITO != "CTE",
+           # x_AMBITO != "CTE",
            x_AMBITO != "FEASR") %>%
     select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA) %>%
     # MEMO: risolvo programmi plurifondo ("FESR-FSE" e "FSE-YEI")

@@ -118,6 +118,15 @@ get_regione_simply <- function(df, progetti, real_reg=TRUE) {
     # MEMO: sovrascrive COD_REGIONE
   }
 
+
+  # NEW BLOCK
+  if (!any(names(df) == "COD_PROVINCIA")) {
+    df <- df %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, COD_PROVINCIA),
+                by = "COD_LOCALE_PROGETTO")
+  }
+
   reg_cn <- c("001", "002", "003", "004", "005", "006",
               "007", "008", "009", "010", "011", "012")
   names(reg_cn) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
@@ -555,6 +564,7 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
     left_join(octk::po_riclass %>%
                 select(-NOTE),
               by = "OC_CODICE_PROGRAMMA")
+  # CHK: vedi sotto per fix, qui duplica in caso di programma FSC su 2 cicli
 
   # recupera fondo comunitario da progetti (se assente in df)
   if (!(any(names(df) == "FONDO_COMUNITARIO"))) {
@@ -576,11 +586,17 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
                                 x_AMBITO == "FSC-POC" ~ "FSC",  # MEMO: forzo su FSC
                                 TRUE ~ x_AMBITO)) %>%
     mutate(x_AMBITO = if_else(x_AMBITO == "IOG", "YEI", x_AMBITO)) %>%
-    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "YEI", "SNAI", "FEASR", "FEAMP")))
+    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "YEI", "SNAI", "FEASR", "FEAMP", "CTE")))
 
   df <- df %>%
-    filter(!(OC_CODICE_PROGRAMMA == "2016XXAMPSAP00" & x_CICLO == "2007-2013"))
+    filter(!(OC_CODICE_PROGRAMMA == "2016XXAMPSAP00" & x_CICLO == "2007-2013"),
+           !(OC_CODICE_PROGRAMMA == "2017TOPIOMBIFSC" & x_CICLO == "2007-2013"))
   # MEMO: fix per doppio entry in po_riclass per piano dissesto
+
+  # octk::po_riclass %>%
+  #   count(x_CICLO, OC_CODICE_PROGRAMMA) %>%
+  #   count(OC_CODICE_PROGRAMMA) %>%
+  #   filter(n > 1)
 
   # TODO: inserire elaboraizone diretta anche su "MISTI"?
 
@@ -628,9 +644,15 @@ get_real_reg <- function(df, progetti, debug_mode=FALSE) {
                 by = c("COD_LOCALE_PROGETTO", "COD_REGIONE"))
   }
 
+  # NEW BLOCK
+  if (!any(names(df) == "x_CICLO")) {
+    df <- get_x_vars(df)
+  }
+
   appo <- octk::po_riclass %>%
     filter(!is.na(OC_CODICE_PROGRAMMA)) %>%
-    select(OC_CODICE_PROGRAMMA, x_REGNAZ) %>%
+    # select(OC_CODICE_PROGRAMMA, x_REGNAZ) %>%
+    select(x_CICLO, OC_CODICE_PROGRAMMA, x_REGNAZ) %>% # MEMO: senza x_CICLO genera dupli per 2016XXAMPSAP00 e 2017TOPIOMBIFSC
     mutate(COD_REGIONE_NEW =
              case_when(x_REGNAZ == "PIEMONTE" ~ "001",
                        x_REGNAZ == "VALLE D'AOSTA" ~ "002", # "VALLE D'AOSTA"
@@ -658,7 +680,8 @@ get_real_reg <- function(df, progetti, debug_mode=FALSE) {
     select(-x_REGNAZ)
 
   out <- df %>%
-    left_join(appo, by = "OC_CODICE_PROGRAMMA") %>%
+    # left_join(appo, by = "OC_CODICE_PROGRAMMA") %>%
+    left_join(appo, by = c("x_CICLO", "OC_CODICE_PROGRAMMA")) %>%
     mutate(COD_REGIONE = case_when(COD_REGIONE_NEW == "" ~  COD_REGIONE,
                                    TRUE ~ COD_REGIONE_NEW)) %>%
     select(-COD_REGIONE_NEW)

@@ -181,9 +181,10 @@ make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe=NULL, vars_
     # mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Altro"))) %>%
     select(COD_LOCALE_PROGETTO, CLASSE)
 
-  # fixlist %>%
-  #   count(COD_LOCALE_PROGETTO) %>%
-  #   filter(n > 1)
+  chk <- fixlist %>%
+    count(COD_LOCALE_PROGETTO) %>%
+    filter(n > 1)
+  print(paste0("verifica se ci sono duplicati in fixlist: ", dim(chk)[1]))
   # WARNING: se questo contiene duplicati poi ritrovo i duplicati in pseudo
 
   # fix
