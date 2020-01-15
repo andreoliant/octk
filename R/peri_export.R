@@ -1,7 +1,7 @@
 # OC > Explorer > Perimetri
 # Export finale
 
-#' Export per il dataset finale
+#' Export per il dataset finale (DEPRECATA)
 #'
 #' Popola pseudo con una lista di variabili.
 #'
@@ -126,11 +126,17 @@ export_data_xls <- function(perimetro, focus, bimestre, use_template=FALSE) {
 
 # ----------------------------------------------------------------------------------- #
 # reload
-reload_perimetro <- function(focus, bimestre, livelli_classe) {
+reload_perimetro <- function(focus=NULL, bimestre=NULL, livelli_classe) {
 
   # load
   # perimetro <- read_csv2(file.path(OUTPUT, paste0(paste(focus, bimestre, sep = "_"), ".csv")))
-  perimetro <- read_csv2(file.path(TEMP, paste0(paste(focus, bimestre, sep = "_"), ".csv")))
+  temp <- paste0(paste(focus, bimestre, sep = "_"), ".csv")
+  if (file.exists(temp)) {
+    perimetro <- read_csv2(file.path(TEMP, temp))
+  } else {
+    perimetro <- read_csv2(file.path(TEMP, "dati.csv"))
+  }
+
 
   # etc
   # reg_cn <- c("001", "002", "003", "004", "005", "006",

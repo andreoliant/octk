@@ -434,4 +434,33 @@ make_matrix_cipe <- function(bimestre, file_name="delib_cipe.csv") {
 }
 
 
+# crea matrix progetti complessi
+make_prog_comp <- function(bimestre, file_name="prog_comp.csv") {
 
+  if (is.null(progetti)) {
+    progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
+  }
+
+  out <- progetti %>%
+    distinct(COD_PROGETTO_COMPLESSO, DESCRIZIONE_PROGETTO_COMPLESSO, COD_TIPO_COMPLESSITA, DESCR_TIPO_COMPLESSITA) %>%
+    mutate(QUERY = 0,
+           NOTE = NA)
+
+  write_delim(out, file.path(getwd(), "setup", "data-raw", file_name), delim = ";", na = "")
+}
+
+
+# crea matrix progetti complessi
+make_patt <- function(bimestre, file_name="patt.csv") {
+
+  if (is.null(progetti)) {
+    progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
+  }
+
+  out <- progetti %>%
+    distinct(COD_PROCED_ATTIVAZIONE, DESCR_PROCED_ATTIVAZIONE, COD_TIPO_PROCED_ATTIVAZIONE, DESCR_TIPO_PROCED_ATTIVAZIONE) %>%
+    mutate(QUERY = 0,
+           NOTE = NA)
+
+  write_delim(out, file.path(getwd(), "setup", "data-raw", file_name), delim = ";", na = "")
+}

@@ -107,6 +107,7 @@ make_perimetro_edit <- function(pseudo, export=TRUE,
     mutate(r_sum = rowSums(select(., starts_with("QUERY"))),
            r_max = do.call(pmax, select(., starts_with("QUERY")))) %>%
     mutate(CHK = case_when(r_sum == 2 & r_max == 2 ~ 0,
+                           r_max == 9 ~ 0, # MEMO: serve per escludere PATT o altri aggregati
                            TRUE ~ 1)) %>%
     select(-r_sum, -r_max)
 
@@ -137,13 +138,16 @@ make_perimetro_edit <- function(pseudo, export=TRUE,
   if (debug == TRUE) {
     # defaults
     if (is.null(progetti)) {
-      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = FALSE)
+      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
     }
     if (is.null(var_ls)) {
       var_ls <- c("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO",
-                  "OC_COD_CICLO", "OC_COD_FONTE", "FONDO_COMUNITARIO",
+                  # "OC_COD_CICLO", "OC_COD_FONTE",
+                  # "FONDO_COMUNITARIO",
+                  "x_CICLO", "x_AMBITO", "x_PROGRAMMA",
                   "CUP_COD_SETTORE",  "CUP_DESCR_SETTORE",  "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE", "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA",
-                  "OC_DESCRIZIONE_PROGRAMMA", "OC_CODICE_PROGRAMMA",
+                  # "OC_DESCRIZIONE_PROGRAMMA",
+                  "OC_CODICE_PROGRAMMA",
                   "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA",
                   "OC_COD_CATEGORIA_SPESA", "OC_DESCR_CATEGORIA_SPESA",
                   "OC_FINANZ_TOT_PUB_NETTO", "IMPEGNI", "TOT_PAGAMENTI")

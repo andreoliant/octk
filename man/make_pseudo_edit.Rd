@@ -18,6 +18,6 @@ Wrapper per esecuzione di una lista di query a composizione libera.
 \section{Warning}{
 
 I valori NA sono convertiti in 0.
-La valutazione dinamica di TIPO_QUERY è ancora da implementare.
+Usare 1 per casi certi, 2 per casi dubbi (è scartato solo 2 unico) e 9 per casi da eliminare (ad es. per PATT)
 }
 

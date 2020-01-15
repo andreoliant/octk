@@ -65,9 +65,18 @@ usethis::use_data(aree_temi_fsc, overwrite = TRUE)
 strum_att <- read_csv2(file.path(getwd(), "setup", "data-raw", "strum_att.csv"))
 usethis::use_data(strum_att, overwrite = TRUE)
 
+# prog_comp
+prog_comp <- read_csv2(file.path(getwd(), "setup", "data-raw", "prog_comp.csv"))
+usethis::use_data(prog_comp, overwrite = TRUE)
+
 # delib_cipe
 delib_cipe <- read_csv2(file.path(getwd(), "setup", "data-raw", "delib_cipe.csv"))
 usethis::use_data(delib_cipe, overwrite = TRUE)
+
+# patt
+patt <- read_csv2(file.path(getwd(), "setup", "data-raw", "patt.csv"))
+usethis::use_data(patt, overwrite = TRUE)
+
 
 # stoplist
 stoplist <- read_csv2(file.path(getwd(), "setup", "data-raw", "template_stoplist.csv"))

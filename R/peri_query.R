@@ -13,12 +13,15 @@ setup_query <- function() {
   write.csv2(po_linee_azioni, file.path(INPUT, "po_linee_azioni.csv"), row.names = FALSE)
   write.csv2(delib_cipe, file.path(INPUT, "delib_cipe.csv"), row.names = FALSE)
   write.csv2(strum_att, file.path(INPUT, "strum_att.csv"), row.names = FALSE)
+  write.csv2(prog_comp, file.path(INPUT, "prog_comp.csv"), row.names = FALSE)
   write.csv2(aree_temi_fsc, file.path(INPUT, "aree_temi_fsc.csv"), row.names = FALSE)
   write.csv2(ra, file.path(INPUT, "ra.csv"), row.names = FALSE)
+  write.csv2(patt, file.path(INPUT, "patt.csv"), row.names = FALSE)
   # DEV: inserire meccanismo per selezione
 
   write.csv2(stoplist, file.path(INPUT, "stoplist.csv"), row.names = FALSE)
   write.csv2(safelist, file.path(INPUT, "safelist.csv"), row.names = FALSE)
+  write.csv2(fixlist, file.path(INPUT, "fixlist.csv"), row.names = FALSE)
 
 }
 
@@ -180,7 +183,7 @@ query_strum <- function(progetti) {
   # "DESCR_TIPO_STRUMENTO"
 
   # load matrix
-  matrix_strum <- read_csv2(file.path(INPUT, "strum_att.csv"))  %>%
+  matrix_strum <- read_csv2(file.path(INPUT, "strum_att.csv")) %>%
     rename(QUERY_STRUM = QUERY)
 
   # merge
@@ -196,6 +199,58 @@ query_strum <- function(progetti) {
 
 }
 
+
+
+
+#' Ricerca progetti per progetto complesso
+#'
+#' Ricerca progetti per progetto complesso a partire da input in "prog_comp.csv".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_PROGCOMP.
+query_progcomp <- function(progetti) {
+
+  # load matrix
+  matrix_progcomp <- read_csv2(file.path(INPUT, "prog_comp.csv"))  %>%
+    rename(QUERY_PROGCOMP = QUERY)
+
+  # merge
+  peri_progcomp <- progetti %>%
+    select(COD_LOCALE_PROGETTO, COD_PROGETTO_COMPLESSO) %>%
+    inner_join(matrix_progcomp %>%
+                 filter(QUERY_PROGCOMP != 0),
+               by = "COD_PROGETTO_COMPLESSO") %>%
+    distinct(COD_LOCALE_PROGETTO, QUERY_PROGCOMP)
+  # MEMO: uso inner_join per tenere QUERY_PROGCOMP
+
+  return(peri_progcomp)
+
+}
+
+#' Ricerca progetti per procedura di attivazione
+#'
+#' Ricerca progetti per procedura di attivazione a partire da input in "patt.csv".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_PATT.
+query_patt <- function(progetti) {
+
+  # load matrix
+  matrix_patt <- read_csv2(file.path(INPUT, "patt.csv"))  %>%
+    rename(QUERY_PATT = QUERY)
+
+  # merge
+  peri_patt <- progetti %>%
+    select(COD_LOCALE_PROGETTO, COD_PROCED_ATTIVAZIONE) %>%
+    inner_join(matrix_patt %>%
+                 filter(QUERY_PATT != 0),
+               by = "COD_PROCED_ATTIVAZIONE") %>%
+    distinct(COD_LOCALE_PROGETTO, QUERY_PATT)
+  # MEMO: uso inner_join per tenere QUERY_PATT
+
+  return(peri_patt)
+
+}
 
 
 #' Ricerca progetti per delibera CIPE
@@ -405,7 +460,7 @@ make_pseudo_std <- function(progetti, export=TRUE) {
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_[1], QUERY_[2], QUERY_[N] e TIPO_QUERY.
 #' @section Warning:
 #' I valori NA sono convertiti in 0.
-#' La valutazione dinamica di TIPO_QUERY è ancora da implementare.
+#' Usare 1 per casi certi, 2 per casi dubbi (è scartato solo 2 unico) e 9 per casi da eliminare (ad es. per PATT)
 make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
 
   # chk <- make_pseudo_2(progetti, query_ls=c("query_cup", "query_po"), export=TRUE)

@@ -150,11 +150,11 @@ report_regioni <- function(perimetro, livelli_classe, debug=FALSE) {
   #
   reg_sud <- c("013", "014", "015", "016", "017", "018", "019", "020")
   names(reg_sud) <- c("ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA", "SARDEGNA")
-  #
-  # # regioni
-  # appo <- perimetro %>%
-  #   mutate(DEN_REGIONE = ifelse(COD_REGIONE %in% c(reg_cn, reg_sud), DEN_REGIONE, "ALTRO TERRITORIO"))
-  # # MEMO: semplifica DEN_REGIONE diversi da vera Regione in "ALTRO TERRITORIO"
+
+  # regioni
+  appo <- perimetro %>%
+    mutate(DEN_REGIONE = ifelse(COD_REGIONE %in% c(reg_cn, reg_sud), DEN_REGIONE, "ALTRO TERRITORIO"))
+  # MEMO: semplifica DEN_REGIONE diversi da vera Regione in "ALTRO TERRITORIO"
 
   regioni <- appo %>%
     group_by(x_CICLO, x_AMBITO, x_GRUPPO, CLASSE, x_MACROAREA, x_REGIONE) %>%

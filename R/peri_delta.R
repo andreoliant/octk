@@ -55,8 +55,9 @@ make_delta_scarti <- function(pseudo, perimetro, path_to_old, debug=FALSE,
     inner_join(pseudo, by = "COD_LOCALE_PROGETTO") %>%
     filter(PERI != 1) %>% # NEWLINE
     filter(!(COD_LOCALE_PROGETTO %in% stoplist)) %>%
-    # DEV: siccome non uso il vecchio pseudo ma quello nuovo... ricontrollo tutto! qui andrebbe messo filtro su pseudo vecchio...
+    # MEMO: evito di ricontrollare record appena messi in scarti tramite stoplist
     anti_join(perim_old, by = "COD_LOCALE_PROGETTO") %>%
+    # MEMO: nel vecchio perimetro la stoplist era già stata scartata
     filter(OC_FINANZ_TOT_PUB_NETTO >= min_cp)
 
 
