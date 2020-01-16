@@ -117,7 +117,15 @@ oc_init <- function(bimestre, db_ver,
           focus <<- temp[length(temp)]
         }
       } else {
-        WORK <- file.path(getwd(), elab, focus)
+        # WORK <- file.path(getwd(), elab, focus)
+        if (!is.null(ver)) {
+          WORK <- file.path(getwd(), elab, focus, ver)
+          # MEMO: si applica solo in Drive
+
+        } else {
+          WORK <- file.path(getwd(), elab, focus)
+        }
+
       }
     } else {
       WORK <- workarea
