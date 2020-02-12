@@ -41,7 +41,8 @@ export_data <- function(pseudo, focus, bimestre, var_ls=NULL, var_add=NULL, expo
                 "OC_COD_CATEGORIA_SPESA", "OC_DESCR_CATEGORIA_SPESA",
                 "COD_PROCED_ATTIVAZIONE", "DESCR_PROCED_ATTIVAZIONE",
                 "CUP_COD_NATURA", "CUP_DESCR_NATURA",
-                # "COD_REGIONE", "DEN_REGIONE", "COD_PROVINCIA", "DEN_PROVINCIA", "COD_COMUNE", "DEN_COMUNE",
+                "COD_REGIONE",
+                # "DEN_REGIONE", "COD_PROVINCIA", "DEN_PROVINCIA", "COD_COMUNE", "DEN_COMUNE",
                 # "OC_COD_SLL", "OC_DENOMINAZIONE_SLL",
                 "OC_FINANZ_TOT_PUB_NETTO", "IMPEGNI", "TOT_PAGAMENTI")
   }

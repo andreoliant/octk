@@ -133,7 +133,7 @@ report_macroaree <- function(perimetro, livelli_classe, debug=FALSE) {
 # ----------------------------------------------------------------------------------- #
 # regioni
 
-report_regioni <- function(perimetro, livelli_classe, debug=FALSE) {
+report_regioni <- function(perimetro, progetti, livelli_classe, debug=FALSE) {
 
 
   # OLD:
@@ -150,6 +150,14 @@ report_regioni <- function(perimetro, livelli_classe, debug=FALSE) {
   #
   reg_sud <- c("013", "014", "015", "016", "017", "018", "019", "020")
   names(reg_sud) <- c("ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA", "SARDEGNA")
+
+  # NEW BLOCK
+  if (!any(names(perimetro) == "COD_REGIONE")) {
+    perimetro <- perimetro %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, COD_REGIONE, DEN_REGIONE),
+                by = "COD_LOCALE_PROGETTO")
+  }
 
   # regioni
   appo <- perimetro %>%
@@ -261,7 +269,15 @@ report_programmi <- function(perimetro, livelli_classe, debug=FALSE) {
 # ----------------------------------------------------------------------------------- #
 # nature
 
-report_nature <- function(perimetro, livelli_classe, debug=FALSE) {
+report_nature <- function(perimetro, progetti, livelli_classe, debug=FALSE) {
+
+  # NEW BLOCK
+  if (!any(names(perimetro) == "CUP_DESCR_NATURA")) {
+    perimetro <- perimetro %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, CUP_DESCR_NATURA),
+                by = "COD_LOCALE_PROGETTO")
+  }
 
   # defactor
   perimetro <- perimetro %>%
@@ -400,7 +416,15 @@ report_dimensioni <- function(perimetro, livelli_classe, debug=FALSE) {
 # ----------------------------------------------------------------------------------- #
 # dimensione per natura
 
-report_dimensioni_nature <- function(perimetro, livelli_classe, debug=FALSE) {
+report_dimensioni_nature <- function(perimetro, progetti, livelli_classe, debug=FALSE) {
+
+  # NEW BLOCK
+  if (!any(names(perimetro) == "CUP_DESCR_NATURA")) {
+    perimetro <- perimetro %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, CUP_DESCR_NATURA),
+                by = "COD_LOCALE_PROGETTO")
+  }
 
   # defactor
   perimetro <- perimetro %>%
@@ -474,7 +498,15 @@ report_dimensioni_nature <- function(perimetro, livelli_classe, debug=FALSE) {
 # stati
 # MEMO: variabile OC
 
-report_stati <- function(perimetro, livelli_classe, debug=FALSE) {
+report_stati <- function(perimetro, progetti, livelli_classe, debug=FALSE) {
+
+  # NEW BLOCK
+  if (!any(names(perimetro) == "OC_STATO_PROGETTO")) {
+    perimetro <- perimetro %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, OC_STATO_PROGETTO),
+                by = "COD_LOCALE_PROGETTO")
+  }
 
   # defactor
   perimetro <- perimetro %>%
@@ -621,7 +653,7 @@ report_statiproc <- function(perimetro, livelli_classe, debug=FALSE) {
 # ----------------------------------------------------------------------------------- #
 # esporta tutto
 
-export_report <- function(perimetro, livelli_classe, use_template=TRUE) {
+export_report <- function(perimetro, progetti, livelli_classe, use_template=TRUE) {
 
   # load
   # if (exists("perimetro")) {
@@ -636,12 +668,12 @@ export_report <- function(perimetro, livelli_classe, use_template=TRUE) {
   # sintesi
   sintesi <- report_sintesi(perimetro, livelli_classe, debug=FALSE)
   macroaree <- report_macroaree(perimetro, livelli_classe, debug=FALSE)
-  regioni <- report_regioni(perimetro, livelli_classe, debug=FALSE)
+  regioni <- report_regioni(perimetro, progetti, livelli_classe, debug=FALSE)
   programmi <- report_programmi(perimetro, livelli_classe, debug=FALSE)
-  nature <- report_nature(perimetro, livelli_classe, debug=FALSE)
+  nature <- report_nature(perimetro, progetti, livelli_classe, debug=FALSE)
   dimensioni <- report_dimensioni(perimetro, livelli_classe, debug=FALSE)
-  dimensioni_nature <- report_dimensioni_nature(perimetro, livelli_classe, debug=FALSE)
-  stati <- report_stati(perimetro, livelli_classe, debug=FALSE)
+  dimensioni_nature <- report_dimensioni_nature(perimetro, progetti, livelli_classe, debug=FALSE)
+  stati <- report_stati(perimetro, progetti, livelli_classe, debug=FALSE)
   statiproc <- report_statiproc(perimetro, livelli_classe, debug=FALSE) # MEMO: opzione sospesa e da allineare a nuova variabile
 
   # spread
