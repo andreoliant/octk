@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.2.7"
+oc_ver <- "0.2.9"
 
 # rm(list=ls())
 library("devtools")
@@ -72,7 +72,7 @@ devtools::load_all(path = ".")
 
 # setup
 oc_init(
-  bimestre = "20191031",
+  bimestre = "201912311",
   db_ver = "NIGHTLY",
   data_path = "/Users/aa/dati/oc",
   use_drive=TRUE,
@@ -204,7 +204,7 @@ write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20190831"
+bimestre_old <- "20191031"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
 progetti_all_old <- load_progetti(bimestre = bimestre_old,
@@ -319,6 +319,12 @@ appo %>%
 chk <- appo %>%
   filter(x_AMBITO == "POC", X_AMBITO == "FESR-FSE")
 
+chk <- appo %>%
+  filter(x_AMBITO == "POC", X_AMBITO == "FESR")
+
+chk <- appo %>%
+  filter(x_AMBITO == "FSC", X_AMBITO == "FESR-FSE")
+
 # verifica calabria
 # chk <- appo %>%
 #   filter(is.na(x_AMBITO))
@@ -406,10 +412,12 @@ appo %>%
 # ----------------------------------------------------------------------------------- #
 # prep di dataset in octk
 
-# TODO: verificare se i nomi sono troncati...
+
+progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
+progetti <- fix_progetti(progetti)
 
 # po_linee_azioni.csv
-make_matrix_po(bimestre = "20191031")
+make_matrix_po(bimestre)
 chk <- chk_delta_po("NEW")
 chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
 chk <- chk_delta_po("OLD")
@@ -418,12 +426,17 @@ chk <- chk_delta_po("OLD")
 # TODO: voglio sapere cosa manca in po_linee_azioni rispetto al DB programmazione
 
 # strum_att.csv
-make_matrix_strum(bimestre = "20191031")
+make_matrix_strum(bimestre)
 
 # delib_cipe.csv
-make_matrix_cipe(bimestre = "20190831")
+make_matrix_cipe(bimestre)
 
-# TODO: inserire matrix per PATT e per progetto complesso
+# prog_comp.csv
+make_prog_comp(bimestre)
+
+# patt.csv
+make_patt(bimestre)
+
 
 
 # ----------------------------------------------------------------------------------- #
@@ -435,15 +448,21 @@ devtools::load_all(path = ".")
 
 
 # ----------------------------------------------------------------------------------- #
+# documents
+
+# usethis::use_vignette("oc")
+devtools::document()
+devtools::load_all(path = ".")
+
+
+# ----------------------------------------------------------------------------------- #
 # progetti_light
 # https://readr.tidyverse.org/articles/readr.html#column-specification
 
-setup_light(bimestre = bimestre, fix = TRUE)
-# HAND: aggiungere nuove variabili di progetti
+setup_light(bimestre, fix = TRUE)
 
-#  oggetto "OC_FINANZ_UE_NETTO" non trovato
+setup_operazioni(bimestre, progetti, export=TRUE, debug=TRUE)
 
-# setup_progetti_descr(bimestre = "20181231")
 
 # analisi peso variabili
 # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = FALSE)
@@ -453,11 +472,6 @@ setup_light(bimestre = bimestre, fix = TRUE)
 #   write.csv2(appo, file.path(TEMP, "prova_peso", paste0(var, ".csv")), row.names = FALSE)
 # }
 
-# ----------------------------------------------------------------------------------- #
-# documents
-
-# usethis::use_vignette("oc")
-devtools::document()
 
 
 # ----------------------------------------------------------------------------------- #

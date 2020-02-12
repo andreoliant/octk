@@ -377,7 +377,6 @@ PC00698ARGE15-869/10;SPECIALIZZIAMO IL LAVORO - LINEA 3;OMI;Operazioni multi-int
 PC01224ARGE17-254-3F/25;PERCORSI DI FORMAZIONE PER LO SVILUPPO DELLE RISORSE UMANE - LINEA B1;OMI;Operazioni multi-intervento;0;
 PC01233ARGE17-254-3F/26;MARKETING E COMUNICAZIONE PER LO SVILUPPO D'IMPRESA - LINEA B1;OMI;Operazioni multi-intervento;0;
 PC01182ARSP17-254-3F/1;L'operazione SERVIZI IN QUALITA' prevede 6 percorsi formativi rivolti a 108 allievi. Il fulcro di tali percorsi Ãš la qualitÃ  intesa come concetto che muove agni processo di miglioramento dei servizi offerti.;OMI;Operazioni multi-intervento;0;
-PC01318ARGE17-254-3F/27;AGGIORNAMENTO DELLE COMPETENZE DI MS OFFICE E LINGUA INGLESE PER PRIANO MARCHELLI SPA - LINEA B1;OMI;Operazioni multi-intervento;0;
 PC01183ARSP17-254-3F/2;"L'operazione ""L'accoglienza nelle baie del Levante"" permetterÃ  di dare migliori risposte alla clientela rendendo l'offerta maggiormente qualificata e innovativa , aumentando il potere di attrazione del territorio. Si rivolge in particolare a piccole realtÃ  operanti nell'area delle baie del Levante.";OMI;Operazioni multi-intervento;0;
 PC01184ARSP17-254-3F/3;"L'operazione ""Aggiornamento professionale in ambito cooperativo"" Ãš costituita da 6 progetti / interventi di aggiornamento di massimo 40 ore rivolti a dipendenti di cooperative sociali operanti sia nei servizi socio - educativi che in quelli socio - assistenziali.";OMI;Operazioni multi-intervento;0;
 PC01216ARGE17-254-3F/29;AGGIORNAMENTO INFORMATICO E GESTIONALE - LINEA B1;OMI;Operazioni multi-intervento;0;
@@ -402,7 +401,6 @@ PC01237ARIEFP1821/32;Operatore Meccanico - SP - Triennali IeFP 2018/2021;OMI;Ope
 PC01238ARIEFP1821/33;Operatore amministrativo segretariale/ Operatore del legno - SP - IeFP triennali 2018/2021;OMI;Operazioni multi-intervento;0;
 PC00690AG2016TECNO/1;assistenza tecnica po 14/20;OMI;Operazioni multi-intervento;0;
 PC01239ARIEFP1821/34;Operatore impianti termoidraulici/ Operatore elettrico - SP - IeFP triennali 2018/2021;OMI;Operazioni multi-intervento;0;
-PC01319ARGE17-254-3F/45;AGGIORNAMENTO DELLE COMPETENZE PROFESSIONALI - LINEA B1;OMI;Operazioni multi-intervento;0;
 PC00704ARGE15-869/18;PROFESSIONE HOTELLERIE, NON SOLO HOTEL - LINEA 1;OMI;Operazioni multi-intervento;0;
 PC01240AG2018TRASF/1;pese di trasferta del personale regionale;OMI;Operazioni multi-intervento;0;
 PC01333ARGE17-992/1;DIGITITAL HUMANITIES-TECNOLOGIE DIGITALI, ARTI,LINGUE, CULTURE E COMUNICAZIONE;OMI;Operazioni multi-intervento;0;
@@ -618,7 +616,6 @@ PC01593ARGE18-2128-2F-1010/27;PROGETTO BUILDING INFORMATION MODELING - 1 - ATIVI
 PC01576ARGE18-2128-2F-1010/28;IMPIANTI PER L'EDILIZIA: TIPOLOGIE E CALCOLO DELLE PRESTAZIONI - 1 - ATTIVITA' B1;OMI;Operazioni multi-intervento;0;
 PC01616ARGE18-2128-1F/62;Formazione continua per i professionisti delle imprese sociali - AttivitÃ  B1;OMI;Operazioni multi-intervento;0;
 PC00792ARIEFP1619/21;OP. AI SERVIZI DI PROMOZIONE E ACCOGLIENZA - GE MET - IEFP TRIENNALE 2016-19;OMI;Operazioni multi-intervento;0;
-PC01612ARSP18-2128-2F-1010/2;"L'operazione ""Mediaformiamoci"" prevede la realizzazione di 3 progetti di aggiornamento di 24 ore ciascuno dedicati a 27 operatori della coop. soc. Mondo Aperto";OMI;Operazioni multi-intervento;0;
 PC01617ARSP18-2128-2F-1010/3;"L'operazione ""Sviluppo cooperativo"" prevede la realizzazione di 2 progetti di aggiornamento della durata di 32 e 16 ore ciascuno dedicati complessivamente a 18 operatori della coop. soc. Beverino di ComunitÃ ";OMI;Operazioni multi-intervento;0;
 PC01618ARSP18-2128-2F-1010/4;"L'operazione ""UPDATE - FORMAZIONE PER COOPERATIVE SOCIALI"" Ãš costituita da 4 progetti rivolti a dipendenti di coop soc. operanti sia nei servizi socio-educativi che in quelli socio-assistenziali con la finalitÃ  di potenziare le competenze per la propria mansione";OMI;Operazioni multi-intervento;0;
 PC01606ARSP18-2128-2F-1010/6;L'operazione Edilizia 4.0 si compone di due progetti BIM BASE e BIM AVANZATO aventi la finalitÃ  di aggiornare le conoscenze tecniche e professionali dei progettisti convolti.;OMI;Operazioni multi-intervento;0;
@@ -1247,10 +1244,13 @@ PC01205OMI - 011;Servizi di Calcolo e Storage e Potenziamento  HPCN  SCS Â¿ PO
 PC01201OMI - 007;Piattaforma PGIS - GIS HPCN;OMI;Operazioni multi-intervento;0;
 PC01204OMI - 010;Joint Innovation Center Â¿ JIC;OMI;Operazioni multi-intervento;0;
 PC01195OMI - 001;BIOMEDICINA Â¿ BIO NGSC;OMI;Operazioni multi-intervento;0;
+PC01497ITI- OLBIA-01;Azioni innovative in materia di sviluppo urbano sostenibile;ITI;INVESTIMENTO INTEGRATO TERRITORIALE;0;
 PC00007ITI CAGLIARI;Azioni innovative in materia di sviluppo urbano sostenibile, che sperimentano in quartieri disagiati progetti di riqualificazione sociale con un approccio che coniuga interventi infrastrutturali a valere sul FESR e interventi a sostegno della fornitura di servizi sociali, sperimentazione di modelli organizzativi e gestionali innovativi propri del FSE. EÂ¿ un intervento di rigenerazione urbana nellÂ¿ambito territoriale del quartiere di Is Mirrionis e di una parte del quartiere di San Michele;ITI;INVESTIMENTO INTEGRATO TERRITORIALE;0;
+PC01496ITI-SS-01;Azioni innovative in materia di sviluppo urbano sostenibile;ITI;INVESTIMENTO INTEGRATO TERRITORIALE;0;
 SA150;SuperHando - Centro di eccellenza per il superamento dell'handicap e dello svantaggio sociale;1;progetto integrato;0;
 LI010;2007IT162PO005 RIQUALIFICAZIONE DEL TESSUTO URBANO - spazi infrastrutturati per attivitÃÂ  ludiche, percorso ciclo-pedonale, rafforzamento di piccoli impianti sportivi, incremento del verde;1;progetto integrato;0;
 PC01482PIT-PT-CRP-15/INT;Anglona Coros, Terre di Tradizioni;PIT;PROGETTO INTEGRATO TERRITORIALE;0;
+PC01488PIT-PT-CRP-24/INT;LOGO'S, cuore dell'Isola;PIT;PROGETTO INTEGRATO TERRITORIALE;0;
 PC01491PIT-PT-CRP-29;Su Suercone, Ambiente Identitario;PIT;PROGETTO INTEGRATO TERRITORIALE;0;
 PC01484PIT-PT-CRP-17/INT;Monte Acuto-Riviera di Gallura, Territori di eccellenza della Sardegna;PIT;PROGETTO INTEGRATO TERRITORIALE;0;
 12;Servizi di cura - Assistenza Tecnica;7;Piano Azione Coesione;0;
@@ -1260,6 +1260,7 @@ PC01476PIT-PT-CRP-06;C.A.S.A. Parte Montis;PIT;PROGETTO INTEGRATO TERRITORIALE;0
 PC01478PIT-PT-CRP-10;La CittÃ  di Paesi della Gallura;PIT;PROGETTO INTEGRATO TERRITORIALE;0;
 PC01480PIT-PT-CRP-13;Marghine al Centro. Turismo, Sport, Cultura e Natura;PIT;PROGETTO INTEGRATO TERRITORIALE;0;
 PC01481PIT-PT-CRP-14;Turismo e vita in Marmilla;PIT;PROGETTO INTEGRATO TERRITORIALE;0;
+PC01489PIT-PT-CRP-25/INT;Pro Te - Dal Villanova al Meilogu: cultura, natura, identitÃ ;PIT;PROGETTO INTEGRATO TERRITORIALE;0;
 PC01492PIT-PT-CRP-30;Tepilora: patrimonio accessibile a tutti;PIT;PROGETTO INTEGRATO TERRITORIALE;0;
 SA019;Ind 07_CONSULMEDIA_302;1;progetto integrato;0;
 SA005;Ind 07_GLOBI DI L. CHIARABINI_41;1;progetto integrato;0;
@@ -1346,6 +1347,7 @@ PC00857PIA IND 13_134_297;MEDISPA SRL_CRS4 Srl Uninominale;PIA;PACCHETTI DI MISU
 PC00855PIA IND 13_068_283;T BRIDGE_UNICA-DIEE;PIA;PACCHETTI DI MISURA;0;
 3;Reti Sarde;7;Piano Azione Coesione;0;
 SA084;Ind 08_INTECS INFORMATICA E TECNOLOGIA DEL SOFTWARE_430;1;progetto integrato;0;
+PC01485PIT-PT-CRP-18/INT;Dal mare verso lÂ¿interno: gli itinerari del Terralbese e del Linas;PIT;PROGETTO INTEGRATO TERRITORIALE;0;
 SA148;Avviso di cooperazione Veneto-Sardegna - Sovvenzione Globale;5;progetto interregionale;0;
 SA108;Tur 07_ARAL_317;1;progetto integrato;0;
 SA142;T07_LA LANTERNA VERDE_154;1;progetto integrato;0;
@@ -1527,8 +1529,12 @@ PC01076SAILO2017002;Strategia aree interne LOMBARDIA - VALTELLINA;SAI;Strategia 
 PC00321LOM_29;"Chiavenna; Comunita' Montana della Valchiavenna";PSIA;PROGETTO SOSTEGNO PER L'INCLUSIONE ATTIVA;0;
 TO007;2007IT162PO012 - ÃÂ¿Piano integrato di sviluppo urbano sostenibile per la cittÃÂ  di ArezzoÃÂ¿ ÃÂ¿ Comune:  Arezzo;1;progetto integrato;0;
 TO003;2007IT162PO012 - ÃÂ¿La CittÃÂ  Dei SaperiÃÂ¿ - Comuni: Firenze (coordinatore), Campi Bisenzio, Scandicci;1;progetto integrato;0;
+PC01603SAIPU2019001;Strategia aree interne Puglia - Monti Dauni;SAI;Strategia Aree Interne;0;
 PC00009ITI SASSARI;Azioni innovative in materia di sviluppo urbano sostenibile, che sperimentano in quartieri disagiati progetti di riqualificazione sociale con un approccio che coniuga interventi infrastrutturali sul FESR e interventi a sostegno della fornitura di servizi sociali, sperimentazione di modelli organizzativi e gestionali innovativi propri del FSE. Intervento integrato di rigenerazione urbana della parte bassa del centro storico di Sassari nei rioni di San Donato e SantÂ¿Apollinare e aree adiacenti;ITI;INVESTIMENTO INTEGRATO TERRITORIALE;0;
+PC01079SAICA2017001;Strategia Aree Interne CAMPANIA - ALTA IRPINIA;SAI;Strategia Aree Interne;0;
+PC01601SAICA2019001;Strategia aree interne Campania - Vallo di Diano;SAI;Strategia Aree Interne;0;
 PC00663AG_URBANA_FOLIGNO_05;Programma di sviluppo urbano sostenibile della cittÃ  di Foligno;AIU;AZIONE INTEGRATA URBANA (ex art. 7 Reg FESR e integrazioni FSE);0;
+PC01082SAIUM2017001;Strategia Aree Interne UMBRIA - SUD-OVEST ORVIETANO;SAI;Strategia Aree Interne;0;
 PC00661AG_URBANA_PERUGIA_03;Programma di sviluppo urbano sostenibile della cittÃ  di Perugia;AIU;AZIONE INTEGRATA URBANA (ex art. 7 Reg FESR e integrazioni FSE);0;
 PC00660AG_URBANA_SPOLETO_02;Programma di sviluppo urbano sostenibile della cittÃ  di Spoleto;AIU;AZIONE INTEGRATA URBANA (ex art. 7 Reg FESR e integrazioni FSE);0;
 PC00659AG_URBANA_TERNI_01;Programma di sviluppo urbano sostenibile della cittÃ  di Terni;AIU;AZIONE INTEGRATA URBANA (ex art. 7 Reg FESR e integrazioni FSE);0;
