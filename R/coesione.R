@@ -338,11 +338,43 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
   # 4 FSC1420      ""                        37 <- PIANO FSC DISSESTO IDROGEOLOGICO
   # 5 PAC          ""                     25353
 
-  # clean
-  operazioni_713 <- operazioni_713_raw %>%
+  # FIX: duplicazione di programmi PAC-FSC (es. direttrici ferroviarie)
+  appo <- operazioni_713_raw %>%
     rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
+
+    filter(OC_CODICE_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005")) %>%
+    # left_join(progetti %>%
+    #             select(COD_LOCALE_PROGETTO, OC_FLAG_PAC),
+    #           by = "COD_LOCALE_PROGETTO") %>%
+    filter(OC_FLAG_PAC == 1)
+
+  # TODO: verifica se OC_FLAG_PAC in operazioni_flt_ok coincide con quello in progetti
+
+
+
+
+    mutate(x_AMBITO = "POC:::FSC") %>%
+    separate_rows(x_AMBITO, sep = ":::")
+
+  operazioni_713_raw_temp <- operazioni_713_raw %>%
+    rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
+
+    mutate(x_AMBITO = NA) %>%
+    anti_join(appo, by = "cod_locale_progetto") %>%
+    bind_rows(appo)
+
+  dim(operazioni_713_raw_temp)[1] == dim(operazioni_713_raw)[1] + dim(appo)[1]/2
+
+  # DEBUG:
+  # chk <- operazioni_713 %>% filter(OC_CODICE_PROGRAMMA == "2007IT005FAMG1")
+  # chk <- operazioni_713 %>% filter(OC_CODICE_PROGRAMMA == "2007IT001FA005")
+  #
+
+  # clean
+  operazioni_713 <- operazioni_713_raw_temp %>%
     # creo ambito e ciclo
-    mutate(x_AMBITO = case_when(OC_COD_FONTE == "FS0713" ~ QSN_FONDO_COMUNITARIO,
+    mutate(x_AMBITO = case_when(!is.na(x_AMBITO) ~ x_AMBITO, # MEMO: serve a incorporare fix sopra
+                                OC_COD_FONTE == "FS0713" ~ QSN_FONDO_COMUNITARIO,
                                 OC_COD_FONTE == "FSC1420" ~ "FSC",
                                 OC_COD_FONTE == "FSC0713" ~ "FSC",
                                 OC_COD_FONTE == "PAC" ~ "POC")) %>%
