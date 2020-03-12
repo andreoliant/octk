@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.2.9"
+oc_ver <- "0.3.0"
 
 # rm(list=ls())
 library("devtools")
@@ -72,7 +72,7 @@ devtools::load_all(path = ".")
 
 # setup
 oc_init(
-  bimestre = "201912311",
+  bimestre = "20191231",
   db_ver = "NIGHTLY",
   data_path = "/Users/aa/dati/oc",
   use_drive=TRUE,
@@ -307,8 +307,17 @@ rm(progetti_all, progetti_all_old)
 
 progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
 
+# chk anomalie ":::CCI"
+chk <- progetti %>%
+  filter(grepl("^:::2017POIMPCOMFSC", OC_CODICE_PROGRAMMA))
+
+chk %>%
+  get_x_vars(.) %>%
+  count(OC_CODICE_PROGRAMMA, x_CICLO, X_CICLO, x_AMBITO, X_AMBITO)
+
+
 # verifica x_vars
-progetti <- fix_progetti(progetti)
+# progetti <- fix_progetti(progetti)
 appo <- get_x_vars(progetti)
 # appo <- get_macroarea(appo, real_reg=TRUE)
 # appo <- get_regione_simply(appo)
@@ -316,14 +325,27 @@ appo <- get_x_vars(progetti)
 appo %>%
   count(x_CICLO, X_CICLO, x_AMBITO, X_AMBITO)
 
+# chk mismatch su ambito
 chk <- appo %>%
-  filter(x_AMBITO == "POC", X_AMBITO == "FESR-FSE")
+  filter(x_AMBITO == "POC", X_AMBITO == "FESR-FSE") %>%
+  mutate(CHK = "poc>fesr-fse") %>%
+  bind_rows(appo %>%
+              filter(x_AMBITO == "POC", X_AMBITO == "FESR") %>%
+              mutate(CHK = "poc>fesr")) %>%
+  bind_rows(appo %>%
+              filter(x_AMBITO == "FSC", X_AMBITO == "FESR-FSE") %>%
+              mutate(CHK = "fsc>fesr-fse"))
 
-chk <- appo %>%
-  filter(x_AMBITO == "POC", X_AMBITO == "FESR")
+write_csv2(chk, file.path(TEMP, "chk_mismatch_ambito.csv"))
 
-chk <- appo %>%
-  filter(x_AMBITO == "FSC", X_AMBITO == "FESR-FSE")
+chk %>%
+  count(OC_CODICE_PROGRAMMA, x_CICLO, X_CICLO, x_AMBITO, X_AMBITO, OC_COD_FONTE)
+# OC_CODICE_PROGRAMMA x_CICLO   X_CICLO   x_AMBITO X_AMBITO OC_COD_FONTE     n
+# <chr>               <chr>     <chr>     <fct>    <chr>    <chr>        <int>
+# 1 2016POCIMPRESE1     2014-2020 2014-2020 POC      FESR     FS1420          10
+# 2 2017FSCRICERCA      2014-2020 2014-2020 FSC      FESR-FSE FS1420          42
+# 3 2017POCRICERCA1     2014-2020 2014-2020 POC      FESR-FSE FS1420          30
+
 
 # verifica calabria
 # chk <- appo %>%
@@ -456,22 +478,46 @@ devtools::load_all(path = ".")
 
 
 # ----------------------------------------------------------------------------------- #
-# progetti_light
+# progetti_light e operazioni
 # https://readr.tidyverse.org/articles/readr.html#column-specification
 
 setup_light(bimestre, fix = TRUE)
 
 setup_operazioni(bimestre, progetti, export=TRUE, debug=TRUE)
 
+# chk mismatch progetti vs operazioni
+chk <- progetti %>%
+  get_x_vars(.) %>%
+  select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_AMBITO) %>%
+  full_join(operazioni %>%
+              select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_AMBITO),
+            by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>%
+  mutate(CHK = x_AMBITO.x == x_AMBITO.y) %>%
+  filter(CHK == FALSE)
 
+chk %>%
+  count(OC_CODICE_PROGRAMMA, x_AMBITO.x, x_AMBITO.y)
+# OC_CODICE_PROGRAMMA x_AMBITO.x x_AMBITO.y     n
+# <chr>               <fct>      <chr>      <int>
+# 1 2007IT001FA005      FSC        POC            6
+# 2 2007IT005FAMG1      FSC        POC            4
+
+write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
+
+# MEMO:
+# una parte del problema è direttrici ferroviarie e giustizia civile
+# poi però ci sono altre anomalie che non comprendo
+# però quelli del fix sul CCI sembrano corretti
+
+# ----------------------------------------------------------------------------------- #
 # analisi peso variabili
+
 # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = FALSE)
 # for (var in names(progetti)) {
 #   appo <- progetti %>% select(var)
 #   print(paste0(var, ": ", object.size(appo)))
 #   write.csv2(appo, file.path(TEMP, "prova_peso", paste0(var, ".csv")), row.names = FALSE)
 # }
-
 
 
 # ----------------------------------------------------------------------------------- #

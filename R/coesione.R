@@ -124,7 +124,7 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
     progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
   }
   if (use_fix == TRUE) {
-    progetti <- fix_progetti(progetti) # MEMO: contiene programmi con ":::CCI"
+    progetti <- fix_progetti(progetti)
   }
 
   # recupera finanziamenti lordi (se assente in df)
@@ -342,32 +342,28 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
   appo <- operazioni_713_raw %>%
     rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
 
-    filter(OC_CODICE_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005")) %>%
+    # filter(OC_CODICE_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005")) %>%
+    filter(OC_COD_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005")) %>%
     # left_join(progetti %>%
     #             select(COD_LOCALE_PROGETTO, OC_FLAG_PAC),
     #           by = "COD_LOCALE_PROGETTO") %>%
-    filter(OC_FLAG_PAC == 1)
-
-  # TODO: verifica se OC_FLAG_PAC in operazioni_flt_ok coincide con quello in progetti
-
-
-
-
+    filter(OC_FLAG_PAC == 1) %>%
+    # MEMO: OC_FLAG_PAC identifica i casi dove ci sono sia pagamenti FSC che PAC
+    # TODO: verifica se OC_FLAG_PAC in operazioni_flt_ok coincide con quello in progetti
     mutate(x_AMBITO = "POC:::FSC") %>%
     separate_rows(x_AMBITO, sep = ":::")
 
   operazioni_713_raw_temp <- operazioni_713_raw %>%
     rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
-
     mutate(x_AMBITO = NA) %>%
-    anti_join(appo, by = "cod_locale_progetto") %>%
+    anti_join(appo, by = "COD_LOCALE_PROGETTO") %>%
     bind_rows(appo)
 
   dim(operazioni_713_raw_temp)[1] == dim(operazioni_713_raw)[1] + dim(appo)[1]/2
 
   # DEBUG:
-  # chk <- operazioni_713 %>% filter(OC_CODICE_PROGRAMMA == "2007IT005FAMG1")
-  # chk <- operazioni_713 %>% filter(OC_CODICE_PROGRAMMA == "2007IT001FA005")
+  # chk <- operazioni_713_raw_temp %>% filter(OC_CODICE_PROGRAMMA == "2007IT005FAMG1")
+  # chk <- operazioni_713_raw_temp %>% filter(OC_CODICE_PROGRAMMA == "2007IT001FA005")
   #
 
   # clean
@@ -439,6 +435,8 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
                                  is.na(COE) ~ 0, # CHK: capire se serve
                                  TRUE ~ 0))
 
+  # CHK: per "giustizia celere" resta 0 su finanziamento FSC
+
   # TODO:
   # aggiungere misura di effetto su impegni
 
@@ -448,7 +446,8 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
     # clean
     appo <- operazioni_713 %>%
       select(COD_LOCALE_PROGETTO,
-             OC_CODICE_PROGRAMMA,
+             # OC_CODICE_PROGRAMMA,
+             OC_CODICE_PROGRAMMA = OC_COD_PROGRAMMA,
              x_AMBITO,
              COE,
              COS_AMM, # DEBUG
@@ -510,7 +509,8 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
   # clean
   operazioni_713 <- operazioni_713 %>%
     select(COD_LOCALE_PROGETTO,
-           OC_CODICE_PROGRAMMA,
+           # OC_CODICE_PROGRAMMA,
+           OC_CODICE_PROGRAMMA = OC_COD_PROGRAMMA,
            x_AMBITO,
            COE,
            COE_IMP,
@@ -555,6 +555,12 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
   #             COE = sum(COE, na.rm = TRUE),
   #             COE_IMP = sum(COE_IMP, na.rm = TRUE),
   #             COE_PAG = sum(COE_PAG, na.rm = TRUE))
+
+  # fix per ERDF e ESF su 713
+  operazioni <- operazioni %>%
+    mutate(x_AMBITO = case_when(x_AMBITO == "ERDF" ~ "FESR",
+                                x_AMBITO == "ESF" ~ "FSE",
+                                TRUE ~ x_AMBITO))
 
 
   # ----------------------------------------------------------------------------------- #
@@ -630,6 +636,18 @@ prep_perimetro_bimestre_coesione <- function(bimestre, usa_meuro=TRUE) {
   # loads
   # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = TRUE, refactor = TRUE)
   perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+
+  # fix per dissesto
+  # TODO: da spostare a monte nel workflow di operazioni
+  perimetro <- perimetro %>%
+    mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2016ABAMPSAP01" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016EMAMPSAP02" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016LIAMPSAP03" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016LOAMPSAP06" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016SAAMPSAP04" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016TOAMPSAP05" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016VEAMPSAP07" ~ "2016XXAMPSAP00",
+                                           TRUE ~ OC_CODICE_PROGRAMMA))
 
   # meuro
   if (usa_meuro == TRUE) {
@@ -793,8 +811,6 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, add_713=F
 
 
   }
-
-
 
   if (export == TRUE) {
     write.csv2(out, file.path(TEMP, temp), row.names = FALSE)

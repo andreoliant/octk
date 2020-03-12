@@ -38,7 +38,7 @@ setup_light <- function(bimestre, fix = FALSE) {
              # OC_TEMA_SINTETICO,
              # COD_GRANDE_PROGETTO,
              # DESCRIZIONE_GRANDE_PROGETTO,
-             # OC_COD_FONTE,
+             OC_COD_FONTE, # inseria per funzionamento di fix_progetti
              # OC_DESCR_FONTE,
              FONDO_COMUNITARIO,
              OC_CODICE_PROGRAMMA,

@@ -41,10 +41,13 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
 
     # load progetti
     if (visualizzati == TRUE) {
-      progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000) %>%
+      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000) %>%
+      #   filter(OC_FLAG_VISUALIZZAZIONE == 0)
+      progetti <- read_csv2(file.path(DATA, temp), guess_max = 1200000) %>%
         filter(OC_FLAG_VISUALIZZAZIONE == 0)
     } else {
-      progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000)
+      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000)
+      progetti <- read_csv2(file.path(DATA, temp), guess_max = 1200000)
       # MEMO: qui prende anche non visualizzati
     }
 
@@ -124,13 +127,21 @@ fix_progetti <- function(progetti) {
   #                                          OC_CODICE_PROGRAMMA == ":::2017POIMPCOMFSC" ~ "2017POIMPCOMFSC",
   #                                          TRUE ~ OC_CODICE_PROGRAMMA))
 
-  # fix temporaneo per ":::OC_CODICE_PROGRAMMA" (nuova versione)
+  # fix temporaneo per ":::OC_CODICE_PROGRAMMA" (su dati 20291031)
+  # progetti <- progetti %>%
+  #   mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == ":::2014IT16RFOP007" ~ "2014IT16RFOP007",
+  #                                          OC_CODICE_PROGRAMMA == ":::2016POCIMPRESE1" ~ "2014IT16RFOP003", # cambia!
+  #                                          OC_CODICE_PROGRAMMA == ":::2017FSCRICERCA" ~ "2014IT16M2OP005",  # cambia!
+  #                                          OC_CODICE_PROGRAMMA == ":::2017POCRICERCA1" ~ "2014IT16M2OP005", # cambia!
+  #                                          OC_CODICE_PROGRAMMA == ":::2017POIMPCOMFSC" ~ "2017POIMPCOMFSC",
+  #                                          TRUE ~ OC_CODICE_PROGRAMMA))
+
+  # fix temporaneo per ":::OC_CODICE_PROGRAMMA" (su dati 20291231)
+  # MEMO: sposto su programma SIE
   progetti <- progetti %>%
-    mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == ":::2014IT16RFOP007" ~ "2014IT16RFOP007",
-                                           OC_CODICE_PROGRAMMA == ":::2016POCIMPRESE1" ~ "2014IT16RFOP003", # cambia!
-                                           OC_CODICE_PROGRAMMA == ":::2017FSCRICERCA" ~ "2014IT16M2OP005",  # cambia!
-                                           OC_CODICE_PROGRAMMA == ":::2017POCRICERCA1" ~ "2014IT16M2OP005", # cambia!
-                                           OC_CODICE_PROGRAMMA == ":::2017POIMPCOMFSC" ~ "2017POIMPCOMFSC",
+    mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2016POCIMPRESE1" & OC_COD_FONTE == "FS1420" ~ "2014IT16RFOP003",
+                                           OC_CODICE_PROGRAMMA == "2017FSCRICERCA" & OC_COD_FONTE == "FS1420" ~ "2014IT16M2OP005",
+                                           OC_CODICE_PROGRAMMA == "2017POCRICERCA1" & OC_COD_FONTE == "FS1420" ~ "2014IT16M2OP005",
                                            TRUE ~ OC_CODICE_PROGRAMMA))
 
   return(progetti)
