@@ -441,9 +441,10 @@ devtools::load_all(path = ".")
 setup_light(bimestre, fix = TRUE)
 
 # operazioni light
-progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE, light = FALSE)
-progetti <- fix_progetti(progetti)
-setup_operazioni(bimestre, progetti, export=TRUE, debug=TRUE)
+# progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE, light = FALSE)
+# progetti <- fix_progetti(progetti)
+# setup_operazioni(bimestre, progetti, export=TRUE, debug=TRUE)
+setup_operazioni(bimestre, export=TRUE, debug=TRUE)
 
 
 # chk mismatch progetti vs operazioni

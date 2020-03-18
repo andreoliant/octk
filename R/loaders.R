@@ -144,6 +144,13 @@ fix_progetti <- function(progetti) {
                                            OC_CODICE_PROGRAMMA == "2017POCRICERCA1" & OC_COD_FONTE == "FS1420" ~ "2014IT16M2OP005",
                                            TRUE ~ OC_CODICE_PROGRAMMA))
 
+  progetti <- progetti %>%
+    mutate(COD_LOCALE_PROGETTO = case_when(grepl("^1MISE174", COD_LOCALE_PROGETTO) ~ "1MISE174",
+                                           grepl("^1MISE397", COD_LOCALE_PROGETTO) ~ "1MISE397",
+                                           grepl("^1MISE496", COD_LOCALE_PROGETTO) ~ "1MISE496",
+                                           grepl("^1MISE608", COD_LOCALE_PROGETTO) ~ "1MISE608",
+                                           TRUE ~ COD_LOCALE_PROGETTO))
+
   return(progetti)
 }
 

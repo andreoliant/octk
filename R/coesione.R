@@ -9,19 +9,24 @@
 #' @param progetti Dataset con un perimetro in formato "progetti".
 #' @return Il dataset operazioni con le variabili coesione calcolate: COE, COE_IMP e COE_PAG.
 #' @note La modalità **debug** esporta diversi csv in TEMP La modalità **export** esporta operazioni_light.csv in DATA.
-setup_operazioni <- function(bimestre, progetti=NULL, export=FALSE, debug=FALSE) {
+setup_operazioni <- function(bimestre, progetti=NULL, export=FALSE, use_fix=FALSE, debug=FALSE) {
   if (exists("DATA", envir = .GlobalEnv)) {
 
-    # if (is.null(progetti)) {
-    #   progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
-    # }
     if (is.null(progetti)) {
-      progetti <- load_progetti(bimestre = bimestre, visualizzati=FALSE, light = FALSE)
+      progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, light = FALSE)
+      message("Dataset progetti caricato")
     }
     # MEMO: da qui veniva l'esclusione dei non visualizzati da operazioni? no perché sotto c'è left_join
 
+    if (use_fix == TRUE) {
+      progetti <- fix_progetti(progetti)
+      message("Fix su progetti effettuati")
+    }
+
+    # main
     operazioni <- workflow_operazioni(bimestre, progetti, debug=debug)
 
+    # export
     if (export == TRUE) {
 
       # ----------------------------------------------------------------------------------- #
@@ -114,7 +119,7 @@ setup_operazioni <- function(bimestre, progetti=NULL, export=FALSE, debug=FALSE)
 
 
 #' Workflow per creare il dataset operazioni
-workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FALSE) {
+workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
 
   # MEMO:
   # i programmi con ciclo sbagliato non sono ancora spostati nei file operazioni.sas
@@ -122,32 +127,36 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
   # ----------------------------------------------------------------------------------- #
   # loads
 
+  message("Entro in workflow operazioni")
+
   po <- octk::po_riclass
 
-  if (is.null(progetti)) {
-    # progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
-    progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, light = FALSE)
-  }
-  if (use_fix == TRUE) {
-    progetti <- fix_progetti(progetti)
-  }
+  # if (is.null(progetti)) {
+  #   # progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
+  #   progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, light = FALSE)
+  # }
 
+  # MEMO: ora è dentro in pre-esteso
   # recupera finanziamenti lordi (se assente in df)
-  if (!(any(names(progetti) == "FINANZ_TOTALE_PUBBLICO"))) {
-
-    temp <- paste0("progetti_esteso_", bimestre, ".csv")
-    progetti_ext <- read_csv2(file.path(DATA, temp), guess_max = 1000000)
-
-    progetti <- progetti %>%
-      left_join(progetti_ext %>%
-                  select(COD_LOCALE_PROGETTO, FINANZ_TOTALE_PUBBLICO, FINANZ_STATO_FSC, FINANZ_STATO_PAC),
-                by = "COD_LOCALE_PROGETTO")
-
-    rm(progetti_ext)
-  }
+  # if (!(any(names(progetti) == "FINANZ_TOTALE_PUBBLICO"))) {
+  #
+  #   temp <- paste0("progetti_esteso_", bimestre, ".csv")
+  #   progetti_ext <- read_csv2(file.path(DATA, temp), guess_max = 1000000)
+  #
+  #   progetti <- progetti %>%
+  #     left_join(progetti_ext %>%
+  #                 select(COD_LOCALE_PROGETTO, FINANZ_TOTALE_PUBBLICO, FINANZ_STATO_FSC, FINANZ_STATO_PAC),
+  #               by = "COD_LOCALE_PROGETTO")
+  #
+  #   rm(progetti_ext)
+  # }
 
   operazioni_1420_raw <- read_sas(file.path(DATA, "operazioni_pucok.sas7bdat"))
+  message("Operazioni raw caricate per 1420")
+
   operazioni_713_raw <- read_sas(file.path(DATA, "operazioni_fltok.sas7bdat"))
+
+  message("Operazioni raw caricate per 1420")
 
 
   # ----------------------------------------------------------------------------------- #
@@ -439,6 +448,8 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
 
   # clean
   operazioni_713 <- operazioni_713_raw_temp %>%
+    # fix per caratteri spuri
+    fix_operazioni_713(.) %>%
     # creo ambito e ciclo
     mutate(x_AMBITO = case_when(!is.na(x_AMBITO) ~ x_AMBITO, # MEMO: serve a incorporare fix sopra
                                 OC_COD_FONTE == "FS0713" ~ QSN_FONDO_COMUNITARIO,
@@ -629,7 +640,8 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
                 # MEMO: fix per doppio entry in po_riclass
                 filter(!(OC_CODICE_PROGRAMMA == "2016XXAMPSAP00" & x_CICLO == "2007-2013"),
                        !(OC_CODICE_PROGRAMMA == "2017TOPIOMBIFSC" & x_CICLO == "2007-2013")) %>%
-                select(OC_CODICE_PROGRAMMA, x_CICLO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ)) %>%
+                select(OC_CODICE_PROGRAMMA, x_CICLO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ),
+              by = "OC_CODICE_PROGRAMMA") %>%
     # fix per dissesto
     mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2016ABAMPSAP01" ~ "2016XXAMPSAP00",
                                            OC_CODICE_PROGRAMMA == "2016EMAMPSAP02" ~ "2016XXAMPSAP00",
@@ -638,17 +650,17 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
                                            OC_CODICE_PROGRAMMA == "2016SAAMPSAP04" ~ "2016XXAMPSAP00",
                                            OC_CODICE_PROGRAMMA == "2016TOAMPSAP05" ~ "2016XXAMPSAP00",
                                            OC_CODICE_PROGRAMMA == "2016VEAMPSAP07" ~ "2016XXAMPSAP00",
-                                           TRUE ~ OC_CODICE_PROGRAMMA)) %>%
+                                           TRUE ~ OC_CODICE_PROGRAMMA))
     # isola visualizzati
     # MEMO: questo sotto non prende ":::" su OC_CODICE_PROGRAMMA
     # semi_join(progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 0), by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA"))
     # semi_join(progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 0), by = "COD_LOCALE_PROGETTO")
-    left_join(progetti %>%
-                select(COD_LOCALE_PROGETTO, OC_FLAG_VISUALIZZAZIONE),
-              by = "COD_LOCALE_PROGETTO")
+    # left_join(progetti %>%
+    #             select(COD_LOCALE_PROGETTO, OC_FLAG_VISUALIZZAZIONE),
+    #           by = "COD_LOCALE_PROGETTO")
 
   # chk compatibile con Fabio x Stefano
-  operazioni %>% distinct(COD_LOCALE_PROGETTO, x_CICLO, x_AMBITO) %>% count(x_CICLO, x_AMBITO)
+  # operazioni %>% distinct(COD_LOCALE_PROGETTO, x_CICLO, x_AMBITO) %>% count(x_CICLO, x_AMBITO)
 
   # chk dupli per ciclo da po_riclass
   chk <- operazioni %>% count(COD_LOCALE_PROGETTO, x_CICLO)
@@ -1058,6 +1070,32 @@ fix_operazioni <- function(df) {
                                         PO_FONDO == "FESR" ~ "FESR",
                                       oc_cod_fonte == "FS1420" & ue_descr_fondo == "Y.E.I." ~ "IOG",
                                       TRUE ~ ue_descr_fondo))
+
+  df <- df %>%
+    mutate(COD_LOCALE_PROGETTO = case_when(grepl("^1MISE174", COD_LOCALE_PROGETTO) ~ "1MISE174",
+                                           grepl("^1MISE397", COD_LOCALE_PROGETTO) ~ "1MISE397",
+                                           grepl("^1MISE496", COD_LOCALE_PROGETTO) ~ "1MISE496",
+                                           grepl("^1MISE608", COD_LOCALE_PROGETTO) ~ "1MISE608",
+                                           TRUE ~ COD_LOCALE_PROGETTO))
+
+  return(df)
+}
+
+
+#' Fix temporaneo per i dataset operazioni (versione per 713)
+#'
+#' Integra il dataset risolvendo il problema di caratteri spuri. Attenzione perché va fatto anche in "progetti".
+#'
+#' @param df Dataset in formato standard.
+#' @return Il dataset operazioni integrato.
+fix_operazioni_713 <- function(df) {
+
+  df <- df %>%
+    mutate(COD_LOCALE_PROGETTO = case_when(grepl("^1MISE174", COD_LOCALE_PROGETTO) ~ "1MISE174",
+                                           grepl("^1MISE397", COD_LOCALE_PROGETTO) ~ "1MISE397",
+                                           grepl("^1MISE496", COD_LOCALE_PROGETTO) ~ "1MISE496",
+                                           grepl("^1MISE608", COD_LOCALE_PROGETTO) ~ "1MISE608",
+                                           TRUE ~ COD_LOCALE_PROGETTO))
 
   return(df)
 }
