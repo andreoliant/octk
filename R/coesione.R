@@ -12,9 +12,13 @@
 setup_operazioni <- function(bimestre, progetti=NULL, export=FALSE, debug=FALSE) {
   if (exists("DATA", envir = .GlobalEnv)) {
 
+    # if (is.null(progetti)) {
+    #   progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
+    # }
     if (is.null(progetti)) {
-      progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
+      progetti <- load_progetti(bimestre = bimestre, visualizzati=FALSE, light = FALSE)
     }
+    # MEMO: da qui veniva l'esclusione dei non visualizzati da operazioni? no perché sotto c'è left_join
 
     operazioni <- workflow_operazioni(bimestre, progetti, debug=debug)
 
@@ -121,7 +125,8 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
   po <- octk::po_riclass
 
   if (is.null(progetti)) {
-    progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
+    # progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
+    progetti <- load_progetti(bimestre = bimestre, visualizzati=FALSE, light = FALSE)
   }
   if (use_fix == TRUE) {
     progetti <- fix_progetti(progetti)
@@ -531,7 +536,10 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
     # isola visualizzati
     # MEMO: questo sotto non prende ":::" su OC_CODICE_PROGRAMMA
     # semi_join(progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 0), by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA"))
-    semi_join(progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 0), by = "COD_LOCALE_PROGETTO")
+    # semi_join(progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 0), by = "COD_LOCALE_PROGETTO")
+    left_join(progetti %>%
+                select(COD_LOCALE_PROGETTO, OC_FLAG_VISUALIZZAZIONE),
+              by = "COD_LOCALE_PROGETTO")
 
   # chk compatibile con Fabio x Stefano
   operazioni %>% distinct(COD_LOCALE_PROGETTO, x_CICLO, x_AMBITO) %>% count(x_CICLO, x_AMBITO)
