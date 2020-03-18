@@ -126,7 +126,7 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
 
   if (is.null(progetti)) {
     # progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
-    progetti <- load_progetti(bimestre = bimestre, visualizzati=FALSE, light = FALSE)
+    progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, light = FALSE)
   }
   if (use_fix == TRUE) {
     progetti <- fix_progetti(progetti)
@@ -235,18 +235,49 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
                                 oc_cod_fonte == "FSC1420" ~ "FSC",
                                 oc_cod_fonte == "PAC1420" ~ "POC")) %>%
     # map per ambito
+    # mutate(COS_AMM = case_when(x_AMBITO == "FSC" ~ costo_ammesso_FSC,
+    #                            x_AMBITO == "POC" ~ costo_ammesso_NAZ,
+    #                            x_AMBITO == "SNAI" ~ costo_ammesso_NAZ,
+    #                            TRUE ~ costo_rendicontabile_UE),
+    #        IMP_AMM = case_when(x_AMBITO == "FSC" ~ oc_impegni_ammessi_FSC,
+    #                            x_AMBITO == "POC" ~ oc_impegni_ammessi_PAC,
+    #                            x_AMBITO == "SNAI" ~ oc_impegni_ammessi_PAC,
+    #                            TRUE ~ oc_impegni_ammessi_ue),
+    #        PAG_AMM = case_when(x_AMBITO == "FSC" ~ oc_tot_pagamenti_FSC,
+    #                            x_AMBITO == "POC" ~ oc_tot_pagamenti_PAC,
+    #                            x_AMBITO == "SNAI" ~ oc_tot_pagamenti_PAC,
+    #                            TRUE ~ oc_tot_pagamenti_rendicontab_ue)) %>%
+
+    # map per ambito (REV TRASFERIMENTI)
+    left_join(progetti %>%
+                select(COD_LOCALE_PROGETTO, CUP_COD_NATURA),
+              by = "COD_LOCALE_PROGETTO") %>%
+    # CUP_COD_NATURA == "08"
     mutate(COS_AMM = case_when(x_AMBITO == "FSC" ~ costo_ammesso_FSC,
                                x_AMBITO == "POC" ~ costo_ammesso_NAZ,
                                x_AMBITO == "SNAI" ~ costo_ammesso_NAZ,
                                TRUE ~ costo_rendicontabile_UE),
-           IMP_AMM = case_when(x_AMBITO == "FSC" ~ oc_impegni_ammessi_FSC,
+           IMP_AMM = case_when(x_AMBITO == "FSC" & CUP_COD_NATURA == "08" ~ oc_impegni_trasf_ammessi_FSC,
+                               x_AMBITO == "FSC" ~ oc_impegni_ammessi_FSC,
+                               x_AMBITO == "POC" & CUP_COD_NATURA == "08" ~ oc_impegni_trasf_ammessi_PAC,
                                x_AMBITO == "POC" ~ oc_impegni_ammessi_PAC,
+                               x_AMBITO == "SNAI" & CUP_COD_NATURA == "08" ~ oc_impegni_trasf_ammessi_PAC,
                                x_AMBITO == "SNAI" ~ oc_impegni_ammessi_PAC,
+                              CUP_COD_NATURA == "08" ~ oc_impegni_trasf_ammessi_ue,
                                TRUE ~ oc_impegni_ammessi_ue),
-           PAG_AMM = case_when(x_AMBITO == "FSC" ~ oc_tot_pagamenti_FSC,
+           PAG_AMM = case_when(x_AMBITO == "FSC" & CUP_COD_NATURA == "08" ~ oc_tot_pag_trasf_FSC,
+                               x_AMBITO == "FSC" ~ oc_tot_pagamenti_FSC,
+                               x_AMBITO == "POC" & CUP_COD_NATURA == "08" ~ oc_tot_pag_trasf_PAC,
                                x_AMBITO == "POC" ~ oc_tot_pagamenti_PAC,
+                               x_AMBITO == "SNAI" & CUP_COD_NATURA == "08" ~ oc_tot_pag_trasf_PAC,
                                x_AMBITO == "SNAI" ~ oc_tot_pagamenti_PAC,
+                               CUP_COD_NATURA == "08" ~ oc_tot_pag_trasf_rendicontab_ue,
                                TRUE ~ oc_tot_pagamenti_rendicontab_ue)) %>%
+
+  #   "oc_tot_pagamenti_rendicontab_ue"  "oc_tot_pagamenti_FSC"             "oc_tot_pagamenti_PAC"
+  # [142] "oc_tot_pag_trasf_rendicontab_ue"  "oc_tot_pag_trasf_FSC"             "oc_tot_pag_trasf_PAC"
+  # [145] "oc_impegni_ammessi_ue"            "oc_impegni_ammessi_FSC"           "oc_impegni_ammessi_PAC"
+
     # incrementa COE con finanziamento FSC e PAC
     # MEMO: per progetti "non multi" o "multi" di cui solo 1 programma FSC (per lasciare fuori i multi su 2 programmi FSC)
     left_join(progetti %>%
@@ -264,6 +295,8 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
                            TRUE ~ COS_AMM))
 
 
+
+
   # TODO:
   # misurare effetto incremento FSC
 
@@ -275,6 +308,29 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
 
   # chk
   if (debug == TRUE) {
+
+    # chk trasferimenti
+    # operazioni_1420 %>% filter(CUP_COD_NATURA == "08") %>% count(x_AMBITO)
+    # x_AMBITO     n
+    # <chr>    <int>
+    # 1 FESR        92
+    # 2 FSC          8
+    # 3 FSE         12
+    # 4 POC          1
+    # 5 YEI          2
+
+    chk <- operazioni_1420 %>%
+      filter(CUP_COD_NATURA == "08") %>%
+      group_by(x_AMBITO) %>%
+      summarise(oc_impegni_trasf_ammessi_FSC = sum(oc_impegni_trasf_ammessi_FSC, na.rm = TRUE),
+                oc_impegni_trasf_ammessi_PAC = sum(oc_impegni_trasf_ammessi_PAC, na.rm = TRUE),
+                oc_impegni_trasf_ammessi_ue = sum(oc_impegni_trasf_ammessi_ue, na.rm = TRUE),
+                oc_tot_pag_trasf_FSC = sum(oc_tot_pag_trasf_FSC, na.rm = TRUE),
+                oc_tot_pag_trasf_PAC = sum(oc_tot_pag_trasf_PAC, na.rm = TRUE),
+                oc_tot_pag_trasf_rendicontab_ue = sum(oc_tot_pag_trasf_rendicontab_ue, na.rm = TRUE))
+
+    write_csv2(chk, file.path(TEMP, "chk_1420_trasf.csv"))
+
     # clean
     appo <- operazioni_1420 %>%
       select(COD_LOCALE_PROGETTO,
@@ -342,6 +398,16 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
   # 3 FSC0713      ""                     22530
   # 4 FSC1420      ""                        37 <- PIANO FSC DISSESTO IDROGEOLOGICO
   # 5 PAC          ""                     25353
+
+  chk <- operazioni_713_raw %>%
+    filter(OC_FLAG_PAC == 1) %>%
+    group_by(OC_COD_FONTE, QSN_FONDO_COMUNITARIO, OC_COD_PROGRAMMA) %>%
+    summarise(N = n(),
+              OC_TOT_PAGAMENTI_RENDICONTAB_UE = sum(OC_TOT_PAGAMENTI_RENDICONTAB_UE, na.rm = TRUE),
+              OC_TOT_PAGAMENTI_FSC = sum(OC_TOT_PAGAMENTI_FSC, na.rm = TRUE),
+              OC_TOT_PAGAMENTI_PAC = sum(OC_TOT_PAGAMENTI_PAC, na.rm = TRUE))
+
+  # MEMO: dovrebbe esserci anche 2007SA002FA016 ma ha flag OC_FLAG_PAC solo per un progetto...
 
   # FIX: duplicazione di programmi PAC-FSC (es. direttrici ferroviarie)
   appo <- operazioni_713_raw %>%
@@ -412,6 +478,7 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
               by = "COD_LOCALE_PROGETTO") %>%
       mutate(COE = case_when(x_AMBITO == "FSC" ~ OC_FINANZ_STATO_FSC_NETTO,
                              x_AMBITO == "POC" ~ OC_FINANZ_STATO_PAC_NETTO,
+                             is.na(COS_AMM) ~ 0,
                              TRUE ~ COS_AMM),
              # MEMO: qui sopra non sto facendo MAX tra FTP e FTPN (è una tecnica che uso solo per riproporzionare impegni)
              # base_ftp = if_else(OC_FINANZ_TOT_PUB_NETTO > 0,
@@ -425,6 +492,7 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
                                   x_AMBITO == "FSC" ~ FINANZ_STATO_FSC,
                                   x_AMBITO == "POC" & OC_FINANZ_TOT_PUB_NETTO > 0 ~ OC_FINANZ_STATO_PAC_NETTO,
                                   x_AMBITO == "POC" ~ FINANZ_STATO_PAC,
+                                  is.na(COS_AMM) ~ 0,
                                   TRUE ~ COS_AMM), # per FS non posso considerare valore al netto di economie
              x = base_coe/base_ftp,
              COE_PAG = PAG_AMM,
@@ -469,13 +537,13 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
              COE_IMP,
              COE_PAG)
 
-    appo %>%
-      filter(x > 1) %>%
-      arrange(desc(x))
-
-    appo %>%
-      filter(round(COE_PAG, 0) > round(COE_IMP, 0)) %>%
-      count(x_AMBITO)
+    # appo %>%
+    #   filter(x > 1) %>%
+    #   arrange(desc(x))
+    #
+    # appo %>%
+    #   filter(round(COE_PAG, 0) > round(COE_IMP, 0)) %>%
+    #   count(x_AMBITO)
     # MEMO: prima del fix...
     # x_AMBITO     n
     #   <chr>    <int>
@@ -485,21 +553,50 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
     # 4 POC       3146
     # MEMO: dopo il fix
 
+    # chk <- appo %>%
+    #   select(-x) %>%
+    #   group_by(x_AMBITO, OC_CODICE_PROGRAMMA) %>%
+    #   summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+    #   left_join(octk::po_riclass %>%
+    #               distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA),
+    #             by = "OC_CODICE_PROGRAMMA")
+
     chk <- appo %>%
-      select(-x) %>%
-      group_by(x_AMBITO, OC_CODICE_PROGRAMMA) %>%
-      summarise_if(is.numeric, sum, na.rm = TRUE) %>%
-      left_join(octk::po_riclass %>%
-                  distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA),
-                by = "OC_CODICE_PROGRAMMA")
+      mutate(TIPO_ELAB = case_when(round(IMPEGNI, 1) == round(COE_IMP, 1) ~ "no_elab",
+                                   is.na(IMPEGNI) ~ "isna_to_zero",
+                                   COE_IMP == 0 & IMPEGNI != 0 ~ "coe_to_zero",
+                                   # x > 1 ~ "x_>_1",
+                                   COE_IMP == COE & IMPEGNI != COE ~ "to_coe", # dovrebbe essere incluso sopra
+                                   x_AMBITO == "FSC" & CP_N <= 0 ~ "fin_tot",
+                                   x_AMBITO == "POC" & CP_N <= 0 ~ "fin_tot",
+                                   round(COE_IMP, 1) == round(COE, 1) ~ "imp_equal_coe",
+                                   round(COE_IMP, 2) == round(COE, 2) ~ "imp_equal_coe_2",
+                                   round(COE_IMP, 1) < round(COE, 1) & round(COE_IMP, 1) < round(IMPEGNI, 1) & x < 1 ~ "ripro")) %>%
+      # filter(is.na(TIPO_ELAB))
+      group_by(TIPO_ELAB, x_AMBITO, OC_CODICE_PROGRAMMA) %>%
+      summarise(N = n(),
+                COE = sum(COE, na.rm = TRUE),
+                COE_IMP = sum(COE_IMP, na.rm = TRUE),
+                IMPEGNI = sum(IMPEGNI, na.rm = TRUE))
 
     write_csv2(chk, file.path(TEMP, "chk_0713.csv"))
 
     chk2 <- chk %>%
-      group_by(x_AMBITO) %>%
+      group_by(TIPO_ELAB) %>%
       summarise_if(is.numeric, sum, na.rm = TRUE)
 
     write_csv2(chk2, file.path(TEMP, "chk_0713_sum.csv"))
+
+    # TIPO_ELAB            N          COE      COE_IMP      IMPEGNI
+    # <chr>            <int>        <dbl>        <dbl>        <dbl>
+    # 1 coe_to_zero       4314           0            0   1842261708.
+    # 2 fin_tot              5           0       248194.     1230647. <<< QUESTI ANDREBBERO PORTATI A 0
+    # 3 imp_equal_coe      311   112825686.   112825685.   272328584.
+    # 4 imp_equal_coe_2     15     4312076.     4312076.    10258899.
+    # 5 isna_to_zero      4148  3621360877.           0            0
+    # 6 no_elab         892785 52937267517. 50383720429. 50383720423.
+    # 7 ripro             2374  5823080565.  3645377826.  7726463907.
+    # 8 to_coe           60944 16308254895. 16308254895. 28893817292.
 
     # chk totali per ambito
     # operazioni_713 %>%
@@ -533,6 +630,15 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
                 filter(!(OC_CODICE_PROGRAMMA == "2016XXAMPSAP00" & x_CICLO == "2007-2013"),
                        !(OC_CODICE_PROGRAMMA == "2017TOPIOMBIFSC" & x_CICLO == "2007-2013")) %>%
                 select(OC_CODICE_PROGRAMMA, x_CICLO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ)) %>%
+    # fix per dissesto
+    mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2016ABAMPSAP01" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016EMAMPSAP02" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016LIAMPSAP03" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016LOAMPSAP06" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016SAAMPSAP04" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016TOAMPSAP05" ~ "2016XXAMPSAP00",
+                                           OC_CODICE_PROGRAMMA == "2016VEAMPSAP07" ~ "2016XXAMPSAP00",
+                                           TRUE ~ OC_CODICE_PROGRAMMA)) %>%
     # isola visualizzati
     # MEMO: questo sotto non prende ":::" su OC_CODICE_PROGRAMMA
     # semi_join(progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 0), by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA"))
@@ -547,6 +653,7 @@ workflow_operazioni <- function(bimestre, progetti=NULL, debug=FALSE, use_fix=FA
   # chk dupli per ciclo da po_riclass
   chk <- operazioni %>% count(COD_LOCALE_PROGETTO, x_CICLO)
   dim(chk)[1] == dim(progetti)[1]
+  # MEMO: attenzione che a volte si importa progetti con i soli visualizzati e salta il chk sopra
 
   # chk
   operazioni %>%
@@ -647,15 +754,19 @@ prep_perimetro_bimestre_coesione <- function(bimestre, usa_meuro=TRUE) {
 
   # fix per dissesto
   # TODO: da spostare a monte nel workflow di operazioni
+  # perimetro <- perimetro %>%
+  #   mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2016ABAMPSAP01" ~ "2016XXAMPSAP00",
+  #                                          OC_CODICE_PROGRAMMA == "2016EMAMPSAP02" ~ "2016XXAMPSAP00",
+  #                                          OC_CODICE_PROGRAMMA == "2016LIAMPSAP03" ~ "2016XXAMPSAP00",
+  #                                          OC_CODICE_PROGRAMMA == "2016LOAMPSAP06" ~ "2016XXAMPSAP00",
+  #                                          OC_CODICE_PROGRAMMA == "2016SAAMPSAP04" ~ "2016XXAMPSAP00",
+  #                                          OC_CODICE_PROGRAMMA == "2016TOAMPSAP05" ~ "2016XXAMPSAP00",
+  #                                          OC_CODICE_PROGRAMMA == "2016VEAMPSAP07" ~ "2016XXAMPSAP00",
+  #                                          TRUE ~ OC_CODICE_PROGRAMMA))
+
+  # viz
   perimetro <- perimetro %>%
-    mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2016ABAMPSAP01" ~ "2016XXAMPSAP00",
-                                           OC_CODICE_PROGRAMMA == "2016EMAMPSAP02" ~ "2016XXAMPSAP00",
-                                           OC_CODICE_PROGRAMMA == "2016LIAMPSAP03" ~ "2016XXAMPSAP00",
-                                           OC_CODICE_PROGRAMMA == "2016LOAMPSAP06" ~ "2016XXAMPSAP00",
-                                           OC_CODICE_PROGRAMMA == "2016SAAMPSAP04" ~ "2016XXAMPSAP00",
-                                           OC_CODICE_PROGRAMMA == "2016TOAMPSAP05" ~ "2016XXAMPSAP00",
-                                           OC_CODICE_PROGRAMMA == "2016VEAMPSAP07" ~ "2016XXAMPSAP00",
-                                           TRUE ~ OC_CODICE_PROGRAMMA))
+    filter(OC_FLAG_VISUALIZZAZIONE == 0)
 
   # meuro
   if (usa_meuro == TRUE) {
@@ -991,4 +1102,5 @@ make_report_bimestre_coesione <- function(programmi=NULL, export=TRUE) {
 
   return(report)
 }
+
 

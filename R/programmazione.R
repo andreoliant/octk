@@ -437,3 +437,4 @@ make_risorse <- function(usa_713=FALSE, usa_macroaree=FALSE)
 
   return(risorse)
 }
+
