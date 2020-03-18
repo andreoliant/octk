@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.3.0"
+oc_ver <- "0.3.1"
 
 # rm(list=ls())
 library("devtools")
@@ -204,6 +204,7 @@ write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
+# bimestre_old <- "20191231.3"
 bimestre_old <- "20191031"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
@@ -241,32 +242,32 @@ write.csv2(chk, file.path(OUTPUT, paste0("chk_delta_noviz_", bimestre, ".csv")),
 
 
 # singoli progetti
-chk2 <- progetti_all_old %>%
-  # mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
-  #                                      TRUE ~ FONDO_COMUNITARIO)) %>%
-  fix_progetti(.) %>%
-  get_x_vars(.) %>%
-  # group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
-  select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO) %>%
-  full_join(progetti_all %>%
-              # mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
-              #                                      TRUE ~ FONDO_COMUNITARIO)) %>%
-              fix_progetti(.) %>%
-              get_x_vars(.) %>%
-              select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO),
-            by = "COD_LOCALE_PROGETTO", suffix = c(".old", ".new")) %>%
-  mutate(CP.chk = CP.new - CP.old)
-
-chk2 %>% arrange(desc(CP.chk))
-chk2 %>% filter(is.na(x_AMBITO.new), OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_CODICE_PROGRAMMA.new)
-chk2 %>% filter(x_AMBITO.new == "FESR", OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_FLAG_VISUALIZZAZIONE.old)
-
-temp <- chk2 %>% filter(is.na(x_CICLO.old), is.na(x_CICLO.new))
-
-                        # == "2007-2013", x_AMBITO.new == "FSC", OC_FLAG_VISUALIZZAZIONE.new == 0, CP.chk > 0)
-
-temp <- chk2 %>% filter(x_CICLO.new == "2007-2013", x_AMBITO.new == "FSC", OC_FLAG_VISUALIZZAZIONE.new == 0, CP.chk > 0)
-write_csv2(temp, file.path(TEMP, "chk_fsc713.csv"))
+# chk2 <- progetti_all_old %>%
+#   # mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
+#   #                                      TRUE ~ FONDO_COMUNITARIO)) %>%
+#   fix_progetti(.) %>%
+#   get_x_vars(.) %>%
+#   # group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
+#   select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO) %>%
+#   full_join(progetti_all %>%
+#               # mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
+#               #                                      TRUE ~ FONDO_COMUNITARIO)) %>%
+#               fix_progetti(.) %>%
+#               get_x_vars(.) %>%
+#               select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO, CP = OC_FINANZ_TOT_PUB_NETTO),
+#             by = "COD_LOCALE_PROGETTO", suffix = c(".old", ".new")) %>%
+#   mutate(CP.chk = CP.new - CP.old)
+#
+# chk2 %>% arrange(desc(CP.chk))
+# chk2 %>% filter(is.na(x_AMBITO.new), OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_CODICE_PROGRAMMA.new)
+# chk2 %>% filter(x_AMBITO.new == "FESR", OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_FLAG_VISUALIZZAZIONE.old)
+#
+# temp <- chk2 %>% filter(is.na(x_CICLO.old), is.na(x_CICLO.new))
+#
+#                         # == "2007-2013", x_AMBITO.new == "FSC", OC_FLAG_VISUALIZZAZIONE.new == 0, CP.chk > 0)
+#
+# temp <- chk2 %>% filter(x_CICLO.new == "2007-2013", x_AMBITO.new == "FSC", OC_FLAG_VISUALIZZAZIONE.new == 0, CP.chk > 0)
+# write_csv2(temp, file.path(TEMP, "chk_fsc713.csv"))
 
 # chk
 chk_match(progetti_all_old, progetti_all, id = "COD_LOCALE_PROGETTO")
@@ -311,13 +312,13 @@ progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE
 chk <- progetti %>%
   filter(grepl("^:::2017POIMPCOMFSC", OC_CODICE_PROGRAMMA))
 
-chk %>%
-  get_x_vars(.) %>%
-  count(OC_CODICE_PROGRAMMA, x_CICLO, X_CICLO, x_AMBITO, X_AMBITO)
+# chk %>%
+#   get_x_vars(.) %>%
+#   count(OC_CODICE_PROGRAMMA, x_CICLO, X_CICLO, x_AMBITO, X_AMBITO)
 
 
 # verifica x_vars
-# progetti <- fix_progetti(progetti)
+# progetti <- fix_progetti(progetti) # MEMO: questo va escluso prima e aggiunto poi per testare se il fix funziona ancora o va integrato
 appo <- get_x_vars(progetti)
 # appo <- get_macroarea(appo, real_reg=TRUE)
 # appo <- get_regione_simply(appo)
@@ -336,7 +337,7 @@ chk <- appo %>%
               filter(x_AMBITO == "FSC", X_AMBITO == "FESR-FSE") %>%
               mutate(CHK = "fsc>fesr-fse"))
 
-write_csv2(chk, file.path(TEMP, "chk_mismatch_ambito.csv"))
+write_csv2(chk, file.path(TEMP, paste0("chk_mismatch_ambito_", bimestre, ".csv")))
 
 chk %>%
   count(OC_CODICE_PROGRAMMA, x_CICLO, X_CICLO, x_AMBITO, X_AMBITO, OC_COD_FONTE)
@@ -381,51 +382,6 @@ chk <- appo %>%
 
 # ----------------------------------------------------------------------------------- #
 # verifica data quality
-
-# HAND:: verifica numero di progetti su mail per Stefano
-appo %>%
-  # count(x_CICLO, x_AMBITO)
-  count(x_CICLO)
-# x_CICLO        n
-# 2007-2013 949928
-# 2014-2020 296934 >>> 296924 nella mail per Stefano
-
-appo %>%
-  group_by(x_CICLO) %>%
-  summarise(CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE))
-
-appo %>%
-  filter(is.na(OC_CODICE_PROGRAMMA)) %>%
-  count(x_CICLO, x_AMBITO)
-
-
-chk <- appo %>%
-  count(DEN_REGIONE)
-
-# verifica mascheramenti
-appo %>%
-  mutate(MASK = grepl("\\*INDIVIDUO\\*", toupper(OC_TITOLO_PROGETTO))) %>%
-  count(CUP_COD_NATURA, CUP_DESCR_NATURA, MASK) %>%
-  spread(MASK, n)
-
-chk <- appo %>%
-  mutate(MASK = grepl("\\*INDIVIDUO\\*", toupper(OC_TITOLO_PROGETTO))) %>%
-  filter(CUP_COD_NATURA == "03" & MASK == TRUE) %>%
-  select(OC_TITOLO_PROGETTO, CUP_DESCR_CATEGORIA)
-
-chk %>%
-  count(CUP_DESCR_CATEGORIA)
-
-
-# verifica cambiamenti nomi variabili
-# "OC_COD_CATEGORIA_SPESA" "OC_DESCR_CATEGORIA_SPESA" >>> peri_query.R >>> query_ue()
-# "COD_RISULTATO_ATTESO" "DESCR_RISULTATO_ATTESO"
-
-appo %>%
-  filter(x_AMBITO != "FEASR") %>%
-  count(x_CICLO, OC_STATO_PROCEDURALE)
-
-
 
 
 
@@ -485,7 +441,10 @@ setup_light(bimestre, fix = TRUE)
 
 setup_operazioni(bimestre, progetti, export=TRUE, debug=TRUE)
 
+
 # chk mismatch progetti vs operazioni
+operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+
 chk <- progetti %>%
   get_x_vars(.) %>%
   select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_AMBITO) %>%
@@ -501,6 +460,7 @@ chk %>%
 # <chr>               <fct>      <chr>      <int>
 # 1 2007IT001FA005      FSC        POC            6
 # 2 2007IT005FAMG1      FSC        POC            4
+# MEMO: se sono solo questi sopra è ok per si tratta di sdoppiamenti forzati per direttrici ferroviarie e giustizia civile
 
 write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
 
