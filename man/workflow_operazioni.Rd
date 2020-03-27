@@ -4,8 +4,7 @@
 \alias{workflow_operazioni}
 \title{Workflow per creare il dataset operazioni}
 \usage{
-workflow_operazioni(bimestre, progetti = NULL, debug = FALSE,
-  use_fix = FALSE)
+workflow_operazioni(bimestre, progetti, debug = FALSE)
 }
 \description{
 Workflow per creare il dataset operazioni

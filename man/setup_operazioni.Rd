@@ -5,7 +5,7 @@
 \title{Crea il dataset operazioni}
 \usage{
 setup_operazioni(bimestre, progetti = NULL, export = FALSE,
-  debug = FALSE)
+  use_fix = FALSE, debug = FALSE)
 }
 \arguments{
 \item{bimestre}{Bimestre di riferimento}

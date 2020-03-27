@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.3.1"
+oc_ver <- "0.3.2"
 
 # rm(list=ls())
 library("devtools")
@@ -204,8 +204,8 @@ write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-# bimestre_old <- "20191231.3"
-bimestre_old <- "20191031"
+bimestre_old <- "20191231.4"
+# bimestre_old <- "20191031"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
 progetti_all_old <- load_progetti(bimestre = bimestre_old,
