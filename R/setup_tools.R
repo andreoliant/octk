@@ -404,7 +404,10 @@ make_matrix_strum <- function(bimestre, file_name="strum_att.csv") {
   }
 
   out <- progetti %>%
-    distinct(COD_STRUMENTO, DESCR_STRUMENTO, DESCR_TIPO_STRUMENTO) %>%
+    distinct(COD_STRUMENTO, DESCR_STRUMENTO, DESCR_TIPO_STRUMENTO, OC_CODICE_PROGRAMMA) %>%
+    left_join(octk::po_riclass %>%
+                distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_PROGRAMMA),
+              by = "OC_CODICE_PROGRAMMA") %>%
     mutate(QUERY = 0,
            NOTE = NA)
 
@@ -442,7 +445,11 @@ make_prog_comp <- function(bimestre, file_name="prog_comp.csv") {
   }
 
   out <- progetti %>%
-    distinct(COD_PROGETTO_COMPLESSO, DESCRIZIONE_PROGETTO_COMPLESSO, COD_TIPO_COMPLESSITA, DESCR_TIPO_COMPLESSITA) %>%
+    distinct(COD_PROGETTO_COMPLESSO, DESCRIZIONE_PROGETTO_COMPLESSO, COD_TIPO_COMPLESSITA, DESCR_TIPO_COMPLESSITA,
+             OC_CODICE_PROGRAMMA) %>%
+    left_join(octk::po_riclass %>%
+                distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_PROGRAMMA),
+              by = "OC_CODICE_PROGRAMMA") %>%
     mutate(QUERY = 0,
            NOTE = NA)
 
@@ -458,7 +465,11 @@ make_patt <- function(bimestre, file_name="patt.csv") {
   }
 
   out <- progetti %>%
-    distinct(COD_PROCED_ATTIVAZIONE, DESCR_PROCED_ATTIVAZIONE, COD_TIPO_PROCED_ATTIVAZIONE, DESCR_TIPO_PROCED_ATTIVAZIONE) %>%
+    distinct(COD_PROCED_ATTIVAZIONE, DESCR_PROCED_ATTIVAZIONE, COD_TIPO_PROCED_ATTIVAZIONE, DESCR_TIPO_PROCED_ATTIVAZIONE,
+             OC_CODICE_PROGRAMMA) %>%
+    left_join(octk::po_riclass %>%
+                distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_PROGRAMMA),
+              by = "OC_CODICE_PROGRAMMA") %>%
     mutate(QUERY = 0,
            NOTE = NA)
 

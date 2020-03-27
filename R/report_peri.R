@@ -791,7 +791,8 @@ export_report <- function(perimetro, progetti, livelli_classe, use_template=TRUE
 
     # edit template
     # wb <- loadWorkbook(file.path(src_path, "elab_template.xlsx"))
-    wb <- loadWorkbook(system.file("extdata", "elab_template.xlsx", package = "oc", mustWork = TRUE))
+    # wb <- loadWorkbook(system.file("extdata", "elab_template.xlsx", package = "oc", mustWork = TRUE))
+    wb <- loadWorkbook(system.file("extdata", "elab_template.xlsx", package = "octk", mustWork = TRUE))
     for (i in seq_along(tab_ls)) {
       print(names(tab_ls)[i])
       removeTable(wb = wb, sheet = names(tab_ls)[i], table = getTables(wb, sheet = names(tab_ls)[i]))

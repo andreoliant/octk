@@ -184,7 +184,8 @@ query_strum <- function(progetti) {
 
   # load matrix
   matrix_strum <- read_csv2(file.path(INPUT, "strum_att.csv")) %>%
-    rename(QUERY_STRUM = QUERY)
+    rename(QUERY_STRUM = QUERY) %>%
+    select(-OC_CODICE_PROGRAMMA, -x_CICLO, -x_AMBITO, -x_PROGRAMMA)
 
   # merge
   peri_strum <- progetti %>%
@@ -212,7 +213,8 @@ query_progcomp <- function(progetti) {
 
   # load matrix
   matrix_progcomp <- read_csv2(file.path(INPUT, "prog_comp.csv"))  %>%
-    rename(QUERY_PROGCOMP = QUERY)
+    rename(QUERY_PROGCOMP = QUERY) %>%
+    select(-OC_CODICE_PROGRAMMA, -x_CICLO, -x_AMBITO, -x_PROGRAMMA)
 
   # merge
   peri_progcomp <- progetti %>%
@@ -237,7 +239,8 @@ query_patt <- function(progetti) {
 
   # load matrix
   matrix_patt <- read_csv2(file.path(INPUT, "patt.csv"))  %>%
-    rename(QUERY_PATT = QUERY)
+    rename(QUERY_PATT = QUERY) %>%
+    select(-OC_CODICE_PROGRAMMA, -x_CICLO, -x_AMBITO, -x_PROGRAMMA)
 
   # merge
   peri_patt <- progetti %>%
