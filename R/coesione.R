@@ -24,6 +24,7 @@ setup_operazioni <- function(bimestre, progetti=NULL, export=FALSE, use_fix=FALS
     }
 
     # main
+    # DEBUG: debug <- TRUE
     operazioni <- workflow_operazioni(bimestre, progetti, debug=debug)
 
     # export
@@ -156,7 +157,7 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
 
   operazioni_713_raw <- read_sas(file.path(DATA, "operazioni_fltok.sas7bdat"))
 
-  message("Operazioni raw caricate per 1420")
+  message("Operazioni raw caricate per 713")
 
 
   # ----------------------------------------------------------------------------------- #
@@ -485,7 +486,7 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
                 select(COD_LOCALE_PROGETTO,
                        OC_FINANZ_TOT_PUB_NETTO, OC_FINANZ_STATO_FSC_NETTO, OC_FINANZ_STATO_PAC_NETTO,
                        FINANZ_TOTALE_PUBBLICO, FINANZ_STATO_FSC, FINANZ_STATO_PAC,
-                       IMPEGNI),
+                       IMPEGNI, TOT_PAGAMENTI),
               by = "COD_LOCALE_PROGETTO") %>%
       mutate(COE = case_when(x_AMBITO == "FSC" ~ OC_FINANZ_STATO_FSC_NETTO,
                              x_AMBITO == "POC" ~ OC_FINANZ_STATO_PAC_NETTO,
@@ -506,7 +507,26 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
                                   is.na(COS_AMM) ~ 0,
                                   TRUE ~ COS_AMM), # per FS non posso considerare valore al netto di economie
              x = base_coe/base_ftp,
-             COE_PAG = PAG_AMM,
+             # COE_PAG = PAG_AMM,
+
+             # fix per pagamenti FSC 0
+             PAG_AMM_2 = case_when(x == Inf ~ 0,
+                                   # fix per caso di uguaglianza completa (non riproporziona anche se CP_N > COE)
+                                   # round(TOT_PAGAMENTI, 0) == round(COE, 0) & round(IMPEGNI, 0) == round(COE, 0) ~ COE,
+                                   # fix per caso di uguaglianza di pagamenti comunque con impegni > COE (non riproporziona)
+                                   # round(TOT_PAGAMENTI, 0) == round(COE, 0) & round(IMPEGNI, 0) > round(COE, 0) ~ COE,
+
+                                   TOT_PAGAMENTI <= base_ftp ~ TOT_PAGAMENTI * x,
+                                   TOT_PAGAMENTI > base_ftp ~ base_ftp * x,
+                                   is.na(TOT_PAGAMENTI) ~ 0,
+                                   # is.na(COE) ~ 0, # CHK: capire se serve
+                                   TRUE ~ 0),
+
+             COE_PAG = case_when(x_AMBITO == "FSC" & PAG_AMM_2 > PAG_AMM ~ PAG_AMM_2,
+                                 x_AMBITO == "FSC" ~ PAG_AMM,
+                                 TRUE ~ PAG_AMM),
+             # MEMO: uso massimo valore per FSC
+
              COE_IMP = case_when(x == Inf ~ 0,
                                  # fix per caso di uguaglianza completa (non riproporziona anche se CP_N > COE)
                                  round(COE_PAG, 0) == round(COE, 0) & round(IMPEGNI, 0) == round(COE, 0) ~ COE,
@@ -542,10 +562,13 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
              PAC = FINANZ_STATO_PAC, # DEBUG
              CP = FINANZ_TOTALE_PUBBLICO, # DEBUG
              IMPEGNI, # DEBUG
+             TOT_PAGAMENTI, # DEBUG
              base_ftp, # DEBUG
              base_coe, # DEBUG
              x, # DEBUG
              COE_IMP,
+             PAG_AMM,
+             PAG_AMM_2,
              COE_PAG)
 
     # appo %>%
@@ -582,7 +605,8 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
                                    x_AMBITO == "POC" & CP_N <= 0 ~ "fin_tot",
                                    round(COE_IMP, 1) == round(COE, 1) ~ "imp_equal_coe",
                                    round(COE_IMP, 2) == round(COE, 2) ~ "imp_equal_coe_2",
-                                   round(COE_IMP, 1) < round(COE, 1) & round(COE_IMP, 1) < round(IMPEGNI, 1) & x < 1 ~ "ripro")) %>%
+                                   round(COE_IMP, 1) < round(COE, 1) & round(COE_IMP, 1) < round(IMPEGNI, 1) & x < 1 ~ "ripro")
+             ) %>%
       # filter(is.na(TIPO_ELAB))
       group_by(TIPO_ELAB, x_AMBITO, OC_CODICE_PROGRAMMA) %>%
       summarise(N = n(),
@@ -616,6 +640,41 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
     #             COE = sum(COE, na.rm = TRUE),
     #             COE_IMP = sum(COE_IMP, na.rm = TRUE),
     #             COE_PAG = sum(COE_PAG, na.rm = TRUE))
+
+    chk <- appo %>%
+      mutate(TIPO_ELAB = case_when(PAG_AMM == COE_PAG ~ "no_elab",
+                                   # round(PAG_AMM, 1) == round(COE_PAG, 1) ~ "no_elab_round",
+                                   is.na(TOT_PAGAMENTI) ~ "na_to_zero",
+                                   x == Inf ~ "inf_to_zero",
+                                   PAG_AMM == 0 & round(PAG_AMM_2, 1) == round(COE_PAG, 1) & TOT_PAGAMENTI > base_ftp ~ "zero_ripro_base",
+                                   PAG_AMM == 0 & round(PAG_AMM_2, 1) == round(COE_PAG, 1) ~ "zero_ripro",
+                                   PAG_AMM != 0 & round(PAG_AMM_2, 1) == round(COE_PAG, 1) & TOT_PAGAMENTI > base_ftp ~ "ripro_base",
+                                   PAG_AMM != 0 & round(PAG_AMM_2, 1) == round(COE_PAG, 1) ~ "ripro"
+                                   # round(PAG_AMM, 1) == round(COE_PAG, 1) ~ "no_elab_round",
+                                   )) %>%
+      # filter(is.na(TIPO_ELAB))
+      group_by(TIPO_ELAB, x_AMBITO, OC_CODICE_PROGRAMMA) %>%
+      summarise(N = n(),
+                COE = sum(COE, na.rm = TRUE),
+                PAG_AMM = sum(PAG_AMM, na.rm = TRUE),
+                PAG_AMM_2 = sum(PAG_AMM_2, na.rm = TRUE),
+                COE_PAG = sum(COE_PAG, na.rm = TRUE),
+                TOT_PAGAMENTI = sum(TOT_PAGAMENTI, na.rm = TRUE))
+
+    write_csv2(chk, file.path(TEMP, "chk_0713_pag.csv"))
+
+    chk2 <- chk %>%
+      filter(x_AMBITO == "FSC") %>%
+      group_by(TIPO_ELAB) %>%
+      summarise_if(is.numeric, sum, na.rm = TRUE)
+
+    write_csv2(chk2, file.path(TEMP, "chk_0713_pag_sum.csv"))
+
+    # chk %>%
+    #   filter(x_AMBITO != "FSC") %>%
+    #   group_by(TIPO_ELAB) %>%
+    #   summarise_if(is.numeric, sum, na.rm = TRUE)
+
 
   }
 
