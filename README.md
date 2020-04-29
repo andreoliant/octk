@@ -65,9 +65,9 @@ oc_init(
 
 
 # Connessione a GitHub per sviluppo
-Per contribuire allo sviluppo del package, creare in locale un progetto RStudio di sviluppo, File > New Project > Version Control > Git.
-
-URL repository: https://github.com/andreoliant/oc
+Per contribuire allo sviluppo del package, creare in locale un progetto RStudio di sviluppo, File > New Project > Version Control > Git:
+* URL repository: https://github.com/andreoliant/oc
+* project directory name: octk
 
 Alla creazione, RStudio sincronizza la cartella del progetto con il master su GitHub. Poi identificarsi nel terminale:
 
