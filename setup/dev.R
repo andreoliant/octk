@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.3.3"
+oc_ver <- "0.3.4"
 
 # rm(list=ls())
 library("devtools")
