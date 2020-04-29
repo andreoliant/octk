@@ -17,7 +17,7 @@ library("octk")
 install.packages("path/to/local/octk_x.y.z.tar.gz", repos = NULL, type="source")
 library("octk")
 
-# caricamento sorgente da da folder di sviluppo
+# caricamento sorgente da folder di sviluppo (vedi sotto)
 devtools::load_all(path = "path/to/local/octk")
 # non è necessario invocare library("octk")
 ```
@@ -48,12 +48,20 @@ Per contribuire allo sviluppo del package, creare in locale un progetto RStudio 
 URL repository: https://github.com/andreoliant/oc
 Alla creazione, RStudio sincronizza la cartella del progetto con il master su GitHub.
 
-Poi in Terminale identificarsi con:
+Poi identificarsi nel terminale:
 
 ```bash
-git config user.email "you@mail.com"
-git config user.name "your-github-username"
+git config --global user.email "you@mail.com"
+git config --global user.name "your-github-username"
+
+# memorizza password (opzionale)
+git config --global credential.helper wincred # windows
+git config --global credential.helper osxkeychain # mac
+git config --global credential.helper 'cache --timeout=10000000' # linux
+
 ```
+
+
 
 Al primo push RStudio richiederà di inserire le proprie credenziali di GitHub,
 
