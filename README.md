@@ -7,7 +7,7 @@ Il toolkit contiene funzioni e processi per l'analisi dei dati pubblicati nella 
 # Installazione
 Il package non è pubblicato su CRAN, va installato da sorgente:
 
-```{r, echo = TRUE, eval = FALSE}
+```r
 # download e installazione direttamente da GitHub
 # install.packages("devtools")
 devtools::install_github("andreoliant/oc")
@@ -26,7 +26,7 @@ devtools::load_all(path = "path/to/local/octk")
 # Setup
 Definire i parametri di configurazione prima di lanciare.
 
-```{r, echo = TRUE, eval = FALSE}
+```r
 # configurazione
 bimestre <- "20181231"         # Bimestre OC di riferimento
 focus <- "turismo"             # Prefisso per i file da esportare
@@ -38,7 +38,7 @@ library("oc")
 
 Oppure con devtools:
 
-```{r, echo = TRUE, eval = FALSE}
+```r
 devtools::build(path = "/path/to/library/oc", binary = FALSE)
 
 ```
@@ -55,5 +55,5 @@ git config user.email "you@mail.com"
 git config user.name "your-github-username"
 ```
 
-Al primo push RStdio richiederà di inserire le proprie credenziali di GitHub,
+Al primo push RStudio richiederà di inserire le proprie credenziali di GitHub,
 
