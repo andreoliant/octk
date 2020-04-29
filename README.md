@@ -24,31 +24,52 @@ devtools::load_all(path = "path/to/local/octk")
 
 
 # Setup
-Definire i parametri di configurazione prima di lanciare.
+E' necessario avere i dati di OpenCoesione in folder locale con questa organizzazione:
 
 ```r
-# configurazione
-bimestre <- "20181231"         # Bimestre OC di riferimento
-focus <- "turismo"             # Prefisso per i file da esportare
-workarea <- "/path/to/project" # Path della workarea (es. progetto RStudio)
-data_path <- "/path/to/data"   # Path dei dati
+/20191231
+  /progetti_light_20191231.csv
+  /operazioni_light_20191231.csv
+  /PROGETTI_PREESTESO.csv
+  /finanziamenti_preesteso.sas7bdat
 
-library("oc")
+/20200228
+  /progetti_light_20200228.csv
+  /...
 ```
 
-Oppure con devtools:
+Il package può salvare i risultati in locale o direttamente nel Drive del team. Definire i parametri di configurazione nel setup di ogni nuova elaborazione:
 
 ```r
-devtools::build(path = "/path/to/library/oc", binary = FALSE)
+
+?oc_init # vedi manuale per informazioni
+
+# setup standard per Drive
+oc_init(
+  bimestre = "20191231",
+  data_path = "/path/to/data/folder",
+  db_ver = "20200331",
+  use_drive = TRUE,
+  drive_root = "/path/to/filestream/volume",
+  elab = "lev1",
+  focus = "lev2")
+
+# setup standard in locale
+oc_init(
+  bimestre = "20191231",
+  data_path = "/path/to/data/folder",
+  db_ver = "/path/to/db/folder",
+  workarea = "/path/to/working/folder")
 
 ```
+
 
 # Connessione a GitHub per sviluppo
 Per contribuire allo sviluppo del package, creare in locale un progetto RStudio di sviluppo, File > New Project > Version Control > Git.
-URL repository: https://github.com/andreoliant/oc
-Alla creazione, RStudio sincronizza la cartella del progetto con il master su GitHub.
 
-Poi identificarsi nel terminale:
+URL repository: https://github.com/andreoliant/oc
+
+Alla creazione, RStudio sincronizza la cartella del progetto con il master su GitHub. Poi identificarsi nel terminale:
 
 ```bash
 git config --global user.email "you@mail.com"
