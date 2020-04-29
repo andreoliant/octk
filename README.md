@@ -61,7 +61,6 @@ git config --global credential.helper 'cache --timeout=10000000' # linux
 
 ```
 
-
-
-Al primo push RStudio richiederà di inserire le proprie credenziali di GitHub,
+Al primo push RStudio richiederà di inserire le proprie credenziali di GitHub.
+I comandi sopra possono essere dati anche senza il parametro "--global" per un setup specifico.
 
