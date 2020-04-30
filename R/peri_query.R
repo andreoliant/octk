@@ -3,9 +3,9 @@
 
 #' Setup query e stoplist
 #'
-#' Salva i file csv del blocco "query" in INPUT insieme a stoplist.csv e safelist.csv
+#' Salva i file csv del blocco "query" in INPUT insieme a stoplist.csv, safelist.csv e fixlist.csv
 #'
-#' @return...
+#' @return File csv in INPUT
 setup_query <- function() {
 
   write.csv2(categorie_cup, file.path(INPUT, "categorie_cup.csv"), row.names = FALSE)
@@ -17,12 +17,55 @@ setup_query <- function() {
   write.csv2(aree_temi_fsc, file.path(INPUT, "aree_temi_fsc.csv"), row.names = FALSE)
   write.csv2(ra, file.path(INPUT, "ra.csv"), row.names = FALSE)
   write.csv2(patt, file.path(INPUT, "patt.csv"), row.names = FALSE)
-  # DEV: inserire meccanismo per selezione
 
   write.csv2(stoplist, file.path(INPUT, "stoplist.csv"), row.names = FALSE)
   write.csv2(safelist, file.path(INPUT, "safelist.csv"), row.names = FALSE)
   write.csv2(fixlist, file.path(INPUT, "fixlist.csv"), row.names = FALSE)
 
+}
+
+#' Setup query e stoplist in excel
+#'
+#' Salva in INPUT un file xls con i file csv del blocco "query", insieme a stoplist.csv, safelist.csv e fixlist.csv
+#'
+#' @return File xls e csv in INPUt
+setup_query_xls <- function() {
+  
+  # filename per export
+  temp_file <- file.path(INPUT, paste0("input_query.xlsx"))
+  
+  # create
+  wb <- createWorkbook()
+  addWorksheet(wb, "categorie_cup")
+  addWorksheet(wb, "categorie_ue")
+  addWorksheet(wb, "po_linee_azioni")
+  addWorksheet(wb, "delib_cipe")
+  addWorksheet(wb, "strum_att")
+  addWorksheet(wb, "prog_comp")
+  addWorksheet(wb, "aree_temi_fsc")
+  addWorksheet(wb, "ra")
+  addWorksheet(wb, "patt")
+
+  # write
+  writeData(wb, sheet = "categorie_cup", x = octk::categorie_cup, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "categorie_ue", x = octk::categorie_ue, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "po_linee_azioni", x = octk::po_linee_azioni, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "delib_cipe", x = octk::delib_cipe, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "strum_att", x = octk::strum_att, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "prog_comp", x = octk::prog_comp, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "aree_temi_fsc", x = octk::aree_temi_fsc, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "ra", x = octk::ra, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "patt", x = octk::patt, startCol = 1, startRow = 1, colNames = TRUE)
+
+  # salva
+  saveWorkbook(wb, file = temp_file, overwrite = FALSE)
+  
+  
+  # stoplist
+  write.csv2(stoplist, file.path(INPUT, "stoplist.csv"), row.names = FALSE)
+  write.csv2(safelist, file.path(INPUT, "safelist.csv"), row.names = FALSE)
+  write.csv2(fixlist, file.path(INPUT, "fixlist.csv"), row.names = FALSE)
+  
 }
 
 
@@ -33,9 +76,14 @@ setup_query <- function() {
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_CUP.
 query_cup <- function(progetti) {
-
+  
   # load matrix
-  matrix_cup <- read_csv2(file.path(INPUT, "categorie_cup.csv"))  %>%
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "categorie_cup")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "categorie_cup.csv")) 
+  }
+  matrix_cup <- appo  %>%
     rename(QUERY_CUP = QUERY) %>%
     mutate(CUP_COD_SETTORE = str_pad(CUP_COD_SETTORE, 2, pad = "0"),
            CUP_COD_SOTTOSETTORE = str_pad(CUP_COD_SOTTOSETTORE, 2, pad = "0"),
@@ -65,7 +113,12 @@ query_cup <- function(progetti) {
 query_po <- function(progetti) {
 
   # load matrix
-  matrix_po <- read_csv2(file.path(INPUT, "po_linee_azioni.csv")) %>%
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "po_linee_azioni")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "po_linee_azioni.csv")) 
+  }
+  matrix_po <- appo %>%
     rename(QUERY_PO = QUERY)
 
   # merge
@@ -83,44 +136,12 @@ query_po <- function(progetti) {
 }
 
 
-#' Ricerca progetti per categoria UE
+#' Ricerca progetti per campo di intervento UE
 #'
-#' Ricerca progetti per campo d'intervento UE 2014-2020 e tema prioritario UE 2007-2013 a partire da input in "categorie_ue.csv".
+#' Ricerca progetti per campo di intervento (2007-2013) o categoria di spesa UE (2014-2020).
 #'
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_UE.
-#' @section Warning:
-#' Le variabili di riferimento non sono presenti in progetti e vanno ricercate in "clp_tema_campointervento.csv".
-query_ue_old <- function(progetti) {
-
-  # load matrix
-  matrix_ue <- read_csv2(file.path(INPUT, "categorie_ue.csv")) %>%
-    rename(QUERY_UE = QUERY)
-
-  # load categorie UE
-  message("Caricamento di clp_tema_campointervento.csv in corso...")
-  appo_tema <- read_csv2(file.path(DATA, "clp_tema_campointervento.csv")) %>%
-    mutate(OC_COD_CICLO = case_when(TIPO == "CAMPO" ~ 2,
-                                    TIPO == "TEMA" ~ 1)) %>%
-    select(-TIPO)
-
-  # merge
-  peri_ue <- progetti %>%
-    select(COD_LOCALE_PROGETTO) %>%
-    inner_join(appo_tema,
-               by = "COD_LOCALE_PROGETTO") %>%
-    select(COD_LOCALE_PROGETTO, OC_COD_CICLO, COD_TEMA_CAMPO) %>%
-    inner_join(matrix_ue %>%
-                 filter(QUERY_UE != 0),
-               by = c("OC_COD_CICLO", "COD_TEMA_CAMPO")) %>%
-    # select(COD_LOCALE_PROGETTO, QUERY_UE)
-    distinct(COD_LOCALE_PROGETTO, QUERY_UE)
-  # WARNING: uso distinct rimuovere duplicati di CLP con temi molteplici
-
-  return(peri_ue)
-
-}
-
 query_ue <- function(progetti) {
 
   # debug
@@ -133,7 +154,12 @@ query_ue <- function(progetti) {
   #   count(x_CICLO, x_AMBITO, x_PROGRAMMA)
 
   # load matrix
-  matrix_ue <- read_csv2(file.path(INPUT, "categorie_ue.csv")) %>%
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "categorie_ue")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "categorie_ue.csv")) 
+  }
+  matrix_ue <- appo %>%
     rename(OC_COD_CATEGORIA_SPESA = COD_TEMA_CAMPO,
            OC_DESCR_CATEGORIA_SPESA = DESCR_TEMA_CAMPO,
            QUERY_UE = QUERY)
@@ -165,9 +191,6 @@ query_ue <- function(progetti) {
 }
 
 
-# TODO: integrare query da RA e temi FSC
-# aree_temi_fsc.csv
-# ra.csv
 
 
 #' Ricerca progetti per strumento attuativo
@@ -183,7 +206,12 @@ query_strum <- function(progetti) {
   # "DESCR_TIPO_STRUMENTO"
 
   # load matrix
-  matrix_strum <- read_csv2(file.path(INPUT, "strum_att.csv")) %>%
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "strum_att")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "strum_att.csv")) 
+  }
+  matrix_strum <- appo %>%
     rename(QUERY_STRUM = QUERY) %>%
     select(-OC_CODICE_PROGRAMMA, -x_CICLO, -x_AMBITO, -x_PROGRAMMA)
 
@@ -212,7 +240,12 @@ query_strum <- function(progetti) {
 query_progcomp <- function(progetti) {
 
   # load matrix
-  matrix_progcomp <- read_csv2(file.path(INPUT, "prog_comp.csv"))  %>%
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "prog_comp")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "prog_comp.csv")) 
+  }
+  matrix_progcomp <- appo  %>%
     rename(QUERY_PROGCOMP = QUERY) %>%
     select(-OC_CODICE_PROGRAMMA, -x_CICLO, -x_AMBITO, -x_PROGRAMMA)
 
@@ -238,7 +271,12 @@ query_progcomp <- function(progetti) {
 query_patt <- function(progetti) {
 
   # load matrix
-  matrix_patt <- read_csv2(file.path(INPUT, "patt.csv"))  %>%
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "patt")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "patt.csv")) 
+  }
+  matrix_patt <- appo  %>%
     rename(QUERY_PATT = QUERY) %>%
     select(-OC_CODICE_PROGRAMMA, -x_CICLO, -x_AMBITO, -x_PROGRAMMA)
 
@@ -278,7 +316,12 @@ query_cipe <- function(progetti) {
   }
 
   # load matrix
-  matrix_cipe <- read_csv2(file.path(INPUT, "delib_cipe.csv"))  %>%
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "delib_cipe")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "delib_cipe.csv")) 
+  }
+  matrix_cipe <- appo  %>%
     rename(QUERY_CIPE = QUERY)
 
   # merge
@@ -316,7 +359,12 @@ query_cipe <- function(progetti) {
 query_ra <- function(progetti) {
 
   # load matrix
-  matrix_ra <- read_csv2(file.path(INPUT, "ra.csv"))  %>%
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "ra")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "ra.csv")) 
+  }
+  matrix_ra <- appo %>%
     rename(QUERY_RA = QUERY,
            COD_RISULTATO_ATTESO = COD_RIS_ATTESO)
 
@@ -379,7 +427,12 @@ query_atp <- function(progetti) {
 
 
   # load matrix
-  matrix_atp <- read_csv2(file.path(INPUT, "aree_temi_fsc.csv"))  %>%
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "aree_temi_fsc")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "aree_temi_fsc.csv")) 
+  }
+  matrix_atp <- appo  %>%
     rename(QUERY_ATP = QUERY) %>%
     mutate(COD_ASSE_TEMATICO_FSC = as.character(COD_ASSE_TEMATICO_FSC))
 
@@ -403,8 +456,7 @@ query_atp <- function(progetti) {
 
 
 
-# ----------------------------------------------------------------------------------- #
-# Intersezioni
+
 
 #' Wrapper per query standard su CUP, UE e PO
 #'
@@ -448,10 +500,6 @@ make_pseudo_std <- function(progetti, export=TRUE) {
 }
 
 
-
-# pseudo %>%
-#   group_by(TIPO_QUERY) %>%
-#   summarise_if(is.numeric, sum)
 
 
 
@@ -522,8 +570,7 @@ make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
 
 
 
-# ----------------------------------------------------------------------------------- #
-# Confronta con vecchio perimetro e integra righe
+
 
 #' Addendum Turismo
 #'
@@ -567,6 +614,47 @@ add_old_turismo <- function(pseudo, export=TRUE, debug=FALSE) {
   }
   return(pseudo)
 }
+
+
+
+
+
+#' Aggiunge progetti a pseudo da una lista di CLP
+#'
+#' Integra pseudo csv con righe provenienti da selezione proveniente da fonte esterna alle funzioni del package e crea colonna "query_add".
+#'
+#' @param pseudo Dataset in formato "pseudo"
+#' @param addendum Dataset in memory oppure nome del file da caricare in INPUT, con elenco di COD_LOCALE_PROGETTO
+#' @param export Logic. Vuoi salvare pseudo.csv? 
+#' @return Un dataframe pseudo integrato con la colonna QUERY_ADD, che si applica anche a righe esistenti (la funzione usa full_join e non bind_rows!).
+#' @section Warning:
+#' La funzione è fuori dal blocco "query" solo per maggiore trasparenza, si poteva usare anche quella logica.
+add_to_pseudo <- function(pseudo, addendum, export=TRUE) {
+  
+  # TODO: inserire controllo su OC_FLAG_VISUALIZZAZIONE?
+  
+  if (is_tibble(addendum)) {
+    appo <- addendum %>%
+      select(COD_LOCALE_PROGETTO) %>%
+      mutate(QUERY_ADD = 1)
+  } else if (is.character(addendum)) {
+    appo <- read_csv2(file.path(INPUT, addendum)) %>%
+      select(COD_LOCALE_PROGETTO) %>%
+      mutate(QUERY_ADD = 1)
+  } else {
+    message("L'addendum non è in un formato corretto")
+  }
+  
+  output <- pseudo %>%
+    full_join(appo, by = "COD_LOCALE_PROGETTO") %>%
+    mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
+  
+  if (export == TRUE) {
+    write.csv2(output, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
+  }
+  return(pseudo)
+}
+
 
 
 
