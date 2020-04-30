@@ -177,12 +177,54 @@ reload_perimetro <- function(focus=NULL, bimestre=NULL, livelli_classe) {
 #' Crea file da passare a SAS per il popolmaneto della variabile FOCUS.
 #'
 #' @param perimetro Dataset "perimetro" da \link[octk]{make_perimetro_edit}o \link[octk]{make_perimetro_std.} 
-#' @param focus Nome file da salvare in OUTPUT.
-#' @param bimestre Bimestre di riferimento (utilizzato per la composizone del nome file in OUTPUT.
-#' @param var_ls Elenco delle variabili di base da esportare.
-#' @param var_add Elenco delle ulteriori variabili da esportare (oltre a quelle di base).
-#' @param export Vuoi salvare?
-#' @return Un file "[focus]_[bimestre].csv".
-export <- perimetro %>%
-  select(COD_LOCALE_PROGETTO, CLASSE)
-write.csv2(export, file.path(OUTPUT, "turismo_clp.csv"), na = "", row.names = FALSE)
+#' @param focus Nome del file da salvare.
+#' @param use_drive Logico. Stai salvano in Drive (TRUE) o in locale (FALSE)?
+#' @param keep_classe Logico. Vuoi tenere la variabile CLASSE?
+#' @param split_classe Logico. Vuoi separare N file in base alla variabile CLASSE?
+#' @return Un file di tipo "[focus]_clp.csv". Viene salvato in PERIMETRI/OUTPUT_SAS se use_drive == TRUE.
+export_sas <- function(perimetro, focus="perimetro", use_drive=TRUE, keep_classe=FALSE, split_classe=FALSE) {
+  # funzione di esportazione
+  if (use_drive == TRUE) {
+    export_fun <- function(df, focus) {
+      # salva in WORK
+      temp_filename <- paste0(focus, "_clp.csv")
+      write.csv2(df, file.path(OUTPUT, temp_filename), na = "", row.names = FALSE)
+      
+      # salva copia ridondante per SAS
+      OUTPUT_SAS <- file.path(dirname(WORK), "_OUTPUT_SAS")
+      write.csv2(df, file.path(OUTPUT_SAS, temp_filename), na = "", row.names = FALSE)
+      message("Copia salvata anche in OUTPUT_SAS")
+    }
+  } else {
+    export_fun <- function(df, focus) {
+      # salva in WORK locale
+      temp_filename <- paste0(focus, "_clp.csv")
+      write.csv2(df, file.path(OUTPUT, temp_filename), na = "", row.names = FALSE)
+      message("Ricordati di aggiornare anche OUTPUT_SAS!")
+    }
+  }
+  
+  # gestione dei casi
+  if (split_classe == TRUE) {
+    temp <- unique(perimetro$CLASSE)
+    for (x in temp) {
+      appo <- perimetro %>%
+        filter(CLASSE == x) %>%
+        select(COD_LOCALE_PROGETTO)
+      export_fun(df = appo, focus = temp)
+    }
+  } else {
+    if (keep_classe == TRUE) {
+      appo <- perimetro %>%
+        select(COD_LOCALE_PROGETTO, CLASSE)
+      export_fun(df = appo, focus = focus)
+    } else {
+      appo <- perimetro %>%
+        select(COD_LOCALE_PROGETTO)
+      export_fun(df = appo, focus = focus)
+    }
+  }
+} 
+
+
+
