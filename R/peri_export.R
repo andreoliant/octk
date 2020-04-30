@@ -171,3 +171,18 @@ reload_perimetro <- function(focus=NULL, bimestre=NULL, livelli_classe) {
 }
 
 
+
+#' Export perimetro to SAS
+#'
+#' Crea file da passare a SAS per il popolmaneto della variabile FOCUS.
+#'
+#' @param perimetro Dataset "perimetro" da \link[octk]{make_perimetro_edit}o \link[octk]{make_perimetro_std.} 
+#' @param focus Nome file da salvare in OUTPUT.
+#' @param bimestre Bimestre di riferimento (utilizzato per la composizone del nome file in OUTPUT.
+#' @param var_ls Elenco delle variabili di base da esportare.
+#' @param var_add Elenco delle ulteriori variabili da esportare (oltre a quelle di base).
+#' @param export Vuoi salvare?
+#' @return Un file "[focus]_[bimestre].csv".
+export <- perimetro %>%
+  select(COD_LOCALE_PROGETTO, CLASSE)
+write.csv2(export, file.path(OUTPUT, "turismo_clp.csv"), na = "", row.names = FALSE)
