@@ -1,0 +1,110 @@
+x_AMBITO;COD_RA;RA_DESC;OP;OPOS;NOTE
+FESR;01.1;RA 1.1 - Incremento dell’attività di innovazione delle imprese;OP1;a_i;
+FESR;01.2;RA 1.2 - Rafforzamento del sistema innovativo regionale e nazionale;OP1;a_i;
+FESR;01.3;RA 1.3 - Promozione di nuovi mercati per l’innovazione;OP1;a_i;
+FESR;01.4;RA 1.4 - Aumento dell’incidenza di specializzazioni innovative in perimetri applicativi ad alta intensità di conoscenza;OP1;a_i;
+FESR;01.5;RA 1.5 - Potenziamento della capacità di sviluppare l’eccellenza nella R&I;OP1;a_i;
+FESR;02.1;"RA 2.1 - Riduzione dei divari digitali nei territori e diffusione di connettività in banda ultra larga (""Digital Agenda"" europea)";OP3;c_i;
+FESR;02.2;RA 2.2 - Digitalizzazione dei processi amministrativi e diffusione di servizi digitali pienamente interoperabili;OP1;a_ii;
+FESR;02.3;RA 2.3 - Potenziamento della domanda di ICT di cittadini e imprese in termini di utilizzo dei servizi online, inclusione digitale e partecipazione in rete;OP1;a_ii;
+FESR;03.1;RA 3.1 - Rilancio della propensione agli investimenti del sistema produttivo;OP1;a_iii;
+FESR;03.2;RA 3.2 - Sviluppo occupazionale e produttivo in aree territoriali colpite da crisi diffusa delle attività produttive;OP5;e_ii;Generalmente le aree di crisi non sono in aree urbane
+FESR;03.3;RA 3.3 - Consolidamento, modernizzazione e diversificazione dei sistemi produttivi territoriali;OP5;e_ii;
+FESR;03.4;RA 3.4 - Incremento del livello di internazionalizzazione dei sistemi produttivi;OP5;e_ii;
+FESR;03.5;RA 3.5 - Nascita e Consolidamento delle Micro, Piccole e Medie Imprese;OP1;a_iii;
+FESR;03.6;RA 3.6 - Miglioramento dell’accesso al credito, del finanziamento delle imprese e della gestione del rischio in agricoltura;OP1;a_iii;Agricoltura riguarda solo “gestione del rischio”
+FESR;03.7;RA 3.7 - Diffusione e rafforzamento delle attività economiche a contenuto sociale;OP4;d_i;
+FESR;03.8;RA 3.8 - Rafforzamento della competitività e della redditività della pesca e dell’acquacoltura;NC;NC;
+FESR;03.9;RA 3.9 - Rafforzamento della competitività, delle condizioni di lavoro e innovazione tecnologica nelle imprese acquicole e promozione di un’acquacoltura che tuteli l’ambiente, il benessere degli animali e la salute pubblica;NC;NC;Assente nel file di programmazione ma presente nei dati di attuazione
+FESR;04.1;RA 4.1 - Riduzione dei consumi energetici negli edifici e nelle strutture pubbliche o ad uso pubblico, residenziali e non residenziali e integrazione di fonti rinnovabili;OP2;b_i;
+FESR;04.2;RA 4.2 - Riduzione dei consumi energetici e delle emissioni nelle imprese e integrazione di fonti rinnovabili;OP2;b_i;
+FESR;04.3;RA 4.3 - Incremento della quota di fabbisogno energetico coperto da generazione distribuita sviluppando e realizzando sistemi di distribuzione intelligenti;OP2;b_iii;
+FESR;04.4;RA 4.4 - Incremento della quota di fabbisogno energetico coperto da cogenerazione e trigenerazione di energia;OP2;b_iii;
+FESR;04.5;RA 4.5 - Aumento dello sfruttamento sostenibile delle bioenergie;OP2;b_iii;
+FESR;04.6;RA 4.6 - Aumento della mobilità sostenibile nelle aree urbane;OP3;c_iv;Opzione per spostamento nel negoziato
+FESR;04.7;RA 4.7 - Riduzione delle emissioni di gas serra e aumento del sequestro di carbonio in agricoltura;OP2;b_iv;
+FESR;04.8;RA 4.8 - Favorire la sostenibilità del settore ittico, l’efficienza energetica, l'attuazione della blue growth e la protezione degli ecosistemi;NC;NC;
+FESR;05.1;RA 5.1 - Riduzione del rischio idrogeologico e di erosione costiera;OP2;b_iv;
+FESR;05.2;RA 5.2 - Riduzione del rischio di desertificazione;OP2;b_iv;
+FESR;05.3;RA 5.3 - Riduzione del rischio incendi e il rischio sismico;OP2;b_iv;
+FESR;06.1;RA 6.1 - Ottimizzazione della gestione dei rifiuti urbani secondo la gerarchia comunitaria;OP2;b_vi;
+FESR;06.2;RA 6.2 - Restituzione all'uso produttivo di aree inquinate;OP2;b_vii;Verificare se le bonifiche saranno ancora ammissibili
+FESR;06.3;RA 6.3 - Miglioramento del servizio idrico integrato per usi civili e riduzione delle perdite di rete di acquedotto;OP2;b_v;
+FESR;06.4;RA 6.4 - Mantenimento e miglioramento della qualità dei corpi idrici;OP2;b_v;
+FESR;06.5;RA 6.5 - Contribuire ad arrestare la perdita di biodiversità terrestre e marina, anche legata al paesaggio rurale e mantenendo e ripristinando i servizi ecosistemici;OP2;b_vii;
+FESR;06.6;RA 6.6 - Miglioramento delle condizioni e degli standard di offerta e fruizione del patrimonio nelle aree di attrazione naturale;OP5;e_ii;Andrebbe bene anche e_i su aree urbane
+FESR;06.7;RA 6.7 - Miglioramento delle condizioni e degli standard di offerta e fruizione del patrimonio culturale, materiale e immateriale, nelle aree di attrazione;OP5;e_ii;Andrebbe bene anche e_i su aree urbane
+FESR;06.8;RA 6.8 - Riposizionamento competitivo delle destinazioni turistiche attraverso la valorizzazione integrata di risorse e competenze territoriali;OP5;e_ii;Andrebbe bene anche e_i su aree urbane
+FESR;07.1;RA 7.1 - Potenziamento della modalità ferroviaria a livello nazionale e miglioramento del servizio in termini di qualità e tempi di percorrenza;OP3;c_iii;
+FESR;07.2;RA 7.2 - Miglioramento della competitività del sistema portuale e interportuale;OP3;c_iii;
+FESR;07.3;RA 7.3 - Miglioramento della mobilità regionale, integrazione modale e miglioramento dei collegamenti multimodali;OP3;c_iii;
+FESR;07.4;RA 7.4 - Rafforzamento delle connessioni dei nodi secondari e terziari alla rete TEN-T;OP3;c_iii;
+FESR;07.5;RA 7.5 - Ottimizzazione del traffico aereo;OP3;c_iii;Ammissibilita da valutare
+FESR;08.1;RA 8.1 - Aumentare l’occupazione dei giovani;OP4;d_i;
+FESR;08.10;RA 8.10 - Aumentare il numero dei lavoratori autonomi o aumentare il numero di micro-piccole imprese;OP4;d_i;
+FESR;08.2;RA 8.2 - Aumentare l’occupazione femminile;OP4;d_i;
+FESR;08.3;RA 8.3 - Aumentare l’occupazione dei lavoratori anziani e favorire l’invecchiamento attivo;OP4;d_i;
+FESR;08.4;RA 8.4 - Accrescere l’occupazione degli immigrati;OP4;d_iii;
+FESR;08.5;RA 8.5 - Favorire l’inserimento lavorativo e l’occupazione dei disoccupati di lunga durata, dei soggetti con maggiore difficoltà di inserimento e il sostegno delle persone a rischio di disoccupazione di lunga durata;OP4;d_iii;
+FESR;08.6;RA 8.6 - Favorire la permanenza al lavoro e la ricollocazione dei lavoratori coinvolti in situazioni di crisi;OP4;d_iii;
+FESR;08.7;RA 8.7 - Migliorare l’efficacia e la qualità dei servizi al lavoro;OP4;d_i;
+FESR;08.8;RA 8.8 - Nuove opportunità di lavoro extra-agricolo nelle aree rurali;NC;e_ii;
+FESR;08.9;RA 8.9 - Favorire la coesione territoriale, il lavoro e la formazione degli operatori nel settore ittico;NC;NC;
+FESR;09.1;RA 9.1 - Riduzione della povertà, dell’esclusione sociale e promozione dell’innovazione sociale;OP4;d_iii;
+FESR;09.2;RA 9.2 - Incremento dell’occupabilità e della partecipazione al mercato del lavoro delle persone maggiormente vulnerabili;OP4;d_iii;
+FESR;09.3;RA 9.3 - Aumento/ consolidamento/qualificazione dei servizi e infrastrutture di cura socio-educativa rivolti ai bambini e dei servizi di cura rivolti a persone con limitazioni dell'autonomia e potenziamento della rete infrastrutturale e dell'offerta di se;OP4;d_iv;
+FESR;09.4;RA 9.4 - Riduzione del numero di famiglie con particolari fragilità sociali ed economiche in condizioni di disagio abitativo;OP4;d_iii;
+FESR;09.5;RA 9.5 - Riduzione della marginalità estrema e interventi di inclusione a favore delle persone senza dimora e delle popolazioni Rom, Sinti e Camminanti in coerenza con la strategia nazionale di inclusione;OP4;d_iii;
+FESR;09.6;RA 9.6 - Aumento della legalità nelle aree ad alta esclusione sociale e miglioramento del tessuto urbano nelle aree a basso tasso di legalità;OP5;e_ii;
+FESR;09.7;RA 9.7 - Rafforzamento dell'economia sociale;OP4;d_i;
+FESR;09.8;RA 9.8 - Rafforzamento del sistema di accoglienza e integrazione dei migranti;OP4;d_iii;
+FESR;10.1;RA 10.1- Riduzione del fallimento formativo precoce e della dispersione scolastica e formativa;OP4;d_ii;
+FESR;10.2;RA 10.2- Miglioramento delle competenze chiave degli allievi;OP4;d_ii;
+FESR;10.3;RA 10.3- Innalzamento del livello di istruzione della popolazione adulta;OP4;d_ii;
+FESR;10.4;RA 10.4- Accrescimento delle competenze della forza lavoro e agevolazione della mobilità, l’inserimento/ reinserimento lavorativo;OP4;d_ii;
+FESR;10.5;RA 10.5- Innalzamento dei livelli di competenze, di partecipazione e di successo formativo nell’istruzione universitaria e/o equivalente;OP4;d_ii;
+FESR;10.6;RA 10.6- Qualificazione dell’offerta di istruzione e formazione tecnica e professionale;OP4;d_ii;
+FESR;10.7;RA 10.7- Aumento della propensione dei giovani a permanere nei contesti formativi e miglioramento della sicurezza e della fruibilità degli ambienti scolastici;OP4;d_ii;
+FESR;10.8;RA 10.8- Diffusione della società della conoscenza nel mondo della scuola e della formazione e adozione di approcci didattici innovativi;OP4;d_ii;
+FESR;10.9;RA 10.9- Miglioramento delle capacità di auto-diagnosi, auto-valutazione e valutazione delle scuole e di innovazione della didattica;OP4;d_ii;
+FESR;11.1;RA 11.1- Aumento della trasparenza e interoperabilità, e dell’accesso ai dati pubblici;OP1;a_ii;
+FESR;11.2;RA 11.2- Riduzione degli oneri regolatori;NC;NC;
+FESR;11.3;RA 11.3- Miglioramento delle prestazioni della pubblica amministrazione;NC;NC;
+FESR;11.4;RA 11.4- Miglioramento dell'efficienza e della qualità delle prestazioni del sistema giudiziario;NC;NC;
+FESR;11.5;RA 11.5- Aumento dei livelli di integrità e di legalità nell’azione della Pubblica Amministrazione, anche per il contrasto al lavoro sommerso;NC;NC;
+FESR;11.6;RA 11.6- Miglioramento della governance multilivello e delle capacità amministrativa e tecnica delle pubbliche amministrazioni nei programmi d'investimento pubblico, anche per la coesione territoriale;NC;NC;
+FESR;12.1;TA - ASSISTENZA TECNICA;NC;NC;
+FSE;08.1;RA 8.1 - Aumentare l’occupazione dei giovani;OP4;fse_i;
+FSE;08.10;RA 8.10 - Aumentare il numero dei lavoratori autonomi o aumentare il numero di micro-piccole imprese;OP4;fse_i;
+FSE;08.2;RA 8.2 - Aumentare l’occupazione femminile;OP4;fse_iii;
+FSE;08.3;RA 8.3 - Aumentare l’occupazione dei lavoratori anziani e favorire l’invecchiamento attivo;OP4;fse_ii;
+FSE;08.4;RA 8.4 - Accrescere l’occupazione degli immigrati;OP4;fse_viii;
+FSE;08.5;RA 8.5 - Favorire l’inserimento lavorativo e l’occupazione dei disoccupati di lunga durata, dei soggetti con maggiore difficoltà di inserimento e il sostegno delle persone a rischio di disoccupazione di lunga durata;OP4;fse_i;
+FSE;08.6;RA 8.6 - Favorire la permanenza al lavoro e la ricollocazione dei lavoratori coinvolti in situazioni di crisi;OP4;fse_iii;
+FSE;08.7;RA 8.7 - Migliorare l’efficacia e la qualità dei servizi al lavoro;OP4;fse_iii;
+FSE;08.8;RA 8.8 - Nuove opportunità di lavoro extra-agricolo nelle aree rurali;NC;NC;
+FSE;08.9;RA 8.9 - Favorire la coesione territoriale, il lavoro e la formazione degli operatori nel settore ittico;NC;NC;
+FSE;09.1;RA 9.1 - Riduzione della povertà, dell’esclusione sociale e promozione dell’innovazione sociale;OP4;fse_x;
+FSE;09.2;RA 9.2 - Incremento dell’occupabilità e della partecipazione al mercato del lavoro delle persone maggiormente vulnerabili;OP4;fse_vii;
+FSE;09.3;RA 9.3 - Aumento/ consolidamento/qualificazione dei servizi e infrastrutture di cura socio-educativa rivolti ai bambini e dei servizi di cura rivolti a persone con limitazioni dell'autonomia e potenziamento della rete infrastrutturale e dell'offerta di se;OP4;fse_ix;cambiato
+FSE;09.4;RA 9.4 - Riduzione del numero di famiglie con particolari fragilità sociali ed economiche in condizioni di disagio abitativo;OP4;fse_x;
+FSE;09.5;RA 9.5 - Riduzione della marginalità estrema e interventi di inclusione a favore delle persone senza dimora e delle popolazioni Rom, Sinti e Camminanti in coerenza con la strategia nazionale di inclusione;OP4;fse_viii;Potrebbe anche andare su fse_xi
+FSE;09.6;RA 9.6 - Aumento della legalità nelle aree ad alta esclusione sociale e miglioramento del tessuto urbano nelle aree a basso tasso di legalità;OP5;e_ii;assegnazione forzata a OPOS FESR
+FSE;09.7;RA 9.7 - Rafforzamento dell'economia sociale;OP4;fse_i;
+FSE;09.8;RA 9.8 - Rafforzamento del sistema di accoglienza e integrazione dei migranti;OP4;fse_viii;
+FSE;10.1;RA 10.1- Riduzione del fallimento formativo precoce e della dispersione scolastica e formativa;OP4;fse_v;
+FSE;10.2;RA 10.2- Miglioramento delle competenze chiave degli allievi;OP4;fse_v;
+FSE;10.3;RA 10.3- Innalzamento del livello di istruzione della popolazione adulta;OP4;fse_vi;
+FSE;10.4;RA 10.4- Accrescimento delle competenze della forza lavoro e agevolazione della mobilità, l’inserimento/ reinserimento lavorativo;OP4;fse_vi;
+FSE;10.5;RA 10.5- Innalzamento dei livelli di competenze, di partecipazione e di successo formativo nell’istruzione universitaria e/o equivalente;OP4;fse_v;
+FSE;10.6;RA 10.6- Qualificazione dell’offerta di istruzione e formazione tecnica e professionale;OP4;fse_v;
+FSE;10.7;RA 10.7- Aumento della propensione dei giovani a permanere nei contesti formativi e miglioramento della sicurezza e della fruibilità degli ambienti scolastici;OP4;fse_v;verificare
+FSE;10.8;RA 10.8- Diffusione della società della conoscenza nel mondo della scuola e della formazione e adozione di approcci didattici innovativi;OP4;fse_vi;
+FSE;10.9;RA 10.9- Miglioramento delle capacità di auto-diagnosi, auto-valutazione e valutazione delle scuole e di innovazione della didattica;OP4;fse_iv;cambiato
+FSE;11.1;RA 11.1- Aumento della trasparenza e interoperabilità, e dell’accesso ai dati pubblici;OP1;a_ii;assegnazione forzata a OPOS FESR
+FSE;11.2;RA 11.2- Riduzione degli oneri regolatori;NC;NC;
+FSE;11.3;RA 11.3- Miglioramento delle prestazioni della pubblica amministrazione;NC;NC;
+FSE;11.4;RA 11.4- Miglioramento dell'efficienza e della qualità delle prestazioni del sistema giudiziario;NC;NC;
+FSE;11.5;RA 11.5- Aumento dei livelli di integrità e di legalità nell’azione della Pubblica Amministrazione, anche per il contrasto al lavoro sommerso;NC;NC;
+FSE;11.6;RA 11.6- Miglioramento della governance multilivello e delle capacità amministrativa e tecnica delle pubbliche amministrazioni nei programmi d'investimento pubblico, anche per la coesione territoriale;NC;NC;
+FSE;12.1;TA - ASSISTENZA TECNICA;NC;NC;

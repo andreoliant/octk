@@ -1,0 +1,21 @@
+Package: octk
+Type: Package
+Title: OpenCoesione Toolkit
+Version: 0.2.2
+Author: Antonio Andreoli
+Maintainer: Antonio Andreoli <antonio.andreoli@opencoesione.team>
+Description: Toolkit per l'importazione e l'analisi dei dati di OpenCoesione
+    ... 
+    ...
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Imports:
+    readxl,
+    dplyr,
+    haven
+RoxygenNote: 6.1.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

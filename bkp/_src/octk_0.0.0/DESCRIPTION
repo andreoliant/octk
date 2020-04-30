@@ -1,0 +1,20 @@
+Package: oc
+Type: Package
+Title: OpenCoesione Toolkit
+Version: 0.1.0
+Author: Antonio Andreoli
+Maintainer: Antonio Andreoli <antonio.andreoli@opencoesione.team>
+Description: Toolkit
+    ... 
+    ...
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Imports:
+    tidyverse,
+    devtools
+RoxygenNote: 6.1.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
