@@ -4,7 +4,9 @@
 \name{monithon_clp}
 \alias{monithon_clp}
 \title{Report su Monithon}
-\format{A data frame}
+\format{
+A data frame
+}
 \source{
 Team OC su dati \url{http://monithon.it}
 }

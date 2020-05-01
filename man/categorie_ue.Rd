@@ -4,7 +4,9 @@
 \name{categorie_ue}
 \alias{categorie_ue}
 \title{Elenco campi di intervento UE}
-\format{A data frame}
+\format{
+A data frame
+}
 \source{
 Team OC su dati BDU
 }

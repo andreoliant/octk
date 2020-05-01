@@ -4,8 +4,15 @@
 \alias{report_cd_regioni}
 \title{Esporta report in formato CD}
 \usage{
-report_cd_regioni(perimetro, ciclo = NULL, ambito = NULL,
-  gruppo = NULL, po_ls = NULL, focus = "elab", export = FALSE)
+report_cd_regioni(
+  perimetro,
+  ciclo = NULL,
+  ambito = NULL,
+  gruppo = NULL,
+  po_ls = NULL,
+  focus = "elab",
+  export = FALSE
+)
 }
 \arguments{
 \item{perimetro}{Dataset di classe perimetro.}

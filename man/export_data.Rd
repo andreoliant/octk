@@ -4,8 +4,14 @@
 \alias{export_data}
 \title{Export per il dataset finale (DEPRECATA)}
 \usage{
-export_data(pseudo, focus, bimestre, var_ls = NULL, var_add = NULL,
-  export = TRUE)
+export_data(
+  pseudo,
+  focus,
+  bimestre,
+  var_ls = NULL,
+  var_add = NULL,
+  export = TRUE
+)
 }
 \arguments{
 \item{pseudo}{Dataset "pseudo".}

@@ -4,8 +4,15 @@
 \alias{add_delta_programmi}
 \title{Integra report per Programmi con delta da un bimestre precedente}
 \usage{
-add_delta_programmi(bimestre, programmi, last_bimestre, last_data_path,
-  usa_meuro = FALSE, focus = "delta", export = FALSE)
+add_delta_programmi(
+  bimestre,
+  programmi,
+  last_bimestre,
+  last_data_path,
+  usa_meuro = FALSE,
+  focus = "delta",
+  export = FALSE
+)
 }
 \arguments{
 \item{bimestre}{Bimestre di riferimento (in formato OC tipo "20181231").}

@@ -4,7 +4,9 @@
 \name{matrix_ra_opos}
 \alias{matrix_ra_opos}
 \title{Raccordo tra RA 2014-2020 e OPOS 2021-2027}
-\format{A data frame}
+\format{
+A data frame
+}
 \source{
 Team OC su regolamenti in corso di negoziazione
 }

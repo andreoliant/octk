@@ -4,8 +4,14 @@
 \alias{init_programmazione}
 \title{Inizializza il database della programmazione}
 \usage{
-init_programmazione(usa_temi = FALSE, usa_sog = FALSE,
-  usa_eu = FALSE, usa_flt = FALSE, add_713 = FALSE, export = TRUE)
+init_programmazione(
+  usa_temi = FALSE,
+  usa_sog = FALSE,
+  usa_eu = FALSE,
+  usa_flt = FALSE,
+  add_713 = FALSE,
+  export = TRUE
+)
 }
 \arguments{
 \item{usa_temi}{Vuoi caricare il DB con correzione dei temi prioritari?}

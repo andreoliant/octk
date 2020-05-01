@@ -4,9 +4,18 @@
 \alias{make_lista_piani}
 \title{Lista di progetti dei Piani nazionali FSC}
 \usage{
-make_lista_piani(piani_list = NULL, progetti, perimetro = NULL,
-  min_cp = 0, use_all = TRUE, export = TRUE, bimestre = bimestre,
-  focus = focus, DATA = DATA, TEMP = TEMP)
+make_lista_piani(
+  piani_list = NULL,
+  progetti,
+  perimetro = NULL,
+  min_cp = 0,
+  use_all = TRUE,
+  export = TRUE,
+  bimestre = bimestre,
+  focus = focus,
+  DATA = DATA,
+  TEMP = TEMP
+)
 }
 \arguments{
 \item{piani_list}{Elenco dei Piani da esportare, in formato c("2016PATTIABR").}

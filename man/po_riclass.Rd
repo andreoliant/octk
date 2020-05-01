@@ -4,7 +4,9 @@
 \name{po_riclass}
 \alias{po_riclass}
 \title{Riclassifica i programmi}
-\format{A data frame}
+\format{
+A data frame
+}
 \source{
 Team OC
 }

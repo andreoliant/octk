@@ -4,7 +4,9 @@
 \name{ra}
 \alias{ra}
 \title{Elenco risultati attesi AP 2014-2020}
-\format{A data frame}
+\format{
+A data frame
+}
 \source{
 Team OC
 }

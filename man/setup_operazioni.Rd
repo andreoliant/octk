@@ -4,8 +4,13 @@
 \alias{setup_operazioni}
 \title{Crea il dataset operazioni}
 \usage{
-setup_operazioni(bimestre, progetti = NULL, export = FALSE,
-  use_fix = FALSE, debug = FALSE)
+setup_operazioni(
+  bimestre,
+  progetti = NULL,
+  export = FALSE,
+  use_fix = FALSE,
+  debug = FALSE
+)
 }
 \arguments{
 \item{bimestre}{Bimestre di riferimento}

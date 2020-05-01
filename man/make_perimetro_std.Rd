@@ -4,8 +4,15 @@
 \alias{make_perimetro_std}
 \title{Definizione del perimetro (versione standard per Turismo)}
 \usage{
-make_perimetro_std(pseudo, export = TRUE, stoplist = NULL,
-  safelist = NULL, debug = FALSE, progetti = NULL, var_ls = NULL)
+make_perimetro_std(
+  pseudo,
+  export = TRUE,
+  stoplist = NULL,
+  safelist = NULL,
+  debug = FALSE,
+  progetti = NULL,
+  var_ls = NULL
+)
 }
 \arguments{
 \item{pseudo}{Dataset "pseudo".}

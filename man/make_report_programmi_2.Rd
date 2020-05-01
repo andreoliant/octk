@@ -4,8 +4,13 @@
 \alias{make_report_programmi_2}
 \title{Esporta report per Programmi (NEW)}
 \usage{
-make_report_programmi_2(perimetro, usa_meuro = FALSE, add_713 = FALSE,
-  focus = "elab", export = FALSE)
+make_report_programmi_2(
+  perimetro,
+  usa_meuro = FALSE,
+  add_713 = FALSE,
+  focus = "elab",
+  export = FALSE
+)
 }
 \arguments{
 \item{perimetro}{Dataset di classe perimetro.}

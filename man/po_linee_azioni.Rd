@@ -4,7 +4,9 @@
 \name{po_linee_azioni}
 \alias{po_linee_azioni}
 \title{Elenco programmi, linee e azioni}
-\format{A data frame}
+\format{
+A data frame
+}
 \source{
 Team OC su dati BDU
 }

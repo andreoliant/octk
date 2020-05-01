@@ -4,9 +4,17 @@
 \alias{make_lista_patti}
 \title{Lista di progetti dei Patti}
 \usage{
-make_lista_patti(patti_list = NULL, progetti, perimetro = NULL,
-  min_cp = 0, export = TRUE, bimestre = bimestre, focus = focus,
-  DATA = DATA, TEMP = TEMP)
+make_lista_patti(
+  patti_list = NULL,
+  progetti,
+  perimetro = NULL,
+  min_cp = 0,
+  export = TRUE,
+  bimestre = bimestre,
+  focus = focus,
+  DATA = DATA,
+  TEMP = TEMP
+)
 }
 \arguments{
 \item{patti_list}{Elenco dei Patti da esportare, in formato c("2016PATTIABR").}

@@ -4,8 +4,13 @@
 \alias{report_cd_regioni_sintesi}
 \title{Report con sintesi per regione (formato CD)}
 \usage{
-report_cd_regioni_sintesi(perimetro, use_coe = TRUE, export = FALSE,
-  focus = NULL, ciclo = NULL)
+report_cd_regioni_sintesi(
+  perimetro,
+  use_coe = TRUE,
+  export = FALSE,
+  focus = NULL,
+  ciclo = NULL
+)
 }
 \arguments{
 \item{perimetro}{Dataset di classe perimetro.}

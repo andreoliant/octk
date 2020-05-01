@@ -4,9 +4,19 @@
 \alias{oc_init}
 \title{Inizializza OCTK}
 \usage{
-oc_init(bimestre, db_ver, data_path = NULL, db_path = NULL,
-  workarea = NULL, elab = NULL, focus = NULL, ver = NULL,
-  use_drive = TRUE, drive_root = NULL, DEV_MODE = FALSE)
+oc_init(
+  bimestre,
+  db_ver,
+  data_path = NULL,
+  db_path = NULL,
+  workarea = NULL,
+  elab = NULL,
+  focus = NULL,
+  ver = NULL,
+  use_drive = TRUE,
+  drive_root = NULL,
+  DEV_MODE = FALSE
+)
 }
 \arguments{
 \item{bimestre}{Versione dei dati di attuazione da utilizzare. Stringa in formato "20180630" come da standard per le date in OC.}

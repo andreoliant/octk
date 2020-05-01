@@ -4,7 +4,9 @@
 \name{matrix_ra_temi_fsc}
 \alias{matrix_ra_temi_fsc}
 \title{Raccordo tra RA e temi prioritari FSC 2014-2020}
-\format{A data frame}
+\format{
+A data frame
+}
 \source{
 Team OC
 }

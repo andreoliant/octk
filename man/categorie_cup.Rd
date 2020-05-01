@@ -4,7 +4,9 @@
 \name{categorie_cup}
 \alias{categorie_cup}
 \title{Elenco settori, sotto-settori e categorie CUP}
-\format{A data frame}
+\format{
+A data frame
+}
 \source{
 Team OC
 }

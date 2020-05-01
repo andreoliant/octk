@@ -4,8 +4,7 @@
 \alias{report_cd_totali_ambito}
 \title{Report su totali per ambito (formato CD)}
 \usage{
-report_cd_totali_ambito(perimetro, export = FALSE, focus = NULL,
-  ciclo = NULL)
+report_cd_totali_ambito(perimetro, export = FALSE, focus = NULL, ciclo = NULL)
 }
 \arguments{
 \item{perimetro}{Dataset di classe perimetro.}

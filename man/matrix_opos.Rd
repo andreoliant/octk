@@ -4,7 +4,9 @@
 \name{matrix_opos}
 \alias{matrix_opos}
 \title{Obiettivi Specifici 2021-2027}
-\format{A data frame}
+\format{
+A data frame
+}
 \source{
 Team OC su regolamenti in corso di negoziazione
 }

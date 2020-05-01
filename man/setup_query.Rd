@@ -7,8 +7,8 @@
 setup_query()
 }
 \value{
-...
+File csv in INPUT
 }
 \description{
-Salva i file csv del blocco "query" in INPUT insieme a stoplist.csv e safelist.csv
+Salva i file csv del blocco "query" in INPUT insieme a stoplist.csv, safelist.csv e fixlist.csv
 }

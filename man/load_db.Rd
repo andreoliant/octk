@@ -4,8 +4,15 @@
 \alias{load_db}
 \title{Carica un dataset dal database della programmazione}
 \usage{
-load_db(ciclo, ambito, simplify_loc = FALSE, use_temi = FALSE,
-  use_sog = FALSE, use_ue = FALSE, use_flt = FALSE)
+load_db(
+  ciclo,
+  ambito,
+  simplify_loc = FALSE,
+  use_temi = FALSE,
+  use_sog = FALSE,
+  use_ue = FALSE,
+  use_flt = FALSE
+)
 }
 \arguments{
 \item{ciclo}{Ciclo di programmazione.}

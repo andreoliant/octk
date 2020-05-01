@@ -4,8 +4,7 @@
 \alias{get_catreg_UE}
 \title{Definisce la categoria di regioni UE}
 \usage{
-get_catreg_UE(df, progetti = NULL, real_reg = TRUE,
-  debug_mode = FALSE)
+get_catreg_UE(df, progetti = NULL, real_reg = TRUE, debug_mode = FALSE)
 }
 \arguments{
 \item{df}{Dataset con un perimetro in formato "progetti".}

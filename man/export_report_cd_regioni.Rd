@@ -4,8 +4,14 @@
 \alias{export_report_cd_regioni}
 \title{Esporta report CD in xlsx}
 \usage{
-export_report_cd_regioni(report, titolo = NULL, focus = "elab",
-  ciclo = NULL, ambito = NULL, gruppo = NULL)
+export_report_cd_regioni(
+  report,
+  titolo = NULL,
+  focus = "elab",
+  ciclo = NULL,
+  ambito = NULL,
+  gruppo = NULL
+)
 }
 \arguments{
 \item{report}{dataframe da report_cd_regioni().}

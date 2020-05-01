@@ -4,7 +4,9 @@
 \name{aree_temi_fsc}
 \alias{aree_temi_fsc}
 \title{Elenco aree tematiche e temi prioritari FSC 2014-2020}
-\format{A data frame}
+\format{
+A data frame
+}
 \source{
 Team OC
 }

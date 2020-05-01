@@ -4,9 +4,14 @@
 \alias{make_report_programmi_coesione}
 \title{Esporta report per Programmi con dati coesione}
 \usage{
-make_report_programmi_coesione(perimetro, usa_meuro = FALSE,
-  add_713 = FALSE, add_totali = FALSE, focus = "report",
-  export = FALSE)
+make_report_programmi_coesione(
+  perimetro,
+  usa_meuro = FALSE,
+  add_713 = FALSE,
+  add_totali = FALSE,
+  focus = "report",
+  export = FALSE
+)
 }
 \arguments{
 \item{perimetro}{Dataset di classe perimetro.}
