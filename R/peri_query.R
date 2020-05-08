@@ -802,6 +802,11 @@ update_input_with_delta <- function(OLD) {
   # create
   wb <- createWorkbook()
   
+  # update metadati
+  temp0 <- as.character(packageVersion("octk"))
+  temp <- data.frame(value = c(bimestre, temp0), var = c("bimestre usato per input", "versione di octk"))
+  writeData(wb, sheet = "META", x = temp, startCol = 1, startRow = 1, colNames = TRUE)
+  
   for (input_tab in appo) {
     
     # read data from input xls in OLD
