@@ -29,6 +29,7 @@ oc_init <- function(bimestre, db_ver,
   library("tidyverse")
   library("haven")
   library("readxl")
+  library("openxlsx")
 
   # TODO: inserire gestione per bimestre e db_ver (ricerca di last)
   # if (!exists("bimestre")) {

@@ -11,10 +11,11 @@ License: What license is it under?
 Encoding: UTF-8
 LazyData: true
 Imports:
-    readxl,
     tidyverse,
+    readxl,
+    openxlsx,
     haven
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0
 Suggests: 
     knitr,
     rmarkdown
