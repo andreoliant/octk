@@ -36,6 +36,7 @@ setup_query_xls <- function() {
   
   # create
   wb <- createWorkbook()
+  addWorksheet(wb, "META")
   addWorksheet(wb, "categorie_cup")
   addWorksheet(wb, "categorie_ue")
   addWorksheet(wb, "po_linee_azioni")
@@ -47,6 +48,9 @@ setup_query_xls <- function() {
   addWorksheet(wb, "patt")
 
   # write
+  temp0 <- as.character(packageVersion("octk"))
+  temp <- data.frame(value = c(bimestre, temp0), var = c("bimestre usato per input", "versione di octk"))
+  writeData(wb, sheet = "META", x = temp, startCol = 1, startRow = 1, colNames = TRUE)
   writeData(wb, sheet = "categorie_cup", x = octk::categorie_cup, startCol = 1, startRow = 1, colNames = TRUE)
   writeData(wb, sheet = "categorie_ue", x = octk::categorie_ue, startCol = 1, startRow = 1, colNames = TRUE)
   writeData(wb, sheet = "po_linee_azioni", x = octk::po_linee_azioni, startCol = 1, startRow = 1, colNames = TRUE)
@@ -59,7 +63,6 @@ setup_query_xls <- function() {
 
   # salva
   saveWorkbook(wb, file = temp_file, overwrite = FALSE)
-  
   
   # stoplist
   write.csv2(stoplist, file.path(INPUT, "stoplist.csv"), row.names = FALSE)
@@ -81,14 +84,20 @@ query_cup <- function(progetti) {
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
     appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "categorie_cup")
   } else {
-    appo <- read_csv2(file.path(INPUT, "categorie_cup.csv")) 
+    appo <- read_csv2(file.path(INPUT, "categorie_cup.csv")) %>%
+      # fix padding su csv (in xls sono sanati a monte)
+      mutate(CUP_COD_SETTORE = str_pad(CUP_COD_SETTORE, 2, pad = "0"),
+             CUP_COD_SOTTOSETTORE = str_pad(CUP_COD_SOTTOSETTORE, 2, pad = "0"),
+             CUP_COD_CATEGORIA = str_pad(CUP_COD_CATEGORIA, 3, pad = "0"))
   }
-  matrix_cup <- appo  %>%
-    rename(QUERY_CUP = QUERY) %>%
-    mutate(CUP_COD_SETTORE = str_pad(CUP_COD_SETTORE, 2, pad = "0"),
-           CUP_COD_SOTTOSETTORE = str_pad(CUP_COD_SOTTOSETTORE, 2, pad = "0"),
-           CUP_COD_CATEGORIA = str_pad(CUP_COD_CATEGORIA, 3, pad = "0"))
+  # matrix_cup <- appo  %>%
+  #   rename(QUERY_CUP = QUERY) %>%
+  #   mutate(CUP_COD_SETTORE = str_pad(CUP_COD_SETTORE, 2, pad = "0"),
+  #          CUP_COD_SOTTOSETTORE = str_pad(CUP_COD_SOTTOSETTORE, 2, pad = "0"),
+  #          CUP_COD_CATEGORIA = str_pad(CUP_COD_CATEGORIA, 3, pad = "0"))
   # CHK: capire perché sono spariti i padding (Mara?)
+  matrix_cup <- appo  %>%
+    rename(QUERY_CUP = QUERY)
 
   # merge
   peri_cup <- progetti %>%
@@ -655,6 +664,165 @@ add_to_pseudo <- function(pseudo, addendum, export=TRUE) {
   return(pseudo)
 }
 
+
+
+
+
+#' Converte input da csv a excel
+#'
+#' Converte gli input in formato csv, ora deprecati, nel nuovo format su file excel.
+#'
+#' @param OLD Percorso alla cartella di livello WORK di una specifica elaborazione, anche diversa dal bimestre di riferimento.
+#' @return Prende tutti i csv nel folder indicato e li inserisce in un file excel in format query_input.xlsx
+convert_input_csv_to_xls <- function(OLD) {
+
+  # nomi file di input
+  appo0 <- list.files(path = file.path(OLD, "input"))
+  temp <- c("fixlist.csv", "safelist.csv", "stoplist.csv", 
+            "old_perim.csv", 
+            "classi_cup.csv", "classi_ue.csv",
+            "input_query.xlsx")
+  appo <- appo0[which(!(appo0 %in% temp))]
+  
+  
+  # filename per export in OLD
+  temp_file <- file.path(OLD, "input", paste0("input_query.xlsx"))
+  
+  # create
+  wb <- createWorkbook()
+  addWorksheet(wb, "META")
+  temp <- data.frame(value = c("", ""), var = c("bimestre usato per input", "versione di octk"))
+  writeData(wb, sheet = "META", x = temp, startCol = 1, startRow = 1, colNames = TRUE)
+  # HAND: completare META a mano
+  
+  for (input_file in appo) {
+    
+    # read csv data from input in OLD
+    tab <- read_csv2(file.path(OLD, "input", input_file))
+    
+    # create label
+    input_tab <- gsub(".csv", "", input_file)
+    print(input_tab)
+    
+    # fix padding
+    if (input_tab == "categorie_cup") {
+      tab <- tab  %>%
+        mutate(CUP_COD_SETTORE = str_pad(CUP_COD_SETTORE, 2, pad = "0"),
+               CUP_COD_SOTTOSETTORE = str_pad(CUP_COD_SOTTOSETTORE, 2, pad = "0"),
+               CUP_COD_CATEGORIA = str_pad(CUP_COD_CATEGORIA, 3, pad = "0"))
+    }
+    
+    # set data to excel
+    addWorksheet(wb, input_tab)
+    writeData(wb, sheet = input_tab, x = tab, startCol = 1, startRow = 1, colNames = TRUE)
+    
+  }
+  
+  # write xls
+  saveWorkbook(wb, file = temp_file, overwrite = TRUE)
+  
+}
+
+
+
+
+#' Calcola delta da precedente input
+#'
+#' Calcola delta da precedente input in format su file excel.
+#'
+#' @param OLD Percorso alla cartella di livello WORK della precedente elaborazione presa a riferimento.
+#' @return Calcola la differenza tra il file indicato in WORK rispetto ai template nel package, salvando un file "input_query_delta.xlsx" da editare manualmente.
+make_input_delta  <- function(OLD) {
+  # filename per input in OLD
+  temp_file <- file.path(OLD, "input", paste0("input_query.xlsx"))
+  
+  # filename per export
+  temp_file_delta <- file.path(INPUT, paste0("input_query_delta.xlsx"))
+  
+  # nomi fogli di input
+  temp <- getSheetNames(temp_file)
+  appo <- temp[which(temp != "META")]
+  
+  # create
+  wb <- createWorkbook()
+  
+  for (input_tab in appo) {
+    
+    # read data from input xls in OLD
+    tab <- read_xlsx(temp_file, sheet = input_tab, col_types = "text")
+    
+    # read new input data from octk
+    tab_new <- eval(as.name(input_tab))
+    
+    tab_delta <- tab_new %>%
+      mutate_if(is.numeric, as.character) %>%
+      anti_join(tab %>%
+                  select(-QUERY, -NOTE) %>%
+                  select(contains("COD")))
+    
+    chk <- tab %>%
+      select(-QUERY, -NOTE) %>%
+      select(contains("COD")) %>%
+      anti_join(tab_new %>%
+                  mutate_if(is.numeric, as.character))
+    
+    # set data to excel
+    addWorksheet(wb, input_tab)
+    writeData(wb, sheet = input_tab, x = tab_delta, startCol = 1, startRow = 1, colNames = TRUE)
+    
+  }
+  
+  # write xls
+  saveWorkbook(wb, file = temp_file_delta, overwrite = TRUE)
+}
+
+
+#' Crea file di input integrato con delta da precedente elaborazione
+#'
+#' Crea file di input integrato con input di precedente elaborazione e delta rispetto all'attuale template nel package, da calcolare con \link[octk]{make_input_delta}.
+#'
+#' @param OLD Percorso alla cartella di livello WORK della precedente elaborazione presa a riferimento.
+#' @return Esegue bind del precedente input e della versione delta, salvando un file "input_query.xlsx".
+update_input_with_delta <- function(OLD) {
+  
+  # filenament per input from OLD
+  temp_file <- file.path(OLD, "input", paste0("input_query.xlsx"))
+  
+  # filename per input delta
+  temp_file_delta <- file.path(INPUT, paste0("input_query_delta.xlsx"))
+  
+  # filename per export in input
+  temp_file_export <- file.path(INPUT, paste0("input_query.xlsx"))
+  
+  
+  # nomi fogli di input
+  temp <- getSheetNames(temp_file)
+  appo <- temp[which(temp != "META")]
+  
+  # create
+  wb <- createWorkbook()
+  
+  for (input_tab in appo) {
+    
+    # read data from input xls in OLD
+    tab <- read_xlsx(temp_file, sheet = input_tab, col_types = "text")
+    
+    # read data from delta
+    tab_delta <- read_xlsx(temp_file_delta, sheet = input_tab, col_types = "text")
+    
+    tab_new <- tab %>%
+      mutate_if(is.numeric, as.character) %>%
+      bind_rows(tab_delta)
+    
+    # set data to excel
+    addWorksheet(wb, input_tab)
+    writeData(wb, sheet = input_tab, x = tab_new, startCol = 1, startRow = 1, colNames = TRUE)
+    
+  }
+  
+  # write xls
+  saveWorkbook(wb, file = temp_file_export, overwrite = TRUE)
+}
 
 
 
