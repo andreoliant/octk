@@ -17,6 +17,7 @@ setup_query <- function() {
   write.csv2(aree_temi_fsc, file.path(INPUT, "aree_temi_fsc.csv"), row.names = FALSE)
   write.csv2(ra, file.path(INPUT, "ra.csv"), row.names = FALSE)
   write.csv2(patt, file.path(INPUT, "patt.csv"), row.names = FALSE)
+  write.csv2(keyword, file.path(INPUT, "keyword.csv"), row.names = FALSE)
 
   write.csv2(stoplist, file.path(INPUT, "stoplist.csv"), row.names = FALSE)
   write.csv2(safelist, file.path(INPUT, "safelist.csv"), row.names = FALSE)
@@ -46,6 +47,8 @@ setup_query_xls <- function() {
   addWorksheet(wb, "aree_temi_fsc")
   addWorksheet(wb, "ra")
   addWorksheet(wb, "patt")
+  addWorksheet(wb, "keyword")
+  
 
   # write
   temp0 <- as.character(packageVersion("octk"))
@@ -60,6 +63,7 @@ setup_query_xls <- function() {
   writeData(wb, sheet = "aree_temi_fsc", x = octk::aree_temi_fsc, startCol = 1, startRow = 1, colNames = TRUE)
   writeData(wb, sheet = "ra", x = octk::ra, startCol = 1, startRow = 1, colNames = TRUE)
   writeData(wb, sheet = "patt", x = octk::patt, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "keyword", x = octk::keyword, startCol = 1, startRow = 1, colNames = TRUE)
 
   # salva
   saveWorkbook(wb, file = temp_file, overwrite = FALSE)
@@ -465,6 +469,77 @@ query_atp <- function(progetti) {
 
 
 
+#' Ricerca progetti per parole chiave
+#'
+#' Ricerca progetti per parole chiave, a partire da specifici lemmi.
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_KEY.
+#' @note Da implementare la versione che aggrega i lemmi per per keyword ma prode una colonna per ogni keyword (e relativo debug)
+query_keyword <- function(progetti) {
+  
+  # TODO: implementare versione che aggrega per keyword
+  
+  # load matrix
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "keyword")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "keyword.csv"))
+  }
+  
+  matrix_key <- appo  %>%
+    rename(QUERY_KEY = QUERY) %>%
+    mutate(LEMMA = str_to_upper(LEMMA)) %>%
+    filter(QUERY_KEY != 0)
+  
+  base_df <- progetti %>%
+    select(COD_LOCALE_PROGETTO, OC_TITOLO_PROGETTO, OC_SINTESI_PROGETTO) %>%
+    mutate(BASE_VAR = str_to_upper(str_c(OC_TITOLO_PROGETTO, OC_SINTESI_PROGETTO)))
+  
+  
+  # base_df <- tibble(
+  #   COD_LOCALE_PROGETTO = c("a1", "b2", "c3"),
+  #   BASE_VAR = c("aaa aaa aaa", "bbbbbbbb", "ca cc cb")
+  # )
+  # matrix_key <- tibble(
+  #   LEMMA = c("aaa", "bbb", "ccc", "cc")
+  # )
+  # matrix_key <- tibble(
+  #   LEMMA = c("aaa", "zzz", "xxxx", "cc")
+  # )
+  
+  # loop
+  rm(peri_key)
+  for (KEY in matrix_key$LEMMA) {
+    # KEY <- matrix_key$LEMMA[4]
+    
+    test_key <- paste0("\\b", KEY, "\\b")
+    
+    temp <- base_df %>%
+      mutate(QUERY_TEMP = str_detect(BASE_VAR, test_key)) %>%
+      select(COD_LOCALE_PROGETTO, QUERY_TEMP) %>%
+      filter(QUERY_TEMP)
+
+    if (!exists("peri_key", inherits = FALSE)) {
+      # print("primo giro..")
+      peri_key <- temp  %>%
+        rename(QUERY_KEY = QUERY_TEMP)
+    } else {
+      peri_key <- peri_key %>%
+        full_join(temp,
+                  by = "COD_LOCALE_PROGETTO") %>%
+        mutate_if(is.logical, replace_na, replace = FALSE) %>%
+        mutate(QUERY_KEY = QUERY_KEY + QUERY_TEMP >= 1) %>%
+        select(-QUERY_TEMP)
+    }
+  }
+  
+  peri_key <- peri_key %>%
+    mutate(QUERY_KEY = if_else(TRUE, 1, 0))
+    
+  return(peri_key)
+  
+}
 
 
 #' Wrapper per query standard su CUP, UE e PO
