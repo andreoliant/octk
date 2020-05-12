@@ -8,8 +8,8 @@
 #' @param pseudo Dataset "pseudo".
 #' @param focus Nome file da salvare in OUTPUT.
 #' @param bimestre Bimestre di riferimento (utilizzato per la composizone del nome file in OUTPUT.
-#' @param var_ls Elenco delle variabili di base da esportare.
-#' @param var_add Elenco delle ulteriori variabili da esportare (oltre a quelle di base).
+#' @param var_ls Elenco delle variabili di base da esportare. Se nullo usa get_default_vars.
+#' @param var_add Elenco delle ulteriori variabili da esportare oltre a quelle di var_ls (se si usa get_default_vars)).
 #' @param export Vuoi salvare?
 #' @return Un file "[focus]_[bimestre].csv".
 export_data <- function(pseudo, focus, bimestre, var_ls=NULL, var_add=NULL, export=TRUE) {
@@ -19,41 +19,43 @@ export_data <- function(pseudo, focus, bimestre, var_ls=NULL, var_add=NULL, expo
   perimetro <- pseudo %>%
     # isola scarti
     filter(PERI == 1) %>%
-    select(-CHK, -PERI) %>%
+    select(-CHK, -PERI) # %>%
     # merge variabili anagrafiche (da progetti)
-    left_join(progetti %>%
-                select("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO", "OC_CODICE_PROGRAMMA"),
-              by = "COD_LOCALE_PROGETTO")
+    # left_join(progetti %>%
+    #             select("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO", "OC_CODICE_PROGRAMMA"),
+    #           by = "COD_LOCALE_PROGETTO")
 
   # x_vars
-  perimetro <- get_x_vars(perimetro, progetti = progetti)
+  # perimetro <- get_x_vars(perimetro, progetti = progetti)
 
   # macroarea
-  perimetro <- get_macroarea(perimetro)
+  # perimetro <- get_macroarea(perimetro)
 
   # regione
-  perimetro <- get_regione_simply(perimetro)
+  # perimetro <- get_regione_simply(perimetro)
 
   # var_ls
   if (is.null(var_ls)) {
-    var_ls <- c("CUP_COD_SETTORE",  "CUP_DESCR_SETTORE",  "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE", "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA",
-                "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA",
-                "OC_COD_CATEGORIA_SPESA", "OC_DESCR_CATEGORIA_SPESA",
-                "COD_PROCED_ATTIVAZIONE", "DESCR_PROCED_ATTIVAZIONE",
-                "CUP_COD_NATURA", "CUP_DESCR_NATURA",
-                "COD_REGIONE",
-                # "DEN_REGIONE", "COD_PROVINCIA", "DEN_PROVINCIA", "COD_COMUNE", "DEN_COMUNE",
-                # "OC_COD_SLL", "OC_DENOMINAZIONE_SLL",
-                "OC_FINANZ_TOT_PUB_NETTO", "IMPEGNI", "TOT_PAGAMENTI")
+    # var_ls <- c("CUP_COD_SETTORE",  "CUP_DESCR_SETTORE",  "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE", "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA",
+    #             "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA",
+    #             "OC_COD_CATEGORIA_SPESA", "OC_DESCR_CATEGORIA_SPESA",
+    #             "COD_PROCED_ATTIVAZIONE", "DESCR_PROCED_ATTIVAZIONE",
+    #             "CUP_COD_NATURA", "CUP_DESCR_NATURA",
+    #             "COD_REGIONE",
+    #             # "DEN_REGIONE", "COD_PROVINCIA", "DEN_PROVINCIA", "COD_COMUNE", "DEN_COMUNE",
+    #             # "OC_COD_SLL", "OC_DENOMINAZIONE_SLL",
+    #             "OC_FINANZ_TOT_PUB_NETTO", "IMPEGNI", "TOT_PAGAMENTI")
+    var_ls <- get_default_vars()
   }
   perimetro <- perimetro %>%
     left_join(progetti %>%
                 select("COD_LOCALE_PROGETTO", var_ls),
-              by = "COD_LOCALE_PROGETTO") %>%
+              by = "COD_LOCALE_PROGETTO") # %>%
     # fix per case in natura CUP
-    mutate(CUP_DESCR_NATURA = ifelse(is.na(CUP_DESCR_NATURA), "NON CLASSIFICATO", toupper(CUP_DESCR_NATURA)))
+    # mutate(CUP_DESCR_NATURA = ifelse(is.na(CUP_DESCR_NATURA), "NON CLASSIFICATO", toupper(CUP_DESCR_NATURA)))
 
   # var_add
+  # aggiunge ulteriori spefiche varibili
   if (!is.null(var_add)) {
     perimetro <- perimetro %>%
       left_join(progetti %>%
@@ -67,11 +69,10 @@ export_data <- function(pseudo, focus, bimestre, var_ls=NULL, var_add=NULL, expo
 
   # Stato di attuazione
   # perimetro <- get_stato_attuazione(df = perimetro, chk_today = "20180531")
-  perimetro <- perimetro %>%
-    left_join(progetti %>%
-                select("COD_LOCALE_PROGETTO", "OC_STATO_FASI"),
-              by = "COD_LOCALE_PROGETTO")
-
+  # perimetro <- perimetro %>%
+  #   left_join(progetti %>%
+  #               select("COD_LOCALE_PROGETTO", "OC_STATO_FASI"),
+  #             by = "COD_LOCALE_PROGETTO")
 
   # export
   if (export == TRUE) {
@@ -84,22 +85,28 @@ export_data <- function(pseudo, focus, bimestre, var_ls=NULL, var_add=NULL, expo
 
 
 
-# ----------------------------------------------------------------------------------- #
-# Export to xls
-
-# FARE A MANO PERCHE NON FUNZIA...
-
+#' Export per il dataset finale in formato excel
+#'
+#' Esporta perimetro da export_data() in excel.
+#'
+#' @param perimetro Dataset "perimetro" creato con export_data().
+#' @param focus Nome file da salvare in OUTPUT.
+#' @param bimestre Bimestre di riferimento (utilizzato per la composizone del nome file in OUTPUT.
+#' @param use_template Vuoi usare un template?
+#' @return Un file "[focus]_[bimestre].csv".
 export_data_xls <- function(perimetro, focus, bimestre, use_template=FALSE) {
 
-  library("openxlsx")
+  # library("openxlsx")
   temp <- paste0(paste(focus, bimestre, sep = "_"), ".xlsx")
 
   if (use_template == TRUE) {
-    wb <- loadWorkbook(system.file("extdata", "template.xlsx", package = "oc", mustWork = TRUE))
-    removeTable(wb = wb, sheet = "dati", table = getTables(wb, sheet = "dati"))
-    writeDataTable(wb, sheet = "dati", x = perimetro, stack = TRUE)
-    saveWorkbook(wb, file = file.path(OUTPUT, temp), overwrite = TRUE)
+    message("DA IMPLEMENTARE")
+    # wb <- loadWorkbook(system.file("extdata", "template.xlsx", package = "oc", mustWork = TRUE))
+    # removeTable(wb = wb, sheet = "dati", table = getTables(wb, sheet = "dati"))
+    # writeDataTable(wb, sheet = "dati", x = perimetro, stack = TRUE)
+    # saveWorkbook(wb, file = file.path(OUTPUT, temp), overwrite = TRUE)
 
+    # OLD: FORSE DA BUTTARE
     # for (i in seq_along(tab_ls)) {
     #   print(names(tab_ls)[i])
     #   removeTable(wb = wb, sheet = names(tab_ls)[i], table = getTables(wb, sheet = names(tab_ls)[i]))
@@ -227,4 +234,60 @@ export_sas <- function(perimetro, focus="perimetro", use_drive=TRUE, keep_classe
 } 
 
 
+# internal utility to list exported variables
+get_default_vars <- function() {
+  out <- c(
+    'COD_LOCALE_PROGETTO',
+    'CUP',
+    'OC_TITOLO_PROGETTO',
+    'OC_SINTESI_PROGETTO',
+    'x_CICLO',
+    'x_AMBITO',
+    'x_PROGRAMMA',
+    'COD_RISULTATO_ATTESO',
+    'DESCR_RISULTATO_ATTESO',
+    'OC_COD_CATEGORIA_SPESA',
+    'OC_DESCR_CATEGORIA_SPESA',
+    'OC_COD_ARTICOLAZ_PROGRAMMA',
+    'OC_DESCR_ARTICOLAZ_PROGRAMMA',
+    'OC_COD_SUBARTICOLAZ_PROGRAMMA',
+    'OC_DESCR_SUBARTICOLAZ_PROGRAMMA',
+    'COD_STRUMENTO',
+    'DESCR_STRUMENTO',
+    'DESCR_TIPO_STRUMENTO',
+    'COD_PROGETTO_COMPLESSO',
+    'DESCRIZIONE_PROGETTO_COMPLESSO',
+    'COD_TIPO_COMPLESSITA',
+    'DESCR_TIPO_COMPLESSITA',
+    'CUP_COD_NATURA',
+    'CUP_DESCR_NATURA',
+    'CUP_COD_TIPOLOGIA',
+    'CUP_DESCR_TIPOLOGIA',
+    'CUP_COD_SETTORE',
+    'CUP_DESCR_SETTORE',
+    'CUP_COD_SOTTOSETTORE',
+    'CUP_DESCR_SOTTOSETTORE',
+    'CUP_COD_CATEGORIA',
+    'CUP_DESCR_CATEGORIA',
+    'x_REGIONE',
+    'x_MACROAREA',
+    'COD_PROVINCIA',
+    'DEN_PROVINCIA',
+    'COD_COMUNE',
+    'DEN_COMUNE',
+    'OC_FINANZ_UE_NETTO',
+    'OC_FINANZ_TOT_PUB_NETTO',
+    'IMPEGNI',
+    'TOT_PAGAMENTI',
+    'OC_STATO_PROGETTO',
+    'OC_STATO_PROCEDURALE',
+    'OC_COD_FASE_CORRENTE',
+    'OC_DESCR_FASE_CORRENTE',
+    'COD_PROCED_ATTIVAZIONE',
+    'DESCR_PROCED_ATTIVAZIONE',
+    'OC_CODFISC_BENEFICIARIO',
+    'OC_DENOM_BENEFICIARIO'
+    )
+  return(out)
+}
 

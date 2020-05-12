@@ -20,9 +20,9 @@ export_data(
 
 \item{bimestre}{Bimestre di riferimento (utilizzato per la composizone del nome file in OUTPUT.}
 
-\item{var_ls}{Elenco delle variabili di base da esportare.}
+\item{var_ls}{Elenco delle variabili di base da esportare. Se nullo usa get_default_vars.}
 
-\item{var_add}{Elenco delle ulteriori variabili da esportare (oltre a quelle di base).}
+\item{var_add}{Elenco delle ulteriori variabili da esportare oltre a quelle di var_ls (se si usa get_default_vars)).}
 
 \item{export}{Vuoi salvare?}
 }
