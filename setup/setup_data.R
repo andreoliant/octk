@@ -94,6 +94,8 @@ usethis::use_data(fixlist, overwrite = TRUE)
 monithon_clp <- read_csv2(file.path(getwd(), "setup", "data-raw", "monithon_clp.csv"))
 usethis::use_data(monithon_clp, overwrite = TRUE)
 
-
+# fixlist
+keyword <- read_csv2(file.path(getwd(), "setup", "data-raw", "template_query_keyword.csv"))
+usethis::use_data(keyword, overwrite = TRUE)
 
 
