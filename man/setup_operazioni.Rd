@@ -9,6 +9,7 @@ setup_operazioni(
   progetti = NULL,
   export = FALSE,
   use_fix = FALSE,
+  use_ecomix = FALSE,
   debug = FALSE
 )
 }
@@ -16,6 +17,8 @@ setup_operazioni(
 \item{bimestre}{Bimestre di riferimento}
 
 \item{progetti}{Dataset con un perimetro in formato "progetti".}
+
+\item{use_ecomix}{Vuoi calcolare il costo coesione al netto delle economie solo per i progetti conclusi?}
 }
 \value{
 Il dataset operazioni con le variabili coesione calcolate: COE, COE_IMP e COE_PAG.
