@@ -1,0 +1,4 @@
+LEMMA;KEYWORD;CHK;NOTE
+museo;MUSEO;1;
+musei;MUSEO;1;
+museale;MUSEO;0;Con CHK = 0 è solo per memoria, non entra nella query
