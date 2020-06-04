@@ -665,40 +665,40 @@ make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
 #' @section Warning:
 #' Punta a "old_perim.csv".
 #' Forse non serve nemmeno più...
-add_old_turismo <- function(pseudo, export=TRUE, debug=FALSE) {
-
-  perim_old <- read_csv2(file.path(INPUT, "old_perim.csv")) %>%
-    # MEMO: flag vecchio riferito ad aprile
-    filter(OC_FLAG_VISUALIZZAZIONE == 0) %>%
-    # MEMO: semi_join per eliminare nuovi non visualizzati
-    semi_join(progetti, by = "COD_LOCALE_PROGETTO")
-
-  pseudo <- pseudo %>%
-    bind_rows(perim_old %>%
-                anti_join(pseudo, by = "COD_LOCALE_PROGETTO") %>%
-                select(COD_LOCALE_PROGETTO) %>%
-                mutate(QUERY_CUP = 0,
-                       QUERY_PO = 0,
-                       QUERY_UE = 0,
-                       TIPO_QUERY = "old"))
-
-  if (debug == TRUE) {
-    scarti <- perim_old %>%
-      anti_join(pseudo, by = "COD_LOCALE_PROGETTO")  %>%
-      left_join(progetti %>%
-                  select(var_ls),
-                by = "COD_LOCALE_PROGETTO")
-    # DEV: qui andrebbe ripreso progetti per integrare
-
-    write.csv2(scarti, file.path(TEMP, "scarti_old_perim.csv"), na = "", row.names = FALSE)
-  }
-
-  if (export == TRUE) {
-    write.csv2(pseudo, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
-  }
-  return(pseudo)
-}
-
+# add_old_turismo <- function(pseudo, export=TRUE, debug=FALSE) {
+# 
+#   perim_old <- read_csv2(file.path(INPUT, "old_perim.csv")) %>%
+#     # MEMO: flag vecchio riferito ad aprile
+#     filter(OC_FLAG_VISUALIZZAZIONE == 0) %>%
+#     # MEMO: semi_join per eliminare nuovi non visualizzati
+#     semi_join(progetti, by = "COD_LOCALE_PROGETTO")
+# 
+#   pseudo <- pseudo %>%
+#     bind_rows(perim_old %>%
+#                 anti_join(pseudo, by = "COD_LOCALE_PROGETTO") %>%
+#                 select(COD_LOCALE_PROGETTO) %>%
+#                 mutate(QUERY_CUP = 0,
+#                        QUERY_PO = 0,
+#                        QUERY_UE = 0,
+#                        TIPO_QUERY = "old"))
+# 
+#   if (debug == TRUE) {
+#     scarti <- perim_old %>%
+#       anti_join(pseudo, by = "COD_LOCALE_PROGETTO")  %>%
+#       left_join(progetti %>%
+#                   select(var_ls),
+#                 by = "COD_LOCALE_PROGETTO")
+#     # DEV: qui andrebbe ripreso progetti per integrare
+# 
+#     write.csv2(scarti, file.path(TEMP, "scarti_old_perim.csv"), na = "", row.names = FALSE)
+#   }
+# 
+#   if (export == TRUE) {
+#     write.csv2(pseudo, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
+#   }
+#   return(pseudo)
+# }
+# 
 
 
 
@@ -736,7 +736,7 @@ add_to_pseudo <- function(pseudo, addendum, export=TRUE) {
   if (export == TRUE) {
     write.csv2(output, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
   }
-  return(pseudo)
+  return(output)
 }
 
 
@@ -880,6 +880,7 @@ update_input_with_delta <- function(OLD) {
   # update metadati
   temp0 <- as.character(packageVersion("octk"))
   temp <- data.frame(value = c(bimestre, temp0), var = c("bimestre usato per input", "versione di octk"))
+  addworkseet(wb, "META")
   writeData(wb, sheet = "META", x = temp, startCol = 1, startRow = 1, colNames = TRUE)
   
   for (input_tab in appo) {

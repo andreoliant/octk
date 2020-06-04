@@ -53,7 +53,8 @@ make_perimetro_std <- function(pseudo, export=TRUE,
   if (debug == TRUE) {
     # defaults
     if (is.null(progetti)) {
-      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE)
+      # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE)
+      message("Va in errore perché bisogna caricare progetti con load_progetti e poi passarlo come parametro")
     }
     if (is.null(var_ls)) {
       var_ls <- c("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO",

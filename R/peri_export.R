@@ -77,7 +77,7 @@ export_data <- function(pseudo, focus, bimestre, var_ls=NULL, var_add=NULL, expo
   # export
   if (export == TRUE) {
     temp <- paste0(paste(focus, bimestre, sep = "_"), ".csv")
-    write.csv2(perimetro, file.path(OUTPUT, temp), na = "", row.names = FALSE)
+    write.csv2(perimetro, file.path(TEMP, temp), na = "", row.names = FALSE)
   }
 
   return(perimetro)
@@ -198,7 +198,7 @@ export_sas <- function(perimetro, focus="perimetro", use_drive=TRUE, keep_classe
       write.csv2(df, file.path(OUTPUT, temp_filename), na = "", row.names = FALSE)
       
       # salva copia ridondante per SAS
-      OUTPUT_SAS <- file.path(dirname(WORK), "_OUTPUT_SAS")
+      OUTPUT_SAS <- file.path(dirname(dirname(WORK)), "_OUTPUT_SAS")
       write.csv2(df, file.path(OUTPUT_SAS, temp_filename), na = "", row.names = FALSE)
       message("Copia salvata anche in OUTPUT_SAS")
     }
@@ -218,7 +218,7 @@ export_sas <- function(perimetro, focus="perimetro", use_drive=TRUE, keep_classe
       appo <- perimetro %>%
         filter(CLASSE == x) %>%
         select(COD_LOCALE_PROGETTO)
-      export_fun(df = appo, focus = temp)
+      export_fun(df = appo, focus = x)
     }
   } else {
     if (keep_classe == TRUE) {
