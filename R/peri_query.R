@@ -335,7 +335,10 @@ query_cipe <- function(progetti) {
     appo <- read_csv2(file.path(INPUT, "delib_cipe.csv")) 
   }
   matrix_cipe <- appo  %>%
-    rename(QUERY_CIPE = QUERY)
+    rename(QUERY_CIPE = QUERY) %>%
+    # fix per input in excel
+    mutate(NUMERO_DEL_CIPE = as.numeric(NUMERO_DEL_CIPE),
+           ANNO_DEL_CIPE = as.numeric(ANNO_DEL_CIPE))
 
   # merge
   appo <- progetti %>%
@@ -829,17 +832,36 @@ make_input_delta  <- function(OLD) {
     # read new input data from octk
     tab_new <- eval(as.name(input_tab))
     
-    tab_delta <- tab_new %>%
-      mutate_if(is.numeric, as.character) %>%
-      anti_join(tab %>%
-                  select(-QUERY, -NOTE) %>%
-                  select(contains("COD")))
+    if (input_tab == "delib_cipe") {
+      tab_delta <- tab_new %>%
+        mutate_if(is.numeric, as.character) %>%
+        anti_join(tab %>%
+                    select(-QUERY, -NOTE) %>%
+                    select(NUMERO_DEL_CIPE, ANNO_DEL_CIPE))
+      
+      chk <- tab %>%
+        select(-QUERY, -NOTE) %>%
+        select(NUMERO_DEL_CIPE, ANNO_DEL_CIPE)%>%
+        anti_join(tab_new %>%
+                    mutate_if(is.numeric, as.character))
+      
+    } else {
+      tab_delta <- tab_new %>%
+        mutate_if(is.numeric, as.character) %>%
+        anti_join(tab %>%
+                    select(-QUERY, -NOTE) %>%
+                    select(contains("COD")))
+      
+      chk <- tab %>%
+        select(-QUERY, -NOTE) %>%
+        select(contains("COD")) %>%
+        anti_join(tab_new %>%
+                    mutate_if(is.numeric, as.character))
+    }
     
-    chk <- tab %>%
-      select(-QUERY, -NOTE) %>%
-      select(contains("COD")) %>%
-      anti_join(tab_new %>%
-                  mutate_if(is.numeric, as.character))
+    
+    
+    
     
     # set data to excel
     addWorksheet(wb, input_tab)
