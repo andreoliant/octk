@@ -111,6 +111,11 @@ query_cup <- function(progetti) {
                by = c("CUP_COD_SETTORE", "CUP_COD_SOTTOSETTORE","CUP_COD_CATEGORIA")) %>%
     select(COD_LOCALE_PROGETTO, QUERY_CUP)
   # MEMO: uso inner_join per tenere QUERY_CUP
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_cup <- peri_cup %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_CUP = min(QUERY_CUP))
 
   return(peri_cup)
 
@@ -143,6 +148,11 @@ query_po <- function(progetti) {
     # select(COD_LOCALE_PROGETTO, QUERY_PO) %>%
     distinct(COD_LOCALE_PROGETTO, QUERY_PO)
   # MEMO: uso distinct perché si generano dupli per casi tipo "FS0713:::PAC"
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_po <- peri_po %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_PO = min(QUERY_PO))
 
   return(peri_po)
 
@@ -198,6 +208,11 @@ query_ue <- function(progetti) {
     # select(COD_LOCALE_PROGETTO, QUERY_UE)
     distinct(COD_LOCALE_PROGETTO, QUERY_UE)
   # WARNING: uso distinct rimuovere duplicati di CLP con temi molteplici
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_ue <- peri_ue %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_UE = min(QUERY_UE))
 
   return(peri_ue)
 
@@ -236,6 +251,11 @@ query_strum <- function(progetti) {
                by = "COD_STRUMENTO") %>%
     distinct(COD_LOCALE_PROGETTO, QUERY_STRUM)
   # MEMO: uso inner_join per tenere QUERY_STRUM
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_strum <- peri_strum %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_STRUM = min(QUERY_STRUM))
 
   return(peri_strum)
 
@@ -270,6 +290,11 @@ query_progcomp <- function(progetti) {
                by = "COD_PROGETTO_COMPLESSO") %>%
     distinct(COD_LOCALE_PROGETTO, QUERY_PROGCOMP)
   # MEMO: uso inner_join per tenere QUERY_PROGCOMP
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_progcomp <- peri_progcomp %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_PROGCOMP = min(QUERY_PROGCOMP))
 
   return(peri_progcomp)
 
@@ -301,6 +326,11 @@ query_patt <- function(progetti) {
                by = "COD_PROCED_ATTIVAZIONE") %>%
     distinct(COD_LOCALE_PROGETTO, QUERY_PATT)
   # MEMO: uso inner_join per tenere QUERY_PATT
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_patt <- peri_patt %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_PATT = min(QUERY_PATT))
 
   return(peri_patt)
 
@@ -360,6 +390,11 @@ query_cipe <- function(progetti) {
     group_by(COD_LOCALE_PROGETTO) %>%
     summarise(QUERY_CIPE = min(QUERY_CIPE))
   # peri_cipe %>% count(COD_LOCALE_PROGETTO) %>% filter(n>1)
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_cipe <- peri_cipe %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_CIPE = min(QUERY_CIPE))
 
   return(peri_cipe)
 
@@ -400,6 +435,11 @@ query_ra <- function(progetti) {
                by = "COD_RISULTATO_ATTESO") %>%
     distinct(COD_LOCALE_PROGETTO, QUERY_RA)
   # MEMO: uso inner_join per tenere QUERY_RA
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_ra <- peri_ra %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_RA = min(QUERY_RA))
 
   return(peri_ra)
 
@@ -465,6 +505,11 @@ query_atp <- function(progetti) {
                by = "COD_LOCALE_PROGETTO") %>%
     distinct(COD_LOCALE_PROGETTO, QUERY_ATP)
   # MEMO: uso inner_join per tenere QUERY_ATP
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_atp <- peri_atp %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_ATP = min(QUERY_ATP))
 
   return(peri_atp)
 
@@ -539,6 +584,11 @@ query_keyword <- function(progetti) {
   
   peri_key <- peri_key %>%
     mutate(QUERY_KEY = if_else(TRUE, 1, 0))
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_key <- peri_key %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_KEY = min(QUERY_KEY))
     
   return(peri_key)
   
@@ -620,6 +670,8 @@ make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
 
   # clean NA
   pseudo <- pseudo %>%
+    # fix per input excel che trasforma in character
+    mutate_at(vars(contains('QUERY')), list(as.numeric)) %>%
     mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
 
 
@@ -902,7 +954,7 @@ update_input_with_delta <- function(OLD) {
   # update metadati
   temp0 <- as.character(packageVersion("octk"))
   temp <- data.frame(value = c(bimestre, temp0), var = c("bimestre usato per input", "versione di octk"))
-  addworkseet(wb, "META")
+  addWorksheet(wb, "META")
   writeData(wb, sheet = "META", x = temp, startCol = 1, startRow = 1, colNames = TRUE)
   
   for (input_tab in appo) {
