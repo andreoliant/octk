@@ -131,21 +131,21 @@ install.packages(temp, repos = NULL, type="source")
 
 # local
 system(
-  paste0("cp README.md bkp/_src/_NIGHTLY/;",
-         "cp DESCRIPTION bkp/_src/_NIGHTLY/;",
-         "cp NAMESPACE bkp/_src/_NIGHTLY/;",
-         "cp -r setup bkp/_src/_NIGHTLY/;",
-         "cp -r R bkp/_src/_NIGHTLY/;",
-         "cp -r data bkp/_src/_NIGHTLY/;",
-         "cp -r vignettes bkp/_src/_NIGHTLY/;",
-         "cp -r man bkp/_src/_NIGHTLY/;",
-         "cp -r inst bkp/_src/_NIGHTLY/"
+  paste0("cp README.md bkp/_src/_PIPPO/;",
+         "cp DESCRIPTION bkp/_src/_PIPPO/;",
+         "cp NAMESPACE bkp/_src/_PIPPO/;",
+         "cp -r setup bkp/_src/_PIPPO/;",
+         "cp -r R bkp/_src/_PIPPO/;",
+         "cp -r data bkp/_src/_PIPPO/;",
+         "cp -r vignettes bkp/_src/_PIPPO/;",
+         "cp -r man bkp/_src/_PIPPO/;",
+         "cp -r inst bkp/_src/_PIPPO/"
   )
 )
 
 # drive
 system(
-  paste0("DEV_BKP='/home/antonio/coding/octk/bkp/_src/_NIGHTLY/';",
+  paste0("DEV_BKP='/home/antonio/coding/octk/bkp/_src/_PIPPO/';",
          "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/_src/_PIPPO/';",
          'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"'
   )

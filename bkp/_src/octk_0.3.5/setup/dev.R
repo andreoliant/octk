@@ -126,6 +126,33 @@ install.packages(temp, repos = NULL, type="source")
 # MEMO: build to binary "oc_0.1.0.tgz"
 # WARNING: it is platform specific!
 
+# ----------------------------------------------------------------------------------- #
+# NIGHTLY to Drive
+
+# local
+system(
+  paste0("cp README.md bkp/_src/_PIPPO/;",
+         "cp DESCRIPTION bkp/_src/_PIPPO/;",
+         "cp NAMESPACE bkp/_src/_PIPPO/;",
+         "cp -r setup bkp/_src/_PIPPO/;",
+         "cp -r R bkp/_src/_PIPPO/;",
+         "cp -r data bkp/_src/_PIPPO/;",
+         "cp -r vignettes bkp/_src/_PIPPO/;",
+         "cp -r man bkp/_src/_PIPPO/;",
+         "cp -r inst bkp/_src/_PIPPO/"
+  )
+)
+
+# drive
+system(
+  paste0("DEV_BKP='/home/antonio/coding/octk/bkp/_src/_PIPPO/';",
+         "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/_src/_PIPPO/';",
+         'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"'
+  )
+)
+
+
+
 
 # ----------------------------------------------------------------------------------- #
 # backup source
@@ -133,7 +160,6 @@ install.packages(temp, repos = NULL, type="source")
 system(
   paste0('VERS="octk_', oc_ver, '";',
          "mkdir bkp/_src/$VERS;",
-         # "cp oc.Rproj bkp/_src/$VERS/;",
          "cp README.md bkp/_src/$VERS/;",
          "cp DESCRIPTION bkp/_src/$VERS/;",
          "cp NAMESPACE bkp/_src/$VERS/;",
@@ -174,6 +200,20 @@ system(
   )
 )
 
+ 
+# system(
+#   paste0('VERS="octk_', oc_ver, '";',
+#          # "DEV_BKP='/home/antonio/coding/octk/bkp/_src/$VERS';",
+#          # "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/_src/$VERS';",
+#          # 'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE";',
+#          "DEV_BKP='/home/antonio/coding/octk/bkp/$VERS", ".tar.gz';",
+#          
+#          "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/$VERS", ".tar.gz';",
+#          "cp -r $DEV_BKP $GOOGLE;"
+#   )
+# )
+
+
 # PROVA DI UTILIZZO DI CP FALLITA PER SPAZIO IN PATH DI GOOGLE
 # system(
 #   paste0("DEV_BKP='/home/antonio/coding/octk/bkp';",
@@ -202,5 +242,6 @@ system(
   # paste0("git tag v", oc_ver, "-REV.01")
   )
 
+# HAND: push
 
 
