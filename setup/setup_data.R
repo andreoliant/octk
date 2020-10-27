@@ -77,6 +77,10 @@ usethis::use_data(delib_cipe, overwrite = TRUE)
 patt <- read_csv2(file.path(getwd(), "setup", "data-raw", "patt.csv"))
 usethis::use_data(patt, overwrite = TRUE)
 
+# qsn
+qsn <- read_csv2(file.path(getwd(), "setup", "data-raw", "qsn.csv"), col_types = "ccic")
+usethis::use_data(qsn, overwrite = TRUE)
+
 
 # stoplist
 stoplist <- read_csv2(file.path(getwd(), "setup", "data-raw", "template_stoplist.csv"))

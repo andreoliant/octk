@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.3.7"
+oc_ver <- "0.3.8"
 
 # rm(list=ls())
 library("devtools")
@@ -50,14 +50,15 @@ devtools::load_all(path = ".")
 
 # setup
 oc_init(
-  bimestre = "20200630",
+  bimestre = "20200831",
   elab = "SETUP",
   focus = "setup",
   ver = "V.01",
   data_path = "/home/antonio/dati/oc",
   db_ver = "NIGHTLY",
   use_drive = TRUE,
-  drive_root = "/home/antonio/ExpanDrive/OC/Team Drives"
+  # drive_root = "/home/antonio/ExpanDrive/OC/Team Drives"
+  drive_root = "/home/antonio/ExpanDrive/OC/Shared Drives"
 )
 
 # MEMO: con DEV_MODE la workarea è in locale octk/test

@@ -72,21 +72,29 @@ devtools::load_all(path = ".")
 # https://readr.tidyverse.org/articles/readr.html#column-specification
 
 # progetti light
-# setup_light(bimestre, fix = TRUE)
-setup_light(bimestre, fix = FALSE)
+setup_light(bimestre, fix = TRUE)
+# setup_light(bimestre, fix = FALSE)
 
-# operazioni light
+# operazioni lightvie
 # progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE, light = FALSE)
 # progetti <- fix_progetti(progetti)
 # setup_operazioni(bimestre, progetti, export=TRUE, debug=TRUE)
 setup_operazioni(bimestre, export=TRUE, debug=TRUE)
 
 
-# chk mismatch progetti vs operazioni
-operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+# chk vuoti
+rm(progetti)
+progetti <- read_csv2(file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), guess_max = 1000000)
+progetti %>% count(x_CICLO, x_AMBITO)
+sum(progetti$OC_FINANZ_TOT_PUB_NETTO, na.rm=TRUE)
 
+operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+operazioni %>% count(x_CICLO, x_AMBITO)
+
+
+# chk mismatch progetti vs operazioni
 chk <- progetti %>%
-  get_x_vars(.) %>%
+  # get_x_vars(.) %>%
   select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_AMBITO) %>%
   full_join(operazioni %>%
               select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_AMBITO),
@@ -108,3 +116,18 @@ write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
 # una parte del problema è direttrici ferroviarie e giustizia civile
 # poi però ci sono altre anomalie che non comprendo
 # però quelli del fix sul CCI sembrano corretti
+
+# patch operazioni in "2014IT16M2OP002:::2016PATTIPUG" senza FONDO_COMUNITARIO
+chk <- operazioni %>%
+  filter(is.na(x_AMBITO))
+chk %>% count(FONDO_COMUNITARIO, OC_CODICE_PROGRAMMA)
+
+operazioni_rev <- operazioni %>%
+  mutate(x_AMBITO = case_when(OC_CODICE_PROGRAMMA == "2014IT16M2OP002" & is.na(FONDO_COMUNITARIO) ~ "FESR",
+                              TRUE ~ x_AMBITO))
+write.csv2(operazioni_rev, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), row.names = FALSE)
+
+
+
+
+

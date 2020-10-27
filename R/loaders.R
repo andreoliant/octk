@@ -138,18 +138,23 @@ fix_progetti <- function(progetti) {
 
   # fix temporaneo per ":::OC_CODICE_PROGRAMMA" (su dati 20291231)
   # MEMO: sposto su programma SIE
+  # progetti <- progetti %>%
+  #   mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2016POCIMPRESE1" & OC_COD_FONTE == "FS1420" ~ "2014IT16RFOP003",
+  #                                          OC_CODICE_PROGRAMMA == "2017FSCRICERCA" & OC_COD_FONTE == "FS1420" ~ "2014IT16M2OP005",
+  #                                          OC_CODICE_PROGRAMMA == "2017POCRICERCA1" & OC_COD_FONTE == "FS1420" ~ "2014IT16M2OP005",
+  #                                          TRUE ~ OC_CODICE_PROGRAMMA))
+  # 
+  # progetti <- progetti %>%
+  #   mutate(COD_LOCALE_PROGETTO = case_when(grepl("^1MISE174", COD_LOCALE_PROGETTO) ~ "1MISE174",
+  #                                          grepl("^1MISE397", COD_LOCALE_PROGETTO) ~ "1MISE397",
+  #                                          grepl("^1MISE496", COD_LOCALE_PROGETTO) ~ "1MISE496",
+  #                                          grepl("^1MISE608", COD_LOCALE_PROGETTO) ~ "1MISE608",
+  #                                          TRUE ~ COD_LOCALE_PROGETTO))
+  
+  # fix di progetti senza FONDO_COMUNITARIO
   progetti <- progetti %>%
-    mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2016POCIMPRESE1" & OC_COD_FONTE == "FS1420" ~ "2014IT16RFOP003",
-                                           OC_CODICE_PROGRAMMA == "2017FSCRICERCA" & OC_COD_FONTE == "FS1420" ~ "2014IT16M2OP005",
-                                           OC_CODICE_PROGRAMMA == "2017POCRICERCA1" & OC_COD_FONTE == "FS1420" ~ "2014IT16M2OP005",
-                                           TRUE ~ OC_CODICE_PROGRAMMA))
-
-  progetti <- progetti %>%
-    mutate(COD_LOCALE_PROGETTO = case_when(grepl("^1MISE174", COD_LOCALE_PROGETTO) ~ "1MISE174",
-                                           grepl("^1MISE397", COD_LOCALE_PROGETTO) ~ "1MISE397",
-                                           grepl("^1MISE496", COD_LOCALE_PROGETTO) ~ "1MISE496",
-                                           grepl("^1MISE608", COD_LOCALE_PROGETTO) ~ "1MISE608",
-                                           TRUE ~ COD_LOCALE_PROGETTO))
+    mutate(FONDO_COMUNITARIO = case_when(OC_CODICE_PROGRAMMA == "2014IT16M2OP002:::2016PATTIPUG" & is.na(FONDO_COMUNITARIO) ~ "FESR",
+                                         TRUE ~ FONDO_COMUNITARIO))
 
   return(progetti)
 }

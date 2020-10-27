@@ -126,7 +126,7 @@ write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20200430"
+bimestre_old <- "20200630"
 # bimestre_old <- "20191031"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
@@ -173,7 +173,8 @@ chk <- progetti_all_old %>%
          N.old, N.new, N.chk,
          CP.old, CP.new, CP.chk)
 
-  write.csv2(chk, file.path(TEMP, paste0("chk_delta_noviz_", bimestre, ".csv")), row.names = FALSE)
+write.csv2(chk, file.path(TEMP, paste0("chk_delta_noviz_", bimestre, ".csv")), row.names = FALSE)
+
 
 
 # singoli progetti
@@ -194,10 +195,29 @@ chk2 <- progetti_all_old %>%
   mutate(CP.chk = CP.new - CP.old)
 
 # ricerca progetti persi
-chk2 %>% filter(is.na(x_AMBITO.old), is.na(x_AMBITO.new))
+temp <- chk2 %>% filter(is.na(x_AMBITO.old), is.na(x_AMBITO.new))
+temp <- chk2 %>% filter(!is.na(OC_CODICE_PROGRAMMA.new), x_AMBITO.old != "FEAMP", is.na(x_AMBITO.new))
+temp %>% filter(is.na(x_AMBITO.old))
+write.csv2(temp, file.path(TEMP, paste0("chk_ambito_na.csv")), row.names = FALSE)
 
-temp <- progetti_all %>% 
-  filter(COD_LOCALE_PROGETTO == "4MISECDS000623")
+# chk vari
+progetti_all_old %>%
+  filter(is.na(OC_CODICE_PROGRAMMA))
+
+temp <- progetti_all_old %>% 
+  filter(COD_LOCALE_PROGETTO == "7PUA1006.392")
+
+temp2 <- progetti_all %>%
+  fix_progetti(.) %>%
+  get_x_vars(.)
+
+temp2 %>% count(x_AMBITO)
+
+temp3 <- temp2 %>% 
+  filter(is.na(x_AMBITO)) %>%
+  select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, FONDO_COMUNITARIO, OC_FLAG_VISUALIZZAZIONE)
+
+write.csv2(temp3, file.path(TEMP, paste0("chk_fondo_comunitario_na.csv")), row.names = FALSE)
 
 
 # chk2 %>% arrange(desc(CP.chk))
@@ -249,8 +269,8 @@ rm(progetti_all, progetti_all_old)
 progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
 
 # chk anomalie ":::CCI"
-chk <- progetti %>%
-  filter(grepl("^:::2017POIMPCOMFSC", OC_CODICE_PROGRAMMA))
+# chk <- progetti %>%
+#   filter(grepl("^:::2017POIMPCOMFSC", OC_CODICE_PROGRAMMA))
 
 # chk %>%
 #   get_x_vars(.) %>%
@@ -320,5 +340,10 @@ chk <- appo %>%
   count(x_MACROAREA, x_REGNAZ, x_REGIONE)
 
 rm(appo, progetti)
+
+
+
+
+
 
 
