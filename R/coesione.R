@@ -252,9 +252,14 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
                                 oc_cod_fonte == "FS1420" & ue_descr_fondo == "PAC" ~ "SNAI",
                                 oc_cod_fonte == "FS1420" & ue_descr_fondo == "FESR" &
                                   CODICE_TIPOLOGIA_PROGRAMMA == "CTE" ~ "CTE",
+                                oc_cod_fonte == "FS1420" & ue_descr_fondo == "IPA" &
+                                  CODICE_TIPOLOGIA_PROGRAMMA == "CTE" ~ "CTE",
+                                oc_cod_fonte == "FS1420" & ue_descr_fondo == "NAZIONALE" &
+                                  CODICE_TIPOLOGIA_PROGRAMMA == "ARI" ~ "SNAI",
                                 oc_cod_fonte == "FS1420" ~ ue_descr_fondo,
                                 oc_cod_fonte == "FSC1420" ~ "FSC",
                                 oc_cod_fonte == "PAC1420" ~ "POC")) %>%
+    # DEBUG: operazioni_1420 %>% count(x_AMBITO, oc_cod_fonte, ue_descr_fondo, CODICE_TIPOLOGIA_PROGRAMMA)
     # map per ambito
     # mutate(COS_AMM = case_when(x_AMBITO == "FSC" ~ costo_ammesso_FSC,
     #                            x_AMBITO == "POC" ~ costo_ammesso_NAZ,
