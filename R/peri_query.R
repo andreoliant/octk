@@ -542,7 +542,8 @@ query_keyword <- function(progetti) {
   
   base_df <- progetti %>%
     select(COD_LOCALE_PROGETTO, OC_TITOLO_PROGETTO, OC_SINTESI_PROGETTO) %>%
-    mutate(BASE_VAR = str_to_upper(str_c(OC_TITOLO_PROGETTO, OC_SINTESI_PROGETTO)))
+    # mutate(BASE_VAR = str_to_upper(str_c(OC_TITOLO_PROGETTO, OC_SINTESI_PROGETTO))) # MEMO: con un NA salta riga intera
+    mutate(BASE_VAR = str_to_upper(paste0(OC_TITOLO_PROGETTO, OC_SINTESI_PROGETTO)))
   
   
   # base_df <- tibble(
