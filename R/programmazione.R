@@ -173,10 +173,10 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
 #'
 #' Carica il databse della programmazione, con pulizia della codifica di aree tematiche e temi prioritari FSC.
 #'
-#' @param usa_temi Vuoi caricare il DB con correzione dei temi prioritari?
-#' @param usa_sog Vuoi caricare il DB con il soggetto programmatore?
-#' @param usa_eu Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)
-#' @param usa_713 Vuoi caricare anche il DB per il 2007-2013?
+#' @param use_temi Vuoi caricare il DB con correzione dei temi prioritari?
+#' @param use_sog Vuoi caricare il DB con il soggetto programmatore?
+#' @param use_eu Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)
+#' @param use_713 Vuoi caricare anche il DB per il 2007-2013?
 #' @return L'intero database dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.
 init_programmazione <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use_flt=FALSE, use_713=FALSE, use_articolaz=FALSE, use_location=FALSE, use_ciclo=FALSE, use_en=FALSE)
 {
