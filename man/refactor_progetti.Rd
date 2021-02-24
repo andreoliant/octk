@@ -13,5 +13,5 @@ refactor_progetti(perimetro)
 Il dataset integrato.
 }
 \description{
-Integra un perimetro di progetti appena caricato con i factor per x_MACROAREA, x_AMBITO e OC_STATO_PROCEDURALE.
+Integra un perimetro di progetti appena caricato con i factor per x_MACROAREA, x_CICLO, x_AMBITO e OC_STATO_PROCEDURALE.
 }
