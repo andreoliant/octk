@@ -223,3 +223,20 @@ refactor_ciclo <- function(df) {
   
 }
 
+
+#' Refactor di x_MACROAREA
+#'
+#' Integra un perimetro di progetti con factor di x_MACROAREA
+#'
+#' @param df Dataset progetti in formato standard.
+#' @return Il dataset integrato.
+refactor_macroarea <- function(df) {
+  
+  levels_macroarea <- c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")
+  
+  df <- df %>%
+    mutate(x_MACROAREA = factor(x_MACROAREA, levels = levels_macroarea))
+  
+  return(df)
+  
+}

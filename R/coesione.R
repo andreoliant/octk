@@ -484,11 +484,11 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
     #                            TRUE ~ "2007-2013")) %>%
     # map per ambito
     mutate(COS_AMM = case_when(x_AMBITO == "FSC" ~ 0,
-                               x_AMBITO == "POC" ~ 0,
+                               x_AMBITO == "PAC" ~ 0,
                                TRUE ~ COSTO_RENDICONTABILE_UE),
            IMP_AMM = 0,
            PAG_AMM = case_when(x_AMBITO == "FSC" ~ OC_TOT_PAGAMENTI_FSC,
-                               x_AMBITO == "POC" ~ OC_TOT_PAGAMENTI_PAC,
+                               x_AMBITO == "PAC" ~ OC_TOT_PAGAMENTI_PAC,
                                TRUE ~ OC_TOT_PAGAMENTI_RENDICONTAB_UE)) %>%
     # OLD: integra variabili da progetti (l'aggancio crea valori duplicati)
     # left_join(progetti %>%
@@ -512,7 +512,6 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
                      IMPEGNI, TOT_PAGAMENTI),
             by = "COD_LOCALE_PROGETTO") %>%
     mutate(COE = case_when(x_AMBITO == "FSC" ~ OC_FINANZ_STATO_FSC_NETTO,
-                           # x_AMBITO == "POC" ~ OC_FINANZ_STATO_PAC_NETTO,
                            x_AMBITO == "PAC" ~ OC_FINANZ_STATO_PAC_NETTO,
                            is.na(COS_AMM) ~ 0,
                            TRUE ~ COS_AMM),
@@ -526,8 +525,8 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
                                 TRUE ~ FINANZ_TOTALE_PUBBLICO),
            base_coe = case_when(x_AMBITO == "FSC" & OC_FINANZ_TOT_PUB_NETTO > 0 ~ OC_FINANZ_STATO_FSC_NETTO,
                                 x_AMBITO == "FSC" ~ FINANZ_STATO_FSC,
-                                x_AMBITO == "POC" & OC_FINANZ_TOT_PUB_NETTO > 0 ~ OC_FINANZ_STATO_PAC_NETTO,
-                                x_AMBITO == "POC" ~ FINANZ_STATO_PAC,
+                                x_AMBITO == "PAC" & OC_FINANZ_TOT_PUB_NETTO > 0 ~ OC_FINANZ_STATO_PAC_NETTO,
+                                x_AMBITO == "PAC" ~ FINANZ_STATO_PAC,
                                 is.na(COS_AMM) ~ 0,
                                 TRUE ~ COS_AMM), # per FS non posso considerare valore al netto di economie
            x = base_coe/base_ftp,
@@ -628,7 +627,7 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
                                    # x > 1 ~ "x_>_1",
                                    COE_IMP == COE & IMPEGNI != COE ~ "to_coe", # dovrebbe essere incluso sopra
                                    x_AMBITO == "FSC" & CP_N <= 0 ~ "fin_tot",
-                                   x_AMBITO == "POC" & CP_N <= 0 ~ "fin_tot",
+                                   x_AMBITO == "PAC" & CP_N <= 0 ~ "fin_tot",
                                    round(COE_IMP, 1) == round(COE, 1) ~ "imp_equal_coe",
                                    round(COE_IMP, 2) == round(COE, 2) ~ "imp_equal_coe_2",
                                    round(COE_IMP, 1) < round(COE, 1) & round(COE_IMP, 1) < round(IMPEGNI, 1) & x < 1 ~ "ripro")
@@ -1106,7 +1105,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
         mutate(x_AMBITO_FSE_FESR = as.character(x_AMBITO_FSE_FESR)) %>%
         separate_rows(OC_CODICE_PROGRAMMA, sep = ":::") %>%
         # recupera x_vars
-        left_join(po %>%
+        left_join(po_riclass %>%
                     select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO),
                   by = c("OC_CODICE_PROGRAMMA")) %>%
         # modifica x_AMBITO
@@ -1988,6 +1987,29 @@ workflow_operazioni_ecomix <- function(bimestre, progetti, debug=FALSE) {
 
 
 
+make_report_macroaree_coesione <- function(risorse=NULL, perimetro=NULL, export=TRUE) {
+  
+  if (is.null(risorse)) {
+    risorse <- make_report_risorse_coesione(use_meuro=TRUE, tipo_ciclo="STRATEGIA", export=FALSE)
+  }
+  
+  if (is.null(perimetro)) {
+    perimetro <- prep_perimetro_bimestre_coesione(bimestre, usa_meuro=TRUE)
+  }
+  
+  out <- risorse %>%
+    full_join(perimetro %>% 
+                group_by(x_CICLO, x_AMBITO, x_MACROAREA) %>%
+                summarise(COE = sum(COE, na.rm = TRUE),
+                          COE_IMP = sum(COE_IMP, na.rm = TRUE),
+                          COE_PAG = sum(COE_PAG, na.rm = TRUE)))
+  
+  if (export == TRUE) {
+    write.csv2(out, file.path(TEMP, "report_macroaree.csv"), row.names = FALSE)
+  }
+  
+  return(out)
+}
 
 
 

@@ -39,16 +39,6 @@ library("devtools")
 devtools::load_all(path = ".")
 
 # setup
-# oc_init(
-#   bimestre = "20191231",
-#   db_ver = "NIGHTLY",
-#   data_path = "/home/antonio/dati/oc",
-#   use_drive=TRUE,
-#   DEV_MODE=TRUE
-#   )
-
-
-# setup
 oc_init(
   bimestre = "20201231",
   elab = "SETUP",
@@ -221,6 +211,6 @@ system(
   # paste0("git tag v", oc_ver, "-REV.01")
   )
 
-  # HAND: push
+# HAND: push
 
 
