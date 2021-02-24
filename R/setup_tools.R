@@ -228,6 +228,18 @@ setup_light <- function(bimestre, fix = FALSE) {
              # OC_FOCUS
       )
 
+    # add QSN
+    operazioni_713_raw <- read_sas(file.path(DATA, "operazioni_fltok.sas7bdat"))
+    
+    appo <- operazioni_713_raw %>%
+      distinct(COD_LOCALE_PROGETTO = cod_locale_progetto,
+             QSN_CODICE_OBIETTIVO_SPECIFICO = qsn_codice_obiettivo_specifico,
+             QSN_DESCR_OBIETTIVO_SPECIFICO = qsn_descr_obiettivo_specifico)
+    
+    progetti_light <- progetti_light %>%
+      left_join(appo, by = "COD_LOCALE_PROGETTO")
+    
+    
     # clean & fix
     if (fix == TRUE) {
       progetti_light <- fix_progetti(progetti_light)
