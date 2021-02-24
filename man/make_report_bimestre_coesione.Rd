@@ -4,7 +4,7 @@
 \alias{make_report_bimestre_coesione}
 \title{Crea report bimestre in modalita' "coesione"}
 \usage{
-make_report_bimestre_coesione(programmi = NULL, export = TRUE)
+make_report_bimestre_coesione(programmi, export = TRUE)
 }
 \arguments{
 \item{programmi}{Dataset in formato "programmi" da make_report_programmi_coesione()}

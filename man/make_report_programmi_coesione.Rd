@@ -7,10 +7,13 @@
 make_report_programmi_coesione(
   perimetro,
   usa_meuro = FALSE,
-  add_713 = FALSE,
+  use_713 = FALSE,
   add_totali = FALSE,
+  use_cp2 = FALSE,
   focus = "report",
-  export = FALSE
+  export = FALSE,
+  progetti = NULL,
+  po_riclass = NULL
 )
 }
 \arguments{
@@ -18,11 +21,19 @@ make_report_programmi_coesione(
 
 \item{usa_meuro}{Vuoi i dati in Meuro? Di default sono in euro.}
 
-\item{add_713}{Vuoi caricare anche i dati di programmaizone per il 2007-2013?}
+\item{use_713}{Vuoi caricare anche i dati di programmaizone per il 2007-2013?}
+
+\item{add_totali}{Vuoi aggiungere valori calcolati in termini di costo pubblico?}
+
+\item{use_cp2}{Se add_totali == TRUE, vuoi raddoppiare i valori relativi ai progetti multi-programma?}
 
 \item{focus}{nome per file.}
 
 \item{export}{vuoi salvare il file?}
+
+\item{progetti}{dataset di tipo "progetti" da utilizzare per con add_totali == TRUE}
+
+\item{po_riclass}{dataset di tipo "po_riclass" da utilizzare (altrimenti usa default nel package)}
 }
 \value{
 Un file csv con apertura per programma e fase procedurale.

@@ -11,7 +11,10 @@ load_db(
   use_temi = FALSE,
   use_sog = FALSE,
   use_ue = FALSE,
-  use_flt = FALSE
+  use_flt = FALSE,
+  use_articolaz = FALSE,
+  use_location = FALSE,
+  use_ciclo = FALSE
 )
 }
 \arguments{
@@ -19,17 +22,22 @@ load_db(
 
 \item{ambito}{Ambito di programmazione..}
 
-\item{simplify_loc}{Logico. Vuoi semplificare le localizzazioni per compatibilità con lo standard dei Report CD?}
+\item{simplify_loc}{Logico. Vuoi semplificare le localizzazioni per compatibilit? con lo standard dei Report CD?}
 
 \item{use_temi}{Logico. Vuoi avere anche i temi prioritari FSC?}
 
 \item{use_sog}{Logico. Vuoi avere anche il soggetto programmatore?}
 
+\item{use_flt}{Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?}
+
+\item{use_articolaz}{Logico. Oltre ai temi, vuoi importare anche le articolazioni? Utile per FESR e FSE}
+
+\item{use_location}{Logico. Vuoi avere anche la localizzazione dei progetti per Regione e Macroarea?}
+
 \item{use_eu}{Logico. Vuoi avere anche il finanziamento EU e categoria di regione? (solo per SIE)}
 }
 \value{
-Il dataset di programmazione per l'ambito richiesto, con pulizia delle denominazioni territoriali e
-della codifica di aree tematiche e temi prioritari FSC.
+
 }
 \description{
 Carica il datase richiesto dal dataset della programmazione.
