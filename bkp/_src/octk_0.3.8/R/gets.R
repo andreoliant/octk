@@ -253,13 +253,13 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
 
   df <- df %>%
     mutate(x_MACROAREA = case_when(COD_REGIONE %in% reg_cn ~ "Centro-Nord",
-                                 COD_REGIONE %in% reg_sud ~ "Sud",
-                                 COD_REGIONE == "000" ~ "Nazionale", # AMBITO NAZIONALE
+                                 COD_REGIONE %in% reg_sud ~ "Mezzogiorno",
+                                 COD_REGIONE == "000" ~ "Ambito nazionale", # AMBITO NAZIONALE
                                  grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_cn) == TRUE ~ "Centro-Nord",
-                                 grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_sud) == TRUE ~ "Sud",
+                                 grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_sud) == TRUE ~ "Mezzogiorno",
                                  grepl(":::", COD_REGIONE) ~ "Trasversale", # MEMO: multi-regionale su più macroaree
                                  TRUE ~ "Estero")) %>%
-    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")))
+    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")))
 
   return(df)
 
@@ -586,7 +586,8 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
                                 x_AMBITO == "FSC-POC" ~ "FSC",  # MEMO: forzo su FSC
                                 TRUE ~ x_AMBITO)) %>%
     mutate(x_AMBITO = if_else(x_AMBITO == "IOG", "YEI", x_AMBITO)) %>%
-    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "YEI", "SNAI", "FEASR", "FEAMP", "CTE")))
+    # mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "YEI", "SNAI", "FEASR", "FEAMP", "CTE", "ORD")))
+    refactor_ambito(.)
 
   df <- df %>%
     filter(!(OC_CODICE_PROGRAMMA == "2016XXAMPSAP00" & x_CICLO == "2007-2013"),
@@ -717,7 +718,8 @@ get_simply_non_loc <- function(df) {
                                    x_MACROAREA == "Nazionale" ~ "Ambito nazionale",
                                    x_MACROAREA == "Estero" ~ "Ambito nazionale",
                                    TRUE ~ x_MACROAREA)) %>%
-    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
+    # mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
+    refactor_macroarea(.)
 
   return(df)
 }

@@ -7,9 +7,7 @@
 
 # ----------------------------------------------------------------------------------- #
 # prep di po_riclass
-# MEMO: parte da "oc_programmi.sas7bdat" e verifica variazioni
 # MEMO: parte dalla versione di sviluppo di "octk::po_riclass" che si assume aggiornata al bimestre precedente
-# TODO: implementare direttamente da SAD
 
 # TIPO
 # 0: programma normale
@@ -25,17 +23,18 @@
 # load da DB programmazione
 po <- octk::po_riclass %>%
   filter(TIPO != 2 & TIPO != 3 & TIPO != 9, # MEMO: elimino programmi accorpati e disattivati
-         x_CICLO != "2000-2006",
-         x_AMBITO != "FEASR") %>%
+         # x_AMBITO != "FEASR",
+         x_CICLO != "2000-2006") %>%
   filter(!(grepl(":::", OC_CODICE_PROGRAMMA)))
 
-# DEV: do something here!!!!!! per ora vedi sotto
 
+# TODO: qui va inserito sistema per rigenerare po_riclass direttamente dal DB
 
 # ----------------------------------------------------------------------------------- #
-#  OLD: verifica po_riclass su DB 
+# verifica po_riclass su DB programmazione
 
-programmi <- init_programmazione(add_713 = TRUE, export = FALSE) %>%
+
+programmi <- init_programmazione(use_713 = TRUE) %>%
   count(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
 
 # chk
@@ -56,54 +55,21 @@ chk_right <- programmi %>%
 write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 
 
+# HAND:
+# Integrare a mano a "po_riclass.csv" con:
+# - righe di "chk_right" con ":::" >>> entrano tutte dritte
+# - altre righe di "chk_right" >>> verificare sovrapposizione con righe gia censite ed eventualmente integrare il DB Programmazione
+# - le righe di "chk_lef" restano ma non sono ricomprese in programmazione ()
+
+
 # load in package as .rda
 source(file.path(getwd(), "setup", "setup_data.R"))
 devtools::load_all(path = ".")
 
 
 # ----------------------------------------------------------------------------------- #
-# OLD: verifica po_riclass su sas
-
-# laod da sas
-# path <- "/Volumes/GoogleDrive/Drive condivisi/DATI/20190831/DASAS/DATABASE/oc_programmi.sas7bdat"
-path <- file.path(DATA, "oc_programmi.sas7bdat")
-po_sas <- read_sas(path)
-# MEMO: oc_programmi.sas7bdat scaricato a mano e messo in DATA
-
-
-# chk
-chk_match(po, po_sas, id = "OC_CODICE_PROGRAMMA")
-# area         obs obs_na obs_n  id_n obs_m  id_m
-# <chr>      <int>  <int> <int> <int> <int> <int>
-# 1 left         367      0   367   365     4     2
-# 2 right        652      0   652   638    27    13
-# 3 inner        303      0   303   287    31    15
-# 4 semi_left    289      0   289   287     4     2
-# 5 anti_left     78      0    78    78     0     0
-# 6 semi_right   301      0   301   287    27    13
-# 7 anti_right   351      0   351   351     0     0
-
-# chk scarti da DB
-chk_left <- po %>%
-  anti_join(po_sas %>%
-              select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ),
-            by = "OC_CODICE_PROGRAMMA")
-write_csv(chk_left, file.path(TEMP, "chk_left.csv"))
-
-# chk nuovi da SAS
-chk_right <- po_sas %>%
-  select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ) %>%
-  anti_join(po,
-            by = "OC_CODICE_PROGRAMMA")
-write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
-
-# HAND:
-# Integrare a mano a "po_riclass.csv" con:
-# - righe di "chk_right" con ":::" >>> entrano tutte dritte
-# - altre righe di "chk_right" >>> verificare sovrapposizione con righe gia censite ed eventualmente integrare il DB Programmazione
-# - le righe di "chk_lef" restano ma non sono ricomprese in SAS
-
 # OLD:
+
 # progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
 # make_po_riclass(bimestre)
 # chk_delta_po_riclass("NEW")
@@ -123,10 +89,44 @@ write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 
 
 # ----------------------------------------------------------------------------------- #
+# chk nuovi programmi da preesteso
+
+
+#load
+progetti_all <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE)
+
+
+# chk mismatch con po_riclass (trova nuovi programmi)
+progetti_all %>% 
+  count(OC_CODICE_PROGRAMMA) %>%
+  anti_join(po, by = "OC_CODICE_PROGRAMMA") %>%
+  filter(!(grepl(":::", OC_CODICE_PROGRAMMA)))
+# MEMO: qui non controlla i programmi ":::" che sono esclusi a monte in po
+
+# chk mismatch con get_x_vars per i programmi misti e anomalie
+progetti_all %>%
+  # fix_progetti(.) %>%
+  get_x_vars(.) %>%
+  filter(is.na(x_CICLO) | is.na(x_AMBITO)) %>%
+  count(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
+# MEMO: qui dovrennero rimanere come problematici solo i programmi ":::"
+
+# HAND: integra po_riclass.csv (e DB in caso di codifiche assenti)
+# HAND: integra fix_progetti() per gestire anomalie
+
+
+
+# reload
+source(file.path(getwd(), "setup", "setup_data.R"))
+devtools::load_all(path = ".")
+
+
+
+# ----------------------------------------------------------------------------------- #
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20200630"
+bimestre_old <- "20201031"
 # bimestre_old <- "20191031"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
@@ -134,20 +134,11 @@ progetti_all_old <- load_progetti(bimestre = bimestre_old,
                                   data_path = data_path_old,
                                   visualizzati = FALSE, debug = TRUE)
 
-progetti_all <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE)
 
 
 # chk disattivati e nuovi
 chk_match(progetti_all_old, progetti_all, id = "COD_LOCALE_PROGETTO")
 
-# test nuovi programmi assenti in po_riclass (FIX da sopra)
-progetti_all %>% 
-  count(OC_CODICE_PROGRAMMA) %>%
-  anti_join(po, by = "OC_CODICE_PROGRAMMA") %>%
-  filter(!(grepl(":::", OC_CODICE_PROGRAMMA)))
-
-source(file.path(getwd(), "setup", "setup_data.R"))
-devtools::load_all(path = ".")
 
 # non visualizzati
 chk <- progetti_all_old %>%
@@ -195,155 +186,59 @@ chk2 <- progetti_all_old %>%
   mutate(CP.chk = CP.new - CP.old)
 
 # ricerca progetti persi
-temp <- chk2 %>% filter(is.na(x_AMBITO.old), is.na(x_AMBITO.new))
 temp <- chk2 %>% filter(!is.na(OC_CODICE_PROGRAMMA.new), x_AMBITO.old != "FEAMP", is.na(x_AMBITO.new))
 temp %>% filter(is.na(x_AMBITO.old))
 write.csv2(temp, file.path(TEMP, paste0("chk_ambito_na.csv")), row.names = FALSE)
-
-# chk vari
-progetti_all_old %>%
-  filter(is.na(OC_CODICE_PROGRAMMA))
-
-temp <- progetti_all_old %>% 
-  filter(COD_LOCALE_PROGETTO == "7PUA1006.392")
-
-temp2 <- progetti_all %>%
-  fix_progetti(.) %>%
-  get_x_vars(.)
-
-temp2 %>% count(x_AMBITO)
-
-temp3 <- temp2 %>% 
-  filter(is.na(x_AMBITO)) %>%
-  select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, FONDO_COMUNITARIO, OC_FLAG_VISUALIZZAZIONE)
-
-write.csv2(temp3, file.path(TEMP, paste0("chk_fondo_comunitario_na.csv")), row.names = FALSE)
-
-
-# chk2 %>% arrange(desc(CP.chk))
-# chk2 %>% filter(is.na(x_AMBITO.new), OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_CODICE_PROGRAMMA.new)
-# chk2 %>% filter(x_AMBITO.new == "FESR", OC_FLAG_VISUALIZZAZIONE.new == 0) %>% count(OC_FLAG_VISUALIZZAZIONE.old)
-#
-# temp <- chk2 %>% filter(is.na(x_CICLO.old), is.na(x_CICLO.new))
-#
-#                         # == "2007-2013", x_AMBITO.new == "FSC", OC_FLAG_VISUALIZZAZIONE.new == 0, CP.chk > 0)
-#
-# temp <- chk2 %>% filter(x_CICLO.new == "2007-2013", x_AMBITO.new == "FSC", OC_FLAG_VISUALIZZAZIONE.new == 0, CP.chk > 0)
-# write_csv2(temp, file.path(TEMP, "chk_fsc713.csv"))
-
-
-
-# chk mismatch con po_riclass
-temp <- progetti_all %>%
-  # mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630 e 20190831
-  #                                      TRUE ~ FONDO_COMUNITARIO)) %>%
-  get_x_vars(.) %>%
-  filter(is.na(x_CICLO))
-
-write_csv2(temp, file.path(TEMP, "chk_missing.csv"))
-
-
-
-# OC_CODICE_PROGRAMMA FONDO_COMUNITARIO      n
-# <chr>               <chr>              <int>
-# 1 2014IT05M9OP001     Y.E.I             129868
-# 2 2014IT14MFOP001     NA                    34
-
-# verifica anomalia 20181231
-# delta_old <- read_csv2(file.path(INPUT, "chk_delta_preesteso.csv"))
-# delta_old %>% semi_join(progetti)
-# # CHK: capire perché questi "non visualizzati" a dicembre sono stati recuperati
-#
-# delta_old %>%
-#   # semi_join(progetti_all) %>%
-#   semi_join(progetti) %>%
-#   filter(X_PROGRAMMA == "PS AREE METROPOLITANE LOMBARDIA")
-# # MEMO: questi 2 sono stati eliminati
-
-rm(progetti_all, progetti_all_old)
 
 
 # ----------------------------------------------------------------------------------- #
 # verifica x_vars
 
-progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
 
-# chk anomalie ":::CCI"
-# chk <- progetti %>%
-#   filter(grepl("^:::2017POIMPCOMFSC", OC_CODICE_PROGRAMMA))
-
-# chk %>%
-#   get_x_vars(.) %>%
-#   count(OC_CODICE_PROGRAMMA, x_CICLO, X_CICLO, x_AMBITO, X_AMBITO)
-
-
-# verifica x_vars
-# progetti <- fix_progetti(progetti) # MEMO: questo va escluso prima e aggiunto poi per testare se il fix funziona ancora o va integrato
-appo <- get_x_vars(progetti)
-# appo <- get_macroarea(appo, real_reg=TRUE)
-# appo <- get_regione_simply(appo)
-# appo <- refactor_progetti(appo)
-appo %>%
+progetti_all %>%
+  fix_progetti(.) %>%
+  get_x_vars(.) %>%
   count(x_CICLO, X_CICLO, x_AMBITO, X_AMBITO)
 
-# chk mismatch su ambito
-chk <- appo %>%
-  filter(x_AMBITO == "POC", X_AMBITO == "FESR-FSE") %>%
-  mutate(CHK = "poc>fesr-fse") %>%
-  bind_rows(appo %>%
-              filter(x_AMBITO == "POC", X_AMBITO == "FESR") %>%
-              mutate(CHK = "poc>fesr")) %>%
-  bind_rows(appo %>%
-              filter(x_AMBITO == "FSC", X_AMBITO == "FESR-FSE") %>%
-              mutate(CHK = "fsc>fesr-fse"))
 
-write_csv2(chk, file.path(TEMP, paste0("chk_mismatch_ambito_", bimestre, ".csv")))
-
-chk %>%
-  count(OC_CODICE_PROGRAMMA, x_CICLO, X_CICLO, x_AMBITO, X_AMBITO, OC_COD_FONTE)
-# OC_CODICE_PROGRAMMA x_CICLO   X_CICLO   x_AMBITO X_AMBITO OC_COD_FONTE     n
-# <chr>               <chr>     <chr>     <fct>    <chr>    <chr>        <int>
-# 1 2016POCIMPRESE1     2014-2020 2014-2020 POC      FESR     FS1420          10
-# 2 2017FSCRICERCA      2014-2020 2014-2020 FSC      FESR-FSE FS1420          42
-# 3 2017POCRICERCA1     2014-2020 2014-2020 POC      FESR-FSE FS1420          30
+# chk <- progetti_all %>%
+#   fix_progetti(.) %>%
+#   get_x_vars(.) %>%
+#   filter(x_AMBITO == "FESR", X_AMBITO == "FSC")
 
 
-# verifica calabria
-# chk <- appo %>%
-#   filter(is.na(x_AMBITO))
-# chk %>%
-#   count(OC_CODICE_PROGRAMMA, x_PROGRAMMA)
-# write.csv2(chk, file.path(OUTPUT, "anomalie_calabria.csv"))
+progetti_all %>%
+  fix_progetti(.) %>%
+  get_x_vars(.) %>%
+  count(x_REGNAZ, X_REGNAZ) %>%
+  filter(x_REGNAZ != X_REGNAZ)
 
-# A tibble: 1 x 3
-# OC_CODICE_PROGRAMMA x_PROGRAMMA               n
-# 2014IT16M2OP006     POR CALABRIA FESR-FSE    27
+# chk <- progetti_all %>%
+#   fix_progetti(.) %>%
+#   get_x_vars(.) %>%
+#   filter(x_REGNAZ == "NAZ", X_REGNAZ == "MOLISE")
 
-# HAND: aggiorna po_riclass.csv e ricarica con script sotto
-# HAND: aggiorna fix_progetti in loaders.R
+# x_REGNAZ X_REGNAZ     n
+# <chr>    <chr>    <int>
+# 1 LAZIO    NAZ          1 # POR vs Piano Impresa (vince POR)
+# 2 NAZ      ABRUZZO      4 # GSSI
+# 3 NAZ      CAMPANIA    26 # METANIZZAZIONE vs PATTO (vince METANIZZAZIONE)
+# 4 NAZ      MOLISE      46 # CIS MOLISE (va a coumuni e non a regione)
 
-chk <- appo %>%
-  count(x_REGNAZ, X_REGNAZ)
 
-chk <- appo %>%
-  filter(x_REGNAZ == "NAZ", X_REGNAZ != "NAZ")
-# MEMO: qui va aggiornato lato SAS # ok per 20190630 e seguenti
+progetti_all %>%
+  fix_progetti(.) %>%
+  get_x_vars(.) %>%
+  get_macroarea(., real_reg=TRUE) %>%
+  # get_regione_simply(.) %>%
+  count(x_MACROAREA, x_REGNAZ, x_REGIONE) %>%
+  filter(x_REGNAZ != x_REGIONE)
 
-chk %>%
-  count(x_PROGRAMMA)
-
-# test
-appo <- get_macroarea(appo, real_reg=TRUE)
-appo <- get_regione_simply(appo)
-
-chk <- appo %>%
-  count(x_MACROAREA, x_REGNAZ, x_REGIONE)
-
-rm(appo, progetti)
+# Errore: '/home/antonio/dati/oc/20201231/../20201231/progetti_light_20201231.csv' does not exist. 
 
 
 
 
-
+rm(progetti_all, progetti_all_old)
 
 

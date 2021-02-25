@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.3.8"
+oc_ver <- "0.4.0"
 
 # rm(list=ls())
 library("devtools")
@@ -39,23 +39,13 @@ library("devtools")
 devtools::load_all(path = ".")
 
 # setup
-# oc_init(
-#   bimestre = "20191231",
-#   db_ver = "NIGHTLY",
-#   data_path = "/home/antonio/dati/oc",
-#   use_drive=TRUE,
-#   DEV_MODE=TRUE
-#   )
-
-
-# setup
 oc_init(
-  bimestre = "20200831",
+  bimestre = "20201231",
   elab = "SETUP",
   focus = "setup",
   ver = "V.01",
   data_path = "/home/antonio/dati/oc",
-  db_ver = "NIGHTLY",
+  db_ver = "NUOVO DB/20201231",
   use_drive = TRUE,
   # drive_root = "/home/antonio/ExpanDrive/OC/Team Drives"
   drive_root = "/home/antonio/ExpanDrive/OC/Shared Drives"
@@ -128,6 +118,13 @@ install.packages(temp, repos = NULL, type="source")
 # WARNING: it is platform specific!
 
 
+# CHK:
+# ** byte-compile and prepare package for lazy loading
+# Note: possible error in 'init_programmazione(usa_temi = FALSE, ': unused arguments (usa_temi = FALSE, add_713 = add_713, export = FALSE) 
+# Note: possible error in 'init_programmazione(usa_temi = FALSE, ': unused arguments (usa_temi = FALSE, add_713 = add_713, export = FALSE) 
+# Note: possible error in 'init_programmazione(usa_temi = FALSE, ': unused arguments (usa_temi = FALSE, export = FALSE) 
+
+
 # ----------------------------------------------------------------------------------- #
 # NIGHTLY to Drive
 
@@ -153,53 +150,55 @@ system(
          'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"'
   )
 )
-
-
-# ----------------------------------------------------------------------------------- #
-# backup source
-
-system(
-  paste0('VERS="octk_', oc_ver, '";',
-         "mkdir bkp/_src/$VERS;",
-         "cp README.md bkp/_src/$VERS/;",
-         "cp DESCRIPTION bkp/_src/$VERS/;",
-         "cp NAMESPACE bkp/_src/$VERS/;",
-         "cp -r setup bkp/_src/$VERS/;",
-         "cp -r R bkp/_src/$VERS/;",
-         "cp -r data bkp/_src/$VERS/;",
-         "cp -r vignettes bkp/_src/$VERS/;",
-         "cp -r man bkp/_src/$VERS/;",
-         "cp -r inst bkp/_src/$VERS/"
-         )
+  
+  
+  # ----------------------------------------------------------------------------------- #
+  # backup source
+  
+  system(
+    paste0('VERS="octk_', oc_ver, '";',
+           "mkdir bkp/_src/$VERS;",
+           "cp README.md bkp/_src/$VERS/;",
+           "cp DESCRIPTION bkp/_src/$VERS/;",
+           "cp NAMESPACE bkp/_src/$VERS/;",
+           "cp -r setup bkp/_src/$VERS/;",
+           "cp -r R bkp/_src/$VERS/;",
+           "cp -r data bkp/_src/$VERS/;",
+           "cp -r vignettes bkp/_src/$VERS/;",
+           "cp -r man bkp/_src/$VERS/;",
+           "cp -r inst bkp/_src/$VERS/"
+           )
+    )
+  
+  
+  # ----------------------------------------------------------------------------------- #
+  # google drive sync
+  
+  # OLD
+  # system(
+  #   paste0("DEV_BKP='/home/antonio/coding/octk/bkp/';",
+  #          "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK';",
+  #          'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"'
+  #   )
+  # )
+  
+  # src
+  system(
+    paste0("DEV_BKP='/home/antonio/coding/octk/bkp/_src/octk_", oc_ver, "/';",
+           # "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/_src/octk_", oc_ver, "';",
+           "GOOGLE='/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/_src/octk_", oc_ver, "';",
+           'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE";'
+    )
   )
-
-
-# ----------------------------------------------------------------------------------- #
-# google drive sync
-
-# OLD
-# system(
-#   paste0("DEV_BKP='/home/antonio/coding/octk/bkp/';",
-#          "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK';",
-#          'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"'
-#   )
-# )
-
-# src
-system(
-  paste0("DEV_BKP='/home/antonio/coding/octk/bkp/_src/octk_", oc_ver, "/';",
-         "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/_src/octk_", oc_ver, "';",
-         'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE";'
+  
+  # file tar.gz 
+  system(
+    paste0("DEV_BKP='/home/antonio/coding/octk/bkp/octk_", oc_ver,".tar.gz';",
+           'GOOGLE="/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/octk_', oc_ver, '.tar.gz";',
+           # 'GOOGLE="/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/octk_', oc_ver, '.tar.gz";',
+           'cp "$DEV_BKP" "$GOOGLE";'
+    )
   )
-)
-
-# file tar.gz 
-system(
-  paste0("DEV_BKP='/home/antonio/coding/octk/bkp/octk_", oc_ver,".tar.gz';",
-         'GOOGLE="/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/octk_', oc_ver, '.tar.gz";',
-         'cp "$DEV_BKP" "$GOOGLE";'
-  )
-)
 
 
 # ----------------------------------------------------------------------------------- #

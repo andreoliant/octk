@@ -229,7 +229,7 @@ setup_light <- function(bimestre, fix = FALSE) {
       )
 
     # add QSN
-    operazioni_713_raw <- read_sas(file.path(DATA, "operazioni_fltok.sas7bdat"))
+    operazioni_713_raw <- read_sas(file.path(DATA, "oper_fltok_preesteso.sas7bdat"))
     
     appo <- operazioni_713_raw %>%
       distinct(COD_LOCALE_PROGETTO = cod_locale_progetto,

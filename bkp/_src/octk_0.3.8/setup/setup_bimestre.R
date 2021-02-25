@@ -33,7 +33,7 @@
 
 
 progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
-# progetti <- fix_progetti(progetti)
+progetti <- fix_progetti(progetti)
 
 # po_linee_azioni.csv
 make_matrix_po(bimestre)
@@ -57,6 +57,13 @@ make_prog_comp(bimestre)
 make_patt(bimestre)
 
 
+# TODO: estendere lista RA
+
+# progetti %>%
+#   count(COD_RISULTATO_ATTESO, DESCR_RISULTATO_ATTESO) %>%
+#   filter(!(grepl(":::", COD_RISULTATO_ATTESO))) %>%
+#   write_csv2(file.path(TEMP, "ra.csv"))
+
 
 # ----------------------------------------------------------------------------------- #
 # data
@@ -75,7 +82,7 @@ devtools::load_all(path = ".")
 setup_light(bimestre, fix = TRUE)
 # setup_light(bimestre, fix = FALSE)
 
-# operazioni lightvie
+# operazioni light
 # progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE, light = FALSE)
 # progetti <- fix_progetti(progetti)
 # setup_operazioni(bimestre, progetti, export=TRUE, debug=TRUE)
@@ -118,14 +125,14 @@ write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
 # però quelli del fix sul CCI sembrano corretti
 
 # patch operazioni in "2014IT16M2OP002:::2016PATTIPUG" senza FONDO_COMUNITARIO
-chk <- operazioni %>%
-  filter(is.na(x_AMBITO))
-chk %>% count(FONDO_COMUNITARIO, OC_CODICE_PROGRAMMA)
-
-operazioni_rev <- operazioni %>%
-  mutate(x_AMBITO = case_when(OC_CODICE_PROGRAMMA == "2014IT16M2OP002" & is.na(FONDO_COMUNITARIO) ~ "FESR",
-                              TRUE ~ x_AMBITO))
-write.csv2(operazioni_rev, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), row.names = FALSE)
+# chk <- operazioni %>%
+#   filter(is.na(x_AMBITO))
+# chk %>% count(FONDO_COMUNITARIO, OC_CODICE_PROGRAMMA)
+# 
+# operazioni_rev <- operazioni %>%
+#   mutate(x_AMBITO = case_when(OC_CODICE_PROGRAMMA == "2014IT16M2OP002" & is.na(FONDO_COMUNITARIO) ~ "FESR",
+#                               TRUE ~ x_AMBITO))
+# write.csv2(operazioni_rev, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), row.names = FALSE)
 
 
 

@@ -8,7 +8,7 @@ add_delta_programmi_coesione(
   bimestre,
   programmi,
   last_bimestre,
-  last_data_path,
+  last_data_path = NULL,
   usa_meuro = FALSE,
   focus = "delta",
   export = FALSE

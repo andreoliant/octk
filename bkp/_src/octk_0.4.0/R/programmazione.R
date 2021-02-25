@@ -173,10 +173,10 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
 #'
 #' Carica il databse della programmazione, con pulizia della codifica di aree tematiche e temi prioritari FSC.
 #'
-#' @param usa_temi Vuoi caricare il DB con correzione dei temi prioritari?
-#' @param usa_sog Vuoi caricare il DB con il soggetto programmatore?
-#' @param usa_eu Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)
-#' @param usa_713 Vuoi caricare anche il DB per il 2007-2013?
+#' @param use_temi Vuoi caricare il DB con correzione dei temi prioritari?
+#' @param use_sog Vuoi caricare il DB con il soggetto programmatore?
+#' @param use_eu Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)
+#' @param use_713 Vuoi caricare anche il DB per il 2007-2013?
 #' @return L'intero database dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.
 init_programmazione <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use_flt=FALSE, use_713=FALSE, use_articolaz=FALSE, use_location=FALSE, use_ciclo=FALSE, use_en=FALSE)
 {
@@ -538,10 +538,21 @@ workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL)
 #' @param use_meuro Vuoi i dati in Meuro? Di default sono in euro.
 #' @param export vuoi salvare il file?
 #' @return Un file csv con apertura per ciclo e macroarea.
-make_report_risorse_coesione <- function(ciclo=NULL, use_meuro=FALSE, tipo_ciclo="STRATEGIA", export=FALSE) {
+make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, tipo_ciclo="STRATEGIA", export=FALSE) {
   
   programmi <- init_programmazione(use_temi = FALSE, use_713 = TRUE, use_location = TRUE, use_ciclo = TRUE, use_eu = TRUE) %>%
     rename(x_MACROAREA = OC_MACROAREA)
+  
+  # programmi %>% count(x_MACROAREA)
+  
+  programmi <- programmi %>% 
+    mutate(x_MACROAREA = case_when(x_MACROAREA == "CN" ~ "Centro-Nord",
+                                   x_MACROAREA == "SUD" ~ "Mezzogiorno",
+                                   x_MACROAREA == "MZ" ~ "Mezzogiorno",
+                                   x_MACROAREA == "ND" ~ "Ambito nazionale",
+                                   x_MACROAREA == "NC" ~ "Ambito nazionale",
+                                   x_MACROAREA == "VOID" ~ "Ambito nazionale",
+                                   TRUE ~ x_MACROAREA))
   
   if (!is.null(ciclo)) {
     programmi %>%
@@ -556,12 +567,15 @@ make_report_risorse_coesione <- function(ciclo=NULL, use_meuro=FALSE, tipo_ciclo
   out <- programmi %>%
     group_by(x_CICLO, x_AMBITO, x_MACROAREA) %>%
     summarise(FINANZ_TOTALE_PUBBLICO = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE),
-              FINANZ_UE = sum(FINANZ_UE, na.rm = TRUE))
+              FINANZ_UE = sum(FINANZ_UE, na.rm = TRUE)) %>%
+    refactor_macroarea(.)
   
   if (use_meuro == TRUE) {
     out <- out %>%
       mutate(FINANZ_TOTALE_PUBBLICO = round(FINANZ_TOTALE_PUBBLICO / 1000000, 1),
-             FINANZ_UE = round(FINANZ_UE / 1000000, 1))
+             FINANZ_UE = round(FINANZ_UE / 1000000, 1)) %>%
+      rename(RISORSE = FINANZ_TOTALE_PUBBLICO,
+             RISORSE_UT = FINANZ_UE)
   }
   
   if (export == TRUE) {

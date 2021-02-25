@@ -109,9 +109,9 @@ fix_progetti <- function(progetti) {
   #                                        TRUE ~ FONDO_COMUNITARIO))
 
   # fix temporaneo per YEI
-  progetti <- progetti %>%
-    mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
-                                         TRUE ~ FONDO_COMUNITARIO))
+  # progetti <- progetti %>%
+  #   mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
+  #                                        TRUE ~ FONDO_COMUNITARIO))
 
   # fix temporaneo per IOG>YEI
   progetti <- progetti %>%
@@ -161,7 +161,7 @@ fix_progetti <- function(progetti) {
 
 #' Refactor per perimetro di progetti
 #'
-#' Integra un perimetro di progetti appena caricato con i factor per x_MACROAREA, x_AMBITO e OC_STATO_PROCEDURALE.
+#' Integra un perimetro di progetti appena caricato con i factor per x_MACROAREA, x_CICLO, x_AMBITO e OC_STATO_PROCEDURALE.
 #'
 #' @param perimetro Dataset in formato standard.
 #' @return Il dataset integrato.
@@ -169,15 +169,74 @@ refactor_progetti <- function(perimetro) {
 
   perimetro <- perimetro %>%
     mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
-           x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
-                                                  "FEAD", "FAMI", "CTE")),
-           x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")),
+           # x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
+           #                                        "FEAD", "FAMI", "CTE")),
+           # x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")),
            OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE, levels = c("Non avviato",
                                                                           "In avvio di progettazione",
                                                                           "In corso di progettazione",
                                                                           "In affidamento",
                                                                           "In esecuzione",
                                                                           "Eseguito",
-                                                                          "Non determinabile")))
+                                                                          "Non determinabile"))) %>%
+    refactor_ambito(.) %>%
+    refactor_ciclo(.)
+  
   return(perimetro)
+}
+
+
+
+#' Refactor di x_AMBITO
+#'
+#' Integra un perimetro di progetti con factor di x_AMBITO.
+#'
+#' @param df Dataset progetti in formato standard.
+#' @return Il dataset integrato.
+refactor_ambito <- function(df) {
+  
+  levels_ambito <- c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
+                     "FEAD", "FAMI", "CTE", "ORD", "PAC")
+  
+  df <- df %>%
+    mutate(x_AMBITO = factor(x_AMBITO, levels = levels_ambito))
+  
+  return(df)
+  
+}
+
+
+#' Refactor di x_CICLO
+#'
+#' Integra un perimetro di progetti con factor di x_CICLO.
+#'
+#' @param df Dataset progetti in formato standard.
+#' @return Il dataset integrato.
+refactor_ciclo <- function(df) {
+  
+  levels_ciclo <- c("2014-2020", "2007-2013", "2000-2006")
+  
+  df <- df %>%
+    mutate(x_CICLO = factor(x_CICLO, levels = levels_ciclo))
+  
+  return(df)
+  
+}
+
+
+#' Refactor di x_MACROAREA
+#'
+#' Integra un perimetro di progetti con factor di x_MACROAREA
+#'
+#' @param df Dataset progetti in formato standard.
+#' @return Il dataset integrato.
+refactor_macroarea <- function(df) {
+  
+  levels_macroarea <- c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")
+  
+  df <- df %>%
+    mutate(x_MACROAREA = factor(x_MACROAREA, levels = levels_macroarea))
+  
+  return(df)
+  
 }

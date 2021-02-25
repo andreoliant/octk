@@ -912,7 +912,9 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
                                            focus="report", export=FALSE, progetti=NULL, po_riclass=NULL) {
   
   # DEBUG: use_713 <- TRUE
-  programmi <- init_programmazione(use_temi=FALSE, use_713=use_713)
+  programmi <- init_programmazione(use_temi=FALSE, use_713=use_713) %>%
+    rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA,
+           x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA)
   
   # patch YEI
   programmi <- programmi %>%
@@ -939,8 +941,6 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
   # perimetro %>% count(x_CICLO, x_AMBITO, x_GRUPPO) %>% filter(x_CICLO == "2007-2013")
   
   spalla <- programmi %>%
-    rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA,
-           x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA) %>%
     # MEMO: patch per factor di x_AMBITO e x_CICLO
     # mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
     #                                               "FEAD", "FAMI", "CTE", "ORD")),
@@ -1047,7 +1047,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
                IMP = IMP / 1000000,
                PAG = PAG / 1000000)
     }
-    
+
     out <- out %>%
       left_join(progetti %>%
                   group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO) %>%
@@ -1094,6 +1094,8 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
       refactor_ambito(.) %>%
       refactor_ciclo(.)
     
+    # CHK: QUI ACCODA RIGHE ":::" A QUELLE BASE
+    
     # versione con cp2
     if (use_cp2 == TRUE) {
       
@@ -1106,8 +1108,12 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
         separate_rows(OC_CODICE_PROGRAMMA, sep = ":::") %>%
         # recupera x_vars
         left_join(po_riclass %>%
-                    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO),
-                  by = c("OC_CODICE_PROGRAMMA")) %>%
+                    select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO),
+                  by = "OC_CODICE_PROGRAMMA") %>%
+        # left_join(programmi %>%
+        #             as_tibble(.) %>%
+        #             distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA),
+        #           by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO")) %>%
         # modifica x_AMBITO
         mutate(x_AMBITO = case_when(x_AMBITO == "FESR-FSE" ~ x_AMBITO_FSE_FESR, # MEMO: split per programmi pluri-fondo
                                     x_AMBITO == "YEI-FSE" ~ x_AMBITO_FSE_FESR,
@@ -1115,6 +1121,10 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
                                     TRUE ~ x_AMBITO)) %>%
         refactor_ambito(.) %>%
         refactor_ciclo(.) %>%
+        left_join(programmi %>%
+                    as_tibble(.) %>%
+                    distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA),
+                  by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO")) %>%
         # mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
         #                                               "FEAD", "FAMI", "CTE", "ORD")),
         #        x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006"))) %>%
