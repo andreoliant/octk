@@ -7,7 +7,8 @@
 make_report_risorse(
   ciclo = NULL,
   use_meuro = FALSE,
-  tipo_ciclo = "STRATEGIA",
+  use_flt = FALSE,
+  tipo_ciclo = "CICLO_STRATEGIA",
   export = FALSE
 )
 }
@@ -16,7 +17,9 @@ make_report_risorse(
 
 \item{use_meuro}{Vuoi i dati in Meuro? Di default sono in euro.}
 
-\item{tipo_ciclo}{Vuoi us, use}
+\item{use_flt}{Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?}
+
+\item{tipo_ciclo}{Vuoi usare CICLO_STRATEGIA (default in x_AMBITO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_AMBITO da DB)?}
 
 \item{export}{vuoi salvare il file?}
 }

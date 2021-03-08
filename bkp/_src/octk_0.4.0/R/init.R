@@ -64,7 +64,8 @@ oc_init <- function(bimestre, db_ver,
     }
     # data_path <- file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART")
     # db_path <- file.path(ROOT, "DATI", bimestre, "PROGRAMMAZIONE", db_ver)
-    db_path <- file.path(ROOT, "DATI", "PROGRAMMAZIONE", db_ver)
+    # db_path <- file.path(ROOT, "DATI", "PROGRAMMAZIONE", db_ver)
+    db_path <- file.path(ROOT, "PROGRAMMAZIONE", db_ver)
 
     # switch per naming
     if (is.null(elab) & is.null(focus)) {

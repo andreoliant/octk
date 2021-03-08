@@ -222,10 +222,13 @@ setup_light <- function(bimestre, fix = FALSE) {
              # PROGRAMMATO_INDICATORE_4,
              # REALIZZATO_INDICATORE_4,
              # OC_FLAG_REGIONE_UNICA,
-             OC_FLAG_VISUALIZZAZIONE #,
+             OC_FLAG_VISUALIZZAZIONE,
              # OC_FLAG_PAC,
              # DATA_AGGIORNAMENTO,
              # OC_FOCUS
+             OC_FLAG_BENICONF = OC_FLAG_TAG_BENICONF,
+             OC_FLAG_COVID = COVID
+             
       )
 
     # add QSN

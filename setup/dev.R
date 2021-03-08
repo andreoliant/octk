@@ -45,7 +45,7 @@ oc_init(
   focus = "setup",
   ver = "V.02",
   data_path = "/home/antonio/dati/oc",
-  db_ver = "20201231.01",
+  db_ver = "20201231.00",
   use_drive = TRUE,
   # drive_root = "/home/antonio/ExpanDrive/OC/Team Drives"
   drive_root = "/home/antonio/ExpanDrive/OC/Shared Drives"

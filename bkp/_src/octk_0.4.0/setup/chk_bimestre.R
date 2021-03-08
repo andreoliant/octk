@@ -35,7 +35,10 @@ po <- octk::po_riclass %>%
 
 
 programmi <- init_programmazione(use_713 = TRUE) %>%
-  count(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
+  rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA) %>%
+  count(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO)
+
+write_csv2(programmi, file.path(TEMP = "chk_po_riclass.csv"))
 
 # chk
 chk_match(po, programmi, id = "OC_CODICE_PROGRAMMA")
@@ -44,14 +47,14 @@ chk_match(po, programmi, id = "OC_CODICE_PROGRAMMA")
 chk_left <- po %>%
   select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ) %>%
   anti_join(programmi,
-            by = "OC_CODICE_PROGRAMMA")
+            by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_GRUPPO"))
 write_csv(chk_left, file.path(TEMP, "chk_left.csv"))
 
 # chk scarti da DB
 chk_right <- programmi %>%
   anti_join(po %>%
               select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ),
-            by = "OC_CODICE_PROGRAMMA")
+            by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_GRUPPO"))
 write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 
 
@@ -110,6 +113,12 @@ progetti_all %>%
   filter(is.na(x_CICLO) | is.na(x_AMBITO)) %>%
   count(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
 # MEMO: qui dovrennero rimanere come problematici solo i programmi ":::"
+
+
+progetti_all %>%
+  count(COD_LOCALE_PROGETTO) %>%
+  filter(n > 1)
+
 
 # HAND: integra po_riclass.csv (e DB in caso di codifiche assenti)
 # HAND: integra fix_progetti() per gestire anomalie
@@ -233,8 +242,6 @@ progetti_all %>%
   # get_regione_simply(.) %>%
   count(x_MACROAREA, x_REGNAZ, x_REGIONE) %>%
   filter(x_REGNAZ != x_REGIONE)
-
-# Errore: '/home/antonio/dati/oc/20201231/../20201231/progetti_light_20201231.csv' does not exist. 
 
 
 

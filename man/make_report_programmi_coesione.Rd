@@ -8,8 +8,11 @@ make_report_programmi_coesione(
   perimetro,
   usa_meuro = FALSE,
   use_713 = FALSE,
+  use_flt = FALSE,
   add_totali = FALSE,
   use_cp2 = FALSE,
+  cut_no_risorse = FALSE,
+  tipo_ciclo = "CICLO_STRATEGIA",
   focus = "report",
   export = FALSE,
   progetti = NULL,
@@ -23,9 +26,15 @@ make_report_programmi_coesione(
 
 \item{use_713}{Vuoi caricare anche i dati di programmaizone per il 2007-2013?}
 
+\item{use_flt}{Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?}
+
 \item{add_totali}{Vuoi aggiungere valori calcolati in termini di costo pubblico?}
 
 \item{use_cp2}{Se add_totali == TRUE, vuoi raddoppiare i valori relativi ai progetti multi-programma?}
+
+\item{cut_no_risorse}{Vuoi eliminare i programmi monitorati senza risorse lato DB?}
+
+\item{tipo_ciclo}{Vuoi usare CICLO_STRATEGIA (default in x_AMBITO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_AMBITO da DB)?}
 
 \item{focus}{nome per file.}
 
