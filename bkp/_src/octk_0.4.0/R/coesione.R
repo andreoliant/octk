@@ -919,6 +919,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
   programmi <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo) %>%
     rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA)
+<<<<<<< HEAD
   
   if (use_flt == TRUE) {
     programmi <- programmi %>%
@@ -926,6 +927,9 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
     # MEMO: in FSC resta anche tipo 9 che viene scartato
   }
 
+=======
+    
+>>>>>>> d49258cdd61167962c673714fc604210592caad6
   # patch YEI
   programmi <- programmi %>%
     mutate(x_AMBITO = as.character(x_AMBITO)) %>%

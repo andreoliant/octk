@@ -14,6 +14,11 @@
 #' @param use_articolaz Logico. Oltre ai temi, vuoi importare anche le articolazioni? Utile per FESR e FSE
 #' @param use_location Logico. Vuoi avere anche la localizzazione dei progetti per Regione e Macroarea?
 #' @return Il dataset di programmazione per l'ambito richiesto, con pulizia delle denominazioni territoriali e della codifica di aree tematiche e temi prioritari FSC.
+<<<<<<< HEAD
+=======
+#' load_db <- function(use_ciclo=TRUE, use_ambito=TRUE, simplify_loc=FALSE, use_temi=FALSE, use_sog=FALSE, use_ue=FALSE, use_flt=FALSE, use_articolaz=FALSE, use_location=FALSE){
+# riga 17: si veda proposta di cambio della funzione load_db con l'introduzione di "use_ciclo" e "use_ambito" al posti di variabili ambito e ciclo
+>>>>>>> d49258cdd61167962c673714fc604210592caad6
 load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=FALSE, use_ue=FALSE, use_flt=FALSE, use_articolaz=FALSE, use_location=FALSE, use_ciclo=FALSE){
   
   # DEV: decidere se fare importazione di tutto e poi selezionare variabili a valle....
