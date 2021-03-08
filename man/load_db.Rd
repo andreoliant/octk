@@ -37,7 +37,7 @@ load_db(
 \item{use_eu}{Logico. Vuoi avere anche il finanziamento EU e categoria di regione? (solo per SIE)}
 }
 \value{
-
+Il dataset di programmazione per l'ambito richiesto, con pulizia delle denominazioni territoriali e della codifica di aree tematiche e temi prioritari FSC.
 }
 \description{
 Carica il datase richiesto dal dataset della programmazione.

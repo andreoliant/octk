@@ -14,8 +14,6 @@
 #' @param use_articolaz Logico. Oltre ai temi, vuoi importare anche le articolazioni? Utile per FESR e FSE
 #' @param use_location Logico. Vuoi avere anche la localizzazione dei progetti per Regione e Macroarea?
 #' @return Il dataset di programmazione per l'ambito richiesto, con pulizia delle denominazioni territoriali e della codifica di aree tematiche e temi prioritari FSC.
-#' load_db <- function(use_ciclo=TRUE, use_ambito=TRUE, simplify_loc=FALSE, use_temi=FALSE, use_sog=FALSE, use_ue=FALSE, use_flt=FALSE, use_articolaz=FALSE, use_location=FALSE){
-# riga 17: si veda proposta di cambio della funzione load_db con l'introduzione di "use_ciclo" e "use_ambito" al posti di variabili ambito e ciclo
 load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=FALSE, use_ue=FALSE, use_flt=FALSE, use_articolaz=FALSE, use_location=FALSE, use_ciclo=FALSE){
   
   # DEV: decidere se fare importazione di tutto e poi selezionare variabili a valle....
@@ -40,7 +38,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
                       # CHK: decidere se vive
                       TRUE ~ ambito)
     # filename <- paste0(temp, "_1420.xlsx")
-    filename <- paste0("DEF_DBPROG_", temp, "1420.xlsx") # DEF_DBPROG_FSC1420.xlsx
+    filename <- paste0("DBPROG_", temp, "1420.xlsx") # DBPROG_FSC1420.xlsx
     
   } else {
     temp <- case_when(ambito == "FESR" ~ "SIE", #AF
@@ -49,7 +47,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
                       ambito == "FSC" ~ "FSC", #AF
                       TRUE ~ ambito)
     #filename <- paste0(temp, "_0713.xlsx") # MODIFICA AF
-    filename <- paste0("DEF_DBPROG_", temp, "0713.xlsx") # DEF_DBPROG_FSC0713.xlsx
+    filename <- paste0("DBPROG_", temp, "0713.xlsx") # DBPROG_FSC0713.xlsx
   }
   
   # importa file excel
@@ -126,14 +124,17 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
     
     # patch per dati da consolidare nel DB
     appo <- appo %>%
+      mutate(OC_FLAG_MONITORAGGIO = as.numeric(OC_FLAG_MONITORAGGIO)) %>%
       mutate(OC_FLAG_MONITORAGGIO = case_when(OC_FLAG_MONITORAGGIO == 1 ~ 1,
                                               OC_FLAG_MONITORAGGIO == 0 ~ 0,
-                                              is.na(OC_FLAG_MONITORAGGIO) ~ 1, # questa è poco logica ma dipende dai dati
-                                              OC_FLAG_MONITORAGGIO == "" ~ 1, # questa dovrebbe corrispondere alla condizione sotto
-                                              is.character(OC_FLAG_MONITORAGGIO) & 
-                                                nchar(OC_FLAG_MONITORAGGIO) == 1 ~ 1,
-                                              is.character(OC_FLAG_MONITORAGGIO) & 
-                                                nchar(OC_FLAG_MONITORAGGIO) > 1 ~ 0,
+                                              OC_FLAG_MONITORAGGIO == 2 ~ 2, # presente per FSC e POC
+                                              OC_FLAG_MONITORAGGIO == 9 ~ 9, # presente per FSC
+                                              # is.na(OC_FLAG_MONITORAGGIO) ~ 1, # questa è poco logica ma dipende dai dati
+                                              # OC_FLAG_MONITORAGGIO == "" ~ 1, # questa dovrebbe corrispondere alla condizione sotto
+                                              # is.character(OC_FLAG_MONITORAGGIO) & 
+                                              #   nchar(OC_FLAG_MONITORAGGIO) == 1 ~ 1,
+                                              # is.character(OC_FLAG_MONITORAGGIO) & 
+                                              #   nchar(OC_FLAG_MONITORAGGIO) > 1 ~ 0,
                                               TRUE ~ 0))
     
   }
@@ -176,8 +177,9 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
 #' @param use_sog Vuoi caricare il DB con il soggetto programmatore?
 #' @param use_eu Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)
 #' @param use_713 Vuoi caricare anche il DB per il 2007-2013?
+#' @param tipo_ciclo Vuoi usare CICLO_STRATEGIA (default in x_AMBITO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_AMBITO da DB)?
 #' @return L'intero database dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.
-init_programmazione <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use_flt=FALSE, use_713=FALSE, use_articolaz=FALSE, use_location=FALSE, use_ciclo=FALSE, use_en=FALSE)
+init_programmazione <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use_flt=FALSE, use_713=FALSE, use_articolaz=FALSE, use_location=FALSE, use_ciclo=FALSE, tipo_ciclo="CICLO_STRATEGIA", use_en=FALSE)
 {
   # use_temi = FALSE
   # use_sog=TRUE
@@ -245,15 +247,16 @@ init_programmazione <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use
     #                    x_AMBITO = "FSE"))
     
     # patch per programmi su due ambiti o su due cicli nello stesso ambito (con gruppi diversi)
-    programmi <- programmi %>%
-      mutate(OC_TIPOLOGIA_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2007IT001FA005" ~ "NAZ-INF",
-                                                OC_CODICE_PROGRAMMA == "2007IT005FAMG1" ~ "PAC Nazionale",
-                                                OC_CODICE_PROGRAMMA == "2007SA002FA016" ~ "REG",
-                                                OC_CODICE_PROGRAMMA == "2016XXAMPSAP00" ~ "Piani nazionali",
-                                                OC_CODICE_PROGRAMMA == "2017TOPIOMBIFSC" ~ "Altre assegnazioni CIPE",
-                                                OC_CODICE_PROGRAMMA == "CIS_TA_PUG" ~ "Altre assegnazioni CIPE",
-                                                OC_CODICE_PROGRAMMA == "TEMP_0713_020" ~ "Altre assegnazioni CIPE",
-                                                TRUE ~ OC_TIPOLOGIA_PROGRAMMA))
+    # programmi <- programmi %>%
+    #   mutate(OC_TIPOLOGIA_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2007IT001FA005" ~ "NAZ-INF",
+    #                                             OC_CODICE_PROGRAMMA == "2007IT005FAMG1" ~ "PAC Nazionale",
+    #                                             OC_CODICE_PROGRAMMA == "2007SA002FA016" ~ "REG",
+    #                                             OC_CODICE_PROGRAMMA == "2016XXAMPSAP00" ~ "Piani nazionali",
+    #                                             OC_CODICE_PROGRAMMA == "2017TOPIOMBIFSC" ~ "Altre assegnazioni CIPE",
+    #                                             OC_CODICE_PROGRAMMA == "CIS_TA_PUG" ~ "Altre assegnazioni CIPE",
+    #                                             OC_CODICE_PROGRAMMA == "TEMP_0713_020" ~ "Altre assegnazioni CIPE",
+    #                                             TRUE ~ OC_TIPOLOGIA_PROGRAMMA))
+    
   }
   
   if (use_en == TRUE) {
@@ -265,6 +268,17 @@ init_programmazione <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use
       mutate(LABEL_PROGRAMMA_IT = x_PROGRAMMA,
              LABEL_PROGRAMMA_EN = if_else(is.na(LABEL_PROGRAMMA_EN), LABEL_PROGRAMMA_IT, LABEL_PROGRAMMA_EN))
   }
+
+  if (use_ciclo == TRUE) {
+    if (tipo_ciclo == "CICLO_RISORSE") {
+      programmi <- programmi %>%
+        mutate(x_CICLO = CICLO_RISORSE)
+    } else if (tipo_ciclo == "CICLO_STRATEGIA") {
+      programmi <- programmi
+      # MEMO: x_CICLO di default è gia CICLO_STRATEGIA
+    }
+  }
+  
   
   return(programmi)
   
@@ -533,14 +547,21 @@ workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL)
 #' Esporta report con risorse coesione per ciclo, ambito e macroarea.
 #'
 #' @param ciclo Dataset di classe perimetro.
-#' @param tipo_ciclo Vuoi us, use
+#' @param tipo_ciclo Vuoi usare CICLO_STRATEGIA (default in x_AMBITO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_AMBITO da DB)?
 #' @param use_meuro Vuoi i dati in Meuro? Di default sono in euro.
+#' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
 #' @param export vuoi salvare il file?
 #' @return Un file csv con apertura per ciclo e macroarea.
-make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, tipo_ciclo="STRATEGIA", export=FALSE) {
+make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, tipo_ciclo="CICLO_STRATEGIA", export=FALSE) {
   
-  programmi <- init_programmazione(use_temi = FALSE, use_713 = TRUE, use_location = TRUE, use_ciclo = TRUE, use_eu = TRUE) %>%
+  programmi <- init_programmazione(use_temi = FALSE, use_713 = TRUE, use_location = TRUE, use_ciclo = TRUE, use_eu = TRUE, use_flt=use_flt, tipo_ciclo=tipo_ciclo) %>%
     rename(x_MACROAREA = OC_MACROAREA)
+  
+  if (use_flt == TRUE) {
+    programmi <- programmi %>%
+      filter(OC_FLAG_MONITORAGGIO == 1 | OC_FLAG_MONITORAGGIO == 2)
+    # MEMO: in FSC resta anche tipo 9 che viene scartato
+  }
   
   # programmi %>% count(x_MACROAREA)
   
@@ -558,10 +579,13 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, tipo_ciclo="STRATEG
       filter(x_CICLO == ciclo)
   }
   
-  if (tipo_ciclo == "RISORSE") {
-    programmi <- programmi %>%
-      mutate(x_CICLO = CICLO_RISORSE)
-  }
+  # if (tipo_ciclo == "CICLO_RISORSE") {
+  #   programmi <- programmi %>%
+  #     mutate(x_CICLO = CICLO_RISORSE)
+  # } else if (tipo_ciclo == "CICLO_STRATEGIA") {
+  #   programmi <- programmi
+  #   # MEMO: x_CICLO di default è gia CICLO_STRATEGIA
+  # }
   
   out <- programmi %>%
     group_by(x_CICLO, x_AMBITO, x_MACROAREA) %>%
@@ -574,7 +598,7 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, tipo_ciclo="STRATEG
       mutate(FINANZ_TOTALE_PUBBLICO = round(FINANZ_TOTALE_PUBBLICO / 1000000, 1),
              FINANZ_UE = round(FINANZ_UE / 1000000, 1)) %>%
       rename(RISORSE = FINANZ_TOTALE_PUBBLICO,
-             RISORSE_UT = FINANZ_UE)
+             RISORSE_UE = FINANZ_UE)
   }
   
   if (export == TRUE) {

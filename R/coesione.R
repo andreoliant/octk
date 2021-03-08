@@ -898,24 +898,34 @@ prep_perimetro_bimestre_coesione <- function(bimestre, usa_meuro=TRUE) {
 #' E' costruito su operaizoni e dati coesione.
 #'
 #' @param perimetro Dataset di classe perimetro.
-#' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro.
+#' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo
 #' @param use_713 Vuoi caricare anche i dati di programmaizone per il 2007-2013?
+#' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
 #' @param add_totali Vuoi aggiungere valori calcolati in termini di costo pubblico?
 #' @param use_cp2 Se add_totali == TRUE, vuoi raddoppiare i valori relativi ai progetti multi-programma?  
+#' @param cut_no_risorse Vuoi eliminare i programmi monitorati senza risorse lato DB?
+#' @param tipo_ciclo Vuoi usare CICLO_STRATEGIA (default in x_AMBITO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_AMBITO da DB)?
 #' @param focus nome per file.
 #' @param export vuoi salvare il file?
 #' @param  progetti dataset di tipo "progetti" da utilizzare per con add_totali == TRUE
 #' @param  po_riclass dataset di tipo "po_riclass" da utilizzare (altrimenti usa default nel package)
 #' @return Un file csv con apertura per programma e fase procedurale.
-make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=FALSE,
-                                           add_totali=FALSE, use_cp2=FALSE,
+make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=FALSE, use_flt=FALSE,
+                                           add_totali=FALSE, use_cp2=FALSE, cut_no_risorse=FALSE,
+                                           tipo_ciclo="CICLO_STRATEGIA",
                                            focus="report", export=FALSE, progetti=NULL, po_riclass=NULL) {
   
   # DEBUG: use_713 <- TRUE
-  programmi <- init_programmazione(use_temi=FALSE, use_713=use_713) %>%
+  programmi <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo) %>%
     rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA)
   
+  if (use_flt == TRUE) {
+    programmi <- programmi %>%
+      filter(OC_FLAG_MONITORAGGIO == 1 | OC_FLAG_MONITORAGGIO == 2)
+    # MEMO: in FSC resta anche tipo 9 che viene scartato
+  }
+
   # patch YEI
   programmi <- programmi %>%
     mutate(x_AMBITO = as.character(x_AMBITO)) %>%
@@ -931,10 +941,10 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
   # perimetro <- refactor_ambito(perimetro)
   # perimetro <- refactor_ciclo(perimetro)
   
-  if (usa_meuro == TRUE) {
-    programmi <- programmi %>%
-      mutate(FINANZ_TOTALE_PUBBLICO = round(FINANZ_TOTALE_PUBBLICO / 1000000, 1))
-  }
+  # if (usa_meuro == TRUE) {
+  #   programmi <- programmi %>%
+  #     mutate(FINANZ_TOTALE_PUBBLICO = round(FINANZ_TOTALE_PUBBLICO / 1000000, 1))
+  # }
   
   # CHK
   # programmi %>% count(x_CICLO, x_AMBITO, OC_TIPOLOGIA_PROGRAMMA) %>% filter(x_CICLO == "2007-2013")
@@ -947,6 +957,11 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
     #        x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006"))) %>%
     group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA) %>%
     summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE))
+  
+  if (usa_meuro == TRUE) {
+    spalla <- spalla %>%
+      mutate(RISORSE = round(RISORSE / 1000000, 1))
+  }
   
   if (is.null(po_riclass)) {
     po_riclass <- octk::po_riclass
@@ -1011,6 +1026,21 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
     refactor_ambito(.) %>%
     refactor_ciclo(.)
   
+  
+  if (usa_meuro == TRUE) {
+    out <- out %>%
+      mutate(COE = round(COE / 1000000, 1),
+             COE_IMP = round(COE_IMP / 1000000, 1),
+             COE_PAG = round(COE_PAG / 1000000, 1),
+             `Non avviato` = round(`Non avviato` / 1000000, 1),
+             `In avvio di progettazione` = round(`In avvio di progettazione` / 1000000, 1),
+             `In corso di progettazione` = round(`In corso di progettazione` / 1000000, 1),
+             `In affidamento` = round(`In affidamento` / 1000000, 1),
+             `In esecuzione` = round(`In esecuzione` / 1000000, 1),
+             `Eseguito` = round(`Eseguito` / 1000000, 1))
+  }
+  
+  
   out <- out %>%
     select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE, N, COE, COE_IMP, COE_PAG,
            `Non avviato`,
@@ -1041,12 +1071,12 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
              IMP = IMPEGNI,
              PAG = TOT_PAGAMENTI)
     
-    if (usa_meuro == TRUE) {
-      progetti <- progetti %>%
-        mutate(CP = CP / 1000000,
-               IMP = IMP / 1000000,
-               PAG = PAG / 1000000)
-    }
+    # if (usa_meuro == TRUE) {
+    #   progetti <- progetti %>%
+    #     mutate(CP = CP / 1000000,
+    #            IMP = IMP / 1000000,
+    #            PAG = PAG / 1000000)
+    # }
 
     out <- out %>%
       left_join(progetti %>%
@@ -1155,8 +1185,19 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
         group_by(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO) %>%
         summarise_if(is.numeric, sum, na.rm = TRUE)
       
+      if (usa_meuro == TRUE) {
+        out <- out %>%
+          mutate(CP = round(CP / 1000000, 1),
+                 IMP = round(IMP / 1000000, 1),
+                 PAG = round(PAG / 1000000, 1))
+      }
+      
     }
   }
+  
+  if (cut_no_risorse == TRUE) {
+    out <- out %>%
+      filter(RISORSE > 0)
   
   if (export == TRUE) {
     if (use_cp2 == TRUE) {
@@ -1164,8 +1205,9 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
     } else {
       write.csv2(out, file.path(TEMP, paste0(focus, "_programmi.csv")), row.names = FALSE)
     }
-    
   }
+  }
+  
   return(out)
 }
 
@@ -2000,7 +2042,7 @@ workflow_operazioni_ecomix <- function(bimestre, progetti, debug=FALSE) {
 make_report_macroaree_coesione <- function(risorse=NULL, perimetro=NULL, export=TRUE) {
   
   if (is.null(risorse)) {
-    risorse <- make_report_risorse_coesione(use_meuro=TRUE, tipo_ciclo="STRATEGIA", export=FALSE)
+    risorse <- make_report_risorse(use_meuro=TRUE, tipo_ciclo="STRATEGIA", export=FALSE)
   }
   
   if (is.null(perimetro)) {

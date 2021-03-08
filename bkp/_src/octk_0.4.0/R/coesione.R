@@ -898,7 +898,7 @@ prep_perimetro_bimestre_coesione <- function(bimestre, usa_meuro=TRUE) {
 #' E' costruito su operaizoni e dati coesione.
 #'
 #' @param perimetro Dataset di classe perimetro.
-#' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro.
+#' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo
 #' @param use_713 Vuoi caricare anche i dati di programmaizone per il 2007-2013?
 #' @param add_totali Vuoi aggiungere valori calcolati in termini di costo pubblico?
 #' @param use_cp2 Se add_totali == TRUE, vuoi raddoppiare i valori relativi ai progetti multi-programma?  
@@ -915,7 +915,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
   programmi <- init_programmazione(use_temi=FALSE, use_713=use_713) %>%
     rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA)
-  
+    
   # patch YEI
   programmi <- programmi %>%
     mutate(x_AMBITO = as.character(x_AMBITO)) %>%
@@ -931,10 +931,10 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
   # perimetro <- refactor_ambito(perimetro)
   # perimetro <- refactor_ciclo(perimetro)
   
-  if (usa_meuro == TRUE) {
-    programmi <- programmi %>%
-      mutate(FINANZ_TOTALE_PUBBLICO = round(FINANZ_TOTALE_PUBBLICO / 1000000, 1))
-  }
+  # if (usa_meuro == TRUE) {
+  #   programmi <- programmi %>%
+  #     mutate(FINANZ_TOTALE_PUBBLICO = round(FINANZ_TOTALE_PUBBLICO / 1000000, 1))
+  # }
   
   # CHK
   # programmi %>% count(x_CICLO, x_AMBITO, OC_TIPOLOGIA_PROGRAMMA) %>% filter(x_CICLO == "2007-2013")
@@ -947,6 +947,11 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
     #        x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006"))) %>%
     group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA) %>%
     summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE))
+  
+  if (usa_meuro == TRUE) {
+    spalla <- spalla %>%
+      mutate(RISORSE = round(RISORSE / 1000000, 1))
+  }
   
   if (is.null(po_riclass)) {
     po_riclass <- octk::po_riclass
@@ -1011,6 +1016,21 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
     refactor_ambito(.) %>%
     refactor_ciclo(.)
   
+  
+  if (usa_meuro == TRUE) {
+    out <- out %>%
+      mutate(COE = round(COE / 1000000, 1),
+             COE_IMP = round(COE_IMP / 1000000, 1),
+             COE_PAG = round(COE_PAG / 1000000, 1),
+             `Non avviato` = round(`Non avviato` / 1000000, 1),
+             `In avvio di progettazione` = round(`In avvio di progettazione` / 1000000, 1),
+             `In corso di progettazione` = round(`In corso di progettazione` / 1000000, 1),
+             `In affidamento` = round(`In affidamento` / 1000000, 1),
+             `In esecuzione` = round(`In esecuzione` / 1000000, 1),
+             `Eseguito` = round(`Eseguito` / 1000000, 1))
+  }
+  
+  
   out <- out %>%
     select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE, N, COE, COE_IMP, COE_PAG,
            `Non avviato`,
@@ -1041,12 +1061,12 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
              IMP = IMPEGNI,
              PAG = TOT_PAGAMENTI)
     
-    if (usa_meuro == TRUE) {
-      progetti <- progetti %>%
-        mutate(CP = CP / 1000000,
-               IMP = IMP / 1000000,
-               PAG = PAG / 1000000)
-    }
+    # if (usa_meuro == TRUE) {
+    #   progetti <- progetti %>%
+    #     mutate(CP = CP / 1000000,
+    #            IMP = IMP / 1000000,
+    #            PAG = PAG / 1000000)
+    # }
 
     out <- out %>%
       left_join(progetti %>%
@@ -1094,7 +1114,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
       refactor_ambito(.) %>%
       refactor_ciclo(.)
     
-    # CHK: QUI DUPLICA ":::"
+    # CHK: QUI ACCODA RIGHE ":::" A QUELLE BASE
     
     # versione con cp2
     if (use_cp2 == TRUE) {
@@ -1110,10 +1130,10 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
         left_join(po_riclass %>%
                     select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO),
                   by = "OC_CODICE_PROGRAMMA") %>%
-        left_join(programmi %>%
-                    as_tibble(.) %>%
-                    distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA),
-                  by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO")) %>%
+        # left_join(programmi %>%
+        #             as_tibble(.) %>%
+        #             distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA),
+        #           by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO")) %>%
         # modifica x_AMBITO
         mutate(x_AMBITO = case_when(x_AMBITO == "FESR-FSE" ~ x_AMBITO_FSE_FESR, # MEMO: split per programmi pluri-fondo
                                     x_AMBITO == "YEI-FSE" ~ x_AMBITO_FSE_FESR,
@@ -1121,6 +1141,10 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
                                     TRUE ~ x_AMBITO)) %>%
         refactor_ambito(.) %>%
         refactor_ciclo(.) %>%
+        left_join(programmi %>%
+                    as_tibble(.) %>%
+                    distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA),
+                  by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO")) %>%
         # mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
         #                                               "FEAD", "FAMI", "CTE", "ORD")),
         #        x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006"))) %>%
@@ -1150,6 +1174,13 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
       out <- programmi_2 %>%
         group_by(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO) %>%
         summarise_if(is.numeric, sum, na.rm = TRUE)
+      
+      if (usa_meuro == TRUE) {
+        out <- out %>%
+          mutate(CP = round(CP / 1000000, 1),
+                 IMP = round(IMP / 1000000, 1),
+                 PAG = round(PAG / 1000000, 1))
+      }
       
     }
   }

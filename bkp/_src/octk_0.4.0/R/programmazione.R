@@ -13,8 +13,7 @@
 #' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
 #' @param use_articolaz Logico. Oltre ai temi, vuoi importare anche le articolazioni? Utile per FESR e FSE
 #' @param use_location Logico. Vuoi avere anche la localizzazione dei progetti per Regione e Macroarea?
-#' @return Il dataset di programmazione per l'ambito richiesto, con pulizia delle denominazioni territoriali e
-#' della codifica di aree tematiche e temi prioritari FSC.
+#' @return Il dataset di programmazione per l'ambito richiesto, con pulizia delle denominazioni territoriali e della codifica di aree tematiche e temi prioritari FSC.
 #' load_db <- function(use_ciclo=TRUE, use_ambito=TRUE, simplify_loc=FALSE, use_temi=FALSE, use_sog=FALSE, use_ue=FALSE, use_flt=FALSE, use_articolaz=FALSE, use_location=FALSE){
 # riga 17: si veda proposta di cambio della funzione load_db con l'introduzione di "use_ciclo" e "use_ambito" al posti di variabili ambito e ciclo
 load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=FALSE, use_ue=FALSE, use_flt=FALSE, use_articolaz=FALSE, use_location=FALSE, use_ciclo=FALSE){
@@ -246,15 +245,16 @@ init_programmazione <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use
     #                    x_AMBITO = "FSE"))
     
     # patch per programmi su due ambiti o su due cicli nello stesso ambito (con gruppi diversi)
-    programmi <- programmi %>%
-      mutate(OC_TIPOLOGIA_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2007IT001FA005" ~ "NAZ-INF",
-                                                OC_CODICE_PROGRAMMA == "2007IT005FAMG1" ~ "PAC Nazionale",
-                                                OC_CODICE_PROGRAMMA == "2007SA002FA016" ~ "REG",
-                                                OC_CODICE_PROGRAMMA == "2016XXAMPSAP00" ~ "Piani nazionali",
-                                                OC_CODICE_PROGRAMMA == "2017TOPIOMBIFSC" ~ "Altre assegnazioni CIPE",
-                                                OC_CODICE_PROGRAMMA == "CIS_TA_PUG" ~ "Altre assegnazioni CIPE",
-                                                OC_CODICE_PROGRAMMA == "TEMP_0713_020" ~ "Altre assegnazioni CIPE",
-                                                TRUE ~ OC_TIPOLOGIA_PROGRAMMA))
+    # programmi <- programmi %>%
+    #   mutate(OC_TIPOLOGIA_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2007IT001FA005" ~ "NAZ-INF",
+    #                                             OC_CODICE_PROGRAMMA == "2007IT005FAMG1" ~ "PAC Nazionale",
+    #                                             OC_CODICE_PROGRAMMA == "2007SA002FA016" ~ "REG",
+    #                                             OC_CODICE_PROGRAMMA == "2016XXAMPSAP00" ~ "Piani nazionali",
+    #                                             OC_CODICE_PROGRAMMA == "2017TOPIOMBIFSC" ~ "Altre assegnazioni CIPE",
+    #                                             OC_CODICE_PROGRAMMA == "CIS_TA_PUG" ~ "Altre assegnazioni CIPE",
+    #                                             OC_CODICE_PROGRAMMA == "TEMP_0713_020" ~ "Altre assegnazioni CIPE",
+    #                                             TRUE ~ OC_TIPOLOGIA_PROGRAMMA))
+    
   }
   
   if (use_en == TRUE) {
@@ -575,7 +575,7 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, tipo_ciclo="STRATEG
       mutate(FINANZ_TOTALE_PUBBLICO = round(FINANZ_TOTALE_PUBBLICO / 1000000, 1),
              FINANZ_UE = round(FINANZ_UE / 1000000, 1)) %>%
       rename(RISORSE = FINANZ_TOTALE_PUBBLICO,
-             RISORSE_UT = FINANZ_UE)
+             RISORSE_UE = FINANZ_UE)
   }
   
   if (export == TRUE) {

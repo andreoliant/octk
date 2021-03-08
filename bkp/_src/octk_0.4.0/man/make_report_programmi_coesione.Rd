@@ -19,7 +19,7 @@ make_report_programmi_coesione(
 \arguments{
 \item{perimetro}{Dataset di classe perimetro.}
 
-\item{usa_meuro}{Vuoi i dati in Meuro? Di default sono in euro.}
+\item{usa_meuro}{Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo}
 
 \item{use_713}{Vuoi caricare anche i dati di programmaizone per il 2007-2013?}
 
