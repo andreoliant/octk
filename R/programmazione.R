@@ -167,6 +167,8 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   appo <- appo %>%
     select(all_of(var_ls))
   
+  return(appo)
+  
 }
 
 #' Inizializza il database della programmazione
@@ -546,16 +548,19 @@ workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL)
 #'
 #' Esporta report con risorse coesione per ciclo, ambito e macroarea.
 #'
-#' @param ciclo Dataset di classe perimetro.
+#' @param ciclo Vuoi un ciclo specifico?
 #' @param tipo_ciclo Vuoi usare CICLO_STRATEGIA (default in x_AMBITO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_AMBITO da DB)?
 #' @param use_meuro Vuoi i dati in Meuro? Di default sono in euro.
 #' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
+#' @param use_eu Logico. vuoi vedere risorse UE ove previste?
+#' @param force_yei Logico. Vuoi forzare FSE in YEI?
 #' @param export vuoi salvare il file?
 #' @return Un file csv con apertura per ciclo e macroarea.
-make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, tipo_ciclo="CICLO_STRATEGIA", export=FALSE) {
+make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_eu=FALSE, force_yei=FALSE, tipo_ciclo="CICLO_STRATEGIA", export=FALSE) {
   
-  programmi <- init_programmazione(use_temi = FALSE, use_713 = TRUE, use_location = TRUE, use_ciclo = TRUE, use_eu = TRUE, use_flt=use_flt, tipo_ciclo=tipo_ciclo) %>%
-    rename(x_MACROAREA = OC_MACROAREA)
+  programmi <- init_programmazione(use_temi = FALSE, use_713 = TRUE, use_location = TRUE, use_ciclo = TRUE, use_eu=use_eu, use_flt=use_flt, tipo_ciclo=tipo_ciclo) 
+  # %>%
+  #   rename(x_MACROAREA = OC_MACROAREA)
   
   if (use_flt == TRUE) {
     programmi <- programmi %>%
@@ -563,16 +568,24 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, tipo
     # MEMO: in FSC resta anche tipo 9 che viene scartato
   }
   
+  if (force_yei == TRUE) {
+    programmi <- programmi %>%
+      mutate(x_AMBITO = if_else(OC_CODICE_PROGRAMMA == "2014IT05M9OP001", "YEI", as.character(x_AMBITO))) %>%
+      refactor_ambito(.)
+  }
+  
   # programmi %>% count(x_MACROAREA)
   
-  programmi <- programmi %>% 
-    mutate(x_MACROAREA = case_when(x_MACROAREA == "CN" ~ "Centro-Nord",
-                                   x_MACROAREA == "SUD" ~ "Mezzogiorno",
-                                   x_MACROAREA == "MZ" ~ "Mezzogiorno",
-                                   x_MACROAREA == "ND" ~ "Ambito nazionale",
-                                   x_MACROAREA == "NC" ~ "Ambito nazionale",
-                                   x_MACROAREA == "VOID" ~ "Ambito nazionale",
-                                   TRUE ~ x_MACROAREA))
+  # programmi <- programmi %>% 
+  #   mutate(x_MACROAREA = case_when(x_MACROAREA == "CN" ~ "Centro-Nord",
+  #                                  x_MACROAREA == "SUD" ~ "Mezzogiorno",
+  #                                  x_MACROAREA == "MZ" ~ "Mezzogiorno",
+  #                                  x_MACROAREA == "ND" ~ "Ambito nazionale",
+  #                                  x_MACROAREA == "NC" ~ "Ambito nazionale",
+  #                                  x_MACROAREA == "VOID" ~ "Ambito nazionale",
+  #                                  TRUE ~ x_MACROAREA))
+  
+  programmi <- ricodifica_macroaree(programmi)
   
   if (!is.null(ciclo)) {
     programmi %>%
@@ -587,19 +600,30 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, tipo
   #   # MEMO: x_CICLO di default è gia CICLO_STRATEGIA
   # }
   
-  out <- programmi %>%
-    group_by(x_CICLO, x_AMBITO, x_MACROAREA) %>%
-    summarise(FINANZ_TOTALE_PUBBLICO = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE),
-              FINANZ_UE = sum(FINANZ_UE, na.rm = TRUE)) %>%
-    refactor_macroarea(.)
-  
-  if (use_meuro == TRUE) {
-    out <- out %>%
-      mutate(FINANZ_TOTALE_PUBBLICO = round(FINANZ_TOTALE_PUBBLICO / 1000000, 1),
-             FINANZ_UE = round(FINANZ_UE / 1000000, 1)) %>%
-      rename(RISORSE = FINANZ_TOTALE_PUBBLICO,
-             RISORSE_UE = FINANZ_UE)
+  if (use_eu == TRUE) {
+    out <- programmi %>%
+      group_by(x_CICLO, x_AMBITO, x_MACROAREA) %>%
+      summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE),
+                RISORSE_UE = sum(FINANZ_UE, na.rm = TRUE)) %>%
+      refactor_macroarea(.)
+    
+    if (use_meuro == TRUE) {
+      out <- out %>%
+        mutate(RISORSE = round(RISORSE / 1000000, 1),
+               RISORSE_UE = round(RISORSE_UE / 1000000, 1))
+    }
+  } else {
+    out <- programmi %>%
+      group_by(x_CICLO, x_AMBITO, x_MACROAREA) %>%
+      summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)) %>%
+      refactor_macroarea(.)
+    
+    if (use_meuro == TRUE) {
+      out <- out %>%
+        mutate(RISORSE = round(RISORSE / 1000000, 1))
+    }
   }
+  
   
   if (export == TRUE) {
     write.csv2(out, file.path(TEMP, "risorse_coesione.csv"), row.names = FALSE)
@@ -608,5 +632,286 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, tipo
   return(out)
   
 }
+
+
+
+#' Verifica variazione risorse per programma
+#'
+#' Verifica variazione risorse per programma. Confronta due dataframe risultanti da make_report_programmi_coesione().
+#'
+#' @param programmi_new Dataframe da make_report_programmi_coesione()
+#' @param programmi_old Dataframe da make_report_programmi_coesione()
+#' @param path_to_new Percorso a csv generato con make_report_programmi_coesione().
+#' @param path_to_old Percorso a csv generato con make_report_programmi_coesione().
+#' @param export vuoi salvare il file?
+#' @return Un dataframe per programma, ciclo e ambito.
+chk_variazione_risorse_programmi <- function(programmi_new=NULL, programmi_old=NULL, path_to_new=NULL, path_to_old=NULL, export=FALSE){
+  
+  if (is.null(programmi_new)) {
+    if (is.null(path_to_new)) {
+      message("Indica un file da confrontare")
+    } else {
+      programmi_new <- read_csv2(path_to_new)
+    }
+  }
+  
+  if (is.null(programmi_old)) {
+    if (is.null(path_to_old)) {
+      message("Indica un file da confrontare")
+    } else {
+      programmi_old <- read_csv2(path_to_old)
+    }
+  }
+  
+  out <- programmi_new %>%
+    as_tibble(.) %>%
+    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE) %>%
+    left_join(programmi_old %>%
+                # fix per "PAC"
+                as_tibble(.) %>%
+                mutate(x_AMBITO = case_when(x_CICLO == "2007-2013" & x_AMBITO == "POC" ~ "PAC",
+                                            TRUE ~ x_AMBITO)) %>%
+                refactor_ambito(.) %>%
+                select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, RISORSE),
+              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO"),
+              suffix = c(".new", ".old")) %>%
+    mutate(RISORSE.old = if_else(is.na(RISORSE.old), 0, RISORSE.old),
+           RISORSE.new = if_else(is.na(RISORSE.new), 0, RISORSE.new)) %>%
+    mutate(CHK = RISORSE.new - RISORSE.old)
+
+  if (export==TRUE) {
+    write.csv2(out, file.path(TEMP, "delta_risorse_programme.csv"), row.names = FALSE)
+  }
+  
+  return(out)
+  
+}
+
+
+
+#' Verifica risorse per ciclo contabile e ciclo strategia
+#'
+#' Verifica risorse per ciclo contabile e ciclo strategia.
+#'
+#' @param programmi_new Dataframe da make_report_programmi_coesione()
+#' @param programmi_old Dataframe da make_report_programmi_coesione()
+#' @param path_to_new Percorso a csv generato con make_report_programmi_coesione().
+#' @param path_to_old Percorso a csv generato con make_report_programmi_coesione().
+#' @param export vuoi salvare il file?
+#' @return Un dataframe per programma, ciclo e ambito.
+chk_risorse_ciclo_contabile_strategia <- function(use_flt=TRUE, force_yei=FALSE, use_eu=FALSE, export=TRUE) {
+  
+  risorse_startegia <- make_report_risorse(use_meuro=TRUE, use_flt=use_flt, force_yei=force_yei, use_eu=use_eu,
+                                           tipo_ciclo="CICLO_STRATEGIA", export=TRUE)
+  
+  risorse_contabili <- make_report_risorse(use_meuro=TRUE, use_flt=use_flt, force_yei=force_yei, use_eu=use_eu,
+                                           tipo_ciclo="CICLO_RISORSE", export=TRUE)
+
+  out <- risorse_startegia %>%
+    left_join(risorse_contabili,
+              by = c("x_CICLO", "x_AMBITO", "x_MACROAREA"),
+              suffix = c(".s", ".c")) %>%
+    mutate_if(is.numeric, list(~replace_na(., 0))) %>%
+    mutate(DELTA_RISORSE = RISORSE.s - RISORSE.c)
+  
+  if (use_eu == TRUE) {
+    out <- out %>%
+      mutate(DELTA_UE = RISORSE_UE.s - RISORSE_UE.c)
+  }
+  
+  if (export==TRUE) {
+    write.csv2(out, file.path(TEMP, "chk_ciclo_contabile_strategia.csv"), row.names = FALSE)
+  }
+  
+  return(out)
+}
+
+
+#' Ricodifica la voce macroarea lato programmazione come x_MACROAREA
+#'
+#' Ricodifica la voce macroarea lato programmazione come x_MACROAREA
+#'
+#' @param programmi Dataframe da init_programmazione()
+#' @return Un dataframe con x_MACROAREA
+ricodifica_macroaree <- function(programmi) {
+  
+  out <- programmi %>% 
+    rename(x_MACROAREA = OC_MACROAREA) %>%
+    mutate(x_MACROAREA = case_when(x_MACROAREA == "CN" ~ "Centro-Nord",
+                                   x_MACROAREA == "SUD" ~ "Mezzogiorno",
+                                   x_MACROAREA == "MZ" ~ "Mezzogiorno",
+                                   x_MACROAREA == "ND" ~ "Ambito nazionale",
+                                   x_MACROAREA == "NC" ~ "Ambito nazionale",
+                                   x_MACROAREA == "VOID" ~ "Ambito nazionale",
+                                   TRUE ~ x_MACROAREA))
+  return(out)
+}
+
+
+#' Carica un dataset di tipo "interventi" dal database della programmazione
+#'
+#' Carica un dataset di tipo "interventi" dal database della programmazione.
+#'
+#' @param tipo Tipologia di dataset interventi.
+#' @param simplify_loc Logico. Vuoi semplificare le localizzazioni per compatibilit? con lo standard dei Report CD?
+#' @param use_temi Logico. Vuoi avere anche i temi prioritari FSC?
+#' @param use_sog Logico. Vuoi avere anche il soggetto programmatore?
+#' @param use_eu Logico. Vuoi avere anche il finanziamento EU e categoria di regione? (solo per SIE)
+#' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
+#' @param use_articolaz Logico. Oltre ai temi, vuoi importare anche le articolazioni? Utile per FESR e FSE
+#' @param use_location Logico. Vuoi avere anche la localizzazione dei progetti per Regione e Macroarea?
+#' @param tipo_ciclo Vuoi usare CICLO_STRATEGIA (default in x_AMBITO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_AMBITO da DB)?
+#' @return Il dataset di programmazione per l'ambito richiesto, con pulizia delle denominazioni territoriali e della codifica di aree tematiche e temi prioritari FSC.
+load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog=FALSE, use_ue=FALSE, 
+                               use_flt=FALSE, use_articolaz=FALSE, use_location=FALSE, use_ciclo=FALSE, tipo_ciclo="CICLO_RISORSE"){
+  
+  # DEV: decidere se fare importazione di tutto e poi selezionare variabili a valle....
+  
+ # crea nome file da importare
+  if (tipo == "CIS") {
+
+    filename <- paste0("DBCOE_interventi_CIS.xlsx") 
+    
+  } else {
+    message("Non è ancora implementato")
+    
+  }
+  
+  # importa file excel
+  appo <-  read_excel(file.path(DB, filename), guess_max = 5000)
+  # VERSIONE  CON UNICO FILE - DA SISTEMARE: appo1 <-  read_excel(file.path(DB, "prova2.xlsx"), sheet = filename, guess_max = 5000)
+  
+  
+  # switch varibili da tenere
+  var_ls <- c("OC_CODICE_PROGRAMMA", "OC_TITOLO_PROGETTO",
+              "OC_DESCR_FONTE",
+              "FINANZ_TOTALE_PUBBLICO")
+  
+  if (use_temi == TRUE) {
+    if(use_articolaz == TRUE) {
+      var_ls <- c(var_ls,
+                  "DESCR_SETTORE_STRATEGICO_FSC", "DESCR_ASSE_TEMATICO_FSC",
+                  "COD_RA", "DESCR_RA",
+                  "OC_COD_ARTICOLAZ_PROGRAMMA")
+    } else {
+      var_ls <- c(var_ls,
+                  "DESCR_SETTORE_STRATEGICO_FSC", "DESCR_ASSE_TEMATICO_FSC",
+                  "COD_RA", "DESCR_RA")
+    }
+  }
+  
+  
+  if (use_sog == TRUE) {
+    var_ls <- c(var_ls,
+                "AMMINISTRAZIONE_BENEFICIARIA",
+                "TIPOLOGIA_DI_AMMINISTRAZIONE_BENEFICIARIA")
+  }
+  
+  if (use_ue == TRUE) {
+    var_ls <- c(var_ls,
+                "FINANZ_UE", "OC_AREA_OBIETTIVO_UE")
+    
+  }
+  
+  if (use_flt == TRUE) {
+    var_ls <- c(var_ls,
+                "OC_FLAG_MONITORAGGIO")
+    
+    # patch per dati da consolidare nel DB
+    appo <- appo %>%
+      mutate(OC_FLAG_MONITORAGGIO = as.numeric(OC_FLAG_MONITORAGGIO)) %>%
+      mutate(OC_FLAG_MONITORAGGIO = case_when(OC_FLAG_MONITORAGGIO == 1 ~ 1,
+                                              OC_FLAG_MONITORAGGIO == 0 ~ 0,
+                                              OC_FLAG_MONITORAGGIO == 2 ~ 2, # presente per FSC e POC
+                                              OC_FLAG_MONITORAGGIO == 9 ~ 9, # presente per FSC
+                                              # is.na(OC_FLAG_MONITORAGGIO) ~ 1, # questa è poco logica ma dipende dai dati
+                                              # OC_FLAG_MONITORAGGIO == "" ~ 1, # questa dovrebbe corrispondere alla condizione sotto
+                                              # is.character(OC_FLAG_MONITORAGGIO) & 
+                                              #   nchar(OC_FLAG_MONITORAGGIO) == 1 ~ 1,
+                                              # is.character(OC_FLAG_MONITORAGGIO) & 
+                                              #   nchar(OC_FLAG_MONITORAGGIO) > 1 ~ 0,
+                                              TRUE ~ 0))
+    
+  }
+  
+  if (use_location == TRUE) {
+    var_ls <- c(var_ls,
+                "OC_MACROAREA", "DEN_REGIONE")
+  }
+  
+  if (use_ciclo == TRUE) {
+    var_ls <- c(var_ls, 
+                "CICLO_PROGRAMMAZIONE", "CICLO_RISORSE")
+
+  }
+  
+  # variabili custom per tipo
+  if (tipo == "CIS") {
+    var_ls <- c(var_ls, 
+                "CIS", "COD_CIS", "CIS_NOME")
+  }
+  
+  
+  # aggiungo ciclo e ambito
+  if (use_ciclo == TRUE) {
+    if (tipo_ciclo == "CICLO_STRATEGIA") {
+      appo <- appo %>%
+        mutate(x_CICLO = CICLO_PROGRAMMAZIONE)
+    } else if (tipo_ciclo == "CICLO_RISORSE") {
+      appo <- appo %>%
+        mutate(x_CICLO = CICLO_RISORSE)
+    }
+  }
+  appo <- appo %>%
+    mutate(x_AMBITO = OC_DESCR_FONTE) 
+  appo <- refactor_ambito(appo)
+  appo <- refactor_ciclo(appo)
+  
+  var_ls <- c(var_ls, 
+              "x_CICLO", "x_AMBITO")
+  
+  
+  # aggiungo clp
+  var_ls <- c(var_ls, 
+              "COD_LOCALE_PROGETTO")
+  
+  # select varibili di interesse
+  appo <- appo %>%
+    select(all_of(var_ls))
+  
+  
+  # integra x_PROGRAMMA e x_GRUPPO da programmi
+  po_riclass <- init_programmazione(use_temi=FALSE, use_713=TRUE, use_flt=FALSE, 
+                                    use_ciclo=TRUE, tipo_ciclo="CICLO_PROGRAMMAZIONE", use_location=FALSE) %>%
+    rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA,
+           x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA) %>%
+    distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO)
+  
+  appo <- appo %>%
+    left_join(po_riclass, 
+              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO"))
+  
+  
+  # integra x_PROGRAMMA per casi con x_AMBITO non convenzionale
+  temp <- po_riclass %>% 
+    filter(!(OC_CODICE_PROGRAMMA == "2007IT001FA005" & x_AMBITO == "PAC"),
+           !(OC_CODICE_PROGRAMMA == "2007SA002FA016" & x_AMBITO == "PAC"),
+           !(OC_CODICE_PROGRAMMA == "2007IT005FAMG1" & x_AMBITO == "PAC")) %>%
+    distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA) %>%
+    rename(x_PROGRAMMA_NEW = x_PROGRAMMA)
+  
+  # temp %>% count(OC_CODICE_PROGRAMMA) %>% filter(n > 1)
+  
+  appo <- appo %>%
+    left_join(temp, by = "OC_CODICE_PROGRAMMA") %>%
+    mutate(x_PROGRAMMA = if_else(is.na(x_PROGRAMMA), x_PROGRAMMA_NEW, x_PROGRAMMA))
+    
+  
+  
+  return(appo)
+}
+
+
+
 
 
