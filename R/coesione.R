@@ -847,6 +847,65 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
 #' @param perimetro Dataset di classe perimetro.
 #' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro.
 prep_perimetro_bimestre_coesione <- function(bimestre, usa_meuro=TRUE) {
+  .Deprecated("load_operazioni")
+  out <- load_operazioni(bimestre, usa_meuro)
+  return(out)
+}
+# OLD:
+# prep_perimetro_bimestre_coesione <- function(bimestre, usa_meuro=TRUE) {
+#   
+#   # loads
+#   # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = TRUE, refactor = TRUE)
+#   perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+#   
+#   # fix per dissesto
+#   # TODO: da spostare a monte nel workflow di operazioni
+#   # perimetro <- perimetro %>%
+#   #   mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2016ABAMPSAP01" ~ "2016XXAMPSAP00",
+#   #                                          OC_CODICE_PROGRAMMA == "2016EMAMPSAP02" ~ "2016XXAMPSAP00",
+#   #                                          OC_CODICE_PROGRAMMA == "2016LIAMPSAP03" ~ "2016XXAMPSAP00",
+#   #                                          OC_CODICE_PROGRAMMA == "2016LOAMPSAP06" ~ "2016XXAMPSAP00",
+#   #                                          OC_CODICE_PROGRAMMA == "2016SAAMPSAP04" ~ "2016XXAMPSAP00",
+#   #                                          OC_CODICE_PROGRAMMA == "2016TOAMPSAP05" ~ "2016XXAMPSAP00",
+#   #                                          OC_CODICE_PROGRAMMA == "2016VEAMPSAP07" ~ "2016XXAMPSAP00",
+#   #                                          TRUE ~ OC_CODICE_PROGRAMMA))
+#   
+#   # viz
+#   perimetro <- perimetro %>%
+#     filter(OC_FLAG_VISUALIZZAZIONE == 0)
+#   
+#   # meuro
+#   if (usa_meuro == TRUE) {
+#     perimetro <- perimetro %>%
+#       mutate(COE = COE / 1000000,
+#              COE_IMP = COE_IMP / 1000000,
+#              COE_PAG = COE_PAG / 1000000)
+#   } else {
+#     perimetro <- perimetro %>%
+#       mutate(COE = COE,
+#              COE_IMP = COE_IMP,
+#              COE_PAG = COE_PAG)
+#   }
+#   
+#   # simply
+#   perimetro <- get_simply_non_loc(perimetro)
+#   
+#   # refactor
+#   perimetro <- refactor_ambito(perimetro)
+#   perimetro <- refactor_ciclo(perimetro)
+#   
+#   return(perimetro)
+# }
+
+
+
+#' Prepara perimetro operazioni con dati coesione
+#'
+#' Prepara perimetro operazioni con dati coesione
+#'
+#' @param perimetro Dataset di classe perimetro.
+#' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro.
+load_operazioni <- function(bimestre, usa_meuro=TRUE) {
   
   # loads
   # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = TRUE, refactor = TRUE)
@@ -890,6 +949,8 @@ prep_perimetro_bimestre_coesione <- function(bimestre, usa_meuro=TRUE) {
   
   return(perimetro)
 }
+
+
 
 
 #' Esporta report per Programmi con dati coesione
