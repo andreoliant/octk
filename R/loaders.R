@@ -168,7 +168,7 @@ fix_progetti <- function(progetti) {
 refactor_progetti <- function(perimetro) {
 
   perimetro <- perimetro %>%
-    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
+    mutate(# x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
            # x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
            #                                        "FEAD", "FAMI", "CTE")),
            # x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")),
@@ -180,7 +180,8 @@ refactor_progetti <- function(perimetro) {
                                                                           "Eseguito",
                                                                           "Non determinabile"))) %>%
     refactor_ambito(.) %>%
-    refactor_ciclo(.)
+    refactor_ciclo(.) %>%
+    refactor_macroarea(.)
   
   return(perimetro)
 }
