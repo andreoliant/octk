@@ -259,7 +259,18 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
                                  grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_sud) == TRUE ~ "Mezzogiorno",
                                  grepl(":::", COD_REGIONE) ~ "Trasversale", # MEMO: multi-regionale su più macroaree
                                  TRUE ~ "Estero")) %>%
-    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")))
+    # mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")))
+    refactor_macroarea(.)
+  
+  
+  # forza Mezzogiorno per alcuni ambiti
+  df <- df %>%
+    as_tibble(.) %>%
+    mutate(x_MACROAREA =  case_when(x_CICLO == "2007-2013" & x_AMBITO == "FESR" & x_REGNAZ == "NAZ" ~ "Mezzogiorno",
+                                    x_CICLO == "2007-2013" & x_AMBITO == "FSE" & x_REGNAZ == "NAZ" ~ "Mezzogiorno",
+                                    x_CICLO == "2007-2013" & x_AMBITO == "PAC" & x_REGNAZ == "NAZ" ~ "Mezzogiorno",
+                                    TRUE ~ as.character(x_MACROAREA))) %>%
+    refactor_macroarea(.)
 
   return(df)
 

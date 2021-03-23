@@ -8,6 +8,8 @@ make_report_macroaree_coesione(
   risorse = NULL,
   perimetro = NULL,
   use_meuro = TRUE,
+  cut_no_risorse = FALSE,
+  focus = "report",
   export = TRUE
 )
 }
@@ -15,6 +17,8 @@ make_report_macroaree_coesione(
 \item{risorse}{Dataset proveniente da make_report_risorse()}
 
 \item{perimetro}{Dataset di classe "operazioni"}
+
+\item{cut_no_risorse}{Vuoi eliminare i programmi monitorati senza risorse lato DB?}
 
 \item{export}{vuoi salvare il file?}
 

@@ -2324,7 +2324,8 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     refactor_ambito(.)
   
   # ricodifica x_MACROAREA
-  programmi <- ricodifica_macroaree(programmi)
+  # programmi <- ricodifica_macroaree(programmi)
+  # MEMO: ora è spostato in init_programmazione()
   
   # crea spalla
   spalla <- programmi %>%

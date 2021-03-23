@@ -281,6 +281,11 @@ init_programmazione <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use
     }
   }
   
+  if (use_location == TRUE) {
+    # ricodifica x_MACROAREA
+    programmi <- ricodifica_macroaree(programmi)
+  }
+  
   
   return(programmi)
   
