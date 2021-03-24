@@ -1,5 +1,5 @@
 ---
-title: "cis"
+title: "Analisi CIS"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{cis}
@@ -50,7 +50,7 @@ report_cis_interventi(interventi, lista_clp=NULL, operazioni=NULL, export=TRUE)
 report_cis_totali(interventi, lista_clp=NULL, progetti=NULL, export=TRUE)
 
 # Lista interventi cis con mapping a operazioni
-lista_cis_interventi_operazioni <- function(interventi, lista_clp=NULL, operazioni=NULL, progetti=NULL, export=TRUE)
+lista_cis_interventi_operazioni(interventi, lista_clp=NULL, operazioni=NULL, progetti=NULL, export=TRUE)
 # MEMO: questa è utile per finalità di debug e confronto con uffici
 
 ```
