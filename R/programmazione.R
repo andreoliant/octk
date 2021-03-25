@@ -38,7 +38,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
                       # CHK: decidere se vive
                       TRUE ~ ambito)
     # filename <- paste0(temp, "_1420.xlsx")
-    filename <- paste0("DBPROG_", temp, "1420.xlsx") # DBPROG_FSC1420.xlsx
+    filename <- paste0("DBCOE_", temp, "1420.xlsx") # DBPROG_FSC1420.xlsx
     
   } else {
     temp <- case_when(ambito == "FESR" ~ "SIE", #AF
@@ -47,7 +47,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
                       ambito == "FSC" ~ "FSC", #AF
                       TRUE ~ ambito)
     #filename <- paste0(temp, "_0713.xlsx") # MODIFICA AF
-    filename <- paste0("DBPROG_", temp, "0713.xlsx") # DBPROG_FSC0713.xlsx
+    filename <- paste0("DBCOE_", temp, "0713.xlsx") # DBPROG_FSC0713.xlsx
   }
   
   # importa file excel
