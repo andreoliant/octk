@@ -37,6 +37,7 @@ library("devtools")
 
 # libs
 devtools::load_all(path = ".")
+packageVersion("octk")
 
 # setup
 oc_init(
@@ -107,6 +108,8 @@ devtools::build_vignettes()
 
 # build
 devtools::load_all(path = ".")
+packageVersion("octk")
+
 # devtools::check(path = "/Users/aa/coding/oc")
 devtools::build(pkg = ".", path = "/home/antonio/coding/octk/bkp")
 # MEMO: build to boundle "oc_X.X.X.tar.gz"
