@@ -38,7 +38,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
                       # CHK: decidere se vive
                       TRUE ~ ambito)
     # filename <- paste0(temp, "_1420.xlsx")
-    filename <- paste0("DBCOE_", temp, "1420.xlsx") # DBPROG_FSC1420.xlsx
+    filename <- paste0("Dati_DBCOE_", temp, "1420.xlsx") # DBPROG_FSC1420.xlsx
     
   } else {
     temp <- case_when(ambito == "FESR" ~ "SIE", #AF
@@ -47,7 +47,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
                       ambito == "FSC" ~ "FSC", #AF
                       TRUE ~ ambito)
     #filename <- paste0(temp, "_0713.xlsx") # MODIFICA AF
-    filename <- paste0("DBCOE_", temp, "0713.xlsx") # DBPROG_FSC0713.xlsx
+    filename <- paste0("Dati_DBCOE_", temp, "0713.xlsx") # DBPROG_FSC0713.xlsx
   }
   
   # importa file excel
@@ -58,7 +58,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   # filtra ambiti da SIE
   if (ambito == "FESR" | ambito == "FSE" | ambito == "YEI") {
     appo <- appo %>%
-      filter(OC_DESCR_FONTE == ambito)
+      filter(AMBITO == ambito)
   }
   
   # MEMO: ELIMINATO PERCH? INCORPORATO NEL DB SIA IL FLAG ULTIMA DECISIONE CHE MONITORAGGIO. 
@@ -81,54 +81,53 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   # }
   
   # patch per specifiche DB FSC
-  if (ambito == "FSC") {
-    appo <- appo %>%
-      mutate(FINANZ_TOTALE_PUBBLICO = FINANZ_FSC)
-  }
+  # if (ambito == "FSC") {
+  #   appo <- appo %>%
+  #     mutate(FINANZ_TOTALE_PUBBLICO = FINANZ_FSC)
+  # }
   
   # switch varibili da tenere
-  var_ls <- c("OC_CODICE_PROGRAMMA", "OC_DESCRIZIONE_PROGRAMMA", "OC_TIPOLOGIA_PROGRAMMA",
-              "OC_DESCR_FONTE",
-              "FINANZ_TOTALE_PUBBLICO") #AF OK
+  var_ls <- c("OC_CODICE_PROGRAMMA", "DESCRIZIONE_PROGRAMMA", "TIPOLOGIA_PROGRAMMA",
+              "AMBITO",
+              "FINANZ_TOTALE")
   
   # SPOSTARE "OC_MACROAREA", "DEN_REGIONE" IN IF CON "USE_LOCATION" 
   
   if (use_temi == TRUE) {
-    if(use_articolaz == TRUE) {
-      var_ls <- c(var_ls,
-                  "DESCR_SETTORE_STRATEGICO_FSC", "DESCR_ASSE_TEMATICO_FSC",
-                  "COD_RA", "DESCR_RA",
-                  "OC_COD_ARTICOLAZ_PROGRAMMA")
-    } else {
-      var_ls <- c(var_ls,
-                  "DESCR_SETTORE_STRATEGICO_FSC", "DESCR_ASSE_TEMATICO_FSC",
-                  "COD_RA", "DESCR_RA")
-    }
+    var_ls <- c(var_ls,
+                "COD_AREA_TEMATICA_PSC", "DESCR_AREA_TEMATICA_PSC", 
+                "COD_SETTORE_INTERVENTO_PSC", "DESCR_SETTORE_INTERVENTO_PSC",
+                "COD_RISULTATO_ATTESO", "DESCR_RISULTATO_ATTESO")
+  }
+  
+  if (use_articolaz == TRUE) {
+    var_ls <- c(var_ls,
+                "COD_LIVELLO_1", "DESCR_LIVELLO_1" )
   }
   
   
   if (use_sog == TRUE) {
     var_ls <- c(var_ls,
-                "AMMINISTRAZIONE_TITOLARE")
+                "AMMINISTRAZIONE", "TIPOLOGIA_AMMINISTRAZIONE")
   }
   
   if (use_ue == TRUE) {
     var_ls <- c(var_ls,
-                "FINANZ_UE", "OC_AREA_OBIETTIVO_UE")#AF OK
+                "FINANZ_UE", "FINANZ_ALTRO", "CAT_REGIONE")
     
   }
   
   if (use_flt == TRUE) {
     var_ls <- c(var_ls,
-                "OC_FLAG_MONITORAGGIO")#AF OK
+                "FLAG_MONITORAGGIO")
     
     # patch per dati da consolidare nel DB
     appo <- appo %>%
-      mutate(OC_FLAG_MONITORAGGIO = as.numeric(OC_FLAG_MONITORAGGIO)) %>%
-      mutate(OC_FLAG_MONITORAGGIO = case_when(OC_FLAG_MONITORAGGIO == 1 ~ 1,
-                                              OC_FLAG_MONITORAGGIO == 0 ~ 0,
-                                              OC_FLAG_MONITORAGGIO == 2 ~ 2, # presente per FSC e POC
-                                              OC_FLAG_MONITORAGGIO == 9 ~ 9, # presente per FSC
+      mutate(FLAG_MONITORAGGIO = as.numeric(FLAG_MONITORAGGIO)) %>%
+      mutate(FLAG_MONITORAGGIO = case_when(FLAG_MONITORAGGIO == 1 ~ 1,
+                                              FLAG_MONITORAGGIO == 0 ~ 0,
+                                              FLAG_MONITORAGGIO == 2 ~ 2, # presente per FSC e POC
+                                              FLAG_MONITORAGGIO == 9 ~ 9, # presente per FSC
                                               # is.na(OC_FLAG_MONITORAGGIO) ~ 1, # questa è poco logica ma dipende dai dati
                                               # OC_FLAG_MONITORAGGIO == "" ~ 1, # questa dovrebbe corrispondere alla condizione sotto
                                               # is.character(OC_FLAG_MONITORAGGIO) & 
@@ -141,7 +140,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   
   if (use_location == TRUE) {
     var_ls <- c(var_ls,
-                "OC_MACROAREA", "DEN_REGIONE")
+                "MACROAREA", "DEN_REGIONE")
   }
   
   if (use_ciclo == TRUE) {
@@ -460,8 +459,8 @@ workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL)
   
   #load
   interventi <- init_programmazione(use_temi = FALSE, use_sog=TRUE, use_eu=TRUE, use_713 = TRUE, use_ciclo = TRUE, use_flt = TRUE) %>%
-    rename(x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA,
-           x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA)
+    rename(x_PROGRAMMA = DESCRIZIONE_PROGRAMMA,
+           x_GRUPPO = TIPOLOGIA_PROGRAMMA)
   
   if (is.null(progetti)) {
     progetti <- load_progetti(bimestre, visualizzati=TRUE, light=TRUE)
@@ -472,7 +471,7 @@ workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL)
   
   # label da progetti pubblicati per allineamento a sito
   label_programmi <- progetti %>%
-    distinct(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
+    distinct(OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA)
   
   # filtro pubblicati
   interventi <- interventi %>%
@@ -488,7 +487,7 @@ workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL)
   # applica FLAG_MONITORAGGIO
   if (use_flt == TRUE) {
     interventi <- interventi %>%
-      filter(OC_FLAG_MONITORAGGIO == 1)
+      filter(FLAG_MONITORAGGIO == 1)
   }
   
   # summary (opzione 1: il programma pluri-fondo mostra il valore specifico di ogni ambito)
@@ -497,7 +496,7 @@ workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL)
     distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_AMBITO, x_CICLO, PUB) %>%
     left_join(interventi %>%
                 group_by(OC_CODICE_PROGRAMMA, x_AMBITO) %>%
-                summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)),
+                summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE)),
               by = c("OC_CODICE_PROGRAMMA", "x_AMBITO"))
   
   # summary (opzione 2: il programma pluri-fondo è duplicato nei due ambiti e il valore esposto è sempre il totale) 
@@ -528,7 +527,7 @@ workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL)
   # rewrite x_PROGRAMMA
   programmi <- programmi %>%
     left_join(label_programmi) %>%
-    mutate(x_PROGRAMMA = if_else(is.na(OC_DESCRIZIONE_PROGRAMMA), x_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)) %>%
+    mutate(x_PROGRAMMA = if_else(is.na(DESCRIZIONE_PROGRAMMA), x_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)) %>%
     select(-OC_DESCRIZIONE_PROGRAMMA)
   
   #aggiunge informazioni di supporto
@@ -569,7 +568,7 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_
   
   if (use_flt == TRUE) {
     programmi <- programmi %>%
-      filter(OC_FLAG_MONITORAGGIO == 1 | OC_FLAG_MONITORAGGIO == 2)
+      filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2)
     # MEMO: in FSC resta anche tipo 9 che viene scartato
   }
   
@@ -608,7 +607,7 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_
   if (use_eu == TRUE) {
     out <- programmi %>%
       group_by(x_CICLO, x_AMBITO, x_MACROAREA) %>%
-      summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE),
+      summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE),
                 RISORSE_UE = sum(FINANZ_UE, na.rm = TRUE)) %>%
       refactor_macroarea(.)
     
@@ -620,7 +619,7 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_
   } else {
     out <- programmi %>%
       group_by(x_CICLO, x_AMBITO, x_MACROAREA) %>%
-      summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)) %>%
+      summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE)) %>%
       refactor_macroarea(.)
     
     if (use_meuro == TRUE) {
@@ -740,8 +739,13 @@ chk_risorse_ciclo_contabile_strategia <- function(use_flt=TRUE, force_yei=FALSE,
 #' @return Un dataframe con x_MACROAREA
 ricodifica_macroaree <- function(programmi) {
   
+  if ("MACROAREA" %in% names(programmi)) {
+    programmi <- programmi %>% 
+      rename(x_MACROAREA = MACROAREA)
+  }
+  
   out <- programmi %>% 
-    rename(x_MACROAREA = OC_MACROAREA) %>%
+    # rename(x_MACROAREA = MACROAREA) %>%
     mutate(x_MACROAREA = case_when(x_MACROAREA == "CN" ~ "Centro-Nord",
                                    x_MACROAREA == "SUD" ~ "Mezzogiorno",
                                    x_MACROAREA == "MZ" ~ "Mezzogiorno",
@@ -789,46 +793,44 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
   
   # switch varibili da tenere
   var_ls <- c("OC_CODICE_PROGRAMMA", "OC_TITOLO_PROGETTO",
-              "OC_DESCR_FONTE",
-              "FINANZ_TOTALE_PUBBLICO")
+              "AMBITO",
+              "FINANZ_TOTALE")
   
   if (use_temi == TRUE) {
-    if(use_articolaz == TRUE) {
-      var_ls <- c(var_ls,
-                  "DESCR_SETTORE_STRATEGICO_FSC", "DESCR_ASSE_TEMATICO_FSC",
-                  "COD_RA", "DESCR_RA",
-                  "OC_COD_ARTICOLAZ_PROGRAMMA")
-    } else {
-      var_ls <- c(var_ls,
-                  "DESCR_SETTORE_STRATEGICO_FSC", "DESCR_ASSE_TEMATICO_FSC",
-                  "COD_RA", "DESCR_RA")
-    }
+    var_ls <- c(var_ls,
+                "COD_AREA_TEMATICA_PSC", "DESCR_AREA_TEMATICA_PSC", 
+                "COD_SETTORE_INTERVENTO_PSC", "DESCR_SETTORE_INTERVENTO_PSC",
+                "COD_RISULTATO_ATTESO", "DESCR_RISULTATO_ATTESO")
+  }
+  
+  if (use_articolaz == TRUE) {
+    var_ls <- c(var_ls,
+                "COD_LIVELLO_1", "DESCR_LIVELLO_1" )
   }
   
   
   if (use_sog == TRUE) {
     var_ls <- c(var_ls,
-                "AMMINISTRAZIONE_BENEFICIARIA",
-                "TIPOLOGIA_DI_AMMINISTRAZIONE_BENEFICIARIA")
+                "AMMINISTRAZIONE", "TIPOLOGIA_AMMINISTRAZIONE")
   }
   
   if (use_ue == TRUE) {
     var_ls <- c(var_ls,
-                "FINANZ_UE", "OC_AREA_OBIETTIVO_UE")
+                "FINANZ_UE", "FINANZ_ALTRO", "CAT_REGIONE")
     
   }
   
   if (use_flt == TRUE) {
     var_ls <- c(var_ls,
-                "OC_FLAG_MONITORAGGIO")
+                "FLAG_MONITORAGGIO")
     
     # patch per dati da consolidare nel DB
     appo <- appo %>%
-      mutate(OC_FLAG_MONITORAGGIO = as.numeric(OC_FLAG_MONITORAGGIO)) %>%
-      mutate(OC_FLAG_MONITORAGGIO = case_when(OC_FLAG_MONITORAGGIO == 1 ~ 1,
-                                              OC_FLAG_MONITORAGGIO == 0 ~ 0,
-                                              OC_FLAG_MONITORAGGIO == 2 ~ 2, # presente per FSC e POC
-                                              OC_FLAG_MONITORAGGIO == 9 ~ 9, # presente per FSC
+      mutate(FLAG_MONITORAGGIO = as.numeric(FLAG_MONITORAGGIO)) %>%
+      mutate(FLAG_MONITORAGGIO = case_when(FLAG_MONITORAGGIO == 1 ~ 1,
+                                              FLAG_MONITORAGGIO == 0 ~ 0,
+                                              FLAG_MONITORAGGIO == 2 ~ 2, # presente per FSC e POC
+                                              FLAG_MONITORAGGIO == 9 ~ 9, # presente per FSC
                                               # is.na(OC_FLAG_MONITORAGGIO) ~ 1, # questa è poco logica ma dipende dai dati
                                               # OC_FLAG_MONITORAGGIO == "" ~ 1, # questa dovrebbe corrispondere alla condizione sotto
                                               # is.character(OC_FLAG_MONITORAGGIO) & 
@@ -868,7 +870,7 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
     }
   }
   appo <- appo %>%
-    mutate(x_AMBITO = OC_DESCR_FONTE) 
+    mutate(x_AMBITO = AMBITO) 
   appo <- refactor_ambito(appo)
   appo <- refactor_ciclo(appo)
   
@@ -888,8 +890,8 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
   # integra x_PROGRAMMA e x_GRUPPO da programmi
   po_riclass <- init_programmazione(use_temi=FALSE, use_713=TRUE, use_flt=FALSE, 
                                     use_ciclo=TRUE, tipo_ciclo="CICLO_PROGRAMMAZIONE", use_location=FALSE) %>%
-    rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA,
-           x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA) %>%
+    rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
+           x_PROGRAMMA = DESCRIZIONE_PROGRAMMA) %>%
     distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO)
   
   appo <- appo %>%

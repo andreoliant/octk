@@ -984,12 +984,12 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
   # perimetro <- operazioni
   # DEBUG: use_713 <- TRUE
   programmi <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo) %>%
-    rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA,
-           x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA)
+    rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
+           x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   
   if (use_flt == TRUE) {
     programmi <- programmi %>%
-      filter(OC_FLAG_MONITORAGGIO == 1 | OC_FLAG_MONITORAGGIO == 2)
+      filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2)
     # MEMO: in FSC resta anche tipo 9 che viene scartato
   }
 
@@ -1023,7 +1023,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
     #                                               "FEAD", "FAMI", "CTE", "ORD")),
     #        x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006"))) %>%
     group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA) %>%
-    summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE))
+    summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE))
   
   if (usa_meuro == TRUE) {
     spalla <- spalla %>%
@@ -2159,8 +2159,8 @@ make_report_macroaree_coesione <- function(risorse=NULL, perimetro=NULL, use_meu
   
   if (cut_no_risorse == TRUE) {
     appo <- init_programmazione(use_713 = TRUE, use_flt = TRUE) %>%
-      filter(FINANZ_TOTALE_PUBBLICO > 0, OC_FLAG_MONITORAGGIO != 0, OC_FLAG_MONITORAGGIO != 9) %>%
-      select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, FINANZ_TOTALE_PUBBLICO)
+      filter(FINANZ_TOTALE > 0, FLAG_MONITORAGGIO != 0, FLAG_MONITORAGGIO != 9) %>%
+      select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, FINANZ_TOTALE)
     
     # perimetro <- operazioni_2
     perimetro <- perimetro %>%
@@ -2325,12 +2325,12 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
   # perimetro <- operazioni
   
   programmi <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE) %>%
-    rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA,
-           x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA)
+    rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
+           x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   
   if (use_flt == TRUE) {
     programmi <- programmi %>%
-      filter(OC_FLAG_MONITORAGGIO == 1 | OC_FLAG_MONITORAGGIO == 2)
+      filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2)
     # MEMO: in FSC resta anche tipo 9 che viene scartato
   }
   
@@ -2348,7 +2348,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
   # crea spalla
   spalla <- programmi %>%
     group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_MACROAREA) %>%
-    summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE))
+    summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE))
   
   if (usa_meuro == TRUE) {
     spalla <- spalla %>%
@@ -2360,8 +2360,8 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     # MEMO: questa soluzione porta a deniminazioni divergenti per lo stesso codice po
     
     po_riclass <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=FALSE) %>%
-      rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA,
-             x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA) %>%
+      rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
+             x_PROGRAMMA = DESCRIZIONE_PROGRAMMA) %>%
       distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO)
     
   }
@@ -2621,12 +2621,12 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     # MEMO: questa versione esclude casi con RISORSE 0 per ambito nazionale e progetti presenti (e casi simili)
     
     appo <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE) %>%
-      rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA,
-             x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA)
+      rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
+             x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
     
     if (use_flt == TRUE) {
       appo <- appo %>%
-        filter(OC_FLAG_MONITORAGGIO == 1 | OC_FLAG_MONITORAGGIO == 2)
+        filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2)
       # MEMO: in FSC resta anche tipo 9 che viene scartato
     }
     
