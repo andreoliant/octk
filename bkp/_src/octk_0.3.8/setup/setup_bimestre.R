@@ -75,6 +75,27 @@ devtools::load_all(path = ".")
 
 
 # ----------------------------------------------------------------------------------- #
+# fix per variabili covid
+
+# MEMO: il file "" in DATA viene dalla versione di "PROGETTI_PREESTESO.csv" del 05/03/2021
+# appo <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE)
+# 
+# appo1 <- appo %>%
+#   distinct(COD_LOCALE_PROGETTO, OC_FLAG_TAG_BENICONF, COVID)
+# 
+# write.csv2(appo1, file.path(DATA, "flag_beniconf_covid.csv"), row.names = FALSE)
+# 
+# # MEMO: la versione di "PROGETTI_PREESTESO.csv" del 05/03/2021 poi è stata cancellata per ripristino della precedente del 22/02/2021
+# progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE, light = FALSE)
+# appo1 <- read_csv2(file.path(DATA, "flag_beniconf_covid.csv"), guess_max = 1200000)
+# 
+# progetti_2 <- progetti %>%
+#   left_join(appo1, by = "COD_LOCALE_PROGETTO")
+# 
+# write.csv2(progetti_2, file.path(DATA, "PROGETTI_PREESTESO.csv"), row.names = FALSE)
+
+
+# ----------------------------------------------------------------------------------- #
 # progetti_light e operazioni
 # https://readr.tidyverse.org/articles/readr.html#column-specification
 
@@ -86,8 +107,7 @@ setup_light(bimestre, fix = TRUE)
 # progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE, light = FALSE)
 # progetti <- fix_progetti(progetti)
 # setup_operazioni(bimestre, progetti, export=TRUE, debug=TRUE)
-setup_operazioni(bimestre, export=TRUE, debug=TRUE)
-
+setup_operazioni(bimestre, use_sito=TRUE, export=TRUE, debug=TRUE)
 
 # chk vuoti
 rm(progetti)
@@ -111,7 +131,7 @@ chk <- progetti %>%
 
 chk %>%
   count(OC_CODICE_PROGRAMMA, x_AMBITO.x, x_AMBITO.y)
-# OC_CODICE_PROGRAMMA x_AMBITO.x x_AMBITO.y     n
+  # OC_CODICE_PROGRAMMA x_AMBITO.x x_AMBITO.y     n
 # <chr>               <fct>      <chr>      <int>
 # 1 2007IT001FA005      FSC        POC            6
 # 2 2007IT005FAMG1      FSC        POC            4
@@ -135,6 +155,10 @@ write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
 # write.csv2(operazioni_rev, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), row.names = FALSE)
 
 
+# ----------------------------------------------------------------------------------- #
+# chk 
 
+chk <- progetti %>%
+  count(x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, OC_CODICE_PROGRAMMA)
 
 

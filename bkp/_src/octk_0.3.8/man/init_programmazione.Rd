@@ -13,6 +13,7 @@ init_programmazione(
   use_articolaz = FALSE,
   use_location = FALSE,
   use_ciclo = FALSE,
+  tipo_ciclo = "CICLO_STRATEGIA",
   use_en = FALSE
 )
 }
@@ -24,6 +25,8 @@ init_programmazione(
 \item{use_eu}{Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)}
 
 \item{use_713}{Vuoi caricare anche il DB per il 2007-2013?}
+
+\item{tipo_ciclo}{Vuoi usare CICLO_STRATEGIA (default in x_AMBITO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_AMBITO da DB)?}
 }
 \value{
 L'intero database dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.

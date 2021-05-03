@@ -222,10 +222,13 @@ setup_light <- function(bimestre, fix = FALSE) {
              # PROGRAMMATO_INDICATORE_4,
              # REALIZZATO_INDICATORE_4,
              # OC_FLAG_REGIONE_UNICA,
-             OC_FLAG_VISUALIZZAZIONE #,
+             OC_FLAG_VISUALIZZAZIONE,
              # OC_FLAG_PAC,
              # DATA_AGGIORNAMENTO,
              # OC_FOCUS
+             OC_FLAG_BENICONF = OC_FLAG_TAG_BENICONF,
+             OC_FLAG_COVID = COVID
+             
       )
 
     # add QSN
@@ -245,8 +248,8 @@ setup_light <- function(bimestre, fix = FALSE) {
       progetti_light <- fix_progetti(progetti_light)
     }
     progetti_light <- get_x_vars(progetti_light)
-    progetti_light <- get_macroarea(progetti_light, real_reg=TRUE)
-    progetti_light <- get_regione_simply(progetti_light)
+    progetti_light <- get_macroarea(progetti_light, progetti_light, real_reg=TRUE)
+    progetti_light <- get_regione_simply(progetti_light, progetti_light)
 
     # chk
     progetti_light %>%

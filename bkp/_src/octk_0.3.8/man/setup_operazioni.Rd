@@ -10,6 +10,7 @@ setup_operazioni(
   export = FALSE,
   use_fix = FALSE,
   use_ecomix = FALSE,
+  use_sito = FALSE,
   debug = FALSE
 )
 }
@@ -19,6 +20,8 @@ setup_operazioni(
 \item{progetti}{Dataset con un perimetro in formato "progetti".}
 
 \item{use_ecomix}{Vuoi calcolare il costo coesione al netto delle economie solo per i progetti conclusi?}
+
+\item{use_sito}{Vuoi usare il calcolo dellle risorse coesione fatto per il sito OC?}
 }
 \value{
 Il dataset operazioni con le variabili coesione calcolate: COE, COE_IMP e COE_PAG.

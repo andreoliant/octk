@@ -93,9 +93,10 @@ get_regione_simply <- function(df, progetti, real_reg=TRUE) {
   # MEMO: deve avere struttura di progetti
 
   if (missing(progetti)) {
-    if (!exists("progetti", envir = .GlobalEnv)) {
-      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
-    }
+    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    # if (!exists("progetti", envir = .GlobalEnv)) {
+    #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    # }
   }
 
   # NEW BLOCK
@@ -114,7 +115,7 @@ get_regione_simply <- function(df, progetti, real_reg=TRUE) {
 
   # NEW BLOCK
   if (real_reg == TRUE) {
-    df <- get_real_reg(df)
+    df <- get_real_reg(df, progetti)
     # MEMO: sovrascrive COD_REGIONE
   }
 
@@ -216,9 +217,10 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
   # source("loader.R")
 
   if (missing(progetti)) {
-    if (!exists("progetti", envir = .GlobalEnv)) {
-      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
-    }
+    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    # if (!exists("progetti", envir = .GlobalEnv)) {
+    #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    # }
   }
 
   # NEW BLOCK
@@ -259,7 +261,18 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
                                  grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_sud) == TRUE ~ "Mezzogiorno",
                                  grepl(":::", COD_REGIONE) ~ "Trasversale", # MEMO: multi-regionale su più macroaree
                                  TRUE ~ "Estero")) %>%
-    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")))
+    # mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")))
+    refactor_macroarea(.)
+  
+  
+  # forza Mezzogiorno per alcuni ambiti
+  df <- df %>%
+    as_tibble(.) %>%
+    mutate(x_MACROAREA =  case_when(x_CICLO == "2007-2013" & x_AMBITO == "FESR" & x_REGNAZ == "NAZ" ~ "Mezzogiorno",
+                                    x_CICLO == "2007-2013" & x_AMBITO == "FSE" & x_REGNAZ == "NAZ" ~ "Mezzogiorno",
+                                    x_CICLO == "2007-2013" & x_AMBITO == "PAC" & x_REGNAZ == "NAZ" ~ "Mezzogiorno",
+                                    TRUE ~ as.character(x_MACROAREA))) %>%
+    refactor_macroarea(.)
 
   return(df)
 
@@ -626,9 +639,10 @@ get_real_reg <- function(df, progetti, debug_mode=FALSE) {
   # MEMO: richiede x_REGNAZ
 
   if (missing(progetti)) {
-    if (!exists("progetti", envir = .GlobalEnv)) {
-      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
-    }
+    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    # if (!exists("progetti", envir = .GlobalEnv)) {
+    #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    # }
   }
 
   # NEW BLOCK

@@ -115,7 +115,8 @@ fix_progetti <- function(progetti) {
 
   # fix temporaneo per IOG>YEI
   progetti <- progetti %>%
-    mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "IOG"~ "YEI",
+    mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "IOG" ~ "YEI",
+                                         OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & is.na(FONDO_COMUNITARIO) ~ "YEI",
                                          TRUE ~ FONDO_COMUNITARIO))
 
   # # fix temporaneo per ":::OC_CODICE_PROGRAMMA"
@@ -168,7 +169,7 @@ fix_progetti <- function(progetti) {
 refactor_progetti <- function(perimetro) {
 
   perimetro <- perimetro %>%
-    mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
+    mutate(# x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
            # x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
            #                                        "FEAD", "FAMI", "CTE")),
            # x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006")),
@@ -180,7 +181,8 @@ refactor_progetti <- function(perimetro) {
                                                                           "Eseguito",
                                                                           "Non determinabile"))) %>%
     refactor_ambito(.) %>%
-    refactor_ciclo(.)
+    refactor_ciclo(.) %>%
+    refactor_macroarea(.)
   
   return(perimetro)
 }

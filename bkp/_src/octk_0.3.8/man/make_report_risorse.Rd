@@ -7,16 +7,25 @@
 make_report_risorse(
   ciclo = NULL,
   use_meuro = FALSE,
-  tipo_ciclo = "STRATEGIA",
+  use_flt = FALSE,
+  use_eu = FALSE,
+  force_yei = FALSE,
+  tipo_ciclo = "CICLO_STRATEGIA",
   export = FALSE
 )
 }
 \arguments{
-\item{ciclo}{Dataset di classe perimetro.}
+\item{ciclo}{Vuoi un ciclo specifico?}
 
 \item{use_meuro}{Vuoi i dati in Meuro? Di default sono in euro.}
 
-\item{tipo_ciclo}{Vuoi us, use}
+\item{use_flt}{Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?}
+
+\item{use_eu}{Logico. vuoi vedere risorse UE ove previste?}
+
+\item{force_yei}{Logico. Vuoi forzare FSE in YEI?}
+
+\item{tipo_ciclo}{Vuoi usare CICLO_STRATEGIA (default in x_AMBITO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_AMBITO da DB)?}
 
 \item{export}{vuoi salvare il file?}
 }

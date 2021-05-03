@@ -35,7 +35,10 @@ po <- octk::po_riclass %>%
 
 
 programmi <- init_programmazione(use_713 = TRUE) %>%
-  count(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
+  rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA) %>%
+  count(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO)
+
+# write_csv2(programmi, file.path(TEMP = "chk_po_riclass.csv"))
 
 # chk
 chk_match(po, programmi, id = "OC_CODICE_PROGRAMMA")
@@ -44,14 +47,14 @@ chk_match(po, programmi, id = "OC_CODICE_PROGRAMMA")
 chk_left <- po %>%
   select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ) %>%
   anti_join(programmi,
-            by = "OC_CODICE_PROGRAMMA")
+            by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_GRUPPO"))
 write_csv(chk_left, file.path(TEMP, "chk_left.csv"))
 
 # chk scarti da DB
 chk_right <- programmi %>%
   anti_join(po %>%
               select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ),
-            by = "OC_CODICE_PROGRAMMA")
+            by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_GRUPPO"))
 write_csv(chk_right, file.path(TEMP, "chk_right.csv"))
 
 
@@ -105,15 +108,23 @@ progetti_all %>%
 
 # chk mismatch con get_x_vars per i programmi misti e anomalie
 progetti_all %>%
-  # fix_progetti(.) %>%
+  fix_progetti(.) %>%
   get_x_vars(.) %>%
   filter(is.na(x_CICLO) | is.na(x_AMBITO)) %>%
   count(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
 # MEMO: qui dovrennero rimanere come problematici solo i programmi ":::"
 
+
+progetti_all %>%
+  count(COD_LOCALE_PROGETTO) %>%
+  filter(n > 1)
+
+
 # HAND: integra po_riclass.csv (e DB in caso di codifiche assenti)
 # HAND: integra fix_progetti() per gestire anomalie
 
+# CHK YEI:
+progetti_all %>% filter(OC_CODICE_PROGRAMMA == "2014IT05M9OP001") %>% count(FONDO_COMUNITARIO)
 
 
 # reload
@@ -126,7 +137,7 @@ devtools::load_all(path = ".")
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20201031"
+bimestre_old <- "20201231"
 # bimestre_old <- "20191031"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
@@ -213,32 +224,36 @@ progetti_all %>%
   count(x_REGNAZ, X_REGNAZ) %>%
   filter(x_REGNAZ != X_REGNAZ)
 
-# chk <- progetti_all %>%
-#   fix_progetti(.) %>%
-#   get_x_vars(.) %>%
-#   filter(x_REGNAZ == "NAZ", X_REGNAZ == "MOLISE")
+chk <- progetti_all %>%
+  fix_progetti(.) %>%
+  get_x_vars(.) %>%
+  filter(x_REGNAZ == "TOSCANA", X_REGNAZ == "NAZ")
 
 # x_REGNAZ X_REGNAZ     n
 # <chr>    <chr>    <int>
 # 1 LAZIO    NAZ          1 # POR vs Piano Impresa (vince POR)
 # 2 NAZ      ABRUZZO      4 # GSSI
-# 3 NAZ      CAMPANIA    26 # METANIZZAZIONE vs PATTO (vince METANIZZAZIONE)
-# 4 NAZ      MOLISE      46 # CIS MOLISE (va a coumuni e non a regione)
+# 3 NAZ      CAMPANIA    27 # METANIZZAZIONE vs PATTO (vince METANIZZAZIONE)
+# 4 NAZ      MOLISE      47 # CIS MOLISE (va a coumuni e non a regione)
+# 5 TOSCANA  NAZ          2 # 
 
-
-progetti_all %>%
+appo <- progetti_all %>%
   fix_progetti(.) %>%
   get_x_vars(.) %>%
-  get_macroarea(., real_reg=TRUE) %>%
-  # get_regione_simply(.) %>%
+  get_macroarea(., progetti_all, real_reg=TRUE) %>%
+  get_regione_simply(., progetti_all) 
+
+chk <- appo %>%
   count(x_MACROAREA, x_REGNAZ, x_REGIONE) %>%
   filter(x_REGNAZ != x_REGIONE)
 
-# Errore: '/home/antonio/dati/oc/20201231/../20201231/progetti_light_20201231.csv' does not exist. 
+appo %>%
+  filter(x_REGNAZ == "PA BOLZANO", x_REGIONE == "PA TRENTO", x_MACROAREA == "Centro-Nord") %>%
+  count(x_CICLO, x_AMBITO, x_PROGRAMMA, x_MACROAREA, x_REGNAZ, x_REGIONE)
+# CHK: per i programmi 713 che forzo su Mezzogiorno restano disallineamenti con x_REGIONE 
 
 
 
-
-rm(progetti_all, progetti_all_old)
+rm(progetti_all, progetti_all_old, appo)
 
 
