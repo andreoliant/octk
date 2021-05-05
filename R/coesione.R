@@ -2823,10 +2823,14 @@ workflow_operazioni_sito <- function(bimestre, progetti, debug=FALSE) {
   
   # MEMO: dovrebbe esserci anche 2007SA002FA016 ma ha flag OC_FLAG_PAC solo per un progetto...
   
+  operazioni_713_raw <- operazioni_713_raw %>%
+    rename(COD_LOCALE_PROGETTO = cod_locale_progetto)
+  
+    # filter(OC_CODICE_PROGRAMMA %in% c("2007IT005FA
+  
   # FIX: duplicazione di programmi PAC-FSC (es. direttrici ferroviarie)
   appo <- operazioni_713_raw %>%
-    rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
-    
+    # rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
     # filter(OC_CODICE_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005")) %>%
     filter(OC_COD_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005")) %>%
     # left_join(progetti %>%
@@ -2837,10 +2841,90 @@ workflow_operazioni_sito <- function(bimestre, progetti, debug=FALSE) {
     # TODO: verifica se OC_FLAG_PAC in operazioni_flt_ok coincide con quello in progetti
     # mutate(x_AMBITO = "POC:::FSC") %>%
     mutate(x_AMBITO = "PAC:::FSC") %>%
-    separate_rows(x_AMBITO, sep = ":::")
+    separate_rows(x_AMBITO, sep = ":::") %>%
+    # ricalcolo variabili coe (sovrascive fabio)
+    fix_operazioni_713(.) %>%
+    # map per ambito
+    mutate(COS_AMM = case_when(x_AMBITO == "FSC" ~ 0,
+                               x_AMBITO == "PAC" ~ 0,
+                               TRUE ~ COSTO_RENDICONTABILE_UE),
+           IMP_AMM = 0,
+           PAG_AMM = case_when(x_AMBITO == "FSC" ~ OC_TOT_PAGAMENTI_FSC,
+                               x_AMBITO == "PAC" ~ OC_TOT_PAGAMENTI_PAC,
+                               TRUE ~ OC_TOT_PAGAMENTI_RENDICONTAB_UE)) %>%
+  # integra variabili da progetti (l'aggancio crea valori duplicati)
+  select(-TOT_PAGAMENTI) %>%
+  left_join(progetti %>%
+              select(COD_LOCALE_PROGETTO,
+                     OC_FINANZ_TOT_PUB_NETTO, OC_FINANZ_STATO_FSC_NETTO, OC_FINANZ_STATO_PAC_NETTO,
+                     FINANZ_TOTALE_PUBBLICO, FINANZ_STATO_FSC, FINANZ_STATO_PAC,
+                     IMPEGNI, TOT_PAGAMENTI),
+            by = "COD_LOCALE_PROGETTO") %>%
+    mutate(COE = case_when(x_AMBITO == "FSC" ~ OC_FINANZ_STATO_FSC_NETTO,
+                           x_AMBITO == "PAC" ~ OC_FINANZ_STATO_PAC_NETTO,
+                           is.na(COS_AMM) ~ 0,
+                           TRUE ~ COS_AMM),
+           # MEMO: qui sopra non sto facendo MAX tra FTP e FTPN (è una tecnica che uso solo per riproporzionare impegni)
+           # base_ftp = if_else(OC_FINANZ_TOT_PUB_NETTO > 0,
+           #                    OC_FINANZ_TOT_PUB_NETTO,
+           #                    FINANZ_TOTALE_PUBBLICO),
+           base_ftp = case_when(COS_AMM > OC_FINANZ_TOT_PUB_NETTO ~ COS_AMM, # FIX per x > 1
+                                COE > OC_FINANZ_TOT_PUB_NETTO ~ COE, # FIX per x > 1 >>> CHK: FORSE E' ININFLUENTE
+                                OC_FINANZ_TOT_PUB_NETTO > 0 ~ OC_FINANZ_TOT_PUB_NETTO,
+                                TRUE ~ FINANZ_TOTALE_PUBBLICO),
+           base_coe = case_when(x_AMBITO == "FSC" & OC_FINANZ_TOT_PUB_NETTO > 0 ~ OC_FINANZ_STATO_FSC_NETTO,
+                                x_AMBITO == "FSC" ~ FINANZ_STATO_FSC,
+                                x_AMBITO == "PAC" & OC_FINANZ_TOT_PUB_NETTO > 0 ~ OC_FINANZ_STATO_PAC_NETTO,
+                                x_AMBITO == "PAC" ~ FINANZ_STATO_PAC,
+                                is.na(COS_AMM) ~ 0,
+                                TRUE ~ COS_AMM), # per FS non posso considerare valore al netto di economie
+           x = base_coe/base_ftp,
+           # COE_PAG = PAG_AMM,
+           
+           # fix per pagamenti FSC 0
+           PAG_AMM_2 = case_when(x == Inf ~ 0,
+                                 # fix per caso di uguaglianza completa (non riproporziona anche se CP_N > COE)
+                                 # round(TOT_PAGAMENTI, 0) == round(COE, 0) & round(IMPEGNI, 0) == round(COE, 0) ~ COE,
+                                 # fix per caso di uguaglianza di pagamenti comunque con impegni > COE (non riproporziona)
+                                 # round(TOT_PAGAMENTI, 0) == round(COE, 0) & round(IMPEGNI, 0) > round(COE, 0) ~ COE,
+                                 
+                                 TOT_PAGAMENTI <= base_ftp ~ TOT_PAGAMENTI * x,
+                                 TOT_PAGAMENTI > base_ftp ~ base_ftp * x,
+                                 is.na(TOT_PAGAMENTI) ~ 0,
+                                 # is.na(COE) ~ 0, # CHK: capire se serve
+                                 TRUE ~ 0),
+           
+           COE_PAG = case_when(x_AMBITO == "FSC" & PAG_AMM_2 > PAG_AMM ~ PAG_AMM_2,
+                               x_AMBITO == "FSC" ~ PAG_AMM,
+                               TRUE ~ PAG_AMM),
+           # MEMO: uso massimo valore per FSC
+           
+           COE_IMP = case_when(x == Inf ~ 0,
+                               # fix per caso di uguaglianza completa (non riproporziona anche se CP_N > COE)
+                               round(COE_PAG, 0) == round(COE, 0) & round(IMPEGNI, 0) == round(COE, 0) ~ COE,
+                               # fix per caso di uguaglianza di pagamenti comunque con impegni > COE (non riproporziona)
+                               round(COE_PAG, 0) == round(COE, 0) & round(IMPEGNI, 0) > round(COE, 0) ~ COE,
+                               
+                               IMPEGNI <= base_ftp ~ IMPEGNI * x,
+                               IMPEGNI > base_ftp ~ base_ftp * x,
+                               is.na(IMPEGNI) ~ 0,
+                               is.na(COE) ~ 0, # CHK: capire se serve
+                               TRUE ~ 0)) %>%
+    
+    # map per ambito
+    mutate(oc_costo_coesione = COE,
+           oc_impegni_coesione = COE_IMP,
+           oc_tot_pagamenti_coesione = COE_PAG) %>% 
+    # clean
+    select(names(operazioni_713_raw), x_AMBITO)
+  
+  
+  # chk <- appo %>%
+  #   select(OC_COD_PROGRAMMA, x_AMBITO, COD_LOCALE_PROGETTO, oc_costo_coesione, COE, 
+  #          oc_impegni_coesione, COE_IMP, oc_tot_pagamenti_coesione, COE_PAG
   
   operazioni_713_raw_temp <- operazioni_713_raw %>%
-    rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
+    # rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
     mutate(x_AMBITO = NA) %>%
     anti_join(appo, by = "COD_LOCALE_PROGETTO") %>%
     bind_rows(appo)
