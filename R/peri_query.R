@@ -878,6 +878,7 @@ make_input_delta  <- function(OLD) {
   wb <- createWorkbook()
   
   for (input_tab in appo) {
+    #  input_tab <- appo[5]
     
     # read data from input xls in OLD
     tab <- read_xlsx(temp_file, sheet = input_tab, col_types = "text")
@@ -897,7 +898,23 @@ make_input_delta  <- function(OLD) {
         select(NUMERO_DEL_CIPE, ANNO_DEL_CIPE)%>%
         anti_join(tab_new %>%
                     mutate_if(is.numeric, as.character))
+    
+    } else if (input_tab == "patt") {
+      tab_delta <- tab_new %>%
+        mutate_if(is.numeric, as.character) %>%
+        anti_join(tab %>%
+                    select(-QUERY, -NOTE) %>%
+                    select(contains("COD"))) %>% 
+        # patch per eliminare caratteri speciali che fanno saltare righe durante la pubblicazione in excel
+        mutate(DESCR_PROCED_ATTIVAZIONE = str_remove(DESCR_PROCED_ATTIVAZIONE, "\\u001a"))
+        
       
+      chk <- tab %>%
+        select(-QUERY, -NOTE) %>%
+        select(contains("COD")) %>%
+        anti_join(tab_new %>%
+                    mutate_if(is.numeric, as.character))
+        
     } else {
       tab_delta <- tab_new %>%
         mutate_if(is.numeric, as.character) %>%
