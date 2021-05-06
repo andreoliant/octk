@@ -131,11 +131,19 @@ setup_light <- function(bimestre, fix = FALSE) {
              OC_FINANZ_TOT_PUB_NETTO,
              IMPEGNI,
              TOT_PAGAMENTI,
-             # COSTO_REALIZZATO,
-             COSTO_RENDICONTABILE_UE,
-             OC_TOT_PAGAMENTI_RENDICONTAB_UE,
-             OC_TOT_PAGAMENTI_FSC,
-             OC_TOT_PAGAMENTI_PAC,
+             
+             COSTO_REALIZZATO,
+             
+             # COSTO_RENDICONTABILE_UE,
+             # OC_TOT_PAGAMENTI_RENDICONTAB_UE,
+             # OC_TOT_PAGAMENTI_FSC,
+             # OC_TOT_PAGAMENTI_PAC,
+             
+             # variabili coesione (versione da progetti che non distingue ambito)
+             OC_COSTO_COESIONE,
+             OC_IMPEGNI_COESIONE,
+             OC_PAGAMENTI_COESIONE,
+             
              # OC_DATA_INIZIO_PROGETTO,
              # OC_DATA_FINE_PROGETTO_PREVISTA,
              # OC_DATA_FINE_PROGETTO_EFFETTIVA,

@@ -164,7 +164,7 @@ system(
 
 system(
   paste0('VERS="octk_', oc_ver, '";',
-         "mkdir bkp/_src/$VERS;",
+         "mkdir bkp/_src/$VERS;", # MEMO: qesto va commentato quando si esegue di nuovo
          "cp README.md bkp/_src/$VERS/;",
          "cp DESCRIPTION bkp/_src/$VERS/;",
          "cp NAMESPACE bkp/_src/$VERS/;",
