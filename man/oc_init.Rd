@@ -15,6 +15,7 @@ oc_init(
   ver = NULL,
   use_drive = TRUE,
   drive_root = NULL,
+  user = NULL,
   DEV_MODE = FALSE
 )
 }
@@ -38,6 +39,8 @@ oc_init(
 \item{use_drive}{Logico. Vuoi usare GoogleDrive?}
 
 \item{drive_root}{Percorso per la cartella di lavoro su GoogleDrive.}
+
+\item{user}{Nome utente da cui deriva drive_root}
 
 \item{DEV_MODE}{Logico. Vuoi usare la DEV_MODE?}
 }

@@ -15,165 +15,134 @@
 #' @param ver Nome della sotto-sotto-cartella dedicata alla versione dell'elebaorazione (solo con use_drive=TRUE).
 #' @param use_drive Logico. Vuoi usare GoogleDrive?
 #' @param drive_root Percorso per la cartella di lavoro su GoogleDrive.
+#' @param user Nome utente da cui deriva drive_root
 #' @param DEV_MODE Logico. Vuoi usare la DEV_MODE?
 #' @return I path della workarea (WORK, con INPUT, OUTPUT e TEMP), dei dati di attuazione (DATA)
 #' e del database di programmazione (DB) sono disponibili nel Global Environment. Se non esistono, vengono creati i folder
 #' "input", "output" e "temp" nella workarea di progetto denominata come "focus" all'interno di "...".
-oc_init <- function(bimestre, db_ver,
-                    data_path=NULL, db_path=NULL,
-                    workarea=NULL, elab=NULL, focus=NULL, ver=NULL,
-                    use_drive=TRUE, drive_root=NULL,
-                    DEV_MODE=FALSE) {
-
-  # libs
+oc_init <- function (bimestre, db_ver, data_path = NULL, db_path = NULL, 
+                     workarea = NULL, elab = NULL, focus = NULL, ver = NULL, use_drive = TRUE, 
+                     drive_root = NULL, user = NULL, DEV_MODE = FALSE) 
+{
   library("tidyverse")
   library("haven")
   library("readxl")
   library("openxlsx")
-
-  # TODO: inserire gestione per bimestre e db_ver (ricerca di last)
-  # if (!exists("bimestre")) {
-  #   bimestre <- list.files(data_path) %>%
-  #     as.numeric() %>%
-  #     max() %>%
-  #     as.character()
-  #   # MEMO: si aggiorna da solo con nuovo bimestre
-  # }
-
-  # wizard dati attuazione
-  if (is.null(data_path)) {
-    appo <- readline("Quale path per la fonte dati? ")
-    data_path <- gsub("\\\"", "", appo)
-  }
-  # OLD: DATA <<- file.path(data_path, bimestre) # MEMO: versione prima di GoogleDrive
-
-  # wizard db programmazione
-  # if (is.null(db_path)) {
-  #   appo <- readline("Quale path per il db di programmazione? ")
-  #   db_path <- gsub("\\\"", "", appo)
-  # }
-
-  # switch
+  
+  # configurazione con drive
   if (use_drive == TRUE) {
     message("GoogleDrive in uso")
     if (is.null(drive_root)) {
-      ROOT <- "/Volumes/GoogleDrive/Drive condivisi"
-      # TODO: inserire switch e default per mac/win
-    } else {
+      if (is.null(user)) {
+        ROOT <- "/Volumes/GoogleDrive/Drive condivisi"  
+      }
+      else {ROOT <- set_developer(user)} 
+    }
+    else {
       ROOT <- drive_root
     }
-    # data_path <- file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART")
-    # db_path <- file.path(ROOT, "DATI", bimestre, "PROGRAMMAZIONE", db_ver)
-    # db_path <- file.path(ROOT, "DATI", "PROGRAMMAZIONE", db_ver)
+    if (is.null(data_path)) {
+      data_path <- file.path(ROOT,"DATI", bimestre ,"DASAS","DATAMART")
+    } else {
+      data_path <- file.path(data_path, bimestre)
+    }
+    #se non è nullo è un percorso che punta in locale 
     db_path <- file.path(ROOT, "PROGRAMMAZIONE", db_ver)
-
-    # switch per naming
     if (is.null(elab) & is.null(focus)) {
       if (DEV_MODE == TRUE) {
         WORK <- file.path(getwd(), "test")
         focus <- "test"
         message("La DEV_MODE è attiva! La workarea è in locale in oc/test ma i dati sono in GoogleDrive")
-      } else {
+      }
+      else {
         WORK <- file.path(getwd())
         temp <- stringr::str_split(getwd(), .Platform$file.sep)[[1]]
         focus <<- temp[length(temp)]
       }
-
-    } else {
+    }
+    else {
       if (!is.null(ver)) {
-        WORK <- file.path(ROOT, "ELAB", bimestre, elab, focus, ver)
-        # MEMO: si applica solo in Drive
-
-      } else {
-        WORK <- file.path(ROOT, "ELAB", bimestre, elab, focus)
+        WORK <- file.path(ROOT, "ELAB", bimestre, elab, 
+                          focus, ver)
+      }
+      else {
+        WORK <- file.path(ROOT, "ELAB", bimestre, elab, 
+                          focus)
       }
     }
-
-  # go local
-  } else {
+  }
+  else {
     message("Lavoro in locale")
-
-    # # wizard dati attuazione
-    # if (is.null(data_path)) {
-    #   appo <- readline("Quale path per la fonte dati? ")
-    #   data_path <- gsub("\\\"", "", appo)
-    # }
-    # # OLD: DATA <<- file.path(data_path, bimestre) # MEMO: versione prima di GoogleDrive
-
-    # wizard db programmazione
+    if (is.null(data_path)) {
+      appo <- readline("Quale path per la fonte dati? ")
+      data_path <- gsub("\\\"", "", appo)
+    }
     if (is.null(db_path)) {
       appo <- readline("Quale path per il db di programmazione? ")
       db_path <- gsub("\\\"", "", appo)
     }
-
-    # switch per naming
     if (is.null(workarea)) {
       if (is.null(elab) & is.null(focus)) {
         if (DEV_MODE == TRUE) {
           WORK <- file.path(getwd(), "test")
           message("La DEV_MODE è attiva! La workarea è in oc/test")
           focus <- "test"
-        } else {
+        }
+        else {
           WORK <- file.path(getwd())
           temp <- stringr::str_split(getwd(), .Platform$file.sep)[[1]]
           focus <<- temp[length(temp)]
         }
-      } else {
-        # WORK <- file.path(getwd(), elab, focus)
+      }
+      else {
         if (!is.null(ver)) {
           WORK <- file.path(getwd(), elab, focus, ver)
-          # MEMO: si applica solo in Drive
-
-        } else {
+        }
+        else {
           WORK <- file.path(getwd(), elab, focus)
         }
-
       }
-    } else {
+    }
+    else {
       WORK <- workarea
     }
   }
-
-  # export path in GlobalEnv
-  # DATA <<- file.path(data_path)
-  DATA <<- file.path(data_path, bimestre) # MEMO: versione per dati in locale
+  # DATA <<- file.path(data_path, bimestre)
+  DATA <<- file.path(data_path)
   message(paste0("Connetto la fonte dati in ", DATA))
-
   DB <<- file.path(db_path)
   message(paste0("Connetto il db di programmazione in ", DB))
-
   INPUT <<- file.path(WORK, "input")
   if (!dir.exists(INPUT)) {
-    message(paste0("Creo e connetto il folder INPUT in ", INPUT))
+    message(paste0("Creo e connetto il folder INPUT in ", 
+                   INPUT))
     dir.create(INPUT, recursive = TRUE)
-  } else {
+  }
+  else {
     message(paste0("Connetto il folder INPUT in ", INPUT))
   }
-
   TEMP <<- file.path(WORK, "temp")
   if (!dir.exists(TEMP)) {
-    message(paste0("Creo e connetto il folder TEMP in ", TEMP))
+    message(paste0("Creo e connetto il folder TEMP in ", 
+                   TEMP))
     dir.create(TEMP, recursive = TRUE)
-  } else {
+  }
+  else {
     message(paste0("Connetto il folder TEMP in ", TEMP))
   }
-
   OUTPUT <<- file.path(WORK, "output")
   if (!dir.exists(OUTPUT)) {
-    message(paste0("Creo e connetto il folder OUTPUT in ", OUTPUT))
+    message(paste0("Creo e connetto il folder OUTPUT in ", 
+                   OUTPUT))
     dir.create(OUTPUT, recursive = TRUE)
-  } else {
+  }
+  else {
     message(paste0("Connetto il folder OUTPUT in ", OUTPUT))
   }
-
-  # export workarea
   WORK <<- WORK
-
-  # export focus (per naming)
   focus <<- focus
-
-  # export bimestre (per naming)
   bimestre <<- bimestre
+  DRIVE <<- ROOT
 }
 
 #' Copia i dati di OC da GoogleDrive
@@ -217,3 +186,30 @@ oc_init_data <- function(bimestre, data_path=NULL) {
 
 }
 
+
+
+#' Gestione utenti OCTK su GoogleDrive
+#'
+#' Definisce il puntamento a GoogleDrive per ogni utente.
+#'
+#' @param user Nome utente da cui deriva drive_root
+#' @return Puntamento allla root di GoogleDrive per ogni utente (drive_root)
+set_developer <- function(user) {
+  developer <- tibble(developer = c("Flora", 
+                                    "Luca",
+                                    "Andrea",
+                                    "Nicola", 
+                                    "Antonio"),
+                          path = c(file.path("G:","Drive condivisi"), # "G:/Drive condivisi"
+                                   file.path("G:","Drive condivisi"),
+                                   file.path("G:","Drive condivisi"),
+                                   file.path("/Volumes", "GoogleDrive", "Drive condivisi"), # "/Volumes/GoogleDrive/Drive condivisi"
+                                   file.path("/home", "antonio", "ExpanDrive", "OC", "Shared Drives"))) # "/home/antonio/ExpanDrive/OC/Shared Drives"))
+  
+  drive_root <- developer%>%
+    filter(developer == user)%>%
+    select(path)%>%
+    as.character()
+  
+  return(drive_root)
+}
