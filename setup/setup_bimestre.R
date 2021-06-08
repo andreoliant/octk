@@ -56,6 +56,8 @@ make_prog_comp(bimestre)
 # patt.csv
 make_patt(bimestre)
 
+# comuni
+make_comuni()
 
 # TODO: estendere lista RA
 
@@ -71,7 +73,6 @@ make_patt(bimestre)
 # load in package as .rda
 source(file.path(getwd(), "setup", "setup_data.R"))
 devtools::load_all(path = ".")
-
 
 
 # ----------------------------------------------------------------------------------- #

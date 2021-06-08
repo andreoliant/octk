@@ -47,6 +47,10 @@ setup_query_xls <- function() {
   addWorksheet(wb, "aree_temi_fsc")
   addWorksheet(wb, "ra")
   addWorksheet(wb, "patt")
+  addWorksheet(wb, "qsn")
+  addWorksheet(wb, "tipologie_cup")
+  addWorksheet(wb, "comuni")
+  addWorksheet(wb, "flag_beniconf")
   addWorksheet(wb, "keyword")
   
 
@@ -63,7 +67,11 @@ setup_query_xls <- function() {
   writeData(wb, sheet = "aree_temi_fsc", x = octk::aree_temi_fsc, startCol = 1, startRow = 1, colNames = TRUE)
   writeData(wb, sheet = "ra", x = octk::ra, startCol = 1, startRow = 1, colNames = TRUE)
   writeData(wb, sheet = "patt", x = octk::patt, startCol = 1, startRow = 1, colNames = TRUE)
-  writeData(wb, sheet = "keyword", x = octk::keyword, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "qsn", x = octk::qsn , startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "tipologie_cup", x = octk::tipologie_cup , startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "comuni", x = octk::comuni, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "flag_beniconf", x = octk::flag_beniconf, startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "keyword", x = octk::keyword , startCol = 1, startRow = 1, colNames = TRUE)
 
   # salva
   saveWorkbook(wb, file = temp_file, overwrite = FALSE)
@@ -463,7 +471,7 @@ query_atp <- function(progetti) {
                COD_ASSE_TEMATICO_FSC, DESCR_ASSE_TEMATICO_FSC)
 
   } else {
-    operazioni <- read_sas(file.path(DATA, "operazioni_pucok.sas7bdat")) %>%
+    operazioni <- read_sas(file.path(DATA, "oper_pucok_preesteso.sas7bdat")) %>%
       rename(COD_LOCALE_PROGETTO = cod_locale_progetto,
              COD_SETTORE_STRATEGICO_FSC = fsc_settore_strategico,
              DESCR_SETTORE_STRATEGICO_FSC = fsc_descr_settore_strategico,
@@ -516,6 +524,203 @@ query_atp <- function(progetti) {
 }
 
 
+#' Ricerca progetti per tipologia CUP
+#'
+#' Ricerca progetti per natura e tipologia CUP a partire da input in "tipologie_cup".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_TIPO_CUP.
+query_tipo_cup <- function(progetti) {
+  
+  # load matrix
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "tipologie_cup")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "tipologie_cup.csv")) %>%
+      # fix padding su csv (in xls sono sanati a monte)
+      mutate(CUP_COD_NATURA = str_pad(CUP_COD_NATURA, 2, pad = "0"),
+             CUP_COD_TIPOLOGIA = str_pad(CUP_COD_TIPOLOGIA, 2, pad = "0"))
+  }
+  # matrix_cup <- appo  %>%
+  #   rename(QUERY_CUP = QUERY) %>%
+  #   mutate(CUP_COD_SETTORE = str_pad(CUP_COD_SETTORE, 2, pad = "0"),
+  #          CUP_COD_SOTTOSETTORE = str_pad(CUP_COD_SOTTOSETTORE, 2, pad = "0"),
+  #          CUP_COD_CATEGORIA = str_pad(CUP_COD_CATEGORIA, 3, pad = "0"))
+  # CHK: capire perché sono spariti i padding (Mara?)
+  matrix_cup <- appo  %>%
+    rename(QUERY_TIPO_CUP = QUERY)
+  
+  # merge
+  peri_cup <- progetti %>%
+    select(COD_LOCALE_PROGETTO, CUP_COD_NATURA, CUP_COD_TIPOLOGIA) %>%
+    inner_join(matrix_cup %>%
+                 filter(QUERY_TIPO_CUP != 0),
+               by = c("CUP_COD_NATURA", "CUP_COD_TIPOLOGIA")) %>%
+    select(COD_LOCALE_PROGETTO, QUERY_TIPO_CUP)
+  # MEMO: uso inner_join per tenere QUERY_CUP
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_cup <- peri_cup %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_TIPO_CUP = min(QUERY_TIPO_CUP))
+  
+  return(peri_cup)
+  
+}
+
+
+#' Ricerca progetti per obiettivi QSN
+#'
+#' Ricerca progetti per obiettivi generali e specifici QSN 2007-2013 a partire da input in "qsn".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_QSN.
+query_qsn <- function(progetti) {
+  
+  # load matrix
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "qsn")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "qsn.csv"))
+  }
+  
+  matrix <- appo  %>%
+    rename(QUERY_QSN = QUERY) %>% 
+    # patch per valori numeric
+    mutate(QSN_CODICE_OBIETTIVO_SPECIFICO = as.numeric(gsub("\\.", "", QSN_CODICE_OBIETTIVO_SPECIFICO)))
+  
+  
+  # merge
+  peri_qsn <- progetti %>%
+    select(COD_LOCALE_PROGETTO, QSN_CODICE_OBIETTIVO_SPECIFICO) %>%
+    # separate_rows(QSN_CODICE_OBIETTIVO_SPECIFICO, sep = ":::") %>% # MEMO: non ha senso per 713
+    inner_join(matrix %>%
+                 filter(QUERY_QSN != 0),
+               by = "QSN_CODICE_OBIETTIVO_SPECIFICO") %>%
+    select(COD_LOCALE_PROGETTO, QUERY_QSN)
+  # MEMO: uso inner_join per tenere QUERY_CUP
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  # peri_qsn <- peri_qsn %>% 
+  #   group_by(COD_LOCALE_PROGETTO) %>%
+  #   summarise(QUERY_QSN = min(QUERY_QSN))
+  
+  return(peri_qsn)
+  
+}
+
+
+#' Ricerca progetti per flag beni confiscati
+#'
+#' Ricerca progetti per flag beni confiscati da CUP a partire da input in "qsn".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_BENICONF.
+query_beniconf <- function(progetti) {
+  
+  # load matrix
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "flag_beniconf")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "flag_beniconf.csv"))
+  }
+  
+  matrix <- appo  %>%
+    rename(QUERY_BENICONF = QUERY) %>% 
+    # fix 
+    mutate(OC_FLAG_BENICONF = as.character(OC_FLAG_BENICONF))
+  
+  # merge
+  peri_beniconf <- progetti %>%
+    select(COD_LOCALE_PROGETTO, OC_FLAG_BENICONF) %>%
+    separate_rows(OC_FLAG_BENICONF, sep = ":::") %>%
+    inner_join(matrix %>%
+                 filter(QUERY_BENICONF != 0),
+               by = "OC_FLAG_BENICONF") %>%
+    select(COD_LOCALE_PROGETTO, QUERY_BENICONF)
+  # MEMO: uso inner_join per tenere QUERY_CUP
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_beniconf <- peri_beniconf %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_BENICONF = min(QUERY_BENICONF))
+  
+  return(peri_beniconf)
+  
+}
+
+
+
+#' Ricerca progetti per comune
+#'
+#' Ricerca progetti per comune di localizzazione a partire da input in "comuni".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_COMUNI.
+query_comuni <- function(progetti) {
+  
+  # load matrix
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "comuni")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "comuni.csv"))
+  }
+  
+  matrix <- appo  %>%
+    rename(QUERY_COMUNI = QUERY)
+  
+  # progetti con COD_COMUNE anomalo (NA o 4 char al posto di 9) che vengono scartati
+  # A tibble: 17 x 3
+  # COD_LOCALE_PROGETTO    COD_COMUNE   chk
+  # <chr>                  <chr>      <int>
+  # 1 13TOA19_2016_CSP004    0090           4
+  # 2 1MISE12IR029/G4        NA            NA
+  # 3 1MISE16IR646/G1        NA            NA
+  # 4 2LIFESR-2-2.1.1-002/01 0070           4
+  # 5 4MISEAbiMISECConM      0130           4
+  # 6 4MISEBaiMISECConM      0170           4
+  # 7 4MISEBasPNPONConM      0170           4
+  # 8 4MISECliPNPONConM      0180           4
+  # 9 4MISECmiPNPONConM      0150           4
+  # 10 4MISEEriMISECConM      0080           4
+  # 11 4MISEFviMISECConM      0060           4
+  # 12 4MISELbiMISECConM      0030           4
+  # 13 4MISEPmiMISECConM      0010           4
+  # 14 4MISEPuiPNPONConM      0160           4
+  # 15 4MISESiiPNPONConM      0190           4
+  # 16 4MISEVeiMISECConM      0050           4
+  # 17 7VE10046146            0050           4
+  
+  # merge
+  peri_comuni <- progetti %>%
+    select(COD_LOCALE_PROGETTO, COD_COMUNE) %>%
+    separate_rows(COD_COMUNE, sep = ":::") %>%
+    # allinea codici oc a matrix (senza regione)
+    mutate(chk = nchar(COD_COMUNE)) %>% 
+    filter(chk == 9) %>% 
+    mutate(COD_COMUNE = substr(COD_COMUNE, 4, 9)) %>% 
+    inner_join(matrix %>%
+                 filter(QUERY_COMUNI != 0),
+               by = "COD_COMUNE") %>%
+    select(COD_LOCALE_PROGETTO, QUERY_COMUNI)
+  # MEMO: uso inner_join per tenere QUERY_COMUNI
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_comuni <- peri_comuni %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_COMUNI = min(QUERY_COMUNI))
+  
+  return(peri_comuni)
+  
+}
+
+
+
+
+
+
+
+
 
 #' Ricerca progetti per parole chiave
 #'
@@ -558,7 +763,9 @@ query_keyword <- function(progetti) {
   # )
   
   # loop
-  rm(peri_key)
+  if (exists("peri_key")){
+    rm(peri_key)
+  }
   for (KEY in matrix_key$LEMMA) {
     # KEY <- matrix_key$LEMMA[4]
     
@@ -765,11 +972,12 @@ make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
 #'
 #' @param pseudo Dataset in formato "pseudo"
 #' @param addendum Dataset in memory oppure nome del file da caricare in INPUT, con elenco di COD_LOCALE_PROGETTO
+#' @param add_name Nome variabile di tipo QUERY_XXX
 #' @param export Logic. Vuoi salvare pseudo.csv? 
 #' @return Un dataframe pseudo integrato con la colonna QUERY_ADD, che si applica anche a righe esistenti (la funzione usa full_join e non bind_rows!).
 #' @section Warning:
 #' La funzione è fuori dal blocco "query" solo per maggiore trasparenza, si poteva usare anche quella logica.
-add_to_pseudo <- function(pseudo, addendum, export=TRUE) {
+add_to_pseudo <- function(pseudo, addendum, add_name="QUERY_ADD", export=TRUE) {
   
   # TODO: inserire controllo su OC_FLAG_VISUALIZZAZIONE?
   
@@ -785,6 +993,11 @@ add_to_pseudo <- function(pseudo, addendum, export=TRUE) {
     message("L'addendum non è in un formato corretto")
   }
   
+  # rename
+  temp <- which(names(appo) == "QUERY_ADD")
+  names(appo)[temp] <- add_name
+  # MEMO di default è QUERY_ADD ma si può cambiare se servono diversi input
+  
   output <- pseudo %>%
     full_join(appo, by = "COD_LOCALE_PROGETTO") %>%
     mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
@@ -796,6 +1009,62 @@ add_to_pseudo <- function(pseudo, addendum, export=TRUE) {
 }
 
 
+#' Aggiunge progetti a pseudo da un perimetro
+#'
+#' Integra pseudo csv con righe provenienti da selezione proveniente da un perimetro realizzato con il package, e in caso di uso di CLASSI le trasfroma in diversi QUERY_XXX.
+#'
+#' @param pseudo Dataset in formato "pseudo"
+#' @param addendum Dataset in memory oppure nome del file in _OUTPUT_SAS da caricare in INPUT, con elenco di COD_LOCALE_PROGETTO
+#' @param usa_classi Logico. Se il perimetro è diviso in classi vuoi tracciarle separatamente in diverse colonne di tipo QUERY_XXX? 
+#' @param add_name Nome variabile di tipo QUERY_XXX
+#' @param export Logico. Vuoi salvare pseudo.csv? 
+#' @return Un dataframe pseudo integrato con la colonna QUERY_ADD, che si applica anche a righe esistenti (la funzione usa full_join e non bind_rows!).
+#' @section Warning:
+#' La funzione è fuori dal blocco "query" solo per maggiore trasparenza, si poteva usare anche quella logica.
+add_perimetro_to_pseudo <- function(pseudo, addendum, usa_classi=FALSE, add_name="QUERY_ADD", export=TRUE) {
+  
+  # TODO: inserire controllo su OC_FLAG_VISUALIZZAZIONE?
+  
+  if (is_tibble(addendum)) {
+    appo <- addendum
+  } else if (is.character(addendum)) {
+    appo <- read_csv2(file.path(DRIVE, "ELAB", bimestre, "PERIMETRI", "_OUTPUT_SAS", addendum))
+  } else {
+    message("L'addendum non è in un formato corretto")
+  }
+  
+  if (usa_classi == TRUE) {
+    appo <- appo  %>%
+      select(COD_LOCALE_PROGETTO, CLASSE) %>%
+      mutate(QUERY_ADD = 1) %>% 
+      pivot_wider(id_cols = COD_LOCALE_PROGETTO, names_from = CLASSE, values_from = QUERY_ADD,
+                  names_prefix = "QUERY_", values_fill = list(QUERY_ADD = 0))
+    
+    # rename
+    temp <- which(names(appo) == "QUERY_ADD")
+    names(appo)[temp] <- add_name
+    # MEMO di default è QUERY_ADD ma si può cambiare se servono diversi input
+    
+  } else {
+    appo <- appo  %>%
+      select(COD_LOCALE_PROGETTO) %>%
+      mutate(QUERY_ADD = 1)
+    
+    # rename
+    temp <- which(names(appo) == "QUERY_ADD")
+    names(appo)[temp] <- add_name
+    # MEMO di default è QUERY_ADD ma si può cambiare se servono diversi input
+  }
+  
+  output <- pseudo %>%
+    full_join(appo, by = "COD_LOCALE_PROGETTO") %>%
+    mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
+  
+  if (export == TRUE) {
+    write.csv2(output, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
+  }
+  return(output)
+}
 
 
 
@@ -879,6 +1148,7 @@ make_input_delta  <- function(OLD) {
   
   for (input_tab in appo) {
     #  input_tab <- appo[5]
+    print(input_tab)
     
     # read data from input xls in OLD
     tab <- read_xlsx(temp_file, sheet = input_tab, col_types = "text")
@@ -914,7 +1184,38 @@ make_input_delta  <- function(OLD) {
         select(contains("COD")) %>%
         anti_join(tab_new %>%
                     mutate_if(is.numeric, as.character))
-        
+    
+    } else if (input_tab == "flag_beniconf") {
+      tab_delta <- tab_new %>%
+        mutate_if(is.numeric, as.character) %>%
+        anti_join(tab %>%
+                    select(-QUERY, -NOTE) %>%
+                    select(OC_FLAG_BENICONF), 
+                  by = "OC_FLAG_BENICONF")
+      
+      
+      chk <- tab %>%
+        select(-QUERY, -NOTE) %>%
+        select(OC_FLAG_BENICONF) %>%
+        anti_join(tab_new %>%
+                    mutate_if(is.numeric, as.character))
+    
+    } else if (input_tab == "keyword") {
+      tab_delta <- tab_new %>%
+        mutate_if(is.numeric, as.character) %>%
+        anti_join(tab %>%
+                    select(-QUERY, -NOTE) %>%
+                    select(LEMMA, KEYWORD), 
+                  by = c("LEMMA", "KEYWORD"))
+      
+      
+      chk <- tab %>%
+        select(-QUERY, -NOTE) %>%
+        select(LEMMA, KEYWORD) %>%
+        anti_join(tab_new %>%
+                    mutate_if(is.numeric, as.character))
+      
+          
     } else {
       tab_delta <- tab_new %>%
         mutate_if(is.numeric, as.character) %>%

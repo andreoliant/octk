@@ -432,7 +432,8 @@ make_matrix_strum <- function(bimestre, file_name="strum_att.csv") {
                 distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_PROGRAMMA),
               by = "OC_CODICE_PROGRAMMA") %>%
     mutate(QUERY = 0,
-           NOTE = NA)
+           NOTE = NA) %>% 
+    filter(!is.na(COD_STRUMENTO))
 
   write_delim(out, file.path(getwd(), "setup", "data-raw", file_name), delim = ";", na = "")
 }
@@ -474,13 +475,14 @@ make_prog_comp <- function(bimestre, file_name="prog_comp.csv") {
                 distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_PROGRAMMA),
               by = "OC_CODICE_PROGRAMMA") %>%
     mutate(QUERY = 0,
-           NOTE = NA)
+           NOTE = NA) %>% 
+    filter(!is.na(COD_PROGETTO_COMPLESSO))
 
   write_delim(out, file.path(getwd(), "setup", "data-raw", file_name), delim = ";", na = "")
 }
 
 
-# crea matrix progetti complessi
+# crea matrix patt
 make_patt <- function(bimestre, file_name="patt.csv") {
 
   if (is.null(progetti)) {
@@ -494,7 +496,31 @@ make_patt <- function(bimestre, file_name="patt.csv") {
                 distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_PROGRAMMA),
               by = "OC_CODICE_PROGRAMMA") %>%
     mutate(QUERY = 0,
-           NOTE = NA)
+           NOTE = NA) %>% 
+    # elimina caratteri spuri che creano problemi quando si salva in excel
+    mutate(DESCR_PROCED_ATTIVAZIONE = str_remove(DESCR_PROCED_ATTIVAZIONE, "\\u001a"))
+
+  write_delim(out, file.path(getwd(), "setup", "data-raw", file_name), delim = ";", na = "")
+}
+
+
+# crea matrix comuni
+make_comuni <- function(file_name="matrix_comuni.csv") {
+  
+  library("haven")
+  
+  message("Ricodati di chiedere a Luca se ha cambiato il file!")
+  
+  out <- read_sas(file.path(getwd(), "setup", "data-raw", "variazioni_comuni.sas7bdat"))  %>%
+    rename(ANNO_VARIAZIONE = anno,
+           TIPO_VARIAZIONE = tipo,
+           COD_COMUNE_OLD = id_old,
+           DEN_COMUNE_OLD = name_old,
+           COD_COMUNE = id_new, 
+           DEN_COMUNE = name_new) %>% 
+    mutate(QUERY = 0,
+           AMBITO = NA,
+           AMBITO_SUB = NA)
 
   write_delim(out, file.path(getwd(), "setup", "data-raw", file_name), delim = ";", na = "")
 }
