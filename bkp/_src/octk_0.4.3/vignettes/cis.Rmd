@@ -1,0 +1,66 @@
+---
+title: "Analisi CIS"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{cis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(octk)
+```
+
+I dati di programmazione relativi ai CIS sono disponbili a livello di interventi nel file "DBCOE_interventi_CIS.xlsx" presente nel DB della programmazione.
+Per la propria natura specifica, questi intevrenti sono trasversali a cicli, ambiti di programmazione e programmi.
+Gli interventi dei CIS sono mappati con i progetti monitorati, ove presenti, e possibi essere riconciliati tramite combinazione di codice programma, CLP, ciclo e ambito.
+
+Nel package è disponbile un gruppo di funzioni dedicate al confronto tra programmazione e attuazione per i cis. Il parametro *lista_clp* può essere ricavato direttamente dal DB da ciascuna funzione.
+L'analisi va svolta in via preferenziale in termini di risorse coesione. Tuttavia, vista la presenza nei CIS di rilevanti risorse ordinarie, è disponibile anche la funzione *report_cis_totali()* per il confronto in risorse totali.
+
+
+```{r, echo = TRUE, eval = FALSE}
+
+# Caricamento del dataset dal DBe della programmazione
+interventi <- load_db_interventi(tipo = "CIS", simplify_loc=FALSE, use_temi=FALSE, use_sog=FALSE, 
+                                 use_ue=FALSE, use_flt=FALSE, use_articolaz=FALSE, use_location=FALSE, 
+                                 use_ciclo=TRUE, tipo_ciclo="CICLO_STRATEGIA")
+
+
+# Report con aggregati per cis (in risorse coesione)
+report_cis(interventi, lista_clp=NULL, operazioni=NULL, export=TRUE)
+
+
+# Report con aggregati per cis e titolare (in risorse coesione)
+report_cis_titolari(interventi, lista_clp=NULL, operazioni=NULL, export=TRUE) 
+
+
+# Report con dettaglio per cis, titolare e intervento (in risorse coesione)
+report_cis_interventi(interventi, lista_clp=NULL, operazioni=NULL, export=TRUE)
+
+
+# Report con aggregati per cis (in risorse totali)
+report_cis_totali(interventi, lista_clp=NULL, progetti=NULL, export=TRUE)
+
+# Lista interventi cis con mapping a operazioni
+lista_cis_interventi_operazioni(interventi, lista_clp=NULL, operazioni=NULL, progetti=NULL, export=TRUE)
+# MEMO: questa è utile per finalità di debug e confronto con uffici
+
+```
+
+E' disponibile anche un wrapper per eseguire l'intero blocco di funzioni, che consente eseguire completamente l'analisi bimestrale tipica.
+
+```{r, echo = TRUE, eval = FALSE}
+
+# Workflow per analisi CIS
+workflow_cis(bimestre, interventi=NULL, operazioni=NULL, progetti=NULL, debug=TRUE, export=TRUE)
+
+
+```

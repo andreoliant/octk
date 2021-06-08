@@ -1,0 +1,166 @@
+---
+title: "Risorse Coesione e DB Programmazione"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{coesione}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(octk)
+```
+
+Le variabili finanziarie relative alle risorse coesione (COE, COE_IMP e COE_PAG) sono disponbili in relazione a **operazioni** (progetti appartenenti a specifici programmi) e non a semplici **progetti**. Le regole di riconciliazione tra dati di programmazione (nel DB) e dati di attuazione (provenineti dal flusso bimestrale a livello di "preesteso") viene effettuata automarticamente dal package *otck*.
+
+
+## Aggiornamento del database programmazione
+TO DO (specificare link con parte FSC ART 44)
+
+Sono disponbili apposite funzioni di controllo:
+
+```{r, echo = TRUE, eval = FALSE}
+
+# variazioni risorse per programmi
+OLD <- file.path(getwd(), "20191231", "STATO", "stato", "V.01", "temp", "report_meuro_programmi_cp2.csv")
+chk <- chk_variazione_risorse_programmi(programmi_new=programmi_2, programmi_old=NULL, 
+                                 path_to_new=NULL, path_to_old=OLD, 
+                                 export=FALSE)
+# MEMO: confronta due dataframe risultanti da make_report_programmi_coesione(), descritto sotto
+
+# confronto tra ciclo contabile e ciclo strategia
+chk <- chk_risorse_ciclo_contabile_strategia(use_flt=TRUE, force_yei=FALSE, use_eu=FALSE, export=FALSE)
+
+```
+
+
+
+## Preparazione dei dati per operazione
+L'update del package fatto in occasione del rilascio bimestrale dei dati su OpenCoesione comprende anche l'aggiornamento del file *operazioni_light_AAAAMMGG.csv*.
+
+Il flusso di elaborazione è svolto da un'apposita funzione di setup:
+
+```{r, echo = TRUE, eval = FALSE}
+
+# bimestre <- 20201231
+setup_operazioni(bimestre, progetti=NULL, export=FALSE, use_fix=FALSE, use_ecomix=FALSE, debug=FALSE)
+
+```
+
+Il dataset operazioni che è disponbile in:
+  
+    Drive/DATI/AAAAMMGG/DASAS/DATAMART
+
+## Caricamento dei dati
+Il caricamento dei dati di attuazione per operazione può essere effettuato con la specifica funzione, che consente di uare valori in meuro o in euro, oltre che di richiamare i factor di x_AMBITO e x_CICLO.
+
+```{r, echo = TRUE, eval = FALSE}
+
+# caricamento del perimetro operazioni
+# OLD: prep_perimetro_bimestre_coesione(bimestre, usa_meuro=FALSE)
+load_operazioni(bimestre, usa_meuro=FALSE)
+
+```
+
+L'accesso ai dati di programmazione può avvenire attraverso funzioni specifiche, che comunque sono eseguite automaticamente dalle funzioni di analisi indicate nei paragrafi a seguire.
+
+```{r, echo = TRUE, eval = FALSE}
+
+# caricamento del DB programmazione 
+init_programmazione(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use_flt=FALSE, use_713=FALSE, use_articolaz=FALSE, use_location=FALSE, 
+                   use_ciclo=FALSE, tipo_ciclo="CICLO_STRATEGIA", use_en=FALSE)
+
+# report di riepilogo per ciclo, ambito e macroarea 
+make_report_risorse(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_eu=FALSE, force_yei=FALSE, tipo_ciclo="CICLO_STRATEGIA", export=FALSE)
+
+```
+
+I dataset del DB programmazione sono disponbile in:
+  
+    Drive/PROGRAMMAZIONE/AAAAMMGG.VV
+    
+
+## Analisi bimestrale
+L'analisi dello stato di attuazione dei programmi viene effettuata ogni bimestre in concomitanza con il rilascio dei dati.
+E' stato definito un insieme di funzioni dedicate, ciascuna delle quali produce uno specifio report a partire dal merge tra dati di **programmazione** (provenienti dal DB programmazione) e dati di **attuazione** (provenieneti dal dataset operazioni).
+Per assicurare la confrontabilità con i dati pubblicati si usa il parametro *cut_no_risorse=FALSE*.
+
+```{r, echo = TRUE, eval = FALSE}
+
+# report per programma
+make_report_programmi_coesione(perimetro, usa_meuro=FALSE, use_713=FALSE, use_flt=FALSE,
+                                           add_totali=FALSE, use_cp2=FALSE, cut_no_risorse=FALSE,
+                                           tipo_ciclo="CICLO_STRATEGIA",
+                                           focus="report", export=FALSE, progetti=NULL, po_riclass=NULL)
+
+# confronto con bimestre precedente per programma 
+add_delta_programmi_coesione(bimestre, programmi, last_bimestre, last_data_path=NULL,
+                                         usa_meuro=FALSE, focus="delta", export=FALSE) 
+
+# report per ciclo e ambito
+make_report_bimestre_coesione(programmi, usa_meuro=TRUE, export=TRUE)
+
+# report per ciclo, ambito e macroarea
+make_report_macroaree_coesione(risorse=NULL, perimetro=NULL, use_meuro=TRUE, export=TRUE)
+
+
+# report attuazione per programmi e macroarea
+make_report_programmi_macroaree_coesione(perimetro, usa_meuro=TRUE, use_713=TRUE, use_flt=TRUE, 
+                                         add_totali=TRUE, use_cp2=TRUE, cut_no_risorse=FALSE,
+                                         tipo_ciclo="CICLO_STRATEGIA",
+                                         focus="report_DEF", export=TRUE, progetti)
+
+  
+```
+
+Per facilitare i controlli su funzionamento dei report esistono funzioni dedicate:
+
+```{r, echo = TRUE, eval = FALSE}
+
+chk_allineamento_risorse <- function(report, programmi, report_macroaree, risorse=NULL) 
+chk_allineamento_costo_coe <- function(report, programmi, report_macroaree, perimetro=NULL)
+
+```
+
+
+## Analisi annuale per DEF
+Le stesse funzioni sopra sono utilizzate per l'analisi dei dati di programmazione e attuazione contenuta nell'Allegato Coesione al DEF.
+Per massimizzare la centralità delle risorse coesione, lato attuazione si usa il parametro *cut_no_risorse=TRUE* mentre lato programmazione rimane valido il *use_flt=TRUE*.
+
+Prima di procedere è inoltre necessario ricodificare i dati di attuazione per alcuni programmi (per OC_CODICE_PROGRAMMA, x_CICLO e x_GRUPPO):
+
+* "2017TOPIOMBIFSC" -> "SIN_PIOMBINO"
+* "2018TOSPIOMFSC" -> "SIN_PIOMBINO"
+* lista di progetti PRA Campania -> "OPCM_CAM_A"
+* lista di progetti PRA Campania -> "OPCM_CAM_B"
+* lista di progetti PRA Campania -> "DEBITI_CAM"
+* lista di progetti PRA Molise -> "MOL_DEBITI_1"
+
+```{r, echo = TRUE, eval = FALSE}
+
+
+# report attuazione per programmi per DEF
+programmi_def <- make_report_programmi_coesione(operazioni_2, usa_meuro=TRUE, use_713=TRUE, use_flt=TRUE, 
+                                              add_totali=TRUE, use_cp2=TRUE, cut_no_risorse=TRUE,
+                                              tipo_ciclo="CICLO_STRATEGIA",
+                                              focus="report_DEF", export=TRUE, progetti = progetti_2)
+# MEMO: uso cut_no_risorse=TRUE per scartare programmi monitorati ma assenti lato programmazione 
+
+#export per popolare tavole 1 e 2 del def (quadro risorse)
+risorse_def <- make_report_risorse(use_meuro=TRUE, use_flt=TRUE, force_yei=FALSE, tipo_ciclo="CICLO_STRATEGIA", export=TRUE)
+
+# report attuazione per programmi e macroarea
+make_report_programmi_macroaree_coesione(perimetro, usa_meuro=TRUE, use_713=TRUE, use_flt=TRUE, 
+                                         add_totali=TRUE, use_cp2=TRUE, cut_no_risorse=TRUE,
+                                         tipo_ciclo="CICLO_STRATEGIA",
+                                         focus="report_DEF", export=TRUE, progetti)
+
+```
+
