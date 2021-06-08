@@ -133,9 +133,17 @@ make_perimetro_edit <- function(pseudo, export=TRUE,
     mutate(PERI = case_when(CHK == 1 ~ 1,
                             # CHK == 2 ~ 0, # DEV: QUESTO NON SI APPLICA PIU...
                             CHK == 0 ~ 0)) %>%
-    mutate(PERI = case_when(COD_LOCALE_PROGETTO %in% stoplist ~ 0,
-                            COD_LOCALE_PROGETTO %in% safelist ~ 1,
+    # mutate(PERI = case_when(COD_LOCALE_PROGETTO %in% stoplist ~ 0,
+    #                         COD_LOCALE_PROGETTO %in% safelist ~ 1,
+    #                         TRUE ~ PERI))
+    mutate(STOP = case_when(COD_LOCALE_PROGETTO %in% stoplist ~ 1,
+                            TRUE ~ 0),
+           SAFE = case_when(COD_LOCALE_PROGETTO %in% safelist ~ 1,
+                            TRUE ~ 0),
+           PERI = case_when(STOP == 1 ~ 0,
+                            SAFE == 1 ~ 1,
                             TRUE ~ PERI))
+  
   # gestione scarti
   if (debug == TRUE) {
     # defaults
