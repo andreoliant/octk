@@ -34,9 +34,11 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
       DATA <- data_path
       # MEMO: sovrascrive data_path a DATA
     } else {
-      data_path=file.path(DATA, "..", bimestre)
-      DATA <- data_path
-      # MEMO: questo serve per puntare a bimestre specifico senza modificare data_path
+      # #OLD: questo non aveva senso perché era pleonastico perché risultava "/home/antonio/dati/oc/20210228/../20210228"
+      # data_path=file.path(DATA, "..", bimestre)
+      # DATA <- data_path
+      # # MEMO: questo serve per puntare a bimestre specifico senza modificare data_path
+      DATA <- DATA
     }
 
     # load progetti
