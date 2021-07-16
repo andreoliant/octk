@@ -1,7 +1,0 @@
-"versione","file","bimestre","tag","data","note","source"
-"0.0.0","octk_0.0.0.tar.gz","2018-10",,12/02/19,"Demo usata per elaborazioni CD ""stato"", ""idrico"" e ""dissesto"" e per prima analisi ""futura"" (no tag)","octk_0.0.0.zip"
-"0.1.0","octk_0.1.0.tar.gz","2018-12","v0.1.0",05/04/19,"Versione in uso da gennaio ad aprile 2019 (data pubblicazione dati 31/12/2018, tag creato il 16/05/2019)","octk_0.1.0.zip"
-"0.1.1","octk_0.1.1.tar.gz","2018-12","v0.1.1",17/05/19,"Versione con regionalizzazione e integrazione programmazione (tag creato il 21/06/2019)","octk_0.1.1.zip"
-"0.2.0","octk_0.2.0.tar.gz","2019-02","v0.2.0",21/06/19,"Versione con setup per GoogleDrive",
-"0.2.7",,"2019-10",,,"versione per dati di ottobre 2019 con evolutiva “coesione”",
-"0.2.8",,"2019-10",,15/01/19,"versione per dati di ottobre 2019 con evolutiva su perimetri",
