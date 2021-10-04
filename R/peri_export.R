@@ -243,6 +243,7 @@ get_default_vars <- function() {
     'OC_SINTESI_PROGETTO',
     'x_CICLO',
     'x_AMBITO',
+    'OC_CODICE_PROGRAMMA',
     'x_PROGRAMMA',
     'COD_RISULTATO_ATTESO',
     'DESCR_RISULTATO_ATTESO',
