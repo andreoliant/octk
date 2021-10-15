@@ -989,7 +989,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
   # tipo_ciclo <- "CICLO_STRATEGIA"
   # use_po_psc <- TRUE
   
-  programmi <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) %>%
+  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   
@@ -2193,7 +2193,7 @@ make_report_macroaree_coesione <- function(risorse=NULL, perimetro=NULL, use_meu
   
   
   if (cut_no_risorse == TRUE) {
-    appo <- init_programmazione(use_713 = TRUE, use_flt = TRUE) %>%
+    appo <- init_programmazione_dati(use_713 = TRUE, use_flt = TRUE) %>%
       filter(FINANZ_TOTALE > 0, FLAG_MONITORAGGIO != 0, FLAG_MONITORAGGIO != 9) %>%
       select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, FINANZ_TOTALE)
     
@@ -2360,7 +2360,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
   # tipo_ciclo <- "CICLO_STRATEGIA"
   # perimetro <- operazioni
   
-  programmi <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE, use_po_psc=use_po_psc) %>%
+  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE, use_po_psc=use_po_psc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   
@@ -2403,7 +2403,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     # po_riclass <- octk::po_riclass
     # MEMO: questa soluzione porta a deniminazioni divergenti per lo stesso codice po
     
-    po_riclass <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=FALSE) %>%
+    po_riclass <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=FALSE) %>%
       rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
              x_PROGRAMMA = DESCRIZIONE_PROGRAMMA) %>%
       distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO)
@@ -2671,7 +2671,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     #   filter(RISORSE > 0)
     # MEMO: questa versione esclude casi con RISORSE 0 per ambito nazionale e progetti presenti (e casi simili)
     
-    appo <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE) %>%
+    appo <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE) %>%
       rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
              x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
     

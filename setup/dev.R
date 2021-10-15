@@ -228,9 +228,9 @@ system(
   # paste0("git tag v", oc_ver, "-REV.01")
   )
 
-# library(gitcreds)
-# gitcreds_set()
-# gitcreds_get()
+library(gitcreds)
+gitcreds_set()
+gitcreds_get()
 
 # HAND: push
 
