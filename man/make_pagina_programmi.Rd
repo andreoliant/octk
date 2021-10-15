@@ -11,10 +11,10 @@ make_pagina_programmi(programmi = NULL, progetti = NULL, export = TRUE)
 
 \item{progetti}{Dataset di tipo 'progetti' (serve per denominazioni programmi da sito e non da DB)}
 
-\item{export}{vuoi salvare il file?}
+\item{export}{Vuoi salvare il file?}
 }
 \value{
-Lista dei programmi 2007-2013 e 2014-2020
+Lista dei programmi 2007-2013 e 2014-2020 applicando le convenzioni per la pubblicazione nella pagina "programmi" del sito.
 }
 \description{
 Crea la lista dei programmi da pubblicare nella "pagina programmi" del sito di OC

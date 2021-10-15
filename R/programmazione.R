@@ -1251,8 +1251,8 @@ make_report_fonti_impieghi <- function(use_meuro=TRUE, export=TRUE) {
 #' 
 #' @param programmi Dati di base da workflow_programmazione().
 #' @param progetti Dataset di tipo 'progetti' (serve per denominazioni programmi da sito e non da DB)
-#' @param export vuoi salvare il file?
-#' @return Lista dei programmi 2007-2013 e 2014-2020
+#' @param export Vuoi salvare il file?
+#' @return Lista dei programmi 2007-2013 e 2014-2020 applicando le convenzioni per la pubblicazione nella pagina "programmi" del sito.
 make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
   
   if (is.null(programmi)) {
