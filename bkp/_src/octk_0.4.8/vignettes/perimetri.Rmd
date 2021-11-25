@@ -1,0 +1,275 @@
+---
+title: "perimetri"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{perimetri}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(octk)
+```
+
+Il package contiene le funzioni per lo svolgimento del workflow di perimetrazione, utile sia per la preparazione dei "focus tematici" pubblicati sul portale che, più in generale, per analisi tematiche.
+
+L'approccio raccomandato presuppone l'analisi contestuale di diverse variabili perché i) per costruzione in BDU esistono diverse variabili "tematiche" e ii) tra queste vi sono numerose difformità. La logica promossa è quella di successive iterazioni supportate da analisi qualitativa/manuale volte al progressivo affinamento dei paramentri di input e alla composizione di liste di progetti eccezionali per lacune nei dati di monitoraggio (da scartare o ricomprendere nel perimetro, a seconda). Il flusso può comunque essere utilizzato anche in modo estremamente semplicato per analisi rapide e puntuali.
+
+Va segnalato che, per natura delle variabili presenti nel monitoraggio, l'approccio proposto è più efficace per l'individuzione e suddivisione in blocchi di "grandi temi" di policy (ad es. "idropotabile" e "depurazione" nel settore "idrico") mentre il risultato resterà lacunoso su oggetti troppo puntuali o troppo trasversali rispetto ai settori convenzionali.
+
+Il flusso prevede due step:
+
+- Perimetrazione: analisi multi-criteri per definire la lista di progetti utili
+- Classificazione: analisi di secondo livello per suddividere in classi il perimetro individuato (analisi opzionale)
+
+Il workflow è concepito per essere reiterato ogni bimestre in modo tale da concentrare l'analisi qualitativa solo sul nuovo delta di progetti
+
+Il flusso prevede una importante componente di controllo manuale e di analisi esplorativa non codificata, con l'obiettivo di milgiorare la qualità del risultato. L'approccio consigliato è di concludere una prima iterazione dell'intero flusso, fino all'esportazione del perimetro classificato, per poi effettuare l'analisi qualitativa. A valle vanno modificati i diversi input (criteri query, stoplist, ecc.) e rieseguito l'intero processo, eventualmente anche in una nuova versione di ELAB.
+
+
+## Importazione dei dati
+Il workflow parte con l'importazione di `progetti esteso`, che deve essere disponbile nel folder DATA (vedi *oc_init()*).
+
+```{r, echo = TRUE, eval = FALSE}
+progetti <- load_progetti(bimestre = "20180630", visualizzati = TRUE, light = TRUE, debug = TRUE)
+```
+
+Nel package sono disponibili gli asset propedeutici all'analisi, illustrati a segure.
+  
+    
+
+## Definizione degli input
+Il workflow consente di selezionare tra diverse variabili, per ognuna delle quali viene stabilito un critero ovvero una lista di casi utili.
+Il file "query_input.xlsx" alimenta il processo e consente, a valle, la condivisione del criterio utilizzato.
+
+Di default contiene tutti i possibili input, uno per foglio. I fogli che non interessa utilizzare vanno eliminati dal file.
+Le query disponbili sono:
+
+- **categorie_cup**: settore, sotto-settore e categoria CUP (*query_cup* a seguire negli script)
+- **categorie_ue**: categoria di spesa UE 2007-2013 / campo di intervento UE 2014-2020 (*query_ue*)
+- **po_linee_azioni**: programma e due articolazioni (due livelli con varia denominazione - *query_po*) 
+- **delib_cipe**: delibere cipe associate al finanziamento dei progetti (*query_cipe* - richiede *finanziamenti_preesteso*)
+- **strum_att**: strumenti attuativi (*query_strum*)
+- **prog_comp**: progetti complessi (*query_progcomp*)
+- **patt**: procedure di attivazione (*query_patt*)
+- **ra**: risultati attesi UE e POC 2014-2020 (*query_ra*)
+- **aree_temi_fsc**: aree tematiche e temmi priortari FSC 2014-2020 (*query_atp* - richiede *oper_pucok_preesteso.sas7bdat*)
+- **qsn**: obiettivi specifici QSN 2007-2013 (*query_qsn*)
+- **tipologie_cup**: natura e tipologia CUP (*query_tipo_cup*)
+- **comuni**: comune di localizzazione del progetto (*query_comuni*)
+- **flag_beniconf**: flag beni confiscati da banca dati CUP (*query_beniconf*)
+- **keyword**: parole chiave da ricercare nei titoli dei progetti (*query_keyword*)
+
+
+La colonna query di ogni input è valorizzata con:
+
+- 1 per i casi certi
+- 2 per i casi ambigui 
+- 9 per i casi da evitare tassativamente
+
+```{r, echo = TRUE, eval = FALSE}
+# la prima volta che si eseuge il flusso:
+
+setup_query_xls()
+# salva template di "query_input.xlsx" in TEMP (da popolare manualmente)
+# salva anche "stoplist.csv", "safelist.csv", "fixlist.csv" (descritte dopo)
+
+```
+
+
+## Esecuzione delle query
+La funzione **make_pseudo_edit** esegue in sequenza le query selezionate (nell'esempio sotto tutte quelle disponbili) e restituisce i risultati nel file **pseudo.csv** salvato in TEMP. Questo file raccoglie per ogni progetto informazioni provenienti da tutti gli step del workflow e consente di fare debug puntuale. 
+
+Durante l'esecuzione di ogni query pseudo viene integrato mediante full_join dei risultati di ricerca (accoda nuovi CLP e agginuge colonna QUERY_XXX valorizzata con il valore corrisipondente in query_input).
+
+Se si dispone di una lista di progetti già nota, che non risponde necessariamente al set di criteri, si può accodare a pseudo con la funzione **add_to_pseudo** (viene generata la colonna QUERY_ADD con valore 1). 
+
+A valle dell'analisi multi-criteri, con la funzione **make_perimetro_edit** si crea il perimetro di progetti.
+
+
+```{r, echo = TRUE, eval = FALSE}
+# lista delle query da eseguire
+lista_query <- c("query_cup",  "query_ue", "query_po", "query_cipe", 
+                 "query_strum", "query_progcomp", "query_patt",
+                 "query_ra", "query_atp", "query_qsn", "query_tipo_cup",
+                 "query_comuni", "query_beniconf",
+                 "query_keyword")
+
+# esecuzione query
+pseudo <- make_pseudo_edit(progetti, query_ls=lista_query, export=TRUE)
+
+# integrazione con lista progetti predefinita
+pseudo <- add_to_pseudo(pseudo, addendum = "progetti_da_aggiungere.csv", add_name="QUERY_ADD", export = TRUE)
+
+# integrazione con lista progetti da altro perimetro e relative classi
+pseudo <- add_perimetro_to_pseudo(pseudo, addendum = "Idrico_clp.csv", usa_classi=TRUE, export = TRUE)
+
+# perimetrazione
+pseudo <- make_perimetro_edit(pseudo, progetti=progetti, export=TRUE, debug=TRUE)
+
+# verifica perimetro
+# chk_dupli_perimetro(pseudo)
+# TODO:
+
+```
+
+Dopo le query, ogni progetto in *pseduo*:
+
+- entra automaticamente nel perimetro se almeno per un criterio risulta 1
+- entra nel perimetro se per almeno due criteri risulta 2
+- esce automaticamente dal perimetro se per solo un criterio risulta 2
+- esce automaticamente dal perimetro se almeno per un criterio risulta 9 (anche se almeno per un criterio risulta 1) 
+
+La funzione *make_perimetro_edit* salva in TEMP un file *scarti_perim.csv* per i controlli, che va esaminato manualmente insieme a *pseudo.csv* o al perimetro finle.
+
+E' possibile aggiungere in *safelist.csv* (già in TEMP ma vuoto) i CLP di cui forzare l'inserimento nel perimetro quando per i criteri sopra sarebbe invece incluso negli scarti. Analogamente, è possibile aggiungere in *stoplist.csv* (sempre in TEMP e vuoto) i CLP di cui forzare l'eliminazione anche se per i criteri sopra sarebbero stati nel perimetro. Ancora più a monte, è possibile modificare le assegnazioni in *input_query* (tipicamente per restringere il campo si passa qualche 1 a 2 oppure si specificano dei 9). Questo è il cuore dell'analisi qualitativa del processo di perimetrazione. 
+
+A questo punto è il momento di eseguire di nuovo il flusso, con i nuovi paramentri. Per farlo è necessaro eliminare *pseudo.csv* ed eseguire di nuovo da *make_pseudo_edit*, con *make_perimetro_edit* che questa volta considererà anche safelist e stoplist. In alternativa, per tenere traccia di diversi test durante l'affinamento della perimetrazione, è possbile creare una nuova versione dell'elaborazione e copiare la cartella INPUT.
+
+Se si prevede di utilizzare anche lo step di classificazione, a seguire, è consigliabile concludere anche tale step prima di effettuare i controlli qualitativi e rilanciare il flusso, in modo da ottimizzare l'analisi qualitativa.
+
+
+
+## Classificazione
+
+Il successivo step del workflow consente la classificazione in temi di secondo livello rispetto al focus principale del perimetro.
+Anche questo step si appoggia sulla struttura di `pseudo.csv` integrandolo con la nuova variabile *CLASSE*  e può essere eseguito interattivamente per correzioni puntuali mediante l'apposita `fixlist.csv` in INPUT. Sono disponbili diversi metodi di classificazione, costruiti con la stessa logica di fondo.
+
+Il metodo standard classifica in base a specifiche attribuzioni da assegnare sulla base di categorie CUP e UE, da esportare in INPUT con le apposite funzioni (che calcolano un semplice conteggio dei progetti nel perimetro per casi considerati nelle due variabili). Una *classe jolly* viene assegnata ai casi non tracciati.
+
+La funzione **make_classi** incorpora le correzioni puntuali in `fixlist.csv`, che possono essere integrazione dopo una prima esecuzione per una nuova iterazione con parametri aggiornati.
+
+```{r, echo = TRUE, eval = FALSE}
+# setup classi
+setup_classi_cup(pseudo, progetti, "classi_cup.csv")
+setup_classi_ue(pseudo, progetti, "classi_ue.csv")
+# HAND: integrare classi_cup.csv, classi_ue.csv e fixlist.csv
+# TODO: inserire tool per gestire integrazione da bimestre precedenti
+
+# classificazione
+pseudo <- make_classi(pseudo,
+                      classe_jolly="Turismo",
+                      livelli_classe = c("Natura", "Cultura", "Turismo"),
+                      export=TRUE, debug=FALSE)
+
+```
+
+Il secondo metodo effettua la classificazione sulla dicotomia "hard" e "soft" a partire dalla natura CUP. Questo metodo non richiede input, ma è sempre disponibile la `fixlist.csv`.
+
+```{r, echo = TRUE, eval = FALSE}
+# classificazione
+pseudo <- make_classi_hard_soft(pseudo, export=TRUE)
+
+```
+
+E' disponibile in beta il metodo di classificazione per tipologie di soggetti (che richiede "PROGETTI_PREESTESO.csv").
+
+```{r, echo = TRUE, eval = FALSE}
+# setup classi
+setup_classi_soggetti("classi_soggetti.csv")
+# HAND: integrare classi_soggetti.csv
+
+# classificazione
+pseudo <- make_classi_soggetti(pseudo, livelli_classe=NULL, progetti, export = TRUE)
+
+```
+
+E' disponibile in beta anche il metodo di classificazione per ambii sovracoumanli (che parte da AMBITI in "comuni" in "input_query.xlsx).
+
+```{r, echo = TRUE, eval = FALSE}
+# classificazione
+pseudo <- make_classi_comuni(pseudo, progetti=progetti, export = TRUE)
+
+```
+
+
+## Esportazione
+
+Il processo di esportazione salva il dataset con il perimetro individuato.
+
+```{r, echo = TRUE, eval = FALSE}
+# integra ed esporta in csv
+perimetro <- export_data(pseudo, focus, bimestre, var_ls=NULL, var_add=NULL, export=TRUE)
+
+# esporta in xls
+export_data_xls(perimetro, focus, bimestre, use_template=FALSE)
+
+# esporta per flusso SAS
+export_sas(perimetro, focus="perimetro", use_drive=TRUE, keep_classe=FALSE, split_classe=FALSE)
+
+
+```
+
+Inoltre è possibile esportate la reportistica sintetica.
+Le query disponbili sono:
+
+- **report_cicli_temi**: report per ciclo e tema, con N, CP e PAG
+- **report_cicli_ambiti**: report per ciclo e ambito, con N, CP e PAG
+- **report_regioni**: report per regioni, con N, CP e PAG
+- **report_dimensioni**: report per classi di dimensione finanziaria, con N, CP e PAG
+- **report_stati**: report per stato di avanzamento procedurale, con N, CP e PAG
+
+```{r, echo = TRUE, eval = FALSE}
+# lista report di interesse
+report_ls <- c("report_cicli_temi", "report_cicli_ambiti", "report_regioni", "report_dimensioni", "report_stati")
+
+# clp per progetti di interesse
+clp_csv <- perimetro %>% select(COD_LOCALE_PROGETTO, CLASSE, AMBITO)
+
+# esportazione
+workflow_report(clp_csv, report_ls=NULL, progetti=NULL, use_coe=TRUE, operazioni=NULL, 
+                tema=NULL, livelli_tema=NULL, nome_file=NULL, use_template=FALSE)
+
+```
+
+
+## Analisi variazioni
+
+Il processo può essere replicato per ogni bimestre di monitoraggio. 
+
+Per alcune variabili il dominio di riferimento cambia ad ogni bimestre e di conseguenza è necessario aggiornare il file input dell'elaborazione.
+Per ogni nuovo rilascio su OpenCoesione il flusso consente di valutare direttamente solo le nuove voci, risparmiando tempo. 
+Le voci esistenti in bimestri precedenti che cessano di essere associate a progetti restano nei file input per memoria ma risultano ininfluenti.
+
+In questo modo "input_query.xlsx" viene ricreato in TEMP aggiornato. Gli altri file (stoplist.csv, ecc.) vanno copiati manualmente dalla vecchia cartella.
+
+
+```{r, echo = TRUE, eval = FALSE}
+# nei successivi aggiornamenti:
+
+# definisce versione precedente per il confronto
+OLD <- file.path(DRIVE, "ELAB", "20201231",  "PERIMETRI", "Turismo", "V.01")
+
+# salva "input_query_delta.xlsx" in TEMP con solo le nuove righe (da popolare manualmente)
+make_input_delta(OLD)
+
+# accoda "input_query_delta.xlsx" al precedente "query_input.xlsx"
+update_input_with_delta(OLD)
+
+```
+
+
+Per ridurre l'effort dedicato ad analisi manuali è possibile utilizzare l'utility dedicata all'analisi delle variazioni tra bimestri di monitoraggio, che isola solo il nuovo delta di progetti non censiti né scartati nel precedente esercizio sia per il perimetro che per gli scarti.
+
+```{r, echo = TRUE, eval = FALSE}
+# path per il precedente perimetro
+# OLD <-"G:/Drive condivisi/ELAB/20201231/PERIMETRI/Turismo/V.02/temp/Turismo_20201231.csv"
+OLD <- file.path(DRIVE, "ELAB", "20201231", "PERIMETRI", "Turismo", "V.01", "temp", "Turismo_20201231.csv")
+
+
+# isola delta
+delta <- make_delta(perimetro, path_to_old = OLD, debug=TRUE) 
+
+# isola delta di scarti
+var_ls <- c("COD_LOCALE_PROGETTO", "OC_TITOLO_PROGETTO", "OC_FINANZ_TOT_PUB_NETTO", "COD_RISULTATO_ATTESO")
+delta_scarti <- make_delta_scarti(pseudo, perimetro, path_to_old = OLD, debug=TRUE, var_ls, min_cp=2000000)
+
+```
+
