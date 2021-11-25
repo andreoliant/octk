@@ -1000,7 +1000,8 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
       mutate(FLAG_MONITORAGGIO = if_else(OC_CODICE_PROGRAMMA == "2007IT005FAMG1", 1, FLAG_MONITORAGGIO))
     
     programmi <- programmi %>%
-      filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2)
+      # filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2)
+      filter(FLAG_MONITORAGGIO == 1)
     # MEMO: in FSC resta anche tipo 9 che viene scartato
   }
 
@@ -3158,5 +3159,81 @@ workflow_operazioni_sito <- function(bimestre, progetti, debug=FALSE) {
   return(operazioni)
 }
 
+#' Verifica variazione risorse per programma
+#'
+#' Verifica variazione risorse per programma. Confronta due dataframe risultanti da make_report_programmi_coesione().
+#'
+#' @param programmi_new Dataframe da make_report_programmi_coesione()
+#' @param programmi_old Dataframe da make_report_programmi_coesione()
+#' @param path_to_new Percorso a csv generato con make_report_programmi_coesione().
+#' @param path_to_old Percorso a csv generato con make_report_programmi_coesione().
+#' @param export vuoi salvare il file?
+#' @return Un dataframe per programma, ciclo e ambito.
+chk_variazione_risorse_programmi_coesione <- function(programmi_new=NULL, programmi_old=NULL, path_to_new=NULL, path_to_old=NULL, export=FALSE){
+  
+  if (is.null(programmi_new)) {
+    if (is.null(path_to_new)) {
+      message("Indica un file da confrontare")
+    } else {
+      programmi_new <- read_csv2(path_to_new)
+    }
+  }
+  
+  if (is.null(programmi_old)) {
+    if (is.null(path_to_old)) {
+      message("Indica un file da confrontare")
+    } else {
+      programmi_old <- read_csv2(path_to_old)
+    }
+  }
+  
+  out <- programmi_new %>%
+    as_tibble(.) %>%
+    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE) %>%
+    left_join(programmi_old %>%
+                # fix per "PAC"
+                as_tibble(.) %>%
+                mutate(x_AMBITO = case_when(x_CICLO == "2007-2013" & x_AMBITO == "POC" ~ "PAC",
+                                            TRUE ~ x_AMBITO)) %>%
+                refactor_ambito(.) %>%
+                select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, RISORSE),
+              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO"),
+              suffix = c(".new", ".old")) %>%
+    mutate(RISORSE.old = if_else(is.na(RISORSE.old), 0, RISORSE.old),
+           RISORSE.new = if_else(is.na(RISORSE.new), 0, RISORSE.new)) %>%
+    mutate(CHK = RISORSE.new - RISORSE.old)
+  
+  if (export==TRUE) {
+    write.csv2(out, file.path(TEMP, "delta_risorse_programmi.csv"), row.names = FALSE)
+  }
+  
+  return(out)
+  
+}
 
 
+#' Integra report bimestre con bimestre precedente a scelta
+#'
+#' Integra report bimestre con bimestre precedente a scelta.
+#'
+#' @param report Report da make_report_bimestre_coesione.
+#' @param path_to_old Percorso a elaborazione per bimestre precedente fino a versione, senza nome file.
+#' @param export vuoi salvare il file?
+#' @return Un file csv con apertura per ciclo e ambito.
+add_delta_report_bimestre_coesione <- function(report, path_to_old, export=FALSE) {
+  
+  # path_to_old <- file.path(DRIVE, "ELAB", "20210430", "STATO", "stato", "V.01")
+  
+  report_old <- read_csv2(file.path(path_to_old, "temp", "report.csv")) %>% 
+    select(x_CICLO, x_AMBITO, COE_OLD = COE, COE_IMP_OLD = COE_IMP, COE_PAG_OLD = COE_PAG)
+  
+  out <- report %>% 
+    left_join(report_old, by = c("x_CICLO", "x_AMBITO"))
+  
+  if (export == TRUE) {
+    write_csv2(out, file.path(TEMP, "report.csv"))
+  }
+  
+  return(out)
+  
+}

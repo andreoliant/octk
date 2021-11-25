@@ -4,10 +4,12 @@
 \alias{load_progetti_psc}
 \title{Carica dati di base per PSC}
 \usage{
-load_progetti_psc(bimemstre)
+load_progetti_psc(bimestre, fix_no_temi_no_coe = FALSE)
 }
 \arguments{
 \item{bimestre}{Bimestre di riferimento}
+
+\item{fix_no_temi_no_coe}{Logico. Vuoi scartare i progetti con tema missing e finanziamenti pari a 0?}
 }
 \value{
 Dataframe

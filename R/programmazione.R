@@ -357,7 +357,8 @@ init_programmazione_info <- function(use_en = FALSE, use_713 = FALSE, sum_po = F
     
     info <- info_FSC0713 %>%
       bind_rows(info_FS0713) %>%
-      bind_rows(info_PAC0713) %>%
+      bind_rows(info_PAC0713 %>% 
+                  mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE))) %>%
       bind_rows (info_FSC) %>%
       mutate(VERSIONE = as.character(VERSIONE)) %>% #fix per NA
       bind_rows(info_SIE) %>%
@@ -434,6 +435,7 @@ init_programmazione_info <- function(use_en = FALSE, use_713 = FALSE, sum_po = F
                                            TIPO_DECISIONE == "Legge" ~ "Law",
                                            TIPO_DECISIONE == "Altra norma" ~ "Other",
                                            TIPO_DECISIONE == "Decreto Legge" ~ "Decree",
+                                           TIPO_DECISIONE == "DM MEF" ~ "Decree",
                                            TIPO_DECISIONE == "Ordinanza" ~ "Order")) %>%
       # mutate(LABEL_DECISIONE_IT = paste0(TIPO_DECISIONE,
       #                                    " n. ",
@@ -806,57 +808,6 @@ workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL)
 
 
 
-#' Verifica variazione risorse per programma
-#'
-#' Verifica variazione risorse per programma. Confronta due dataframe risultanti da make_report_programmi_coesione().
-#'
-#' @param programmi_new Dataframe da make_report_programmi_coesione()
-#' @param programmi_old Dataframe da make_report_programmi_coesione()
-#' @param path_to_new Percorso a csv generato con make_report_programmi_coesione().
-#' @param path_to_old Percorso a csv generato con make_report_programmi_coesione().
-#' @param export vuoi salvare il file?
-#' @return Un dataframe per programma, ciclo e ambito.
-chk_variazione_risorse_programmi <- function(programmi_new=NULL, programmi_old=NULL, path_to_new=NULL, path_to_old=NULL, export=FALSE){
-  
-  if (is.null(programmi_new)) {
-    if (is.null(path_to_new)) {
-      message("Indica un file da confrontare")
-    } else {
-      programmi_new <- read_csv2(path_to_new)
-    }
-  }
-  
-  if (is.null(programmi_old)) {
-    if (is.null(path_to_old)) {
-      message("Indica un file da confrontare")
-    } else {
-      programmi_old <- read_csv2(path_to_old)
-    }
-  }
-  
-  out <- programmi_new %>%
-    as_tibble(.) %>%
-    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE) %>%
-    left_join(programmi_old %>%
-                # fix per "PAC"
-                as_tibble(.) %>%
-                mutate(x_AMBITO = case_when(x_CICLO == "2007-2013" & x_AMBITO == "POC" ~ "PAC",
-                                            TRUE ~ x_AMBITO)) %>%
-                refactor_ambito(.) %>%
-                select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, RISORSE),
-              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO"),
-              suffix = c(".new", ".old")) %>%
-    mutate(RISORSE.old = if_else(is.na(RISORSE.old), 0, RISORSE.old),
-           RISORSE.new = if_else(is.na(RISORSE.new), 0, RISORSE.new)) %>%
-    mutate(CHK = RISORSE.new - RISORSE.old)
-
-  if (export==TRUE) {
-    write.csv2(out, file.path(TEMP, "delta_risorse_programmi.csv"), row.names = FALSE)
-  }
-  
-  return(out)
-  
-}
 
 
 
@@ -1095,7 +1046,7 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
 #' @param force_yei Logico. Vuoi forzare FSE in YEI?
 #' @param export vuoi salvare il file?
 #' @return Un file csv con apertura per ciclo e macroarea.
-make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_eu=FALSE, use_po_psc=FALSE, force_yei=FALSE, tipo_ciclo="CICLO_STRATEGIA", export=FALSE) {
+  make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_eu=FALSE, use_po_psc=FALSE, force_yei=FALSE, tipo_ciclo="CICLO_STRATEGIA", export=FALSE) {
   
   programmi <- init_programmazione_dati(use_temi = FALSE, use_713 = TRUE, use_location = TRUE, use_ciclo = TRUE, use_eu=use_eu, 
                                         use_flt=use_flt, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) 
@@ -1346,7 +1297,7 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
   programmi <- programmi %>%
     mutate(x_AMBITO = as.character(x_AMBITO)) %>% 
     mutate(LABEL_AMBITO_IT = case_when(x_AMBITO == "YEI" ~ "IOG",  # fix YEI
-                                       x_AMBITO == "SNAI" ~ "SNAI-Servizi",
+                                       x_AMBITO == "SNAI" ~ "SNAI-SERVIZI",
                                        TRUE ~ x_AMBITO),
            LABEL_AMBITO_EN = case_when(x_AMBITO == "FESR" ~ "ERDF",
                                        x_AMBITO == "FSE" ~ "ESF",
@@ -1358,7 +1309,8 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
                                        x_AMBITO == "PAC" ~ "CAP",
                                        x_AMBITO == "SNAI" ~ "IANS",
                                        x_AMBITO == "YEI" ~ "YEI"),
-           LABEL_TIPO_IT = x_GRUPPO,
+           LABEL_TIPO_IT = case_when(x_AMBITO == "SNAI" ~ "SNAI-SERVIZI",
+                                     TRUE ~ x_GRUPPO),
            LABEL_TIPO_EN = case_when(x_GRUPPO == "PON" ~ "NOP",
                                      x_GRUPPO == "POR" ~ "ROP",
                                      x_GRUPPO == "PATTI" ~ "DEVELOPMENT PACT",
@@ -1366,7 +1318,7 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
                                      x_GRUPPO == "PIANI OPERATIVI" ~ "NATIONAL PLAN",
                                      x_GRUPPO == "POC REGIONALI" ~ "REGIONAL COP",
                                      x_GRUPPO == "POC NAZIONALI" ~ "NATIONAL COP",
-                                     x_GRUPPO == "SNAI" ~ "IANS",
+                                     x_AMBITO == "SNAI" ~ "IANS",
                                      TRUE ~ x_GRUPPO))
   
   # maiusc
@@ -1390,9 +1342,10 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
                                     LABEL_AMBITO_IT == "POC" & LABEL_TIPO_IT == "POC Nazionale Completamenti" ~ "COMPLETAMENTI",
                                     LABEL_AMBITO_IT == "POC" & LABEL_TIPO_IT == "POC Regionale" ~ "REGIONALI",
                                     LABEL_AMBITO_IT == "POC" & LABEL_TIPO_IT == "POC Regionale Completamenti" ~ "COMPLETAMENTI",
-                                    LABEL_AMBITO_IT == "SNAI-Servizi" ~ "SNAI-SERVIZI",
+                                    LABEL_AMBITO_IT == "SNAI-SERVIZI" ~ "SNAI-SERVIZI",
                                     LABEL_AMBITO_IT == "PAC" & LABEL_TIPO_IT == "PAC Nazionale" ~ "NAZIONALI",
                                     LABEL_AMBITO_IT == "PAC" & LABEL_TIPO_IT == "PAC Regionale" ~ "REGIONALI",
+                                    LABEL_AMBITO_IT == "PAC" & OC_CODICE_PROGRAMMA == "2007IT001FA005" ~ "NAZIONALI", # fix per direttrici ferroviarie
                                     TRUE ~ LABEL_TIPO_IT)) %>% 
     mutate(LABEL_TIPO_IT = factor(LABEL_TIPO_IT, levels = c("PSC", "PATTI", "VARI", "POR", "PON", "POIN", "CTE", "NAZIONALI", "REGIONALI", "COMPLETAMENTI", "SNAI-SERVIZI"))) %>%
     mutate(LABEL_TIPO_EN = case_when(LABEL_AMBITO_EN == "DCF" & LABEL_TIPO_EN == "PACTS" ~ "PACTS",
@@ -1405,11 +1358,11 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
                                     LABEL_AMBITO_IT == "PAC" & LABEL_TIPO_IT == "REGIONALI" ~ "REGIONAL",
                                     LABEL_TIPO_IT == "POIN" ~ "INOP",
                                     TRUE ~ LABEL_TIPO_EN)) %>% 
-    mutate(LABEL_TIPO_EN = factor(LABEL_TIPO_EN, levels = c("PSC", "PACTS", "OTHERS", "ROP", "NOP", "INOP","CTE", "NAZIONAL", "REGIONAL", "COMPLETAMENTI", "SNAI-SERVIZI"))) %>%
+    mutate(LABEL_TIPO_EN = factor(LABEL_TIPO_EN, levels = c("PSC", "PACTS", "OTHERS", "ROP", "NOP", "INOP","CTE", "NAZIONAL", "REGIONAL", "COMPLETAMENTI", "IANS"))) %>%
     mutate(LINK_DOC = paste0("../programmi/", OC_CODICE_PROGRAMMA, "/documenti/")) %>% # TEST
     mutate(RISORSE = round(RISORSE, 0),
            RISORSE_UE = round(RISORSE_UE, 0)) %>% 
-    mutate(LINK_DOC = case_when(OC_CODICE_PROGRAMMA == "TEMP_CTE_TRANS	" ~ "", #sere per non generare link su sito
+    mutate(LINK_DOC = case_when(OC_CODICE_PROGRAMMA == "TEMP_CTE_TRANS	" ~ "", #serve per non generare link su sito
                                            OC_CODICE_PROGRAMMA == "COMP_POC_CALABR" ~ "",
                                            OC_CODICE_PROGRAMMA == "COMP_POC_CAMPAN" ~ "",
                                            OC_CODICE_PROGRAMMA == "COMP_POC_CULTUR" ~ "",
@@ -1418,7 +1371,7 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
                                            OC_CODICE_PROGRAMMA == "COMP_POC_LEGALI" ~ "",
                                            OC_CODICE_PROGRAMMA == "AREEINTASSTEC" ~ "",
                                            TRUE ~ LINK_DOC)) %>% 
-    mutate(LABEL_DOC_EN = case_when(OC_CODICE_PROGRAMMA == "TEMP_CTE_TRANS	" ~ "", #sere per non generare link su sito
+    mutate(LABEL_DOC_EN = case_when(OC_CODICE_PROGRAMMA == "TEMP_CTE_TRANS	" ~ "", #serve per non generare link su sito
                                 OC_CODICE_PROGRAMMA == "COMP_POC_CALABR" ~ "",
                                 OC_CODICE_PROGRAMMA == "COMP_POC_CAMPAN" ~ "",
                                 OC_CODICE_PROGRAMMA == "COMP_POC_CULTUR" ~ "",
@@ -1427,7 +1380,7 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
                                 OC_CODICE_PROGRAMMA == "COMP_POC_LEGALI" ~ "",
                                 OC_CODICE_PROGRAMMA == "AREEINTASSTEC" ~ "",
                                 TRUE ~ LABEL_DOC_EN)) %>% 
-    mutate(LABEL_DOC_IT = case_when(OC_CODICE_PROGRAMMA == "TEMP_CTE_TRANS	" ~ "", #sere per non generare link su sito
+    mutate(LABEL_DOC_IT = case_when(OC_CODICE_PROGRAMMA == "TEMP_CTE_TRANS	" ~ "", #serve per non generare link su sito
                                 OC_CODICE_PROGRAMMA == "COMP_POC_CALABR" ~ "",
                                 OC_CODICE_PROGRAMMA == "COMP_POC_CAMPAN" ~ "",
                                 OC_CODICE_PROGRAMMA == "COMP_POC_CULTUR" ~ "",
@@ -1437,15 +1390,15 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
                                 OC_CODICE_PROGRAMMA == "AREEINTASSTEC" ~ "",
                                 TRUE ~ LABEL_DOC_IT)) %>% 
     # deve stare dopo
-    mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "TEMP_CTE_TRANS	" ~ "", #sere per non generare link su sito
-                                           OC_CODICE_PROGRAMMA == "COMP_POC_CALABR" ~ "",
-                                           OC_CODICE_PROGRAMMA == "COMP_POC_CAMPAN" ~ "",
-                                           OC_CODICE_PROGRAMMA == "COMP_POC_CULTUR" ~ "",
-                                           OC_CODICE_PROGRAMMA == "COMP_POC_ENERGI" ~ "",
-                                           OC_CODICE_PROGRAMMA == "COMP_POC_SICILI" ~ "",
-                                           OC_CODICE_PROGRAMMA == "COMP_POC_LEGALI" ~ "",
-                                           OC_CODICE_PROGRAMMA == "AREEINTASSTEC" ~ "",
-                                           TRUE ~ OC_CODICE_PROGRAMMA)) %>% 
+    # mutate(OC_CODICE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "TEMP_CTE_TRANS	" ~ "", #serve per non generare link su sito
+    #                                        OC_CODICE_PROGRAMMA == "COMP_POC_CALABR" ~ "",
+    #                                        OC_CODICE_PROGRAMMA == "COMP_POC_CAMPAN" ~ "",
+    #                                        OC_CODICE_PROGRAMMA == "COMP_POC_CULTUR" ~ "",
+    #                                        OC_CODICE_PROGRAMMA == "COMP_POC_ENERGI" ~ "",
+    #                                        OC_CODICE_PROGRAMMA == "COMP_POC_SICILI" ~ "",
+    #                                        OC_CODICE_PROGRAMMA == "COMP_POC_LEGALI" ~ "",
+    #                                        OC_CODICE_PROGRAMMA == "AREEINTASSTEC" ~ "",
+    #                                        TRUE ~ OC_CODICE_PROGRAMMA)) %>% 
     select(OC_CODICE_PROGRAMMA,
            LABEL_PROGRAMMA_IT,
            LABEL_PROGRAMMA_EN,
@@ -1525,8 +1478,19 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
   out <- out4
   
   # split cicli
-  out_1420 <- out %>% filter(LABEL_CICLO == "2014-2020")
-  out_713 <- out %>% filter(LABEL_CICLO == "2007-2013")
+  out_1420 <- out %>% 
+    filter(LABEL_CICLO == "2014-2020")
+  
+  out_713 <- out %>% 
+    filter(LABEL_CICLO == "2007-2013") %>% 
+    # scarta psc senza 713
+    filter(OC_CODICE_PROGRAMMA != "PSC_MUR",
+           OC_CODICE_PROGRAMMA != "PSC_LAZIO",
+           OC_CODICE_PROGRAMMA != "PSC_MISE",
+           OC_CODICE_PROGRAMMA != "PSC_MIT",
+           OC_CODICE_PROGRAMMA != "PSC_MISALUTE",
+           OC_CODICE_PROGRAMMA != "PSC_PCM-SPORT",
+           OC_CODICE_PROGRAMMA != "PSC_MIPAAF")
   
   if (export == TRUE) {
     require(withr)
@@ -1590,8 +1554,9 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
   
   # applica convenzione workflow a interventi
   appo1 <- interventi %>%
-    filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2) %>% 
-    # MEMO: programmi è già filtrato 
+    # filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2) %>% 
+    filter(FLAG_MONITORAGGIO == 1) %>% 
+    # MEMO: programmi è già filtrato da workflow
     select(-DESCRIZIONE_PROGRAMMA, -TIPOLOGIA_PROGRAMMA, -AMBITO,
            -CICLO_PROGRAMMAZIONE) %>%
     left_join(programmi %>%
@@ -1656,6 +1621,11 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
            CATEGORIA_REGIONI = ifelse(is.na(CATEGORIA_REGIONI), "-", as.character(CATEGORIA_REGIONI)),
            AMMINISTRAZIONE = ifelse(is.na(AMMINISTRAZIONE), "Amministrazioni varie", as.character(AMMINISTRAZIONE)))
   
+  # filter (serve per automazione controlli)
+  out <- out %>% 
+    filter(LABEL_AMBITO != "FEASR",
+           LABEL_AMBITO != "FEAMP",
+           LABEL_AMBITO != "CTE")
   
   # export
   if (export == TRUE) {
@@ -1710,7 +1680,7 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
     
     # fix vari
     out_2 <- out %>%
-      mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "SNAI-Servizi", "CTE", "PAC"))) %>% 
+      mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "SNAI-SERVIZI", "CTE", "PAC"))) %>% 
       # appo per spostare psc
       mutate(LABEL_CICLO_2 = case_when(OC_TIPOLOGIA_PROGRAMMA == "PSC" ~ "2014-2020",
                                        TRUE ~ LABEL_CICLO)) %>% 
@@ -1975,7 +1945,8 @@ make_opendata_dotazioni_popsc <- function(programmi=NULL, progetti=NULL, export=
   
   # applica convenzione workflow a interventi
   appo1 <- interventi %>%
-    filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2) %>% 
+    # filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2) %>% 
+    filter(FLAG_MONITORAGGIO == 1) %>% 
     rename(x_AMBITO = AMBITO, 
            x_CICLO = CICLO_PROGRAMMAZIONE,
            x_MACROAREA = MACROAREA) %>%
@@ -2806,7 +2777,9 @@ setup_dbcoe_dati_fsc_psc <- function(file_evo, file_temi, psc_cm=FALSE, export=F
     summarise(RISORSE = sum(FINANZ_TOTALE_PUBBLICO, na.rm = TRUE)) %>%
     mutate(RISORSE = round(RISORSE/1000000, 2)) %>%
     filter(abs(RISORSE) > 0) %>%
-    full_join(articolazioni_2 %>%
+    # MEMO: qui usavo full_join ma devo mettere left_join perché altrimenti mi porta dietro sempre le città metropolitate
+    # full_join(articolazioni_2 %>%
+    left_join(articolazioni_2 %>%
                 mutate(OC_CODICE_PROGRAMMA = paste0("PSC_", gsub(" ", "_", PSC))) %>%
                 group_by(OC_CODICE_PROGRAMMA, OC_MACROAREA, CICLO_PROGRAMMAZIONE, OC_FLAG_MONITORAGGIO) %>%
                 summarise(RISORSE = sum(FINANZ_FSC, na.rm = TRUE)) %>%
@@ -2822,7 +2795,9 @@ setup_dbcoe_dati_fsc_psc <- function(file_evo, file_temi, psc_cm=FALSE, export=F
     select("OC_CODICE_PROGRAMMA", "OC_DESCRIZIONE_PROGRAMMA", "OC_MACROAREA", "CICLO_PROGRAMMAZIONE", "OC_FLAG_MONITORAGGIO",
            "OC_DESCR_FONTE", "AMMINISTRAZIONE_TITOLARE",	"TIPOLOGIA_DI_AMMINISTRAZIONE_TITOLARE",	"OC_TIPOLOGIA_PROGRAMMA") %>%
     distinct() %>%
-    full_join(articolazioni_2 %>%
+    # MEMO: qui usavo full_join ma devo mettere left_join perché altrimenti mi porta dietro sempre le città metropolitate
+    # full_join(articolazioni_2 %>%
+    left_join(articolazioni_2 %>%
                 rename(FINANZ_TOTALE_PUBBLICO = FINANZ_FSC) %>%
                 mutate(FINANZ_TOTALE_PUBBLICO = FINANZ_TOTALE_PUBBLICO * 1000000) %>%
                 mutate(OC_CODICE_PROGRAMMA = paste0("PSC_", gsub(" ", "_", PSC))) %>%
@@ -3360,17 +3335,40 @@ setup_dbcoe_dati_fsc_popsc <- function(file_evo, psc_cm=FALSE, export=FALSE, exp
   # prende i dati sempre da strumenti, che conserva con risorse 0 i programmi interamente sostituiti dai programmi fittizi CIS 
   # a valle rimangono più righe per alcuni programmi (ad es. cambia amministrazione titolare) che sono gestite con summarise da normali funzioni del package
   
+  # PROVA ABOLITA
+  # fix per CIS Taranto in PRA Puglia
+  # strumenti <- strumenti %>% 
+  #   mutate(OC_CODICE_PROGRAMMA = if_else(OC_CODICE_PROGRAMMA == "CIS_TA_PUG", "2007PU001FA010", OC_CODICE_PROGRAMMA),
+  #          OC_DESCRIZIONE_PROGRAMMA = if_else(OC_CODICE_PROGRAMMA == "2007PU001FA010", , OC_DESCRIZIONE_PROGRAMMA)
+  # MEMO: crea versione duplicata del PRA Puglia, con risorse su due cicli 
+  
   temp <- strumenti %>%
     distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA = OC_DESCRIZIONE_PROGRAMMA, x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA, x_CICLO = CICLO_PROGRAMMAZIONE)
   
+  # programmi_2 <- programmi %>%
+  #   mutate(OC_CODICE_PROGRAMMA = if_else(is.na(COD_ORIG), OC_CODICE_PROGRAMMA, COD_ORIG)) %>%
+  #   left_join(temp, 
+  #             by = "OC_CODICE_PROGRAMMA") %>%
+  #   mutate(OC_DESCRIZIONE_PROGRAMMA = ifelse(is.na(COD_ORIG), OC_DESCRIZIONE_PROGRAMMA, x_PROGRAMMA),
+  #          OC_TIPOLOGIA_PROGRAMMA = ifelse(is.na(COD_ORIG), OC_TIPOLOGIA_PROGRAMMA, x_GRUPPO),
+  #          CICLO_PROGRAMMAZIONE = ifelse(is.na(COD_ORIG), CICLO_PROGRAMMAZIONE, x_CICLO)) 
+  
   programmi_2 <- programmi %>%
+    mutate(CICLO_APPO = ifelse(OC_CODICE_PROGRAMMA == "CIS_TA_PUG", "2014-2020", NA)) %>% 
     mutate(OC_CODICE_PROGRAMMA = if_else(is.na(COD_ORIG), OC_CODICE_PROGRAMMA, COD_ORIG)) %>%
     left_join(temp, 
               by = "OC_CODICE_PROGRAMMA") %>%
     mutate(OC_DESCRIZIONE_PROGRAMMA = ifelse(is.na(COD_ORIG), OC_DESCRIZIONE_PROGRAMMA, x_PROGRAMMA),
            OC_TIPOLOGIA_PROGRAMMA = ifelse(is.na(COD_ORIG), OC_TIPOLOGIA_PROGRAMMA, x_GRUPPO),
-           CICLO_PROGRAMMAZIONE = ifelse(is.na(COD_ORIG), CICLO_PROGRAMMAZIONE, x_CICLO)) 
-  
+           CICLO_PROGRAMMAZIONE = case_when(!is.na(CICLO_APPO) ~ CICLO_APPO,
+                                            is.na(COD_ORIG) ~ CICLO_PROGRAMMAZIONE,
+                                            TRUE ~ x_CICLO)) %>% 
+    select(-CICLO_APPO)  
+    # MEMO:
+    # questa nuova verisone introduce fix per CIS Taranto in PRA Puglia, che era già separato in strumenti
+    # in pratica crea versione duplicata del PRA Puglia, con risorse su due cicli 
+    
+    
   # test per verificare se restano missing su x_GRUPPO
   programmi_2 %>%
     filter(!is.na(COD_ORIG), is.na(OC_TIPOLOGIA_PROGRAMMA))
@@ -4642,3 +4640,124 @@ setup_dbcoe_no_fsc <- function(db_path_old, db_path_new=NULL) {
   }
   
 }
+
+
+#' Verifica variazione risorse per ciclo e ambito
+#'
+#' Verifica variazione risorse per ciclo e ambito. Confronta due dataframe risultanti da make_report_risorse() o i file csv da questa esportati.
+#'
+#' @param risorse_new Dataframe da make_report_risorse()
+#' @param risorse_old Dataframe da make_report_risorse()
+#' @param path_to_new Percorso ad attuale folder in cui si trovano i file "risorse_coesione_2014-2020.csv" e "risorse_coesione_2007-2013.csv" generati con make_report_risorse().
+#' @param path_to_old Percorso a precedente folder in cui si trova il file "risorse_coesione.csv" oppure i file "risorse_coesione_2014-2020.csv" e "risorse_coesione_2007-2013.csv" generati con make_report_risorse().
+#' @param export vuoi salvare il file?
+#' @return Un dataframe per ciclo e ambito.
+chk_variazione_risorse_ciclo_ambito <- function(risorse_new=NULL, risorse_old=NULL, path_to_new=NULL, path_to_old=NULL, export=FALSE){
+  
+  if (is.null(risorse_new)) {
+    if (is.null(path_to_new)) {
+      message("Indica un file da confrontare")
+    } else {
+      risorse_new <- read_csv2(path_to_new)
+    }
+  }
+  
+  if (is.null(risorse_old)) {
+    if (is.null(path_to_old)) {
+      message("Indica un file da confrontare")
+    } else {
+      risorse_old <- read_csv2(path_to_old)
+    }
+  }
+  
+  out <- risorse_new %>%
+    as_tibble(.) %>%
+    mutate(RISORSE = `RISORSE_Centro-Nord` + `RISORSE_Mezzogiorno` + `RISORSE_Ambito nazionale`) %>% 
+    select(x_CICLO, x_AMBITO, RISORSE) %>%
+    left_join(risorse_old %>%
+                # fix per "PAC" per edizioni antiche
+                as_tibble(.) %>%
+                mutate(RISORSE = `RISORSE_Centro-Nord` + `RISORSE_Mezzogiorno` + `RISORSE_Ambito nazionale`) %>% 
+                mutate(x_AMBITO = case_when(x_CICLO == "2007-2013" & x_AMBITO == "POC" ~ "PAC",
+                                            TRUE ~ x_AMBITO)) %>%
+                refactor_ambito(.) %>%
+                select(x_CICLO, x_AMBITO, RISORSE),
+              by = c("x_CICLO", "x_AMBITO"),
+              suffix = c(".new", ".old")) %>%
+    mutate(RISORSE.old = if_else(is.na(RISORSE.old), 0, RISORSE.old),
+           RISORSE.new = if_else(is.na(RISORSE.new), 0, RISORSE.new)) %>%
+    mutate(CHK = RISORSE.new - RISORSE.old)
+  
+  if (export==TRUE) {
+    write.csv2(out, file.path(TEMP, "delta_risorse_ciclo_ambito.csv"), row.names = FALSE)
+  }
+  
+  return(out)
+  
+}
+
+
+#' Verifica variazione risorse per programma
+#'
+#' Verifica variazione risorse per programma. Confronta due dataframe risultanti da make_pagina_programmi() o i file csv da questa esportati.
+#'
+#' @param programmi_new Dataframe attuale da make_pagina_programmi()
+#' @param programmi_old Dataframe precedente da make_pagina_programmi()
+#' @param path_to_new Percorso ad attuale folder in cui si trovano i file "programmi_0713.csv" e "programmi_1420.csv" generati con make_pagina_programmi().
+#' @param path_to_old Percorso a precedente folder in cui si trovano i file "programmi_0713.csv" e "programmi_1420.csv" generati con make_pagina_programmi().
+#' @param export vuoi salvare il file?
+#' @return Un dataframe per programma, ciclo e ambito.
+chk_variazione_risorse_programmi <- function(programmi_new=NULL, programmi_old=NULL, path_to_new=NULL, path_to_old=NULL, export=FALSE){
+  
+  if (is.null(programmi_new)) {
+    if (is.null(path_to_new)) {
+      message("Indica un file da confrontare")
+    } else {
+      programmi_new <- read_csv2(file.path(path_to_new, "programmi_0713.csv")) %>% 
+        bind_rows(read_csv2(file.path(path_to_new, "programmi_1420.csv")))
+    }
+  }
+  
+  if (is.null(programmi_old)) {
+    if (is.null(path_to_old)) {
+      message("Indica il folder con i file da confrontare")
+    } else {
+      programmi_old <- read_csv2(file.path(path_to_old, "programmi_0713.csv")) %>% 
+        bind_rows(read_csv2(file.path(path_to_old, "programmi_1420.csv")))
+    }
+  }
+  
+  out <- programmi_new %>%
+    as_tibble(.) %>%
+    rename(x_PROGRAMMA = LABEL_PROGRAMMA_IT,
+           x_CICLO = LABEL_CICLO,
+           x_AMBITO = LABEL_AMBITO_IT,
+           x_GRUPPO = LABEL_TIPO_IT) %>% 
+    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE) %>%
+    full_join(programmi_old %>%
+                # fix per "PAC"
+                as_tibble(.) %>%
+                rename(x_PROGRAMMA = LABEL_PROGRAMMA_IT,
+                       x_CICLO = LABEL_CICLO,
+                       x_AMBITO = LABEL_AMBITO_IT,
+                       x_GRUPPO = LABEL_TIPO_IT) %>%
+                mutate(x_AMBITO = case_when(x_CICLO == "2007-2013" & x_AMBITO == "POC" ~ "PAC",
+                                            TRUE ~ x_AMBITO)) %>%
+                refactor_ambito(.) %>%
+                select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, RISORSE),
+              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO"),
+              suffix = c(".new", ".old")) %>%
+    mutate(RISORSE.old = if_else(is.na(RISORSE.old), 0, RISORSE.old),
+           RISORSE.new = if_else(is.na(RISORSE.new), 0, RISORSE.new)) %>%
+    mutate(CHK = RISORSE.new - RISORSE.old) %>% 
+    filter(abs(CHK) > 0)
+  
+  if (export==TRUE) {
+    write.csv2(out, file.path(TEMP, "delta_risorse_programmi.csv"), row.names = FALSE)
+  }
+  
+  return(out)
+  
+}
+
+
