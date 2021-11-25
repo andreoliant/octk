@@ -104,5 +104,16 @@ chk_match <- function(df_left, df_right, id) {
 # come faccio gli stessi chk con sum su altra variabile (es. FTP)? e per due variabili diverse in left e right?
 # come faccio gli stessi chk con count su altra variabile?
 
+#' Wrapper di "not in"
+#'
+#' Confronta due vettore per verificare casi "not in".
+#'
+#' @param x Vettore da verificare.
+#' @param y Vettore dei casi da ricercare nel vettore da verificare.
+#' @return Vettorelogico con lunghezza di x e valore TRUE per "not in".
+'%!in%' <- function(x, y) {
+  # c(1,2,3, 4) %!in% c(1,2, 5)
+  !('%in%'(x, y))
+}
 
 
