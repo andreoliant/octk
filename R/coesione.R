@@ -43,7 +43,8 @@ setup_operazioni <- function(bimestre, progetti=NULL, export=FALSE, use_fix=FALS
       #  export light
       
       # macroarea
-      operazioni_light <- get_macroarea(operazioni, progetti, real_reg=TRUE)
+      # operazioni_light <- get_macroarea(operazioni, progetti, real_reg=TRUE)
+      operazioni_light <- get_macroarea_oc(operazioni, progetti)
       operazioni_light <- get_regione_simply(operazioni_light, progetti)
       
       # variabili

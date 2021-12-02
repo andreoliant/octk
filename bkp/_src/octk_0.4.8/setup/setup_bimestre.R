@@ -40,7 +40,7 @@ make_matrix_po(bimestre)
 chk <- chk_delta_po("NEW")
 chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
 chk <- chk_delta_po("OLD")
-# HAND: rinominare "po_linee_azioni_NEW.csv" in "po_linee_azioni.csv
+# OLD: HAND: rinominare "po_linee_azioni_NEW.csv" in "po_linee_azioni.csv >>> non serve più
 
 # TODO: voglio sapere cosa manca in po_linee_azioni rispetto al DB programmazione
 
@@ -118,6 +118,7 @@ rm(progetti)
 progetti <- read_csv2(file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), guess_max = 1000000)
 progetti %>% count(x_CICLO, x_AMBITO)
 sum(progetti$OC_FINANZ_TOT_PUB_NETTO, na.rm=TRUE)
+progetti %>% count(x_MACROAREA, OC_MACROAREA)
 
 operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
 operazioni %>% count(x_CICLO, x_AMBITO)
@@ -142,7 +143,7 @@ chk %>%
 # MEMO: se sono solo questi sopra è ok per si tratta di sdoppiamenti forzati per direttrici ferroviarie e giustizia civile
 # 3 2014TC16M5CB013     CTE        ENI           20
 # 4 2020PCDPCINA001     FSC        SNAI        4116 -> 5173
-# MEMO: nuovi programmi fuori da perimetro COE
+# MEMO: nuovi programmi fuori da perimetro COE >>> ora non ci sono più!
 
 write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
 
@@ -166,4 +167,6 @@ write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
 chk <- progetti %>%
   count(x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, OC_CODICE_PROGRAMMA)
 
+progetti %>% 
+  count(x_MACROAREA, OC_MACROAREA)
 

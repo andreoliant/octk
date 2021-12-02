@@ -1,6 +1,6 @@
 OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTICOLAZIONE_PROGRAMMA;OC_COD_ARTICOLAZ_PROGRAMMA;OC_DESCR_ARTICOLAZ_PROGRAMMA;OC_SUBARTICOLAZIONE_PROGRAMMA;OC_COD_SUBARTICOLAZ_PROGRAMMA;OC_DESCR_SUBARTICOLAZ_PROGRAMMA;QUERY;NOTE
-2;Ciclo di programmazione 2014-2020;2017NAPOLI-POZZ;COLLEGAMENTO TANGENZIALE DI NAPOLI AL PORTO DI POZZUOLI;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;1;Infrastrutture di trasporto ferroviario e stradale;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;2;Ambiente;ASSE TEMATICO;5;Cambiamento climatico, prevenzione e gestione dei;0;
+1;Ciclo di programmazione 2007-2013;2017NAPOLI-POZZ;COLLEGAMENTO TANGENZIALE DI NAPOLI AL PORTO DI POZZUOLI;LINEA;1;Infrastrutture;AZIONE;1;Infrastrutture di trasporto ferroviario e stradale;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;2;Ambiente;AZIONE;5;Cambiamento climatico, prevenzione e gestione dei;0;
 2;Ciclo di programmazione 2014-2020;2014TC16I5CB008;PROGRAMMA IPA INTERREG CBC ITALIA-ALBANIA-MONTENEGRO;ASSE;;;OBIETTIVO SPECIFICO;;;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP014;POR FSE SICILIA;ASSE;5;Assistenza tecnica;OBIETTIVO SPECIFICO;5.a;Rafforzare i processi di programmazione, attuazion;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP014;POR FSE SICILIA;ASSE;3;ASSE 3 - ISTRUZIONE E FORMAZIONE;OBIETTIVO SPECIFICO;10.1;Riduzione del fallimento formativo precoce e della;0;
@@ -33,7 +33,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP010;POR FSE UMBRIA;ASSE;2;INCLUSIONE SOCIALE E LOTTA ALLA POVERTA';OBIETTIVO SPECIFICO;1;Riduzione della povertÃ , dell'esclusione sociale;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP010;POR FSE UMBRIA;ASSE;3;ISTRUZIONE E FORMAZIONE;OBIETTIVO SPECIFICO;2;Miglioramento delle competenze chiave degli alliev;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP010;POR FSE UMBRIA;ASSE;1;OCCUPAZIONE;OBIETTIVO SPECIFICO;1;Favorire la permanenza al lavoro e la ricollocazio;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;10;Infrastrutture pubbliche, didattiche/universitarie;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;1;Infrastrutture;AZIONE;10;Infrastrutture pubbliche, didattiche/universitarie;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP009;POR FESR FRIULI-VENEZIA GIULIA;ASSE;1;Rafforzare la Ricerca, lo sviluppo tecnologico e l'innovazio;OBIETTIVO SPECIFICO;1;Incremento dell'attivitÃ  di innovazione delle imp;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP009;POR FESR FRIULI-VENEZIA GIULIA;ASSE;3;Sostenere la transizione verso un'economia a basse emissioni;OBIETTIVO SPECIFICO;1;Riduzione dei consumi energetici negli edifici e n;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP009;POR FESR FRIULI-VENEZIA GIULIA;ASSE;2;Promuovere la competitivitÃ  delle PMI;OBIETTIVO SPECIFICO;1;Rilancio della propensione agli investimenti del s;0;
@@ -49,10 +49,10 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2020AREAINTLAZ;STRATEGIA AREE INTERNE REGIONE LAZIO SERVIZI;AREA;a.001;Valle di Comino;AMBITO;3;Istruzione;0;
 2;Ciclo di programmazione 2014-2020;2020AREAINTLAZ;STRATEGIA AREE INTERNE REGIONE LAZIO SERVIZI;AREA;a.001;Valle di Comino;AMBITO;2;MobilitÃÂ ;0;
 2;Ciclo di programmazione 2014-2020;2020AREAINTLAZ;STRATEGIA AREE INTERNE REGIONE LAZIO SERVIZI;AREA;a.001;Valle di Comino;AMBITO;9;Assistenza Tecnica;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;8;Infrastrutture pubbliche, didattiche/universitarie;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;7;Rigenerazione urbana;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;3;Infrastrutture aeroportuali;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;4;Turismo, cultura e valorizzazione risorse naturali;ASSE TEMATICO;2;Valorizzazione del patrimonio culturale;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;1;Infrastrutture;AZIONE;8;Infrastrutture pubbliche, didattiche/universitarie;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;1;Infrastrutture;AZIONE;7;Rigenerazione urbana;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;1;Infrastrutture;AZIONE;3;Infrastrutture aeroportuali;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;4;Turismo, cultura e valorizzazione risorse naturali;AZIONE;2;Valorizzazione del patrimonio culturale;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP015;POR FSE TOSCANA;ASSE;C;ISTRUZIONE E FORMAZIONE;OBIETTIVO SPECIFICO;C.2.1;Innalzamento dei livelli di competenze, di parteci;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP015;POR FSE TOSCANA;ASSE;A;OCCUPAZIONE;OBIETTIVO SPECIFICO;A.2.1;Aumentare l'occupazione dei giovani;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP015;POR FSE TOSCANA;ASSE;D;CAPACITÃ ISTITUZIONALE E AMMINISTRATIVA;OBIETTIVO SPECIFICO;D.1.2;Miglioramento delle prestazioni della pubblica amm;0;
@@ -68,7 +68,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP015;POR FSE TOSCANA;ASSE;C;ISTRUZIONE E FORMAZIONE;OBIETTIVO SPECIFICO;C.3.3;Diffusione della societÃ  della conoscenza nel mon;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP015;POR FSE TOSCANA;ASSE;A;OCCUPAZIONE;OBIETTIVO SPECIFICO;A.5.1;Migliorare l'efficacia e la qualitÃ  dei servizi a;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP015;POR FSE TOSCANA;ASSE;C;ISTRUZIONE E FORMAZIONE;OBIETTIVO SPECIFICO;C.1.1;Riduzione del fallimento formativo precoce e della;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;1;Infrastrutture di trasporto ferroviario e stradale;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;1;Infrastrutture;AZIONE;1;Infrastrutture di trasporto ferroviario e stradale;0;
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB036;PROGRAMMA FESR INTERREG ITALIA-SLOVENIA;ASSE;1;Promoting innovation capacities for a more competitive area;OBIETTIVO SPECIFICO;1.1;Strengthen the cooperation among key actors to pro;0;
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB036;PROGRAMMA FESR INTERREG ITALIA-SLOVENIA;ASSE;4;Enhancing capacity building and cross-border governance;OBIETTIVO SPECIFICO;4.1;Strengthen the institutional cooperation capacity;0;
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB036;PROGRAMMA FESR INTERREG ITALIA-SLOVENIA;ASSE;2;Cooperating for implementation of low carbon strategies and;OBIETTIVO SPECIFICO;2.1;Promotion of implementation of strategies and acti;0;
@@ -76,7 +76,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB036;PROGRAMMA FESR INTERREG ITALIA-SLOVENIA;ASSE;3;Protecting and promoting natural and cultural resources;OBIETTIVO SPECIFICO;3.2;Enhance the integrated management of ecosystems fo;0;
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB036;PROGRAMMA FESR INTERREG ITALIA-SLOVENIA;ASSE;3;Protecting and promoting natural and cultural resources;OBIETTIVO SPECIFICO;3.3;Development and the testing of innovative environm;0;
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB036;PROGRAMMA FESR INTERREG ITALIA-SLOVENIA;ASSE;5;Technical Assistance;OBIETTIVO SPECIFICO;5.1;To ensure the efficient management and implementat;0;
-2;Ciclo di programmazione 2014-2020;2017PPORTTARFSC;PIASTRA PORTUALE DI TARANTO;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;4;Infrastrutture portuali;0;
+1;Ciclo di programmazione 2007-2013;2017PPORTTARFSC;PIASTRA PORTUALE DI TARANTO;LINEA;1;Infrastrutture;AZIONE;4;Infrastrutture portuali;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP017;POR FESR TOSCANA;ASSE;4;SOSTENERE LA TRANSIZIONE VERSO UN'ECONOMIA A BASSA EMISSIONE;OBIETTIVO SPECIFICO;RA4.1;Riduzione dei consumi energetici negli edifici e n;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP017;POR FESR TOSCANA;ASSE;6;URBANO;OBIETTIVO SPECIFICO;RA9.6;Aumento della legalitÃ  nelle aree ad alta esclusi;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP017;POR FESR TOSCANA;ASSE;6;URBANO;OBIETTIVO SPECIFICO;RA9.3;Aumento/ consolidamento/ qualificazione dei serviz;0;
@@ -109,7 +109,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB033;PROGRAMMA FESR INTERREG ITALIA-FRANCIA MARITTIMO;ASSE;1;Promozione della competitivitÃ  delle imprese nelle filiere;OBIETTIVO SPECIFICO;3A.1;Incrementare il tessuto imprenditoriale delle impr;0;
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB033;PROGRAMMA FESR INTERREG ITALIA-FRANCIA MARITTIMO;ASSE;3;Miglioramento della connessione dei territori e della sosten;OBIETTIVO SPECIFICO;7C.1;Migliorare la sostenibilitÃ  dei porti commerciali;0;
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB033;PROGRAMMA FESR INTERREG ITALIA-FRANCIA MARITTIMO;ASSE;2;Protezione e valorizzazione delle risorse naturali e cultura;OBIETTIVO SPECIFICO;6C.2;Accrescere la protezione delle acque marine nei po;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;4;Turismo, cultura e valorizzazione risorse naturali;ASSE TEMATICO;1;Sviluppo del turismo;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;4;Turismo, cultura e valorizzazione risorse naturali;AZIONE;1;Sviluppo del turismo;0;
 1;Ciclo di programmazione 2007-2013;2007IT162PO002;POR CRO FESR EMILIA ROMAGNA;ASSE;02;Sviluppo innovativo delle imprese;OBIETTIVO SPECIFICO;001;Sostenere il potenziamento e la crescita delle imp;0;
 1;Ciclo di programmazione 2007-2013;2007IT162PO002;POR CRO FESR EMILIA ROMAGNA;ASSE;05;Assistenza tecnica;OBIETTIVO SPECIFICO;001;Sostenere l'esecuzione del Programma Operativo nel;0;
 1;Ciclo di programmazione 2007-2013;2007IT162PO002;POR CRO FESR EMILIA ROMAGNA;ASSE;05;Assistenza tecnica;OBIETTIVO SPECIFICO;003;Dare ampia visibilità  al programma con adeguati i;0;
@@ -366,7 +366,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 1;Ciclo di programmazione 2007-2013;2007IT051PO001;POR CONV FSE CAMPANIA;ASSE;02;ASSE II - OCCUPABILITA';OBIETTIVO SPECIFICO;06;Sostenere la creazione di impresa, soprattutto in;0;
 1;Ciclo di programmazione 2007-2013;2007IT161PO009:::2012CAXXXPAC00;POR CONV FESR CAMPANIA:::PROGRAMMA PAC CAMPANIA;ASSE:::LINEA;01:::32001;Sostenibilità ambient. e attrattività culturale e turistica:::Salvaguardia;OBIETTIVO SPECIFICO:::AZIONE;10:::9999;LA CULTURA COME RISORSA.:::Salvaguardia POR FESR 2;0;
 1;Ciclo di programmazione 2007-2013;2007IT161PO009:::2012CAXXXPAC00;POR CONV FESR CAMPANIA:::PROGRAMMA PAC CAMPANIA;ASSE:::LINEA;04:::32001;Accessibilità e trasporti:::Salvaguardia;OBIETTIVO SPECIFICO:::AZIONE;06:::9999;SISTEMA DELLA METROPOLITANA REGIONALE.:::Salvaguar;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;9;Infrastrutture pubbliche, didattiche/universitarie;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;1;Infrastrutture;AZIONE;9;Infrastrutture pubbliche, didattiche/universitarie;0;
 1;Ciclo di programmazione 2007-2013;2007IT051PO002;POR CONV FSE CALABRIA;ASSE;03;Inclusione Sociale;OBIETTIVO SPECIFICO;G.1;Sviluppare l'inserimento lavorativo delle categori;0;
 1;Ciclo di programmazione 2007-2013;2007IT051PO002;POR CONV FSE CALABRIA;ASSE;02;Occupabilità;OBIETTIVO SPECIFICO;E.1;Rafforzare l'inserimento/reinserimento lavorativo;0;
 1;Ciclo di programmazione 2007-2013;2007IT161PO008;POR CONV FESR CALABRIA;ASSE;03;Asse III - Ambiente;OBIETTIVO SPECIFICO;3.3.2;Ottimizzare il sistema di gestione dei rifiuti e a;0;
@@ -802,7 +802,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2017POAMBIENFSC;PIANO FSC AMBIENTE;SETTORE STRATEGICO;2;Ambiente;ASSE TEMATICO;3;Recupero dei siti industriali e dei terreni contam;0;
 2;Ciclo di programmazione 2014-2020;2014XXSMDFSC004;PIANO STRALCIO TARANTO;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;10;Infrastrutture pubbliche, didattiche/universitarie;0;
 2;Ciclo di programmazione 2014-2020;2014XXSMDFSC004;PIANO STRALCIO TARANTO;SETTORE STRATEGICO;4;Turismo, cultura e valorizzazione risorse naturali;ASSE TEMATICO;1;Sviluppo del turismo;0;
-2;Ciclo di programmazione 2014-2020;FSCMILITSPORT;IMPIANTI SPORTIVI PER GRUPPI SPORTIVI MILITARI;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;10;Infrastrutture pubbliche, didattiche/universitarie;0;
+1;Ciclo di programmazione 2007-2013;FSCMILITSPORT;IMPIANTI SPORTIVI PER GRUPPI SPORTIVI MILITARI;LINEA;1;Infrastrutture;AZIONE;10;Infrastrutture pubbliche, didattiche/universitarie;0;
 1;Ciclo di programmazione 2007-2013;2007IT005FAMG1;PROGRAMMA ATTUATIVO SPECIALE FSC GIUSTIZIA CIVILE CELERE PER LA CRESCITA;LINEA;1;Giustizia On Line - GOL;AZIONE;11E4;Diffusione notifiche telematiche (provvedimenti na;0;
 1;Ciclo di programmazione 2007-2013;2007IT005FAMG1;PROGRAMMA ATTUATIVO SPECIALE FSC GIUSTIZIA CIVILE CELERE PER LA CRESCITA;LINEA;1;Giustizia On Line - GOL;AZIONE;11E4;Diffusione decreti ingiuntivi telematici;0;
 1;Ciclo di programmazione 2007-2013;2007IT005FAMG1;PROGRAMMA ATTUATIVO SPECIALE FSC GIUSTIZIA CIVILE CELERE PER LA CRESCITA;LINEA;1;Giustizia On Line - GOL;AZIONE;11E4;Monitoraggio, Valutazione del progetto ed Analisi;0;
@@ -820,7 +820,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2016PATTIGEN;PATTO GENOVA;SETTORE STRATEGICO;3.a;Sviluppo economico e produttivo;ASSE TEMATICO;1;Ricerca e sviluppo, innovazione;0;
 2;Ciclo di programmazione 2014-2020;2016PATTICAT;PATTO CATANIA;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;8;Infrastrutture pubbliche, didattiche/universitarie;0;
 1;Ciclo di programmazione 2007-2013;2007SA002FA016;PROGRAMMA REGIONALE DI ATTUAZIONE (PRA) FSC SARDEGNA;LINEA;4111;4.1.1.A. Interventi di riqualificazione strutturale delle scuole della Regione;AZIONE;41111;Riqualificazione edifici scolastici;0;
-1;Ciclo di programmazione 2007-2013;2016XXAMPSAP00;PIANO FSC DISSESTO IDROGEOLOGICO;LINEA;2;Ambiente;AZIONE;5;Cambiamento climatico, prevenzione e gestione dei;0;
+2;Ciclo di programmazione 2014-2020;2016XXAMPSAP00;PIANO FSC DISSESTO IDROGEOLOGICO;SETTORE STRATEGICO;2;Ambiente;ASSE TEMATICO;5;Cambiamento climatico, prevenzione e gestione dei;0;
 1;Ciclo di programmazione 2007-2013;2012PCMDGPAC21;PROGRAMMA PAC PCM - DIPARTIMENTO GIOVENTU';LINEA;20001;Progetti promossi da giovani del privato sociale;AZIONE;50001;Giovani per il sociale;0;
 2;Ciclo di programmazione 2014-2020;2019AREAINTPUGL;STRATEGIA AREE INTERNE REGIONE PUGLIA SERVIZI;AREA;aa.1;"Area Interna ""Monti Dauni""";AMBITO;1;Istruzione;0;
 1;Ciclo di programmazione 2007-2013;2007IT161PO002;POIN CONV FESR ENERGIE RINNOVABILI E RISPARMIO ENERGETICO;ASSE;01;Asse I Produzione di energia da fonti rinnovabili;OBIETTIVO SPECIFICO;1.2;Promuovere e sostenere l'utilizzo delle fonti rinn;0;
@@ -1536,10 +1536,10 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 1;Ciclo di programmazione 2007-2013;2007IT161PO005;PON CONV FESR RETI E MOBILITÀ;ASSE;03;Assistenza tecnica;OBIETTIVO SPECIFICO;3.2;Accrescere la conoscenza del PON da parte del pubb;0;
 1;Ciclo di programmazione 2007-2013;2012MITXXPAC33;PROGRAMMA PAC MINISTERO DELLE INFRASTRUTTURE E TRASPORTI - PIANO CITTA';LINEA;33002;Assistenza Tecnica;AZIONE;129E3;Assistenza tecnica;0;
 1;Ciclo di programmazione 2007-2013;2012MITXXPAC33;PROGRAMMA PAC MINISTERO DELLE INFRASTRUTTURE E TRASPORTI - PIANO CITTA';LINEA;33001;Nuove Azioni;AZIONE;12E4;Piano città - Catania;0;
-2;Ciclo di programmazione 2014-2020;2017MEFDTFSC004;GRAN SASSO SCIENCE INSTITUTE;SETTORE STRATEGICO;GS1;PERSONALE DOCENTE;ASSE TEMATICO;GS1;PERSONALE DOCENTE;0;
-2;Ciclo di programmazione 2014-2020;2017MEFDTFSC004;GRAN SASSO SCIENCE INSTITUTE;SETTORE STRATEGICO;GS2;BORSE PHD E POST DOC;ASSE TEMATICO;GS2;BORSE PHD E POST DOC;0;
-2;Ciclo di programmazione 2014-2020;2017MEFDTFSC004;GRAN SASSO SCIENCE INSTITUTE;SETTORE STRATEGICO;GS3;ALLOGGI;ASSE TEMATICO;GS3;ALLOGGI;0;
-2;Ciclo di programmazione 2014-2020;2017MEFDTFSC004;GRAN SASSO SCIENCE INSTITUTE;SETTORE STRATEGICO;GS4;FUNZIONAMENTO;ASSE TEMATICO;GS4;FUNZIONAMENTO;0;
+1;Ciclo di programmazione 2007-2013;2017MEFDTFSC004;GRAN SASSO SCIENCE INSTITUTE;LINEA;GS1;PERSONALE DOCENTE;AZIONE;GS1;PERSONALE DOCENTE;0;
+1;Ciclo di programmazione 2007-2013;2017MEFDTFSC004;GRAN SASSO SCIENCE INSTITUTE;LINEA;GS2;BORSE PHD E POST DOC;AZIONE;GS2;BORSE PHD E POST DOC;0;
+1;Ciclo di programmazione 2007-2013;2017MEFDTFSC004;GRAN SASSO SCIENCE INSTITUTE;LINEA;GS3;ALLOGGI;AZIONE;GS3;ALLOGGI;0;
+1;Ciclo di programmazione 2007-2013;2017MEFDTFSC004;GRAN SASSO SCIENCE INSTITUTE;LINEA;GS4;FUNZIONAMENTO;AZIONE;GS4;FUNZIONAMENTO;0;
 2;Ciclo di programmazione 2014-2020;POSPORTFSC;PIANO FSC SPORT E PERIFERIE;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;10;Infrastrutture pubbliche, didattiche/universitarie;0;
 2;Ciclo di programmazione 2014-2020;AREEURBDEGRFSC;RIQUALIFICAZIONE AREE URBANE DEGRADATE;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;7;Rigenerazione urbana;0;
 1;Ciclo di programmazione 2007-2013;2007PU001FA010;PROGRAMMA REGIONALE DI ATTUAZIONE (PRA) FSC PUGLIA;LINEA;11;Ricerca;AZIONE;111;Sostegno alla specializzazione intelligente;0;
@@ -1649,7 +1649,6 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB037;PROGRAMMA FESR INTERREG ITALIA-MALTA;ASSE;2;Promuovere la competitivitÃ  dell'area transfrontaliera;OBIETTIVO SPECIFICO;2.1;Favorire la creazione e il potenziamento delle imp;0;
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB037;PROGRAMMA FESR INTERREG ITALIA-MALTA;ASSE;2;Promuovere la competitivitÃ  dell'area transfrontaliera;OBIETTIVO SPECIFICO;2.2;Favorire la mobilitÃ  dei lavoratori nell'area tra;0;
 2;Ciclo di programmazione 2014-2020;2014TC16RFCB037;PROGRAMMA FESR INTERREG ITALIA-MALTA;ASSE;3;Tutelare l'ambiente e promuovere l'uso efficiente delle riso;OBIETTIVO SPECIFICO;3.1;Contribuire ad arrestare la perdita di biodiversit;0;
-2;Ciclo di programmazione 2014-2020;2014TC16M5CB013;ENI ITALIA-TUNISIA;;;;;;;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP015;POR FESR SARDEGNA;ASSE;I;Ricerca scientifica, sviluppo tecnologico e innovazione;OBIETTIVO SPECIFICO;1.1;INCREMENTO DELL'ATTIVITÃ DI INNOVAZIONE DELLE IMP;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP015;POR FESR SARDEGNA;ASSE;I;Ricerca scientifica, sviluppo tecnologico e innovazione;OBIETTIVO SPECIFICO;1.2;RAFFORZAMENTO DEL SISTEMA INNOVATIVO REGIONALE E N;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP015;POR FESR SARDEGNA;ASSE;I;Ricerca scientifica, sviluppo tecnologico e innovazione;OBIETTIVO SPECIFICO;1.3;PROMOZIONE DI NUOVI MERCATI PER L'INNOVAZIONE;0;
@@ -2048,7 +2047,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP008;POR FESR EMILIA-ROMAGNA;ASSE;3;CompetitivitÃ  e attrattivitÃ  del sistema produttivo;OBIETTIVO SPECIFICO;3.1;Rilancio della propensione agli investimenti del s;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP008;POR FESR EMILIA-ROMAGNA;ASSE;4;Promozione della low carbon economy nei territori e nel sist;OBIETTIVO SPECIFICO;4.6;Aumento della mobilitÃ  sostenibile nelle aree urb;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP008;POR FESR EMILIA-ROMAGNA;ASSE;1;Ricerca e Innovazione;OBIETTIVO SPECIFICO;1.6;Promuovere gli investimenti necessari per il raffo;0;
-2;Ciclo di programmazione 2014-2020;2015XMINTFSC016;PIANO SICUREZZA URBANA ROMA;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;10;Infrastrutture pubbliche, didattiche/universitarie;0;
+1;Ciclo di programmazione 2007-2013;2015XMINTFSC016;PIANO SICUREZZA URBANA ROMA;LINEA;1;Infrastrutture;AZIONE;10;Infrastrutture pubbliche, didattiche/universitarie;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP003;POR FSE EMILIA-ROMAGNA;ASSE;3;ISTRUZIONE E FORMAZIONE;OBIETTIVO SPECIFICO;9;Innalzamento dei livelli di competenze, di parteci;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP003;POR FSE EMILIA-ROMAGNA;ASSE;5;ASSISTENZA TECNICA;OBIETTIVO SPECIFICO;12;Sostenere l'esecuzione del programma operativo nel;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP003;POR FSE EMILIA-ROMAGNA;ASSE;2;INCLUSIONE SOCIALE E LOTTA ALLA POVERTA';OBIETTIVO SPECIFICO;6;Incremento dell'occupabilitÃ  e della partecipazio;0;
@@ -2061,7 +2060,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP003;POR FSE EMILIA-ROMAGNA;ASSE;4;CAPACITA' ISTITUZIONALE E AMMINISTRATIVA;OBIETTIVO SPECIFICO;11;Miglioramento delle prestazioni della Pubblica Amm;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP003;POR FSE EMILIA-ROMAGNA;ASSE;1;OCCUPAZIONE;OBIETTIVO SPECIFICO;3;Aumentare l'occupazione femminile;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP003;POR FSE EMILIA-ROMAGNA;ASSE;2;INCLUSIONE SOCIALE E LOTTA ALLA POVERTA';OBIETTIVO SPECIFICO;7;Aumento/ consolidamento/ qualificazione dei serviz;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;6;Infrastrutture energetiche;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;1;Infrastrutture;AZIONE;6;Infrastrutture energetiche;0;
 1;Ciclo di programmazione 2007-2013;2007IT162PO001;POR CRO FESR ABRUZZO;ASSE;01;R&S Innovazione e Imprenditorialità;OBIETTIVO SPECIFICO;01;Accrescere la competitività  del sistema delle imp;0;
 1;Ciclo di programmazione 2007-2013;2007IT052PO001;POR CRO FSE ABRUZZO;ASSE;01;Adattabilità;OBIETTIVO SPECIFICO;1A;Sviluppare sistemi di forrmazione continua e soste;0;
 1;Ciclo di programmazione 2007-2013;2007IT052PO001;POR CRO FSE ABRUZZO;ASSE;03;Inclusione sociale;OBIETTIVO SPECIFICO;3G;Sviluppare percorsi d'integrazione e migliorare il;0;
@@ -2326,7 +2325,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 1;Ciclo di programmazione 2007-2013;2007IT052PO007;POR CRO FSE MARCHE;ASSE;01;Asse I - Adattabilità;OBIETTIVO SPECIFICO;C;Sviluppare politiche e servizi per l'anticipazione;0;
 1;Ciclo di programmazione 2007-2013;2007IT052PO007;POR CRO FSE MARCHE;ASSE;04;Asse IV - Capitale Umano;OBIETTIVO SPECIFICO;H;Elaborazione e introduzione delle riforme dei sist;0;
 1;Ciclo di programmazione 2007-2013;2007IT052PO007;POR CRO FSE MARCHE;ASSE;05;Asse V - Transnazionalità e interregionalità;OBIETTIVO SPECIFICO;M;Promuovere la realizzazione e lo sviluppo di inizi;0;
-2;Ciclo di programmazione 2014-2020;2018FREJUSFSC;TRAFORO FREJUS;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;1;Infrastrutture di trasporto ferroviario e stradale;0;
+1;Ciclo di programmazione 2007-2013;2018FREJUSFSC;TRAFORO FREJUS;LINEA;1;Infrastrutture;AZIONE;1;Infrastrutture di trasporto ferroviario e stradale;0;
 1;Ciclo di programmazione 2007-2013;2007IT161PO007:::2012MINTXPAC22;PON CONV FESR SICUREZZA:::PROGRAMMA PAC MINISTERO DELL'INTERNO - SICUREZZA E LEGALITA';ASSE:::LINEA;01:::20001;Sicurezza per la libertà economica e d'impresa:::Sicurezza;OBIETTIVO SPECIFICO:::AZIONE;1.1:::50001;Rendere il territorio meno aggredibile da fattispe;0;
 1;Ciclo di programmazione 2007-2013;2007IT161PO007;PON CONV FESR SICUREZZA;ASSE;01;Sicurezza per la libertà economica e d'impresa;OBIETTIVO SPECIFICO;1.1;Rendere il territorio meno aggredibile da fattispe;0;
 1;Ciclo di programmazione 2007-2013;2007IT161PO007:::2012MINTXPAC22;PON CONV FESR SICUREZZA:::PROGRAMMA PAC MINISTERO DELL'INTERNO - SICUREZZA E LEGALITA';ASSE:::LINEA;01:::20001;Sicurezza per la libertà economica e d'impresa:::Sicurezza;OBIETTIVO SPECIFICO:::AZIONE;1.2:::50001;Garantire il libero e sicuro utilizzo delle vie di;0;
@@ -2435,7 +2434,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2014TC16M4TN002;PROGRAMMA FESR INTERREG ADRION;ASSE;PA 1;INNOVATIVE AND SMART REGION;OBIETTIVO SPECIFICO;1.1;Support the development of a regional Innovation s;0;
 2;Ciclo di programmazione 2014-2020;2014TC16M4TN002;PROGRAMMA FESR INTERREG ADRION;ASSE;PA 3;CONNECTED REGION;OBIETTIVO SPECIFICO;3.1;Enhance capacity for integrated transport and mobi;0;
 2;Ciclo di programmazione 2014-2020;2014TC16M4TN002;PROGRAMMA FESR INTERREG ADRION;ASSE;PA 4;SUPPORTING THE GOVERNANCE OF THE EUSAIR;OBIETTIVO SPECIFICO;4.1;SO 4.1;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;2;Ambiente;ASSE TEMATICO;6;Tutela dell'ambiente e della biodiversità;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;2;Ambiente;AZIONE;6;Tutela dell'ambiente e della biodiversità;0;
 1;Ciclo di programmazione 2007-2013;2007IT052PO008;POR CRO FSE MOLISE;ASSE;04;Capitale Umano;OBIETTIVO SPECIFICO;OP4I1;Accrescere la partecipazione all'istruzione ed all;0;
 1;Ciclo di programmazione 2007-2013;2007IT052PO008;POR CRO FSE MOLISE;ASSE;02;occupabilità;OBIETTIVO SPECIFICO;OP2D1;Sviluppare strumenti per l'incontro di domanda off;0;
 1;Ciclo di programmazione 2007-2013;2007IT052PO008;POR CRO FSE MOLISE;ASSE;03;Inclusione Sociale;OBIETTIVO SPECIFICO;OP3G1;Favorire l'inserimento e l'integrazione dei sogget;0;
@@ -2567,7 +2566,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2015PCDPCFSC018;PIANO DI INTERVENTI ISOLA DI LAMPEDUSA;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;7;Rigenerazione urbana;0;
 2;Ciclo di programmazione 2014-2020;2015PCDPCFSC018;PIANO DI INTERVENTI ISOLA DI LAMPEDUSA;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;10;Infrastrutture pubbliche, didattiche/universitarie;0;
 2;Ciclo di programmazione 2014-2020;2015PCDPCFSC018;PIANO DI INTERVENTI ISOLA DI LAMPEDUSA;SETTORE STRATEGICO;6;Rafforzamento PA;ASSE TEMATICO;1;Capacità  istituzionale ed efficienza delle pubbli;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;2;Trasporto sostenibile urbano;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;1;Infrastrutture;AZIONE;2;Trasporto sostenibile urbano;0;
 2;Ciclo di programmazione 2014-2020;POCBASILICATA;POC BASILICATA;ASSE TEMATICO;ASSE 5;Tutela dellÂambiente ed uso efficiente delle risorse;LINEA-AZIONE;8;SOSTEGNO ALLA DIFFUSIONE DELLA CONOSCENZA E ALLA F;0;
 2;Ciclo di programmazione 2014-2020;POCBASILICATA;POC BASILICATA;ASSE TEMATICO;ASSE 5;Tutela dellÂambiente ed uso efficiente delle risorse;LINEA-AZIONE;9;SOSTEGNO ALLA FRUIZIONE INTEGRATA DI RISORSE CULTU;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP022;POR FESR BASILICATA;ASSE;9;Assistenza Tecnica;OBIETTIVO SPECIFICO;AT;Garantire l'efficacia e l'efficienza del Programma;0;
@@ -2926,7 +2925,6 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP005;POR FESR P.A. BOLZANO;ASSE;4;Territorio sicuro;OBIETTIVO SPECIFICO;5.1;Riduzione del rischio idrogeologico e di erosione;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP005;POR FESR P.A. BOLZANO;ASSE;5;Assistenza tecnica;OBIETTIVO SPECIFICO;AT.2;Promuovere l'informazione e la pubblicitÃ  del Pro;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP005;POR FESR P.A. BOLZANO;ASSE;5;Assistenza tecnica;OBIETTIVO SPECIFICO;AT.1;Definire un sistema ottimale di attuazione, sorveg;0;
-2;Ciclo di programmazione 2014-2020;2020PCDPCINA001;CONTRIBUTI AI COMUNI DELLE AREE INTERNE;ASSE TEMATICO;3.a;Sviluppo economico e produttivo;LINEA-AZIONE;2;Sviluppo e competitivitÃÂ  delle imprese;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP007;POR FSE LOMBARDIA;ASSE;III;ISTRUZIONE E FORMAZIONE;OBIETTIVO SPECIFICO;10.1;Riduzione del fallimento formativo precoce e della;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP007;POR FSE LOMBARDIA;ASSE;I;OCCUPAZIONE;OBIETTIVO SPECIFICO;8.5;Favorire l'inserimento lavorativo e l'occupazione;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP007;POR FSE LOMBARDIA;ASSE;II;INCLUSIONE SOCIALE E LOTTA ALLA POVERTÃ;OBIETTIVO SPECIFICO;9.2;Incremento dell'occupabilitÃ  e della partecipazio;0;
@@ -3044,7 +3042,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2018AREAINTTOSC;STRATEGIA AREE INTERNE REGIONE TOSCANA SERVIZI;AREA;1.0;Area interna Casentino Valtiberina;AMBITO;4;Assistenza tecnica;0;
 2;Ciclo di programmazione 2014-2020;SINPIOMBINO;RIQUALIFICAZIONE POLO INDUSTRIALE DI PIOMBINO;SETTORE STRATEGICO;2;Ambiente;ASSE TEMATICO;3;Recupero dei siti industriali e dei terreni contam;0;
 2;Ciclo di programmazione 2014-2020;2018REGTOSCFSC;PRESIDIO OSPEDALIERO DI PRATO;SETTORE STRATEGICO;1;Infrastrutture;ASSE TEMATICO;10;Infrastrutture pubbliche, didattiche/universitarie;0;
-1;Ciclo di programmazione 2007-2013;SINPIOMBINO;RIQUALIFICAZIONE POLO INDUSTRIALE DI PIOMBINO;LINEA;82;Interventi per la riqualificazione e la riconversione del Polo Industriale di Piombino;AZIONE;82;Interventi per la riqualificazione e la riconversi;0;
+2;Ciclo di programmazione 2014-2020;SINPIOMBINO;RIQUALIFICAZIONE POLO INDUSTRIALE DI PIOMBINO;SETTORE STRATEGICO;82;Interventi per la riqualificazione e la riconversione del Polo Industriale di Piombino;ASSE TEMATICO;82;Interventi per la riqualificazione e la riconversi;0;
 2;Ciclo di programmazione 2014-2020;2018AREAINTTOSC;STRATEGIA AREE INTERNE REGIONE TOSCANA SERVIZI;AREA;2.0;Area Interna Garfagnana, Lunigiana, Mediavalle del Serchio, Appennino Pistoiese;AMBITO;2;MobilitÃÂ ;0;
 2;Ciclo di programmazione 2014-2020;2018AREAINTTOSC;STRATEGIA AREE INTERNE REGIONE TOSCANA SERVIZI;AREA;2.0;Area Interna Garfagnana, Lunigiana, Mediavalle del Serchio, Appennino Pistoiese;AMBITO;1;Salute;0;
 2;Ciclo di programmazione 2014-2020;2018AREAINTTOSC;STRATEGIA AREE INTERNE REGIONE TOSCANA SERVIZI;AREA;2.0;Area Interna Garfagnana, Lunigiana, Mediavalle del Serchio, Appennino Pistoiese;AMBITO;3;Istruzione;0;
@@ -3211,7 +3209,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP012;POR FSE VENETO;ASSE;5;Assistenza tecnica;OBIETTIVO SPECIFICO;16;Miglioramento dei sistemi di gestione, comunicazio;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP012;POR FSE VENETO;ASSE;4;CapacitÃ  istituzionale;OBIETTIVO SPECIFICO;14;Miglioramento dell'efficienza e della qualitÃ  del;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP012;POR FSE VENETO;ASSE;4;CapacitÃ  istituzionale;OBIETTIVO SPECIFICO;15;Miglioramento delle prestazioni della pubblica amm;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;4;Turismo, cultura e valorizzazione risorse naturali;ASSE TEMATICO;3;Valorizzazione delle risorse naturali;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;4;Turismo, cultura e valorizzazione risorse naturali;AZIONE;3;Valorizzazione delle risorse naturali;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP017;POR FSE P.A. BOLZANO;ASSE;1;OT8 - Occupazione;OBIETTIVO SPECIFICO;8.1;Aumentare l'occupazione dei giovani;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP017;POR FSE P.A. BOLZANO;ASSE;1;OT8 - Occupazione;OBIETTIVO SPECIFICO;8.4;Accrescere l'occupazione degli immigrati;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP017;POR FSE P.A. BOLZANO;ASSE;1;OT8 - Occupazione;OBIETTIVO SPECIFICO;8.2;Aumentare l'occupazione femminile;0;
@@ -3378,7 +3376,7 @@ OC_COD_CICLO;OC_DESCR_CICLO;OC_CODICE_PROGRAMMA;OC_DESCRIZIONE_PROGRAMMA;OC_ARTI
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP007:::2016PATTICAMP;POR FESR CAMPANIA:::PATTO CAMPANIA;ASSE:::SETTORE STRATEGICO;3:::3.a;COMPETITIVITA' DEL SISTEMA PRODUTTIVO:::Sviluppo economico e produttivo;OBIETTIVO SPECIFICO:::ASSE TEMATICO;3.2:::2;SVILUPPO OCCUPAZIONALE E PRODUTTIVO IN AREE TERRIT;0;
 2;Ciclo di programmazione 2014-2020;2014IT16RFOP007;POR FESR CAMPANIA;ASSE;1;RICERCA E INNOVAZIONE;OBIETTIVO SPECIFICO;1.6;PROMUOVERE GLI INVESTIMENTI NECESSARI PER IL RAFFO;0;
 2;Ciclo di programmazione 2014-2020;2016PATTICAMP;PATTO CAMPANIA;SETTORE STRATEGICO;4;Turismo, cultura e valorizzazione risorse naturali;ASSE TEMATICO;2;Valorizzazione del patrimonio culturale;0;
-2;Ciclo di programmazione 2014-2020;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;SETTORE STRATEGICO;2;Ambiente;ASSE TEMATICO;2;Servizio idrico integrato;0;
+1;Ciclo di programmazione 2007-2013;FSCCOMUNI;RISORSE FSC ASSEGNATE AI COMUNI;LINEA;2;Ambiente;AZIONE;2;Servizio idrico integrato;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP004;POR FSE FRIULI-VENEZIA GIULIA;ASSE;1;OCCUPAZIONE;OBIETTIVO SPECIFICO;8.5;Ridurre il numero dei disoccupati di lunga durata;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP004;POR FSE FRIULI-VENEZIA GIULIA;ASSE;1;OCCUPAZIONE;OBIETTIVO SPECIFICO;8.1;Aumentare l'occupazione dei giovani;0;
 2;Ciclo di programmazione 2014-2020;2014IT05SFOP004;POR FSE FRIULI-VENEZIA GIULIA;ASSE;1;OCCUPAZIONE;OBIETTIVO SPECIFICO;8.6;Favorire la permanenza al lavoro e la ricollocazio;0;

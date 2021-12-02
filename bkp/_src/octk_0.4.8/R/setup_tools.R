@@ -257,7 +257,8 @@ setup_light <- function(bimestre, fix = FALSE) {
       progetti_light <- fix_progetti(progetti_light)
     }
     progetti_light <- get_x_vars(progetti_light)
-    progetti_light <- get_macroarea(progetti_light, progetti_light, real_reg=TRUE)
+    # progetti_light <- get_macroarea(progetti_light, progetti_light, real_reg=TRUE)
+    progetti_light <- get_macroarea_oc(progetti_light, progetti_light)
     progetti_light <- get_regione_simply(progetti_light, progetti_light)
 
     # chk
@@ -360,7 +361,8 @@ make_matrix_po <- function(bimestre) {
   file.rename(file.path(getwd(), "setup", "data-raw", "po_linee_azioni.csv"),
               file.path(getwd(), "setup", "data-raw", "po_linee_azioni_OLD.csv"))
 
-  write_delim(out, file.path(getwd(), "setup", "data-raw", "po_linee_azioni_NEW.csv"), delim = ";", na = "")
+  # write_delim(out, file.path(getwd(), "setup", "data-raw", "po_linee_azioni_NEW.csv"), delim = ";", na = "")
+  write_delim(out, file.path(getwd(), "setup", "data-raw", "po_linee_azioni.csv"), delim = ";", na = "")
 }
 
 # confronta programmi_linee_azioni e isola delta

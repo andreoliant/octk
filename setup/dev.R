@@ -44,7 +44,7 @@ oc_init(
   bimestre = "20210831",
   elab = "SETUP",
   focus = "setup",
-  ver = "V.01",
+  ver = "V.02",
   # user = "Antonio",
   data_path = "/media/antonio/Volume/dati/oc",
   db_ver = "20210930.00",
@@ -174,7 +174,7 @@ system(
 
 system(
   paste0('VERS="octk_', oc_ver, '";',
-         "mkdir bkp/_src/$VERS;", # MEMO: qesto va commentato quando si esegue di nuovo
+         # "mkdir bkp/_src/$VERS;", # MEMO: qesto va commentato quando si esegue di nuovo
          "cp README.md bkp/_src/$VERS/;",
          "cp DESCRIPTION bkp/_src/$VERS/;",
          "cp NAMESPACE bkp/_src/$VERS/;",
@@ -229,7 +229,7 @@ system(
   )
 
 library(gitcreds)
-gitcreds_set()
+# gitcreds_set()
 gitcreds_get()
 
 # HAND: push

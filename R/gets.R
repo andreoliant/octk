@@ -263,8 +263,8 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
                                  TRUE ~ "Estero")) %>%
     # mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")))
     refactor_macroarea(.)
-  
-  
+
+
   # forza Mezzogiorno per alcuni ambiti
   df <- df %>%
     as_tibble(.) %>%
@@ -276,6 +276,43 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
 
   return(df)
 
+}
+
+
+#' Integra la macroarea da PREESTESO
+#'
+#' Integra la macroarea da PREESTESO in x_MACROAREA partendo da OC_MACROAREA.
+#'
+#' @param df Dataset con un perimetro in formato "progetti".
+#' @param progetti Dataset "progetti" in formato PREESTESO per integrazione.
+#' @param debug_mode Dataset in formato "progetti".
+#' @return Il dataset con la variabile x_MACROAREA, come factor con levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero").
+get_macroarea_oc <- function(df, progetti, debug_mode=FALSE) {
+  # versione da dati di ottobre 2021 con OC_MACROAREA.
+  
+  # DEBUG:
+  # df <- progetti
+
+  if (!any(names(df) == "OC_MACROAREA")) {
+    if (missing(progetti)) {
+      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    }
+    df <- df %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, OC_MACROAREA),
+                by = "COD_LOCALE_PROGETTO")
+  }
+  
+  df <- df %>%
+    mutate(x_MACROAREA = case_when(OC_MACROAREA == "Mezzogiorno" ~ "Mezzogiorno",
+                                   OC_MACROAREA == "Centro-Nord" ~ "Centro-Nord",
+                                   OC_MACROAREA == "Ambito Nazionale" ~ "Ambito nazionale",
+                                   OC_MACROAREA ==  "Altro" ~ "Trasversale",
+                                   OC_MACROAREA == "Estero" ~ "Estero")) %>%
+    # mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")))
+    refactor_macroarea(.)
+
+  return(df)
 }
 
 
