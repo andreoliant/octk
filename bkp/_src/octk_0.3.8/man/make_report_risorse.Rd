@@ -9,6 +9,7 @@ make_report_risorse(
   use_meuro = FALSE,
   use_flt = FALSE,
   use_eu = FALSE,
+  use_po_psc = FALSE,
   force_yei = FALSE,
   tipo_ciclo = "CICLO_STRATEGIA",
   export = FALSE
@@ -22,6 +23,8 @@ make_report_risorse(
 \item{use_flt}{Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?}
 
 \item{use_eu}{Logico. vuoi vedere risorse UE ove previste?}
+
+\item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?}
 
 \item{force_yei}{Logico. Vuoi forzare FSE in YEI?}
 

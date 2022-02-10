@@ -7,7 +7,7 @@
 ricodifica_macroaree(programmi)
 }
 \arguments{
-\item{programmi}{Dataframe da init_programmazione()}
+\item{programmi}{Dataframe da init_programmazione_dati()}
 }
 \value{
 Un dataframe con x_MACROAREA

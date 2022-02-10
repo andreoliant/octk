@@ -9,6 +9,7 @@ make_report_programmi_macroaree_coesione(
   usa_meuro = FALSE,
   use_713 = FALSE,
   use_flt = FALSE,
+  use_po_psc = FALSE,
   add_totali = FALSE,
   use_cp2 = FALSE,
   cut_no_risorse = FALSE,
@@ -27,6 +28,8 @@ make_report_programmi_macroaree_coesione(
 \item{use_713}{Vuoi caricare anche i dati di programmaizone per il 2007-2013?}
 
 \item{use_flt}{Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?}
+
+\item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?}
 
 \item{add_totali}{Vuoi aggiungere valori calcolati in termini di costo pubblico?}
 

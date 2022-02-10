@@ -263,8 +263,8 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
                                  TRUE ~ "Estero")) %>%
     # mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")))
     refactor_macroarea(.)
-  
-  
+
+
   # forza Mezzogiorno per alcuni ambiti
   df <- df %>%
     as_tibble(.) %>%
@@ -276,6 +276,43 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
 
   return(df)
 
+}
+
+
+#' Integra la macroarea da PREESTESO
+#'
+#' Integra la macroarea da PREESTESO in x_MACROAREA partendo da OC_MACROAREA.
+#'
+#' @param df Dataset con un perimetro in formato "progetti".
+#' @param progetti Dataset "progetti" in formato PREESTESO per integrazione.
+#' @param debug_mode Dataset in formato "progetti".
+#' @return Il dataset con la variabile x_MACROAREA, come factor con levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero").
+get_macroarea_oc <- function(df, progetti, debug_mode=FALSE) {
+  # versione da dati di ottobre 2021 con OC_MACROAREA.
+  
+  # DEBUG:
+  # df <- progetti
+
+  if (!any(names(df) == "OC_MACROAREA")) {
+    if (missing(progetti)) {
+      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    }
+    df <- df %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, OC_MACROAREA),
+                by = "COD_LOCALE_PROGETTO")
+  }
+  
+  df <- df %>%
+    mutate(x_MACROAREA = case_when(OC_MACROAREA == "Mezzogiorno" ~ "Mezzogiorno",
+                                   OC_MACROAREA == "Centro-Nord" ~ "Centro-Nord",
+                                   OC_MACROAREA == "Ambito Nazionale" ~ "Ambito nazionale",
+                                   OC_MACROAREA ==  "Altro" ~ "Trasversale",
+                                   OC_MACROAREA == "Estero" ~ "Estero")) %>%
+    # mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")))
+    refactor_macroarea(.)
+
+  return(df)
 }
 
 
@@ -736,4 +773,45 @@ get_simply_non_loc <- function(df) {
     refactor_macroarea(.)
 
   return(df)
+}
+
+#' Integra classi di dimensione finanziaria
+#'
+#' Calcola e integra una variabile con le classi di dimensione finanziaria (x_DIM_FIN).
+#'
+#' @param df Dataset con un perimetro in formato "progetti".
+#' @return Il dataset con la variabile CLASSE_FIN, come factor con levels = c("0-100k", "100k-500k", "500k-1M", "1M-2M", "2M-5M", "5M-10M", "10M-infty")
+#' @note La modalità **debug** non + implementata.
+get_dim_fin <- function(df, debug_mode=FALSE) {
+  
+  # DEBUG:
+  # df <- perimetro
+  
+  # NEW BLOCK
+  if (!any(names(df) == "OC_FINANZ_TOT_PUB_NETTO")) {
+    
+    if (is.null(progetti)) {
+      progetti <- load_progetti(bimestre, light=TRUE)
+    }
+    
+    df <- df %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, OC_FINANZ_TOT_PUB_NETTO),
+                by = "COD_LOCALE_PROGETTO")
+  }
+  
+  df <- df %>%
+    # aggiunge classe dimensione finanziaria
+    mutate(x_DIM_FIN = case_when(OC_FINANZ_TOT_PUB_NETTO <= 100000 ~ "0-100k",
+                                 OC_FINANZ_TOT_PUB_NETTO > 100000 & OC_FINANZ_TOT_PUB_NETTO <= 500000 ~ "100k-500k",
+                                 OC_FINANZ_TOT_PUB_NETTO > 500000 & OC_FINANZ_TOT_PUB_NETTO <= 1000000 ~ "500k-1M",
+                                 OC_FINANZ_TOT_PUB_NETTO > 1000000 & OC_FINANZ_TOT_PUB_NETTO <= 2000000 ~ "1M-2M",
+                                 OC_FINANZ_TOT_PUB_NETTO > 2000000 & OC_FINANZ_TOT_PUB_NETTO <= 5000000 ~ "2M-5M",
+                                 OC_FINANZ_TOT_PUB_NETTO > 5000000 & OC_FINANZ_TOT_PUB_NETTO <= 10000000 ~ "5M-10M",
+                                 OC_FINANZ_TOT_PUB_NETTO > 10000000 ~ "10M-inf")) %>%
+    mutate(x_DIM_FIN = factor(x_DIM_FIN, levels=c("0-100k", "100k-500k", "500k-1M", "1M-2M", "2M-5M", "5M-10M", "10M-inf")))
+  
+  return(df)
+  
+  
 }

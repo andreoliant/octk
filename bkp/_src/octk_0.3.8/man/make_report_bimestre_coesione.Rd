@@ -9,7 +9,7 @@ make_report_bimestre_coesione(programmi, usa_meuro = TRUE, export = TRUE)
 \arguments{
 \item{programmi}{Dataset in formato "programmi" da make_report_programmi_coesione()}
 
-\item{usa_meuro}{Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo}
+\item{usa_meuro}{Vuoi i dati in Meuro? Di default sono come in 'programmi', vale solo se 'programmi' è in euro}
 }
 \value{
 Il report bimestre.

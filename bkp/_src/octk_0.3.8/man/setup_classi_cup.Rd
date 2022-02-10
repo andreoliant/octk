@@ -4,7 +4,7 @@
 \alias{setup_classi_cup}
 \title{Crea nuova base per riclassificazione lato categorie CUP}
 \usage{
-setup_classi_cup(pseudo, file_name = "classi_cup_NEW.csv")
+setup_classi_cup(pseudo, progetti, file_name = "classi_cup_NEW.csv")
 }
 \arguments{
 \item{pseudo}{Dataset "pseudo".}

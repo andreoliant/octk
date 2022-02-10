@@ -16,6 +16,7 @@ OC_COD_CICLO;COD_RIS_ATTESO;DESCR_RIS_ATTESO;QUERY;NOTE
 2;03.7;RA 3.7 - Diffusione e rafforzamento delle attività economiche a contenuto sociale;0;
 2;03.8;RA 3.8 - Rafforzamento della competitività e della redditività della pesca e dell’acquacoltura;0;
 2;03.9;RA 3.9 - Rafforzamento della competitività, delle condizioni di lavoro e innovazione tecnologica nelle imprese acquicole e promozione di un’acquacoltura che tuteli l’ambiente, il benessere degli animali e la salute pubblica;0;
+2;03.10;RA 3.10 - Miglioramento dell'organizzazione di mercato dei prodotti della pesca e dell'acquacoltura e promozione degli investimenti nei settori della trasformazione e della commercializzazione;0;
 2;04.1;RA 4.1 - Riduzione dei consumi energetici negli edifici e nelle strutture pubbliche o ad uso pubblico, residenziali e non residenziali e integrazione di fonti rinnovabili;0;
 2;04.2;RA 4.2 - Riduzione dei consumi energetici e delle emissioni nelle imprese e integrazione di fonti rinnovabili;0;
 2;04.3;RA 4.3 - Incremento della quota di fabbisogno energetico coperto da generazione distribuita sviluppando e realizzando sistemi di distribuzione intelligenti;0;
@@ -35,6 +36,7 @@ OC_COD_CICLO;COD_RIS_ATTESO;DESCR_RIS_ATTESO;QUERY;NOTE
 2;06.6;RA 6.6 - Miglioramento delle condizioni e degli standard di offerta e fruizione del patrimonio nelle aree di attrazione naturale;0;
 2;06.7;RA 6.7 - Miglioramento delle condizioni e degli standard di offerta e fruizione del patrimonio culturale, materiale e immateriale, nelle aree di attrazione;0;
 2;06.8;RA 6.8 - Riposizionamento competitivo delle destinazioni turistiche attraverso la valorizzazione integrata di risorse e competenze territoriali;0;
+2;06.9;RA 6.9 - Promuovere il turismo e la valorizzazione del territorio;0;
 2;07.1;RA 7.1 - Potenziamento della modalità ferroviaria a livello nazionale e miglioramento del servizio in termini di qualità e tempi di percorrenza;0;
 2;07.2;RA 7.2 - Miglioramento della competitività del sistema portuale e interportuale;0;
 2;07.3;RA 7.3 - Miglioramento della mobilità regionale, integrazione modale e miglioramento dei collegamenti multimodali;0;
@@ -100,3 +102,4 @@ OC_COD_CICLO;COD_RIS_ATTESO;DESCR_RIS_ATTESO;QUERY;NOTE
 2;06.5.C;Tutela e ripristino della biodiversitÃ  acquatica, promozione di un'acquacoltura ad elevato livello di tutela ambientale e della salute e del benessere degli animali e della salute pubblica;0;
 2;06.5.D;Miglioramento delle conoscenze scientifiche, della raccolta e della gestione dei dati e del monitoraggio, del controllo ed esecuzione;0;
 2;06.5.E;Sviluppo e implementazione della Politica Marittima Integrata;0;
+2;01.ADRION;Level of capacity of key innovation actors to be effectively involved in transnational actions for the development of a regional Innovation system;0;

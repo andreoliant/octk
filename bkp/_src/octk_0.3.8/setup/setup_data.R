@@ -19,9 +19,9 @@ usethis::use_data(po_riclass, overwrite = TRUE)
 # usethis::use_data(po_riclass_ext, overwrite = TRUE)
 
 # matrix_comuni
-matrix_comuni <- read_csv2(file.path(getwd(), "setup", "data-raw", "matrix_comuni.csv"))
-usethis::use_data(matrix_comuni, overwrite = TRUE)
-# MEMO: questo viene da uno script a parte che va integrato in oc
+comuni <- read_csv2(file.path(getwd(), "setup", "data-raw", "matrix_comuni.csv"))
+usethis::use_data(comuni, overwrite = TRUE)
+# MEMO: questo viene workflow sas di Luca
 
 # matrix_op
 matrix_op <- read_csv2(file.path(getwd(), "setup", "data-raw", "matrix_op.csv"))
@@ -81,6 +81,13 @@ usethis::use_data(patt, overwrite = TRUE)
 qsn <- read_csv2(file.path(getwd(), "setup", "data-raw", "qsn.csv"), col_types = "ccic")
 usethis::use_data(qsn, overwrite = TRUE)
 
+# tipologie_cup
+tipologie_cup <- read_csv2(file.path(getwd(), "setup", "data-raw", "tipologie_cup.csv"))
+usethis::use_data(tipologie_cup, overwrite = TRUE)
+
+# flag_beniconf
+flag_beniconf <- read_csv2(file.path(getwd(), "setup", "data-raw", "flag_beniconf.csv"))
+usethis::use_data(flag_beniconf, overwrite = TRUE)
 
 # stoplist
 stoplist <- read_csv2(file.path(getwd(), "setup", "data-raw", "template_stoplist.csv"))
@@ -102,4 +109,6 @@ usethis::use_data(monithon_clp, overwrite = TRUE)
 keyword <- read_csv2(file.path(getwd(), "setup", "data-raw", "template_query_keyword.csv"))
 usethis::use_data(keyword, overwrite = TRUE)
 
-
+# forma_giuridica_soggetti
+forma_giuridica_soggetti <- read_csv2(file.path(getwd(), "setup", "data-raw", "forma_giuridica_soggetti.csv"), col_types = "ccccl")
+usethis::use_data(forma_giuridica_soggetti, overwrite = TRUE)

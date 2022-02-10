@@ -112,10 +112,10 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 26;2016;Assegnazione delle risorse a carico delle aree depresse;0;
 32;2015;Piano stralcio;0;
 1;2016;Piano stralcio;0;
+74;2017;Assegnazione per norma;0;
 26;2016;Quota Ordinaria;0;
 14;2019;Patto per lo Sviluppo;0;
 15;2019;Patto per lo Sviluppo;0;
-74;2017;Assegnazione per norma;0;
 98;2017;Piano operativo;0;
 62;2011;Quota Ordinaria;0;
 54;2016;Piano operativo;0;
@@ -150,9 +150,10 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 71;2019;Assegnazione per norma;0;
 73;2019;Assegnazione per norma;0;
 19;2018;Assegnazione per norma;0;
-4;2020;Piano operativo;0;
 80;2017;Progetti Strategici Speciali;0;
 46;2019;Patto per lo Sviluppo;0;
+36;2020;Assegnazione per norma;0;
+4;2020;Piano operativo;0;
 2;2017;Assegnazione per norma;0;
 47;2019;Piano operativo;0;
 69;2000;Assegnazione delle risorse a carico delle aree depresse;0;
@@ -160,10 +161,11 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 52;2018;Progetti Strategici Speciali;0;
 138;2000;Assegnazione delle risorse a carico delle aree depresse;0;
 24;2019;Piano operativo;0;
+17;2018;Assegnazione per norma;0;
+36;2012;Assegnazione per norma;0;
 52;2016;Piano operativo;0;
 18;2018;Quota Ordinaria;0;
 47;2017;Piano stralcio;0;
-17;2018;Assegnazione per norma;0;
 28;2019;Piano operativo;0;
 21;2014;Quota Ordinaria;0;
 50;2017;Assegnazione per norma;0;
@@ -173,8 +175,8 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 47;2014;Piano stralcio;0;
 65;2015;Piano stralcio;0;
 33;2015;Piano stralcio;0;
-36;2020;Assegnazione per norma;0;
 83;2003;Quota D.1.b - Amministrazioni Centrali;0;
 5;2015;Assegnazione per norma;0;
 35;2005;Quota F.2.2.b - Terremoto Umbria del 1997;0;
+9;2015;Progetti Strategici Speciali;0;
 36;2002;Quota Ordinaria;0;

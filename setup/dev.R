@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.4.8"
+oc_ver <- "0.4.9"
 
 # rm(list=ls())
 library("devtools")
@@ -36,15 +36,16 @@ library("devtools")
 # init
 
 # libs
+# library("tidyverse")
 devtools::load_all(path = ".")
 packageVersion("octk")
 
 # setup
 oc_init(
-  bimestre = "20210831",
+  bimestre = "20211031",
   elab = "SETUP",
   focus = "setup",
-  ver = "V.02",
+  ver = "V.01",
   # user = "Antonio",
   data_path = "/media/antonio/Volume/dati/oc",
   db_ver = "20210930.00",

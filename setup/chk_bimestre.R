@@ -139,7 +139,7 @@ devtools::load_all(path = ".")
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20210630"
+bimestre_old <- "20210831"
 # bimestre_old <- "20191031"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
@@ -218,7 +218,7 @@ progetti_all %>%
 # chk <- progetti_all %>%
 #   fix_progetti(.) %>%
 #   get_x_vars(.) %>%
-#   filter(x_AMBITO == "FESR", X_AMBITO == "FSC")
+#   filter(x_AMBITO == "FSE", X_AMBITO == "FESR")
 
 
 progetti_all %>%

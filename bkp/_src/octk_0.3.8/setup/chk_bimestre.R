@@ -34,9 +34,9 @@ po <- octk::po_riclass %>%
 # verifica po_riclass su DB programmazione
 
 
-programmi <- init_programmazione(use_713 = TRUE) %>%
-  rename(x_GRUPPO = OC_TIPOLOGIA_PROGRAMMA) %>%
-  count(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO)
+programmi <- init_programmazione_dati(use_713 = TRUE, use_po_psc = TRUE) %>%
+  rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA) %>%
+  count(OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO)
 
 # write_csv2(programmi, file.path(TEMP = "chk_po_riclass.csv"))
 
@@ -102,7 +102,7 @@ progetti_all <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug =
 # chk mismatch con po_riclass (trova nuovi programmi)
 progetti_all %>% 
   count(OC_CODICE_PROGRAMMA) %>%
-  anti_join(po, by = "OC_CODICE_PROGRAMMA") %>%
+  anti_join(octk::po_riclass, by = "OC_CODICE_PROGRAMMA") %>%
   filter(!(grepl(":::", OC_CODICE_PROGRAMMA)))
 # MEMO: qui non controlla i programmi ":::" che sono esclusi a monte in po
 
@@ -114,8 +114,10 @@ progetti_all %>%
   count(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
 # MEMO: qui dovrennero rimanere come problematici solo i programmi ":::"
 
-
+# chk dupli
 progetti_all %>%
+  fix_progetti(.) %>%
+  get_x_vars(.) %>%
   count(COD_LOCALE_PROGETTO) %>%
   filter(n > 1)
 
@@ -137,7 +139,7 @@ devtools::load_all(path = ".")
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20201231"
+bimestre_old <- "20210831"
 # bimestre_old <- "20191031"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
@@ -148,7 +150,7 @@ progetti_all_old <- load_progetti(bimestre = bimestre_old,
 
 
 # chk disattivati e nuovi
-chk_match(progetti_all_old, progetti_all, id = "COD_LOCALE_PROGETTO")
+# chk_match(progetti_all_old, progetti_all, id = "COD_LOCALE_PROGETTO")
 
 
 # non visualizzati
@@ -175,7 +177,8 @@ chk <- progetti_all_old %>%
          N.old, N.new, N.chk,
          CP.old, CP.new, CP.chk)
 
-write.csv2(chk, file.path(TEMP, paste0("chk_delta_noviz_", bimestre, ".csv")), row.names = FALSE)
+# write.csv2(chk, file.path(TEMP, paste0("chk_delta_noviz_", bimestre, ".csv")), row.names = FALSE)
+write.xlsx(chk, file.path(TEMP, paste0("chk_delta_noviz_", bimestre, ".xlsx")))
 
 
 
@@ -215,7 +218,7 @@ progetti_all %>%
 # chk <- progetti_all %>%
 #   fix_progetti(.) %>%
 #   get_x_vars(.) %>%
-#   filter(x_AMBITO == "FESR", X_AMBITO == "FSC")
+#   filter(x_AMBITO == "FSE", X_AMBITO == "FESR")
 
 
 progetti_all %>%
@@ -235,7 +238,7 @@ chk <- progetti_all %>%
 # 2 NAZ      ABRUZZO      4 # GSSI
 # 3 NAZ      CAMPANIA    27 # METANIZZAZIONE vs PATTO (vince METANIZZAZIONE)
 # 4 NAZ      MOLISE      47 # CIS MOLISE (va a coumuni e non a regione)
-# 5 TOSCANA  NAZ          2 # 
+# 5 TOSCANA  NAZ          2 # Piombino
 
 appo <- progetti_all %>%
   fix_progetti(.) %>%
@@ -253,6 +256,21 @@ appo %>%
 # CHK: per i programmi 713 che forzo su Mezzogiorno restano disallineamenti con x_REGIONE 
 
 
+# chk macroarea
+appo %>% 
+  mutate(OC_MACROAREA = case_when(OC_MACROAREA == "Ambito Nazionale" ~ "Ambito nazionale",
+                                  OC_MACROAREA ==	"Non definibile" ~ "Trasversale",
+                                  TRUE ~ OC_MACROAREA)) %>% 
+  count(x_MACROAREA, OC_MACROAREA) %>% 
+  write.xlsx(., file.path(TEMP, "chk_macroarea.xlsx"))
+
+appo %>% 
+  mutate(OC_MACROAREA = case_when(OC_MACROAREA == "Ambito Nazionale" ~ "Ambito nazionale",
+                                  OC_MACROAREA ==	"Non definibile" ~ "Trasversale",
+                                  TRUE ~ OC_MACROAREA)) %>% 
+  filter(x_MACROAREA != OC_MACROAREA) %>% 
+  count(x_AMBITO, x_CICLO, x_PROGRAMMA, x_REGIONE, x_MACROAREA, DEN_REGIONE, OC_MACROAREA) %>% 
+  write.xlsx(., file.path(TEMP, "chk_macroarea_progetti.xlsx"))
 
 rm(progetti_all, progetti_all_old, appo)
 

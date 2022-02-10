@@ -43,7 +43,8 @@ setup_operazioni <- function(bimestre, progetti=NULL, export=FALSE, use_fix=FALS
       #  export light
       
       # macroarea
-      operazioni_light <- get_macroarea(operazioni, progetti, real_reg=TRUE)
+      # operazioni_light <- get_macroarea(operazioni, progetti, real_reg=TRUE)
+      operazioni_light <- get_macroarea_oc(operazioni, progetti)
       operazioni_light <- get_regione_simply(operazioni_light, progetti)
       
       # variabili
@@ -967,6 +968,7 @@ load_operazioni <- function(bimestre, usa_meuro=TRUE) {
 #' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo
 #' @param use_713 Vuoi caricare anche i dati di programmaizone per il 2007-2013?
 #' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
+#' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?
 #' @param add_totali Vuoi aggiungere valori calcolati in termini di costo pubblico?
 #' @param use_cp2 Se add_totali == TRUE, vuoi raddoppiare i valori relativi ai progetti multi-programma?  
 #' @param cut_no_risorse Vuoi eliminare i programmi monitorati senza risorse lato DB?
@@ -976,20 +978,31 @@ load_operazioni <- function(bimestre, usa_meuro=TRUE) {
 #' @param  progetti dataset di tipo "progetti" da utilizzare per con add_totali == TRUE
 #' @param  po_riclass dataset di tipo "po_riclass" da utilizzare (altrimenti usa default nel package)
 #' @return Un file csv con apertura per programma e fase procedurale.
-make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=FALSE, use_flt=FALSE,
+make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=FALSE, use_flt=FALSE, use_po_psc=FALSE,
                                            add_totali=FALSE, use_cp2=FALSE, cut_no_risorse=FALSE,
                                            tipo_ciclo="CICLO_STRATEGIA",
                                            focus="report", export=FALSE, progetti=NULL, po_riclass=NULL) {
   
   # perimetro <- operazioni
-  # DEBUG: use_713 <- TRUE
-  programmi <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo) %>%
+  # DEBUG: 
+  # use_713 <- TRUE
+  # use_flt <- TRUE
+  # tipo_ciclo <- "CICLO_STRATEGIA"
+  # use_po_psc <- TRUE
+  
+  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   
   if (use_flt == TRUE) {
+    
+    # fix per 2007IT005FAMG1
+    programmi <- programmi %>% 
+      mutate(FLAG_MONITORAGGIO = if_else(OC_CODICE_PROGRAMMA == "2007IT005FAMG1", 1, FLAG_MONITORAGGIO))
+    
     programmi <- programmi %>%
-      filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2)
+      # filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2)
+      filter(FLAG_MONITORAGGIO == 1)
     # MEMO: in FSC resta anche tipo 9 che viene scartato
   }
 
@@ -999,6 +1012,15 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
     mutate(x_AMBITO = case_when(OC_CODICE_PROGRAMMA == "2014IT05M9OP001" ~ "YEI", # sovrascrive FSE
                                 TRUE ~ x_AMBITO)) %>%
     refactor_ambito(.)
+  
+  # patch YEI anche per perimetro 
+  perimetro <- perimetro  %>%
+    mutate(x_AMBITO = as.character(x_AMBITO)) %>%
+    mutate(x_AMBITO = case_when(OC_CODICE_PROGRAMMA == "2014IT05M9OP001" ~ "YEI", # sovrascrive FSE
+                                TRUE ~ x_AMBITO)) %>%
+    refactor_ambito(.)
+  # MEMO: c'è anche su progetti sotto
+  
   
   # MEMO: patch per factor di x_AMBITO e x_CICLO
   # perimetro <- perimetro %>%
@@ -1024,6 +1046,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
     #        x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006"))) %>%
     group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA) %>%
     summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE))
+  # MEMO: questo group_by è sufficiente a gestire direttrici ferroviarie con use_po_psc = TRUE
   
   if (usa_meuro == TRUE) {
     spalla <- spalla %>%
@@ -1125,6 +1148,13 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
     if (is.null(progetti)) {
       progetti <- load_progetti(bimestre, light = TRUE, refactor = TRUE)
     }
+    
+    # patch YEI anche per perimetro 
+    progetti <- progetti  %>%
+      mutate(x_AMBITO = as.character(x_AMBITO)) %>%
+      mutate(x_AMBITO = case_when(OC_CODICE_PROGRAMMA == "2014IT05M9OP001" ~ "YEI", # sovrascrive FSE
+                                  TRUE ~ x_AMBITO)) %>%
+      refactor_ambito(.)
     
     progetti <- progetti %>%
       refactor_ambito(.) %>%
@@ -1458,7 +1488,7 @@ fix_operazioni_713 <- function(df) {
 #' Crea report sintetico bimestrale con risorse coesione calcolate su operazioni.
 #'
 #' @param programmi Dataset in formato "programmi" da make_report_programmi_coesione()
-#' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo
+#' @param usa_meuro Vuoi i dati in Meuro? Di default sono come in 'programmi', vale solo se 'programmi' è in euro
 #' @export vuoi salvare il file?
 #' @return Il report bimestre.
 make_report_bimestre_coesione <- function(programmi, usa_meuro=TRUE, export=TRUE) {
@@ -1497,6 +1527,13 @@ make_report_bimestre_coesione <- function(programmi, usa_meuro=TRUE, export=TRUE
              IMP = round(IMP/1000000, 1),
              PAG = round(PAG/1000000, 1))
   }
+  
+  # arrange per template
+  report <- report %>% 
+    filter(x_AMBITO != "FEAMP", x_AMBITO != "FEASR") %>% 
+    select(x_CICLO,	x_AMBITO,	RISORSE, COE, COE_IMP, COE_PAG, N, CP, IMP, PAG, N_CLP) %>% 
+    arrange(desc(x_CICLO), x_AMBITO)
+
   
   if (export == TRUE) {
     write_csv2(report, file.path(TEMP, "report.csv"))
@@ -2158,7 +2195,7 @@ make_report_macroaree_coesione <- function(risorse=NULL, perimetro=NULL, use_meu
   
   
   if (cut_no_risorse == TRUE) {
-    appo <- init_programmazione(use_713 = TRUE, use_flt = TRUE) %>%
+    appo <- init_programmazione_dati(use_713 = TRUE, use_flt = TRUE) %>%
       filter(FINANZ_TOTALE > 0, FLAG_MONITORAGGIO != 0, FLAG_MONITORAGGIO != 9) %>%
       select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, FINANZ_TOTALE)
     
@@ -2304,6 +2341,7 @@ chk_allineamento_costo_coe <- function(report, programmi, report_macroaree, peri
 #' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo
 #' @param use_713 Vuoi caricare anche i dati di programmaizone per il 2007-2013?
 #' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
+#' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?
 #' @param add_totali Vuoi aggiungere valori calcolati in termini di costo pubblico?
 #' @param use_cp2 Se add_totali == TRUE, vuoi raddoppiare i valori relativi ai progetti multi-programma?  
 #' @param cut_no_risorse Vuoi eliminare i programmi monitorati senza risorse lato DB?
@@ -2313,7 +2351,7 @@ chk_allineamento_costo_coe <- function(report, programmi, report_macroaree, peri
 #' @param  progetti dataset di tipo "progetti" da utilizzare per con add_totali == TRUE
 #' @param  po_riclass dataset di tipo "po_riclass" da utilizzare (altrimenti usa default nel package)
 #' @return Un file csv con apertura per programma e fase procedurale.
-make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE, use_713=FALSE, use_flt=FALSE,
+make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE, use_713=FALSE, use_flt=FALSE, use_po_psc=FALSE,
                                            add_totali=FALSE, use_cp2=FALSE, cut_no_risorse=FALSE,
                                            tipo_ciclo="CICLO_STRATEGIA",
                                            focus="report", export=FALSE, progetti=NULL, po_riclass=NULL) {
@@ -2324,7 +2362,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
   # tipo_ciclo <- "CICLO_STRATEGIA"
   # perimetro <- operazioni
   
-  programmi <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE) %>%
+  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE, use_po_psc=use_po_psc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   
@@ -2340,6 +2378,14 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     mutate(x_AMBITO = case_when(OC_CODICE_PROGRAMMA == "2014IT05M9OP001" ~ "YEI", # sovrascrive FSE
                                 TRUE ~ x_AMBITO)) %>%
     refactor_ambito(.)
+  
+  # patch YEI anche per perimetro 
+  perimetro <- perimetro  %>%
+    mutate(x_AMBITO = as.character(x_AMBITO)) %>%
+    mutate(x_AMBITO = case_when(OC_CODICE_PROGRAMMA == "2014IT05M9OP001" ~ "YEI", # sovrascrive FSE
+                                TRUE ~ x_AMBITO)) %>%
+    refactor_ambito(.)
+  # MEMO: c'è anche su progetti sotto
   
   # ricodifica x_MACROAREA
   # programmi <- ricodifica_macroaree(programmi)
@@ -2359,7 +2405,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     # po_riclass <- octk::po_riclass
     # MEMO: questa soluzione porta a deniminazioni divergenti per lo stesso codice po
     
-    po_riclass <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=FALSE) %>%
+    po_riclass <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=FALSE) %>%
       rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
              x_PROGRAMMA = DESCRIZIONE_PROGRAMMA) %>%
       distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO)
@@ -2441,6 +2487,13 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     if (is.null(progetti)) {
       progetti <- load_progetti(bimestre, light = TRUE, refactor = TRUE)
     }
+    
+    # patch YEI anche per perimetro 
+    progetti <- progetti  %>%
+      mutate(x_AMBITO = as.character(x_AMBITO)) %>%
+      mutate(x_AMBITO = case_when(OC_CODICE_PROGRAMMA == "2014IT05M9OP001" ~ "YEI", # sovrascrive FSE
+                                  TRUE ~ x_AMBITO)) %>%
+      refactor_ambito(.)
     
     progetti <- progetti %>%
       refactor_ambito(.) %>%
@@ -2620,7 +2673,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     #   filter(RISORSE > 0)
     # MEMO: questa versione esclude casi con RISORSE 0 per ambito nazionale e progetti presenti (e casi simili)
     
-    appo <- init_programmazione(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE) %>%
+    appo <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE) %>%
       rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
              x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
     
@@ -2686,7 +2739,8 @@ workflow_operazioni_sito <- function(bimestre, progetti, debug=FALSE) {
   operazioni_1420_raw <- read_sas(file.path(DATA, "oper_pucok_preesteso.sas7bdat"))
   message("Operazioni raw caricate per 1420")
   
-  operazioni_713_raw <- read_sas(file.path(DATA, "oper_fltok_preesteso.sas7bdat"))
+  operazioni_713_raw <- read_sas(file.path(DATA, "oper_fltok_preesteso.sas7bdat")) %>%
+    rename(OC_COD_PROGRAMMA = oc_cod_programma)
   message("Operazioni raw caricate per 713")
   
   
@@ -2816,17 +2870,21 @@ workflow_operazioni_sito <- function(bimestre, progetti, debug=FALSE) {
   
   message("Preparazione dati 713...")
   
-  chk <- operazioni_713_raw %>%
+  chk <- operazioni_713_raw %>% 
     filter(OC_FLAG_PAC == 1) %>%
     group_by(OC_COD_FONTE, QSN_FONDO_COMUNITARIO, OC_COD_PROGRAMMA) %>%
     summarise(N = n())
   
   # MEMO: dovrebbe esserci anche 2007SA002FA016 ma ha flag OC_FLAG_PAC solo per un progetto...
   
+  operazioni_713_raw <- operazioni_713_raw %>%
+    rename(COD_LOCALE_PROGETTO = cod_locale_progetto)
+  
+    # filter(OC_CODICE_PROGRAMMA %in% c("2007IT005FA
+  
   # FIX: duplicazione di programmi PAC-FSC (es. direttrici ferroviarie)
   appo <- operazioni_713_raw %>%
-    rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
-    
+    # rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
     # filter(OC_CODICE_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005")) %>%
     filter(OC_COD_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005")) %>%
     # left_join(progetti %>%
@@ -2837,10 +2895,90 @@ workflow_operazioni_sito <- function(bimestre, progetti, debug=FALSE) {
     # TODO: verifica se OC_FLAG_PAC in operazioni_flt_ok coincide con quello in progetti
     # mutate(x_AMBITO = "POC:::FSC") %>%
     mutate(x_AMBITO = "PAC:::FSC") %>%
-    separate_rows(x_AMBITO, sep = ":::")
+    separate_rows(x_AMBITO, sep = ":::") %>%
+    # ricalcolo variabili coe (sovrascive fabio)
+    fix_operazioni_713(.) %>%
+    # map per ambito
+    mutate(COS_AMM = case_when(x_AMBITO == "FSC" ~ 0,
+                               x_AMBITO == "PAC" ~ 0,
+                               TRUE ~ COSTO_RENDICONTABILE_UE),
+           IMP_AMM = 0,
+           PAG_AMM = case_when(x_AMBITO == "FSC" ~ OC_TOT_PAGAMENTI_FSC,
+                               x_AMBITO == "PAC" ~ OC_TOT_PAGAMENTI_PAC,
+                               TRUE ~ OC_TOT_PAGAMENTI_RENDICONTAB_UE)) %>%
+  # integra variabili da progetti (l'aggancio crea valori duplicati)
+  select(-TOT_PAGAMENTI) %>%
+  left_join(progetti %>%
+              select(COD_LOCALE_PROGETTO,
+                     OC_FINANZ_TOT_PUB_NETTO, OC_FINANZ_STATO_FSC_NETTO, OC_FINANZ_STATO_PAC_NETTO,
+                     FINANZ_TOTALE_PUBBLICO, FINANZ_STATO_FSC, FINANZ_STATO_PAC,
+                     IMPEGNI, TOT_PAGAMENTI),
+            by = "COD_LOCALE_PROGETTO") %>%
+    mutate(COE = case_when(x_AMBITO == "FSC" ~ OC_FINANZ_STATO_FSC_NETTO,
+                           x_AMBITO == "PAC" ~ OC_FINANZ_STATO_PAC_NETTO,
+                           is.na(COS_AMM) ~ 0,
+                           TRUE ~ COS_AMM),
+           # MEMO: qui sopra non sto facendo MAX tra FTP e FTPN (è una tecnica che uso solo per riproporzionare impegni)
+           # base_ftp = if_else(OC_FINANZ_TOT_PUB_NETTO > 0,
+           #                    OC_FINANZ_TOT_PUB_NETTO,
+           #                    FINANZ_TOTALE_PUBBLICO),
+           base_ftp = case_when(COS_AMM > OC_FINANZ_TOT_PUB_NETTO ~ COS_AMM, # FIX per x > 1
+                                COE > OC_FINANZ_TOT_PUB_NETTO ~ COE, # FIX per x > 1 >>> CHK: FORSE E' ININFLUENTE
+                                OC_FINANZ_TOT_PUB_NETTO > 0 ~ OC_FINANZ_TOT_PUB_NETTO,
+                                TRUE ~ FINANZ_TOTALE_PUBBLICO),
+           base_coe = case_when(x_AMBITO == "FSC" & OC_FINANZ_TOT_PUB_NETTO > 0 ~ OC_FINANZ_STATO_FSC_NETTO,
+                                x_AMBITO == "FSC" ~ FINANZ_STATO_FSC,
+                                x_AMBITO == "PAC" & OC_FINANZ_TOT_PUB_NETTO > 0 ~ OC_FINANZ_STATO_PAC_NETTO,
+                                x_AMBITO == "PAC" ~ FINANZ_STATO_PAC,
+                                is.na(COS_AMM) ~ 0,
+                                TRUE ~ COS_AMM), # per FS non posso considerare valore al netto di economie
+           x = base_coe/base_ftp,
+           # COE_PAG = PAG_AMM,
+           
+           # fix per pagamenti FSC 0
+           PAG_AMM_2 = case_when(x == Inf ~ 0,
+                                 # fix per caso di uguaglianza completa (non riproporziona anche se CP_N > COE)
+                                 # round(TOT_PAGAMENTI, 0) == round(COE, 0) & round(IMPEGNI, 0) == round(COE, 0) ~ COE,
+                                 # fix per caso di uguaglianza di pagamenti comunque con impegni > COE (non riproporziona)
+                                 # round(TOT_PAGAMENTI, 0) == round(COE, 0) & round(IMPEGNI, 0) > round(COE, 0) ~ COE,
+                                 
+                                 TOT_PAGAMENTI <= base_ftp ~ TOT_PAGAMENTI * x,
+                                 TOT_PAGAMENTI > base_ftp ~ base_ftp * x,
+                                 is.na(TOT_PAGAMENTI) ~ 0,
+                                 # is.na(COE) ~ 0, # CHK: capire se serve
+                                 TRUE ~ 0),
+           
+           COE_PAG = case_when(x_AMBITO == "FSC" & PAG_AMM_2 > PAG_AMM ~ PAG_AMM_2,
+                               x_AMBITO == "FSC" ~ PAG_AMM,
+                               TRUE ~ PAG_AMM),
+           # MEMO: uso massimo valore per FSC
+           
+           COE_IMP = case_when(x == Inf ~ 0,
+                               # fix per caso di uguaglianza completa (non riproporziona anche se CP_N > COE)
+                               round(COE_PAG, 0) == round(COE, 0) & round(IMPEGNI, 0) == round(COE, 0) ~ COE,
+                               # fix per caso di uguaglianza di pagamenti comunque con impegni > COE (non riproporziona)
+                               round(COE_PAG, 0) == round(COE, 0) & round(IMPEGNI, 0) > round(COE, 0) ~ COE,
+                               
+                               IMPEGNI <= base_ftp ~ IMPEGNI * x,
+                               IMPEGNI > base_ftp ~ base_ftp * x,
+                               is.na(IMPEGNI) ~ 0,
+                               is.na(COE) ~ 0, # CHK: capire se serve
+                               TRUE ~ 0)) %>%
+    
+    # map per ambito
+    mutate(oc_costo_coesione = COE,
+           oc_impegni_coesione = COE_IMP,
+           oc_tot_pagamenti_coesione = COE_PAG) %>% 
+    # clean
+    select(names(operazioni_713_raw), x_AMBITO)
+  
+  
+  # chk <- appo %>%
+  #   select(OC_COD_PROGRAMMA, x_AMBITO, COD_LOCALE_PROGETTO, oc_costo_coesione, COE, 
+  #          oc_impegni_coesione, COE_IMP, oc_tot_pagamenti_coesione, COE_PAG
   
   operazioni_713_raw_temp <- operazioni_713_raw %>%
-    rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
+    # rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
     mutate(x_AMBITO = NA) %>%
     anti_join(appo, by = "COD_LOCALE_PROGETTO") %>%
     bind_rows(appo)
@@ -3022,5 +3160,81 @@ workflow_operazioni_sito <- function(bimestre, progetti, debug=FALSE) {
   return(operazioni)
 }
 
+#' Verifica variazione risorse per programma
+#'
+#' Verifica variazione risorse per programma. Confronta due dataframe risultanti da make_report_programmi_coesione().
+#'
+#' @param programmi_new Dataframe da make_report_programmi_coesione()
+#' @param programmi_old Dataframe da make_report_programmi_coesione()
+#' @param path_to_new Percorso a csv generato con make_report_programmi_coesione().
+#' @param path_to_old Percorso a csv generato con make_report_programmi_coesione().
+#' @param export vuoi salvare il file?
+#' @return Un dataframe per programma, ciclo e ambito.
+chk_variazione_risorse_programmi_coesione <- function(programmi_new=NULL, programmi_old=NULL, path_to_new=NULL, path_to_old=NULL, export=FALSE){
+  
+  if (is.null(programmi_new)) {
+    if (is.null(path_to_new)) {
+      message("Indica un file da confrontare")
+    } else {
+      programmi_new <- read_csv2(path_to_new)
+    }
+  }
+  
+  if (is.null(programmi_old)) {
+    if (is.null(path_to_old)) {
+      message("Indica un file da confrontare")
+    } else {
+      programmi_old <- read_csv2(path_to_old)
+    }
+  }
+  
+  out <- programmi_new %>%
+    as_tibble(.) %>%
+    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE) %>%
+    left_join(programmi_old %>%
+                # fix per "PAC"
+                as_tibble(.) %>%
+                mutate(x_AMBITO = case_when(x_CICLO == "2007-2013" & x_AMBITO == "POC" ~ "PAC",
+                                            TRUE ~ x_AMBITO)) %>%
+                refactor_ambito(.) %>%
+                select(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, RISORSE),
+              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO"),
+              suffix = c(".new", ".old")) %>%
+    mutate(RISORSE.old = if_else(is.na(RISORSE.old), 0, RISORSE.old),
+           RISORSE.new = if_else(is.na(RISORSE.new), 0, RISORSE.new)) %>%
+    mutate(CHK = RISORSE.new - RISORSE.old)
+  
+  if (export==TRUE) {
+    write.csv2(out, file.path(TEMP, "delta_risorse_programmi.csv"), row.names = FALSE)
+  }
+  
+  return(out)
+  
+}
 
 
+#' Integra report bimestre con bimestre precedente a scelta
+#'
+#' Integra report bimestre con bimestre precedente a scelta.
+#'
+#' @param report Report da make_report_bimestre_coesione.
+#' @param path_to_old Percorso a elaborazione per bimestre precedente fino a versione, senza nome file.
+#' @param export vuoi salvare il file?
+#' @return Un file csv con apertura per ciclo e ambito.
+add_delta_report_bimestre_coesione <- function(report, path_to_old, export=FALSE) {
+  
+  # path_to_old <- file.path(DRIVE, "ELAB", "20210430", "STATO", "stato", "V.01")
+  
+  report_old <- read_csv2(file.path(path_to_old, "temp", "report.csv")) %>% 
+    select(x_CICLO, x_AMBITO, COE_OLD = COE, COE_IMP_OLD = COE_IMP, COE_PAG_OLD = COE_PAG)
+  
+  out <- report %>% 
+    left_join(report_old, by = c("x_CICLO", "x_AMBITO"))
+  
+  if (export == TRUE) {
+    write_csv2(out, file.path(TEMP, "report.csv"))
+  }
+  
+  return(out)
+  
+}

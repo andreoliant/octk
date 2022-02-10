@@ -10,7 +10,7 @@
 #' @return Un file "classi_cup.csv".
 #' #' @section Warning:
 #' Da rinominare in "classi_cup.csv" e modificare.
-setup_classi_cup <- function(pseudo, file_name="classi_cup_NEW.csv") {
+setup_classi_cup <- function(pseudo, progetti, file_name="classi_cup_NEW.csv") {
 
   # intgera pseudo
   out <- pseudo %>%
@@ -26,6 +26,10 @@ setup_classi_cup <- function(pseudo, file_name="classi_cup_NEW.csv") {
     mutate(CLASSE = NA)
 
   write.csv2(out, file.path(INPUT, file_name), row.names = FALSE)
+  
+  if (file_name == "classi_cup_NEW.csv") {
+    message("Integra e rinomina classi_cup_NEW.csv")
+  }
 
 }
 
@@ -39,7 +43,7 @@ setup_classi_cup <- function(pseudo, file_name="classi_cup_NEW.csv") {
 #' @return Un file "classi_ue.csv".
 #' #' @section Warning:
 #' Da rinominare in "classi_ue.csv" e modificare.
-setup_classi_ue <- function(pseudo, file_name="classi_ue_NEW.csv") {
+setup_classi_ue <- function(pseudo, progetti, file_name="classi_ue_NEW.csv") {
 
   # intgera pseudo
   out <- pseudo %>%
@@ -52,6 +56,10 @@ setup_classi_ue <- function(pseudo, file_name="classi_ue_NEW.csv") {
     mutate(CLASSE = NA)
 
   write.csv2(out, file.path(INPUT, file_name), row.names = FALSE)
+  
+  if (file_name == "classi_ue_NEW.csv") {
+    message("Integra e rinomina classi_ue_NEW.csv")
+  }
 
 }
 
@@ -70,8 +78,17 @@ setup_fixlist <- function() {
 }
 
 
-
-make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe=NULL, vars_ls=NULL, export=TRUE, debug=FALSE) {
+#' Classificazione per categoria CUP e campo d'intervento UE
+#'
+#' Classificazione per categoria CUP e campo d'intervento UE
+#'
+#' @param pseudo Dataset "pseudo".
+#' @param classe_jolly Nome per classe da assegnare ai casi non mappati in classi_cup e classi_ue
+#' @param livelli_classe Nomi per factor di classe
+#' @param export Logico. Vuoi salvare?
+#' @param debug Logico. Vuoi una matrice con freq cup x ue
+#' @return Un file "pseudo".
+make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe=NULL, export=TRUE, debug=FALSE) {
 
   # if (is.null(var_ls)) {
   #   var_ls <- c("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO",
@@ -233,39 +250,253 @@ make_classi <- function(pseudo, classe_jolly="Altro", livelli_classe=NULL, vars_
 }
 
 
+#' Classificazione Hard-Soft
+#'
+#' Classificazione Hard-Soft da nautra CUP
+#'
+#' @param pseudo Dataset "pseudo".
+#' @param export Logico. Vuoi salvare?
+#' @return Un file "pseudo".
+make_classi_hard_soft <- function (pseudo, export = TRUE) {
+  
+  out <- pseudo %>% 
+    filter(PERI == 1) %>% # isola scarti
+    mutate(CLASSE = case_when(CUP_COD_NATURA == "03" ~ "hard",
+                              TRUE ~ "soft"))
+  
+  fixlist <- read_csv2(file.path(INPUT, "fixlist.csv")) %>% 
+    filter(!is.na(COD_LOCALE_PROGETTO), CHK == 1) %>% 
+    select(COD_LOCALE_PROGETTO, CLASSE)
+  
+  chk <- fixlist %>% 
+    count(COD_LOCALE_PROGETTO) %>% 
+    filter(n > 1)
+  
+  print(paste0("Numero di duplicati in fixlist: ", dim(chk)[1]))
+  
+  out <- out %>% 
+    mutate(CLASSE = as.character(CLASSE)) %>% 
+    left_join(fixlist, by = "COD_LOCALE_PROGETTO") %>% 
+    mutate(CLASSE = ifelse(is.na(CLASSE.y), CLASSE.x, CLASSE.y)) %>% 
+    mutate(CLASSE = factor(CLASSE, levels = c("hard", "soft"))) %>% 
+    select(-CLASSE.x, -CLASSE.y) %>%
+    select(-CUP_DESCR_NATURA, -CUP_COD_NATURA)
+  
+  if (export == TRUE) {
+    write.csv2(out, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
+  }
+  
+  return(out)
+}
 
 
-# ----------------------------------------------------------------------------------- #
-# Aggiungi vecchia classificazione
 
-# DEV: BLOCCO VALIDO SOLO PER TURISMO
 
-#
-# perim_old <- read_csv2(file.path(INPUT, "old_perim.csv")) %>%
-#   filter(OC_FLAG_VISUALIZZAZIONE == 0) %>%
-#   select(COD_LOCALE_PROGETTO, CLASSE_OLD = OC_FLAG_MACRO_CATEGORIA)
-#
-# appo1 <- appo %>%
-#   left_join(perim_old,
-#             by = "COD_LOCALE_PROGETTO") %>%
-#   # MEMO: attenzione a codica diversa (1=Natura e NON Cultura!)
-#   mutate(CLASSE_OLD = case_when(CLASSE_OLD == 1 ~ "Natura",
-#                                 CLASSE_OLD == 2 ~ "Cultura",
-#                                 CLASSE_OLD == 3 ~ "Turismo")) %>%
-#   mutate(CLASSE_OLD = factor(CLASSE_OLD,
-#                              # levels = c(1, 2, 3, 4),
-#                              labels = c("Cultura", "Natura", "Turismo"))) %>%
-#   mutate(CHK_CLASSE_OLD = CLASSE == CLASSE_OLD)
-#
-# # appo1 %>%
-# #   count(CHK_CLASSE)
-#
-# # matrice cup x ue
-# appo1 %>%
-#   count(CLASSE, CLASSE_OLD) %>%
-#   spread(CLASSE_OLD, n) %>%
-#   rename("NEW/OLD" = CLASSE) %>%
-#   write.csv2(file.path(tmp_path, "matrix_classi_old.csv"), na = "", row.names = FALSE)
-#
-#
-#
+#' Crea nuova base per riclassificazione per forma giuridica soggetti
+#'
+#' Crea nuova base per riclassificazione per forma giuridica soggetti
+#'
+#' @param file_name Nome file da salvare in INPUT.
+#' @return Un file "classi_soggetti.csv".
+setup_classi_soggetti <- function(file_name="classi_soggetti_NEW.csv") {
+  
+  out <- octk::forma_giuridica_soggetti
+  
+  write.csv2(out, file.path(INPUT, file_name), row.names = FALSE, quote = c(1))
+  
+  if (file_name == "classi_soggetti_NEW.csv") {
+    message("Integra e rinomina classi_soggetti_NEW.csv")
+    message("Attenzione ad aprire il csv con la colonna 1 come testo")
+  }
+}
+
+
+#' Classificazione per soggetti
+#'
+#' Classificazione per tipologie di soggetti
+#'
+#' @param pseudo Dataset "pseudo".
+#' @param livelli_classe Nomi per factor di classe
+#' @param export Logico. Vuoi salvare?
+#' @return Un file "pseudo".
+make_classi_soggetti <- function (pseudo, livelli_classe=NULL, progetti, export = TRUE) {
+  
+  if (!("OC_COD_FORMA_GIU_BENEFICIARIO" %in% names(progetti))) {
+    progetti <- load_progetti(bimestre, light = FALSE)
+  }
+  
+  # ----------------------------------------------------------------------------------- #
+  # Integra dati perimetro
+  
+  # filtra pseudo (in appo e senza scarti)
+  appo <- pseudo %>%
+    filter(PERI == 1) # isola scarti
+
+  # intgera pseudo
+  appo <- appo %>%
+    left_join(progetti %>%
+              select(COD_LOCALE_PROGETTO, OC_COD_FORMA_GIU_BENEFICIARIO),
+              by = "COD_LOCALE_PROGETTO") %>% 
+    # isola primo soggetto
+    mutate(OC_COD_FORMA_GIU_BENEFICIARIO = substr(OC_COD_FORMA_GIU_BENEFICIARIO, 1, 6))
+  # MEMO: ci sono casi spuri diversi da 9.9.99  (es. 1.2)
+
+  
+  # ----------------------------------------------------------------------------------- #
+  # Classificazione
+  
+  # load
+  classi_soggetti <- read_csv2(file.path(INPUT, "classi_soggetti.csv"), col_types = "ccccc") %>%
+    select(OC_COD_FORMA_GIU_BENEFICIARIO, CLASSE)
+  
+  
+  # switch per livelli_classe e classe_jolly
+  if (is.null(livelli_classe)) {
+    livelli_classe <- unique(classi_soggetti$CLASSE)
+    livelli_classe <- livelli_classe[which(!is.na(livelli_classe))]
+    if (!("Altro" %in% livelli_classe)){
+      livelli_classe <- c(livelli_classe, "Altro")
+    }
+  }
+  
+  # merge
+  appo <- appo %>%
+    left_join(classi_soggetti,
+              by = "OC_COD_FORMA_GIU_BENEFICIARIO")
+
+    
+  # ----------------------------------------------------------------------------------- #
+  # Fix manuale
+
+  fixlist <- read_csv2(file.path(INPUT, "fixlist.csv")) %>% 
+    filter(!is.na(COD_LOCALE_PROGETTO), CHK == 1) %>% 
+    select(COD_LOCALE_PROGETTO, CLASSE)
+  
+  chk <- fixlist %>% 
+    count(COD_LOCALE_PROGETTO) %>% 
+    filter(n > 1)
+  
+  print(paste0("Numero di duplicati in fixlist: ", dim(chk)[1]))
+  
+  # fix
+  appo <- appo %>%
+    # gestione missing
+    mutate(CLASSE = ifelse(is.na(CLASSE), "Altro", CLASSE)) %>%
+    left_join(fixlist,
+              by = "COD_LOCALE_PROGETTO") %>%
+    # mutate(CLASSE = ifelse(is.na(CLASSE.y), as.factor(CLASSE.x), as.factor(CLASSE.y))) %>%
+    mutate(CLASSE = ifelse(is.na(CLASSE.y), CLASSE.x, CLASSE.y)) %>%
+    mutate(CLASSE = factor(CLASSE, levels = livelli_classe)) %>%
+    # mutate(CLASSE = factor(CLASSE, levels = c(1, 2, 3), labels = livelli_classe)) %>%
+    # CHK: VERIFICARE LABELS
+    select(-CLASSE.x, -CLASSE.y) 
+  
+  out <- appo
+  
+  if (export == TRUE) {
+    write.csv2(out, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
+  }
+  
+  return(out)
+}
+
+
+#' Classificazione per ambiti comunali
+#'
+#' Classificazione per tipologie di soggetti
+#'
+#' @param pseudo Dataset "pseudo".
+#' @param export Logico. Vuoi salvare?
+#' @return Un file "pseudo".
+make_classi_comuni <- function (pseudo, progetti, export = TRUE) {
+  
+  # load matrix
+  comuni <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "comuni") %>% 
+    filter(QUERY == 1) %>% 
+    select(COD_COMUNE, DEN_COMUNE, AMBITO, AMBITO_SUB)
+  
+  # ----------------------------------------------------------------------------------- #
+  # Integra dati perimetro
+  
+  # filtra pseudo (in appo e senza scarti)
+  appo <- pseudo %>%
+    filter(PERI == 1) # isola scarti
+  
+  # corregge comuni
+  temp <- progetti %>%
+    select(COD_LOCALE_PROGETTO, COD_COMUNE)%>%
+    semi_join(appo,
+              by = "COD_LOCALE_PROGETTO") %>% 
+    separate_rows(COD_COMUNE, sep = ":::") %>%
+    # allinea codici oc a matrix (senza regione)
+    mutate(chk = nchar(COD_COMUNE)) %>% 
+    filter(chk == 9) %>% 
+    mutate(COD_COMUNE = substr(COD_COMUNE, 4, 9)) %>%
+    select(-chk) %>% 
+    left_join(comuni, by = "COD_COMUNE")
+  
+  # aggrega comuni
+  temp1 <- temp %>%
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(COD_COMUNE = paste(COD_COMUNE, collapse=':::'),
+              DEN_COMUNE = paste(DEN_COMUNE, collapse=':::')) %>% 
+    left_join(temp %>%
+                # elimina ":::NA" da localizzazioni senza ambito
+                filter(!is.na(AMBITO)) %>% 
+                # elimina dupli da localizzazioni multiple nello stesso ambito
+                distinct(COD_LOCALE_PROGETTO, AMBITO, AMBITO_SUB) %>% 
+                group_by(COD_LOCALE_PROGETTO) %>%
+                summarise(AMBITO = paste(AMBITO, collapse=':::'),
+                          AMBITO_SUB = paste(AMBITO_SUB, collapse=':::')),
+              by = "COD_LOCALE_PROGETTO")
+  
+  
+  
+  # intgera pseudo
+  appo <- appo  %>% 
+    left_join(temp1, by = "COD_LOCALE_PROGETTO")
+
+  
+  # ----------------------------------------------------------------------------------- #
+  # Classificazione
+  
+  # merge
+  appo <- appo %>%
+    mutate(CLASSE = AMBITO)
+  
+  # TODO: gestire anvhe ambito_sub
+  
+  # ----------------------------------------------------------------------------------- #
+  # Fix manuale
+  
+  fixlist <- read_csv2(file.path(INPUT, "fixlist.csv")) %>% 
+    filter(!is.na(COD_LOCALE_PROGETTO), CHK == 1) %>% 
+    select(COD_LOCALE_PROGETTO, CLASSE)
+  
+  chk <- fixlist %>% 
+    count(COD_LOCALE_PROGETTO) %>% 
+    filter(n > 1)
+  
+  print(paste0("Numero di duplicati in fixlist: ", dim(chk)[1]))
+  
+  # fix
+  appo <- appo %>%
+    mutate(CLASSE = as.character(CLASSE)) %>%
+    left_join(fixlist,
+              by = "COD_LOCALE_PROGETTO") %>%
+    # mutate(CLASSE = ifelse(is.na(CLASSE.y), as.factor(CLASSE.x), as.factor(CLASSE.y))) %>%
+    mutate(CLASSE = ifelse(is.na(CLASSE.y), CLASSE.x, CLASSE.y)) %>%
+    # mutate(CLASSE = factor(CLASSE, levels = c(livelli_classe, "Altro"))) %>%
+    # mutate(CLASSE = factor(CLASSE, levels = c(1, 2, 3), labels = livelli_classe)) %>%
+    # CHK: VERIFICARE LABELS
+    select(-CLASSE.x, -CLASSE.y)
+  
+  
+  out <- appo
+  
+  if (export == TRUE) {
+    write.csv2(out, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
+  }
+  
+  return(out)
+}

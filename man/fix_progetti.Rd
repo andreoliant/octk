@@ -4,7 +4,7 @@
 \alias{fix_progetti}
 \title{Fix temporaneo per il dataset progetti in vestione preesteso}
 \usage{
-fix_progetti(progetti)
+fix_progetti(progetti, path_snai = NULL)
 }
 \arguments{
 \item{progetti}{Dataset in formato standard.}

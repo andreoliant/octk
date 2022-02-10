@@ -27,19 +27,34 @@
 # - invia mail al team
 
 
+# ----------------------------------------------------------------------------------- #
+# test su fix_snai 
+
+progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE, light = FALSE)
+progetti_2 <- fix_progetti(progetti, path_snai <- "ELAB/20211031/SNAI/snai/V.01/output/perimetro_snai.xlsx")
+progetti %>%
+  count(X_AMBITO)
+
+progetti_2 %>% 
+  filter(!is.na(SNAI))
+
+progetti_2 %>% 
+  filter(!is.na(COD_AREA_INT))
+
+rm(progetti, progetti_2)
+
 
 # ----------------------------------------------------------------------------------- #
 # prep di dataset in octk
-
 
 progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
 progetti <- fix_progetti(progetti)
 
 # po_linee_azioni.csv
 make_matrix_po(bimestre)
-chk <- chk_delta_po("NEW")
-chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
-chk <- chk_delta_po("OLD")
+# chk <- chk_delta_po("NEW")
+# chk <- chk_delta_po("OLD")
+# chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
 # OLD: HAND: rinominare "po_linee_azioni_NEW.csv" in "po_linee_azioni.csv >>> non serve più
 
 # TODO: voglio sapere cosa manca in po_linee_azioni rispetto al DB programmazione
@@ -68,6 +83,13 @@ progetti %>%
   filter(is.na(QUERY)) %>% 
   write_csv2(file.path(TEMP, "ra.csv"))
 # HAND: estendere lista RA
+
+# COD_RIS_ATTESO DESCR_RISULTATO_ATTESO                                                               n OC_COD_CICLO DESCR_RIS_ATTESO QUERY NOTE 
+# <chr>          <chr>                                                                            <int>        <dbl> <chr>            <dbl> <lgl>
+# 1 R 3.2.A        Maggiore diffusione di nuove pratiche, non convenzionali, di gestione delle ri… 1   e0           NA NA                  NA NA   
+# 2 R 3.2.B        Nuovi metodi di gestione dei rifiuti, di riduzione dell'intensitÃ  energetica … 1   e0           NA NA                  NA NA   
+# 3 R2.3           Maggiore mobilitÃ  di studenti, ricercatori e insegnanti nell'area del program… 3   e0           NA NA                  NA NA   
+# 4 NA             NA                                                                              1.18e6           NA NA                  NA NA  
 
 
 # ----------------------------------------------------------------------------------- #
@@ -104,7 +126,8 @@ devtools::load_all(path = ".")
 # https://readr.tidyverse.org/articles/readr.html#column-specification
 
 # progetti light
-setup_light(bimestre, fix = TRUE)
+# setup_light(bimestre, fix = TRUE)
+setup_light(bimestre, fix = TRUE, path_snai = "ELAB/20211031/SNAI/snai/V.01/output/perimetro_snai.xlsx") # MEMO: fix per snai
 # setup_light(bimestre, fix = FALSE)
 
 # operazioni light

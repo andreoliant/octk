@@ -13,13 +13,13 @@ chk_variazione_risorse_programmi(
 )
 }
 \arguments{
-\item{programmi_new}{Dataframe da make_report_programmi_coesione()}
+\item{programmi_new}{Dataframe attuale da make_pagina_programmi()}
 
-\item{programmi_old}{Dataframe da make_report_programmi_coesione()}
+\item{programmi_old}{Dataframe precedente da make_pagina_programmi()}
 
-\item{path_to_new}{Percorso a csv generato con make_report_programmi_coesione().}
+\item{path_to_new}{Percorso ad attuale folder in cui si trovano i file "programmi_0713.csv" e "programmi_1420.csv" generati con make_pagina_programmi().}
 
-\item{path_to_old}{Percorso a csv generato con make_report_programmi_coesione().}
+\item{path_to_old}{Percorso a precedente folder in cui si trovano i file "programmi_0713.csv" e "programmi_1420.csv" generati con make_pagina_programmi().}
 
 \item{export}{vuoi salvare il file?}
 }
@@ -27,5 +27,5 @@ chk_variazione_risorse_programmi(
 Un dataframe per programma, ciclo e ambito.
 }
 \description{
-Verifica variazione risorse per programma. Confronta due dataframe risultanti da make_report_programmi_coesione().
+Verifica variazione risorse per programma. Confronta due dataframe risultanti da make_pagina_programmi() o i file csv da questa esportati.
 }

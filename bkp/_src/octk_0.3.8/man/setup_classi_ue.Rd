@@ -4,7 +4,7 @@
 \alias{setup_classi_ue}
 \title{Crea nuova base per riclassificazione lato temi/campi UE}
 \usage{
-setup_classi_ue(pseudo, file_name = "classi_ue_NEW.csv")
+setup_classi_ue(pseudo, progetti, file_name = "classi_ue_NEW.csv")
 }
 \arguments{
 \item{pseudo}{Dataset "pseudo".}

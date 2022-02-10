@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.4.1"
+oc_ver <- "0.4.9"
 
 # rm(list=ls())
 library("devtools")
@@ -36,16 +36,19 @@ library("devtools")
 # init
 
 # libs
+# library("tidyverse")
 devtools::load_all(path = ".")
+packageVersion("octk")
 
 # setup
 oc_init(
-  bimestre = "20210228",
+  bimestre = "20211031",
   elab = "SETUP",
   focus = "setup",
   ver = "V.01",
-  data_path = "/home/antonio/dati/oc",
-  db_ver = "20201231.00",
+  # user = "Antonio",
+  data_path = "/media/antonio/Volume/dati/oc",
+  db_ver = "20210930.00",
   use_drive = TRUE,
   # drive_root = "/home/antonio/ExpanDrive/OC/Team Drives"
   drive_root = "/home/antonio/ExpanDrive/OC/Shared Drives"
@@ -75,11 +78,20 @@ oc_init(
 
 # usethis::use_build_ignore(c("test", "bkp", ".git"))
 # usethis::use_vignette("oc")
+# usethis::use_vignette("perimetri")
 # usethis::use_vignette("coesione")
 # usethis::use_vignette("cis")
+# usethis::use_vignette("psc")  
 devtools::document()
 devtools::load_all(path = ".")
+options(rmarkdown.html_vignette.check_title = FALSE)
+# install.packages(c("vroom", "tzdb"))
 devtools::build_vignettes()
+
+# dir.create("manuali")
+# dir("doc", full.names=TRUE)
+# file.copy("doc/oc.html", "manuali", overwrite=TRUE)
+# knitr::knit("doc/oc.html", "manuali/oc.md")
 
 
 # ----------------------------------------------------------------------------------- #
@@ -107,6 +119,8 @@ devtools::build_vignettes()
 
 # build
 devtools::load_all(path = ".")
+packageVersion("octk")
+
 # devtools::check(path = "/Users/aa/coding/oc")
 devtools::build(pkg = ".", path = "/home/antonio/coding/octk/bkp")
 # MEMO: build to boundle "oc_X.X.X.tar.gz"
@@ -134,23 +148,23 @@ install.packages(temp, repos = NULL, type="source")
 
 # local
 system(
-  paste0("cp README.md bkp/_src/_PIPPO/;",
-         "cp DESCRIPTION bkp/_src/_PIPPO/;",
-         "cp NAMESPACE bkp/_src/_PIPPO/;",
-         "cp -r setup bkp/_src/_PIPPO/;",
-         "cp -r R bkp/_src/_PIPPO/;",
-         "cp -r data bkp/_src/_PIPPO/;",
-         "cp -r vignettes bkp/_src/_PIPPO/;",
-         "cp -r man bkp/_src/_PIPPO/;",
-         "cp -r inst bkp/_src/_PIPPO/"
+  paste0("cp README.md bkp/_src/_NIGHTLY/;",
+         "cp DESCRIPTION bkp/_src/_NIGHTLY/;",
+         "cp NAMESPACE bkp/_src/_NIGHTLY/;",
+         "cp -r setup bkp/_src/_NIGHTLY/;",
+         "cp -r R bkp/_src/_NIGHTLY/;",
+         "cp -r data bkp/_src/_NIGHTLY/;",
+         "cp -r vignettes bkp/_src/_NIGHTLY/;",
+         "cp -r man bkp/_src/_NIGHTLY/;",
+         "cp -r inst bkp/_src/_NIGHTLY/"
   )
 )
 
 # drive
 system(
-  paste0("DEV_BKP='/home/antonio/coding/octk/bkp/_src/_PIPPO/';",
-         # "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/_src/_PIPPO/';",
-         "GOOGLE='/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/_src/_PIPPO/';",
+  paste0("DEV_BKP='/home/antonio/coding/octk/bkp/_src/_NIGHTLY/';",
+         # "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/_src/_NIGHTLY/';",
+         "GOOGLE='/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/_src/_NIGHTLY/';",
          'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"'
   )
 )
@@ -161,7 +175,7 @@ system(
 
 system(
   paste0('VERS="octk_', oc_ver, '";',
-         "mkdir bkp/_src/$VERS;",
+         # "mkdir bkp/_src/$VERS;", # MEMO: qesto va commentato quando si esegue di nuovo
          "cp README.md bkp/_src/$VERS/;",
          "cp DESCRIPTION bkp/_src/$VERS/;",
          "cp NAMESPACE bkp/_src/$VERS/;",
@@ -214,6 +228,10 @@ system(
   paste0("git tag v", oc_ver)
   # paste0("git tag v", oc_ver, "-REV.01")
   )
+
+library(gitcreds)
+# gitcreds_set()
+gitcreds_get()
 
 # HAND: push
 

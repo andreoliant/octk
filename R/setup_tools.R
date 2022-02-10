@@ -20,10 +20,11 @@
 #'
 #' @param bimestre Bimestre di riferimento.
 #' @return Il dataset viene salvato in DATA e può essere caricato con load_progetti(light = TRUE).
-setup_light <- function(bimestre, fix = FALSE) {
+setup_light <- function(bimestre, fix = FALSE, ...) {
   if (exists("DATA", envir = .GlobalEnv)) {
     # loads
-    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
+    # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
+    progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE, light = FALSE) # MEMO: versione con SNAI-FEASR
 
     # clean
     progetti_light <- progetti %>%
@@ -236,14 +237,16 @@ setup_light <- function(bimestre, fix = FALSE) {
              # OC_FOCUS
              OC_FLAG_BENICONF = OC_FLAG_TAG_BENICONF,
              OC_FLAG_COVID = COVID,
-             OC_MACROAREA
-             
+             OC_MACROAREA,
+             SNAI # ,
+             # COD_AREA_INT, # MEMO: queste entrano dopo
+             # AREA_INTERNA
       )
 
     # add QSN
     operazioni_713_raw <- read_sas(file.path(DATA, "oper_fltok_preesteso.sas7bdat"))
     
-    appo <- operazioni_713_raw %>%
+     appo <- operazioni_713_raw %>%
       distinct(COD_LOCALE_PROGETTO = cod_locale_progetto,
              QSN_CODICE_OBIETTIVO_SPECIFICO = qsn_codice_obiettivo_specifico,
              QSN_DESCR_OBIETTIVO_SPECIFICO = qsn_descr_obiettivo_specifico)
@@ -254,7 +257,7 @@ setup_light <- function(bimestre, fix = FALSE) {
     
     # clean & fix
     if (fix == TRUE) {
-      progetti_light <- fix_progetti(progetti_light)
+      progetti_light <- fix_progetti(progetti_light, ...)
     }
     progetti_light <- get_x_vars(progetti_light)
     # progetti_light <- get_macroarea(progetti_light, progetti_light, real_reg=TRUE)
@@ -267,6 +270,10 @@ setup_light <- function(bimestre, fix = FALSE) {
       summarise(N = n(),
                 CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE))
     # MEMO: confronta con recap_preesteso.xlsx
+    
+    # ripristina solo visualizzati (inclusa SNAI su FEASR)
+    progetti_light <- progetti_light %>%
+      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9)
 
     # export
     write.csv2(progetti_light, file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), row.names = FALSE)
@@ -538,7 +545,7 @@ make_comuni <- function(file_name="matrix_comuni.csv") {
 #'
 #' @param progetti Dataset in formato standard.
 #' @return Il dataset progetti integrato.
-fix_progetti <- function(progetti) {
+fix_progetti <- function(progetti, path_snai=NULL) {
   
   # fix temporaneo per matera
   # progetti <- progetti %>%
@@ -609,5 +616,35 @@ fix_progetti <- function(progetti) {
   #   mutate(FONDO_COMUNITARIO = case_when(OC_CODICE_PROGRAMMA == "2014IT16M2OP002:::2016PATTIPUG" & is.na(FONDO_COMUNITARIO) ~ "FESR",
   #                                        TRUE ~ FONDO_COMUNITARIO))
   
+  # fix snai
+  if (!(is.null(path_snai))) {
+    progetti <- fix_snai(progetti, path_snai)
+  }
+  
   return(progetti)
 }
+
+
+
+#' Fix variabili SNAI
+#'
+#' Fix temporaneo per integrare le variabili SNAI (COD_AREA_INT e AREA_INTERNA) dal file di Andrea
+#'
+#' @param progetti Dataset in formato standard.
+#' @return Il dataset progetti integrato.
+fix_snai <- function(progetti, path_snai) {
+  
+  # path_snai <- "ELAB/20211031/SNAI/snai/V.01/output/perimetro_snai.xlsx"
+  snai <- read_xlsx(file.path(DRIVE, path_snai)) %>% 
+    select(COD_LOCALE_PROGETTO, SNAI_OC, COD_AREA_INT, AREA_INTERNA) %>% 
+    filter(SNAI_OC == 1) %>% 
+    select(-SNAI_OC)
+  
+  # fix temporaneo per IOG>YEI
+  progetti <- progetti %>%
+    left_join(snai, by = "COD_LOCALE_PROGETTO")
+  
+  return(progetti)
+}
+
+

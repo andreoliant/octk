@@ -4,12 +4,14 @@
 \alias{add_to_pseudo}
 \title{Addendum Turismo}
 \usage{
-add_to_pseudo(pseudo, addendum, export = TRUE)
+add_to_pseudo(pseudo, addendum, add_name = "QUERY_ADD", export = TRUE)
 }
 \arguments{
 \item{pseudo}{Dataset in formato "pseudo"}
 
 \item{addendum}{Dataset in memory oppure nome del file da caricare in INPUT, con elenco di COD_LOCALE_PROGETTO}
+
+\item{add_name}{Nome variabile di tipo QUERY_XXX}
 
 \item{export}{Logic. Vuoi salvare pseudo.csv?}
 }

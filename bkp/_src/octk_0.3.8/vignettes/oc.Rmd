@@ -16,233 +16,167 @@ knitr::opts_chunk$set(
 )
 ```
 
-Il toolkit contiene funzioni e processi per l'analisi dei dati pubblicati nella sezione open data del portale OpenCoesione.
+Il toolkit contiene funzioni per svolgere task di analisi e preparazione di reportistica tipiche del Team di OpenCoesione. 
 
-Il workflow di base comprende i seguenti blocchi logici:
+Potenzialmente lo strumento potrebbe essere utilizzato per l'analisi dei dati aperti pubblicati nel portale OpenCoesione, tuttavia per il momento funziona solo con dataset speciali riservati al team e disponbili in Drive.
 
-- Importazione
-- Perimetrazione (`query.R` per l'estrazione multi-criteri e `perimetro.R` per la verifica e consolidamento)
-- Classificazione (`classi.R` per ...)
-- Esportazione (`export.R` per i dati per progetto e `report.R` per quelli aggregati)
+Le funzioni assumono l'utilizzo delle denominazioni delle variabili in uso nel portale (vedi [metadati](https://opencoesione.gov.it/media/opendata/metadati_progetti_tracciato_esteso.xls)) con l'eccezione di alcune variabili speciali non ancora pubblicate.
 
-E' disponibile l'utility per l'analisi delle variazioni tra bimestri di monitoraggio (`delta.R`).
-
-Le funzioni assumono l'utilizzo delle denominazioni delle variabili in uso nel portale (vedi [metadati](https://opencoesione.gov.it/media/opendata/metadati_progetti_tracciato_esteso.xls))
-
-I dati sono pubblicati [qui](https://opencoesione.gov.it/it/opendata/).
+Il package funziona prioritariamente con la struttura della cartella ELAB di Drive, ma può anche essere configurato diversamente, anche per l'uso interamente locale.
 
 
-## Setup
+## Installazione
+Il package non è pubblicato su CRAN, va installato con una delle seguenti modalità. Dopo l'intallazione è consigliabile verificare la versione installata.
 
-Per l'utilizzo del toolkit è obbligatorio il seguente setup con 3 folder in locale.
+```{r, echo = TRUE, eval = FALSE}
+# installazione da archivio disponible in locale
+# download da DRIVE > TOOLS > OCTK > octk_X.X.X.tar.gz
+install.packages("path/to/local/octk_X.X.X.tar.gz", repos = NULL, type="source")
+library("octk")
+
+# installazione direttamente da GitHub
+# install.packages("devtools")
+devtools::install_github("andreoliant/oc")
+library("octk")
+
+# caricamento da sorgente
+# install.packages("devtools")
+# download da DRIVE > TOOLS > OCTK > _src > octk_X.X.X 
+devtools::load_all(path = "path/to/local/octk")
+# non è necessario invocare library("octk")
+
+
+# per verificare la versione installata:
+packageVersion("octk") # es. 0.4.2
+
+```
+
+
+
+## Dati di attuazione
+Per non gravare eccessivamente sulla banda in download e ridurre i tempi di caricamento è fortemente consigliato utilizzare una copia dei file dati disponibile in locale.
+In tal caso è necessario copiare i nuovi dati di ogni bimestre in un folder con la seguente struttura:
 
 **Folder per dati OC**
 
-    DATI/
-      oc_20180630/
-        progetti_esteso_20180630.csv
+    PATH_TO_DATI/
+      BIMESTRE/ # es. "20180630"
+        progetti_light_XXXXXXXX.csv
+        operazioni_light_XXXXXXXX.csv
         ...
-    
-**Folder per package OC**
 
-    OC/
-      R/
-      man/
-      dati/
-      ...
-    
-**Folder per workarea**
+I dati di attuazione specifici di un bimestre sono disponbili al percorso DRIVE > DATI > BIMESTRE > DASAS > DATAMART
 
-    WORK/
-      main.R
-      temp/
-      input/
-      output/
+Se si usa *Google Drive per desktop* (ex Google Drive file tream) è possibile rendere disponbile offline la cartella dati in Drive.   
 
-E' disponibile un wizard per il setup della workarea (crea automaticamente i folder input, output e temp) e la connessione ai dati (un prompt chiede di indicare il path e lo aggiunge al global environment).
-Se i paramentri di setup sono definiti nell'ambiente globale prima del caricamento del package vengono automaticamente utilizzati. Altrimenti intervengono le variabili di default del wizard.
-Il toolkit attualmente funziona solo in development mode. Per l'utilizzo è necessario il package R `devtools`.
+
+## Setup con GoogleDrive
+Le elaborazioni del Team sono fatte nel drive condiviso ELAB del pertinente bimestre con la seguente struttura.
+
+**Folder per elaborazione in Drive**
+
+    BIMESTRE/
+      ELAB/
+        elaborazione/ # es. perimetri
+          elaborazione_specifica/ # es. perimetro dissesto
+            V.01/
+              script_principale.R 
+              script_secondario.R
+              ...
+              input/
+              temp/
+              output/
+              
+*ATTENZIONE*: per assicurare una buona tracciabilità, script, dati di input e file con i risultati devono essere riferiti ad una sola versione dell'elaborazione, quindi devo essere salvati dentro una cartella tipo "V.01"
+
+Il setup si fa con l'apposita funzione con la seguente configurazione, che automaticamente definisce nel global environment i principali percorsi (DATA, DB, INPUT, TEMP, OUTPUT, WORK e ROOT) e, se necessario, crea le cartelle "input", "temp" e "output".
+
+Per gli utenti già noti è implicito nel package il riferimento al percorso in cui Drive è disponbile nel file system locale.
+
 
 ```{r, echo = TRUE, eval = FALSE}
-# Parametri di setup
-bimestre <- "20180630"         # Bimestre OC di riferimento
-focus <- "turismo"             # Prefisso per i file da esportare
-workarea <- "/path/to/project" # Path della workarea (es. progetto RStudio)
-data_path <- "/path/to/data"   # Path dei dati 
 
-# Library
+library("octk")
+
+# setup per utenti già noti (con dati in Drive)
+oc_init(
+  bimestre = "20201031",
+  db_ver = "20201231.01",
+  elab = "elaborazione",
+  focus = "elaborazione_specifica",
+  ver = "V.01",
+  use_drive = TRUE,
+  user = "Antonio"
+)
+
+# setup per utenti già noti (con dati in locale)
+oc_init(
+  bimestre = "20201031",
+  db_ver = "20201231.01",
+  elab = "elaborazione",
+  focus = "elaborazione_specifica",
+  ver = "V.01",
+  use_drive = TRUE,
+  user = "Antonio",
+  data_path = "/path/to/dati/oc" # esplicitare percorso locale
+)
+
+
+# setup per altri utenti
+oc_init(
+  bimestre = "20201031",
+  db_ver = "20201231.01",
+  elab = "elaborazione",
+  focus = "elaborazione_specifica",
+  ver = "V.01",
+  use_drive = TRUE,
+  drive_root = "/path/to/drive/cartelle_condivise"
+)
+
+
+```
+
+
+## Setup locale
+E' possibile usare il package esclusivamente in locale (DA TESTARE)
+
+```{r, echo = TRUE, eval = FALSE}
+
+# setuplocale
+oc_init(
+  bimestre = "20201031",
+  db_path = "/path/to/dbcoe"
+  db_ver = "20201231.01",
+  elab = "elaborazione",
+  focus = "elaborazione_specifica",
+  ver = "V.01",
+  data_path = "/path/to/dati/oc",
+  use_drive = TRUE,
+  drive_root = "/path/to/drive/cartelle_condivise"
+)
+```
+
+
+## Versioni
+Al momento è programmato un rilascio del package in corrispondenza di goni rilascio dei dati di attuazione, con numerazione sequenziale.
+In caso di necessità sono effettuati rilasci intermedi per la correzione di bug o implementazione di evolutive.
+Ogni rilascio è accompagnato da una mail esplicativa al Team.
+
+
+## Debug
+Per effettuare test durante le operazioni di debug è disponbile una apposita versione del sorgente in Drive
+```{r, echo = TRUE, eval = FALSE}
+
+# caricamento da sorgente NIGHTLY
 # install.packages("devtools")
-devtools::load_all(path = "/path/to/oc")
+# ROOT <- path/to/drive
+path_to_nightly <- file.path(ROOT, "TOOLS", "OCTK", "_src", "_NIGHTLY")
+devtools::load_all(path = path_to_nightly)
+# non è necessario invocare library("octk")
+
 ```
 
-Per ottimizzare l'uso è bene definire anche i seguenti parametri che interessano esportazione e reportistica.
-
-```{r, echo = TRUE, eval = FALSE}
-# Elenco delle variabili di OC (sono riportate nel file dati esteso)
-var_ls <- c("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO",
-            "OC_COD_CICLO", "OC_COD_FONTE", "FONDO_COMUNITARIO",
-            "CUP_COD_SETTORE",  "CUP_DESCR_SETTORE",  
-            "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE", 
-            "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA",
-            "OC_DESCRIZIONE_PROGRAMMA", "OC_CODICE_PROGRAMMA",
-            "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", 
-            "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA",
-            "OC_FINANZ_TOT_PUB_NETTO", "IMPEGNI", "TOT_PAGAMENTI")
-
-# Livelli di riferimento per la variabile CLASSE
-livelli_classe <- c("Natura", "Cultura", "Turismo")
-```
-
-
-## Importazione
-Il workflow parte con l'importazione di `progetti_esteso.csv`. Il file va scaricato manualmente dal portale OpenCoesione e collocato nel folder DATI.
-
-```{r, echo = TRUE, eval = FALSE}
-progetti <- load_progetti(bimestre = "20180630", visualizzati = TRUE, debug = TRUE)
-```
-
-Con il caricamento del package inoltre sono disponibili gli asset preparati dal Team di OpenCoesione:
-
-* `matrix` per facilitare il match tra i dati 
-* supporti per le `query` sulle variabili
-* altri asset (es. riclassificazione)
-
-In /data-raw ci sono gli asset originali (.csv) e lo script di conversione, mentre in /data ci sono le versioni in uso (.rda). Possono essere esportati per condivisione in `oc_asset.xlsx`.
-
-
-## Perimetro
-L'identificazione del perimetro di progetti è effettuata con le funzioni di ricerca del blocco `query_[CRITERIO]`. E' possibile/raccomandato effettuare la ricerca secondo diversi criteri.
-
-L'esecuzione di tali funzioni richiede l'esistenza corrispondenti file csv di input adeguatamente nominati e compilati.
-I template sono disponibili all'interno degli `oc_asset` e vanno esportati con la stessa denominazione nella cartella INPUT.
-
-```{r, echo = TRUE, eval = FALSE}
-write.csv2(categorie_cup, file.path(INPUT, "categorie_cup.csv"), row.names = FALSE)
-write.csv2(categorie_ue, file.path(INPUT, "categorie_ue.csv"), row.names = FALSE)
-write.csv2(po_linee_azioni, file.path(INPUT, "po_linee_azioni.csv"), row.names = FALSE)
-```
-<!-- serve wizard anche qui -->
-
-La variabile QUERY del template va compilata con i seguenti valori:
-
-* `0` per gli item non pertinenti
-* `1` per gli item sicuramente pertinenti
-* `2` per gli item da valutare a valle in base all'effettivo contenuto dei record
-
-Ogni funzione applica il criterio di ricerca al dataset progetti e restuisce l'elenco dei CLP e la variabile QUERY.
-
-```{r, echo = TRUE, eval = FALSE}
-peri_cup <- query_cup(progetti)
-peri_po <- query_po(progetti)
-peri_ue <- query_ue(progetti)
-```
-
-<!-- qui manca funzione che crea TIPO_QUERY (ora è presente solo in make_pseudo) --> 
-Il file `pseudo.csv` è obbligatorio perché costituisce l'ossatura dell'intero workflow e non solo della sezione relativa alla ricerca. Va creato mediante full_join dei risultati di ricerca e salvato in TEMP. Il file contiene almeno l'elenco dei CLP e i valori di QUERY in corrispondenza di ciascun criterio di ricerca.
-
-E' anche disponibile un wrapper per aggregare i diversi processi di ricerca. Per ogni funzione di ricerca richiesta il wrapper integra il file `pseudo.csv`.
-
-```{r, echo = TRUE, eval = FALSE}
-# creazione manuale di pseudo:
-pseudo <- peri_cup %>%
-    full_join(peri_po) %>%
-    full_join(peri_ue)
-write.csv2(pseudo, file.path(TEMP, "pseudo.csv"), row.names = FALSE)
-
-# creazione di pseudo con il wrapper standard:
-pseudo <- make_pseudo_std(progetti, export=TRUE)
-# MEMO: usa le 3 query
-
-# creazione di pseudo con il wrapper editabile:
-pseudo <- make_pseudo_edit(progetti, query_ls=c("query_cup", "query_po"), export=TRUE)
-# MEMO: seleziona le query desiderate
-
-# ricarica pseudo (ad es. in una nuova sessione)
-pseudo <- read_csv2(file.path(TEMP, "pseudo.csv"))
-```
-
-E' possibile anche integrare pseudo con righe provenienti da funzioni specifiche create per analisi ricorrenti.
-
-```{r, echo = TRUE, eval = FALSE}
-# Integrazione progetti turismo da precedente metodologia
-pseudo <- add_old_turismo(pseudo, export=TRUE)
-```
-
-Il processo di ricerca è finalizzato con lo scarto dei progetti individuati esclusivamente tramite un criterio dubbio e l'applicazione di rettifiche individuali per:
-
-* salvare il progetto che sarebbe stato eliminato dal perimeto (se inserito in `safelist.csv`)
-* eliminare un progetto che sarebbe rimasto nel perimeto (se inserito in `stoplist.csv`)
-
-I template sono disponibili all'interno degli `oc_asset` e vanno esportati con la stessa denominazione nella cartella INPUT. Le righe di esempio descrivono le regole di compilazione.
-
-```{r, echo = TRUE, eval = FALSE}
-write.csv2(stoplist, file.path(INPUT, "stoplist.csv"), row.names = FALSE)
-write.csv2(safelist, file.path(INPUT, "safelist.csv"), row.names = FALSE)
-```
-<!-- serve wizard anche qui -->
-
-Una volta popolate stoplist e safelist si integra pseudo con la definizione del perimetro. 
-
-```{r, echo = TRUE, eval = FALSE}
-pseudo <- make_perimetro(pseudo, export=TRUE, debug=TRUE)
-# DEV: qui va fatto anche blocco per query editabili
-```
-
-**Controllo dei risultati**
-
-L'esito del processo è visionabile nel file `scarti_perim.csv` e mediante gli strumenti dedicati disponibli in `analisi.R` per l'esecuzione line-by-line. 
-<!-- questi forse non ci sono più... --> 
-A valle dei controlli è possibile ritornare indietro nel workflow per:
-
-* ridefinire i criteri nel blocco query (ad es. con il passaggio da "2" a "0" di voci rivelatesi sistematicamente erronee)
-* integrare gli elenchi in `safelist.csv` e `stoplist.csv`
-
-Altrimenti si può procedere alla classificazione (se prevista) oppure all'esportazione.
-
-
-## Classificazione
-
-E' disponibile in beta il processo di classificazione in ambiti di secondo livello rispetto al focus del perimetro.
-Anche questa funzione si appoggia sulla struttura di `pseudo.csv` e puo essere utilizzata interattivamete per correzioni puntuali mediante `fixlist.csv`.
-
-```{r, echo = TRUE, eval = FALSE}
-pseudo <- make_classi(pseudo,
-                      classe_jolly="Turismo",
-                      livelli_classe = c("Natura", "Cultura", "Turismo"),
-                      export=TRUE, debug=FALSE)
-```
-
-
-## Esportazione
-
-Il processo di esportazione salva il dataset con il perimetro individuato.
-
-```{r, echo = TRUE, eval = FALSE}
-perimetro <- export_data(pseudo, focus, bimestre, var_ls, var_add=NULL, chk_today="20180731")
-```
-
-Inoltre è possibile esportate la reportistica sintetica.
-
-```{r, echo = TRUE, eval = FALSE}
-export_report(perimetro, use_template=TRUE)
-```
-
-
-## Analisi variazioni
-
-Il processo può essere replicato per ogni bimestre di monitoraggio. Per ridurre l'effort dedicato ad analisi manuali è possibile utilizzare l'utility dedicat all'analisi delle variazioni tra bimestri di monitoraggio, che isola solo il nuovo delta di progetti non censiti né scartati nel precedente esercizio.
-
-
-```{r, echo = TRUE, eval = FALSE}
-delta <- make_delta(perimetro, path_to_old = OLD, debug=TRUE)
-# chk_match(perimetro, delta, id="COD_LOCALE_PROGETTO")
-# chk_match(perimetro, perim_old, id="COD_LOCALE_PROGETTO")
-chk_delta(perimetro, path_to_old = OLD, debug=TRUE)
-make_delta_scarti(pseudo, perimetro, path_to_old = OLD, debug=TRUE, var_ls, min_cp=2000000)
-```
-
-
-
+A breve useremo github per gestire issues e nuovi sviluppi.
 
 
 

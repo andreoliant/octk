@@ -27,20 +27,35 @@
 # - invia mail al team
 
 
+# ----------------------------------------------------------------------------------- #
+# test su fix_snai 
+
+progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE, light = FALSE)
+progetti_2 <- fix_progetti(progetti, path_snai <- "ELAB/20211031/SNAI/snai/V.01/output/perimetro_snai.xlsx")
+progetti %>%
+  count(X_AMBITO)
+
+progetti_2 %>% 
+  filter(!is.na(SNAI))
+
+progetti_2 %>% 
+  filter(!is.na(COD_AREA_INT))
+
+rm(progetti, progetti_2)
+
 
 # ----------------------------------------------------------------------------------- #
 # prep di dataset in octk
-
 
 progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
 progetti <- fix_progetti(progetti)
 
 # po_linee_azioni.csv
 make_matrix_po(bimestre)
-chk <- chk_delta_po("NEW")
-chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
-chk <- chk_delta_po("OLD")
-# HAND: rinominare "po_linee_azioni_NEW.csv" in "po_linee_azioni.csv
+# chk <- chk_delta_po("NEW")
+# chk <- chk_delta_po("OLD")
+# chk %>% count(OC_DESCRIZIONE_PROGRAMMA)
+# OLD: HAND: rinominare "po_linee_azioni_NEW.csv" in "po_linee_azioni.csv >>> non serve più
 
 # TODO: voglio sapere cosa manca in po_linee_azioni rispetto al DB programmazione
 
@@ -56,13 +71,25 @@ make_prog_comp(bimestre)
 # patt.csv
 make_patt(bimestre)
 
+# comuni
+make_comuni()
 
-# TODO: estendere lista RA
+# ra
+progetti %>%
+  count(COD_RISULTATO_ATTESO, DESCR_RISULTATO_ATTESO) %>%
+  filter(!(grepl(":::", COD_RISULTATO_ATTESO))) %>%
+  rename(COD_RIS_ATTESO = COD_RISULTATO_ATTESO) %>% 
+  full_join(octk::ra, by = "COD_RIS_ATTESO") %>% 
+  filter(is.na(QUERY)) %>% 
+  write_csv2(file.path(TEMP, "ra.csv"))
+# HAND: estendere lista RA
 
-# progetti %>%
-#   count(COD_RISULTATO_ATTESO, DESCR_RISULTATO_ATTESO) %>%
-#   filter(!(grepl(":::", COD_RISULTATO_ATTESO))) %>%
-#   write_csv2(file.path(TEMP, "ra.csv"))
+# COD_RIS_ATTESO DESCR_RISULTATO_ATTESO                                                               n OC_COD_CICLO DESCR_RIS_ATTESO QUERY NOTE 
+# <chr>          <chr>                                                                            <int>        <dbl> <chr>            <dbl> <lgl>
+# 1 R 3.2.A        Maggiore diffusione di nuove pratiche, non convenzionali, di gestione delle ri… 1   e0           NA NA                  NA NA   
+# 2 R 3.2.B        Nuovi metodi di gestione dei rifiuti, di riduzione dell'intensitÃ  energetica … 1   e0           NA NA                  NA NA   
+# 3 R2.3           Maggiore mobilitÃ  di studenti, ricercatori e insegnanti nell'area del program… 3   e0           NA NA                  NA NA   
+# 4 NA             NA                                                                              1.18e6           NA NA                  NA NA  
 
 
 # ----------------------------------------------------------------------------------- #
@@ -71,7 +98,6 @@ make_patt(bimestre)
 # load in package as .rda
 source(file.path(getwd(), "setup", "setup_data.R"))
 devtools::load_all(path = ".")
-
 
 
 # ----------------------------------------------------------------------------------- #
@@ -100,7 +126,8 @@ devtools::load_all(path = ".")
 # https://readr.tidyverse.org/articles/readr.html#column-specification
 
 # progetti light
-setup_light(bimestre, fix = TRUE)
+# setup_light(bimestre, fix = TRUE)
+setup_light(bimestre, fix = TRUE, path_snai = "ELAB/20211031/SNAI/snai/V.01/output/perimetro_snai.xlsx") # MEMO: fix per snai
 # setup_light(bimestre, fix = FALSE)
 
 # operazioni light
@@ -114,6 +141,7 @@ rm(progetti)
 progetti <- read_csv2(file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), guess_max = 1000000)
 progetti %>% count(x_CICLO, x_AMBITO)
 sum(progetti$OC_FINANZ_TOT_PUB_NETTO, na.rm=TRUE)
+progetti %>% count(x_MACROAREA, OC_MACROAREA)
 
 operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
 operazioni %>% count(x_CICLO, x_AMBITO)
@@ -133,16 +161,17 @@ chk %>%
   count(OC_CODICE_PROGRAMMA, x_AMBITO.x, x_AMBITO.y)
   # OC_CODICE_PROGRAMMA x_AMBITO.x x_AMBITO.y     n
 # <chr>               <fct>      <chr>      <int>
-# 1 2007IT001FA005      FSC        POC            6
+# 1 2007IT001FA005      FSC        POC            6 -> 4
 # 2 2007IT005FAMG1      FSC        POC            4
 # MEMO: se sono solo questi sopra è ok per si tratta di sdoppiamenti forzati per direttrici ferroviarie e giustizia civile
+# 3 2014TC16M5CB013     CTE        ENI           20
+# 4 2020PCDPCINA001     FSC        SNAI        4116 -> 5173
+# MEMO: nuovi programmi fuori da perimetro COE >>> ora non ci sono più!
 
 write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
 
 # MEMO:
 # una parte del problema è direttrici ferroviarie e giustizia civile
-# poi però ci sono altre anomalie che non comprendo
-# però quelli del fix sul CCI sembrano corretti
 
 # patch operazioni in "2014IT16M2OP002:::2016PATTIPUG" senza FONDO_COMUNITARIO
 # chk <- operazioni %>%
@@ -161,4 +190,6 @@ write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
 chk <- progetti %>%
   count(x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, OC_CODICE_PROGRAMMA)
 
+progetti %>% 
+  count(x_MACROAREA, OC_MACROAREA)
 
