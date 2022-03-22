@@ -499,17 +499,58 @@ make_patt <- function(bimestre, file_name="patt.csv") {
     progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
   }
 
-  out <- progetti %>%
+  appo <- progetti %>%
     distinct(COD_PROCED_ATTIVAZIONE, DESCR_PROCED_ATTIVAZIONE, COD_TIPO_PROCED_ATTIVAZIONE, DESCR_TIPO_PROCED_ATTIVAZIONE,
              OC_CODICE_PROGRAMMA) %>%
     left_join(octk::po_riclass %>%
                 distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_PROGRAMMA),
               by = "OC_CODICE_PROGRAMMA") %>%
     mutate(QUERY = 0,
-           NOTE = NA) %>% 
-    # elimina caratteri spuri che creano problemi quando si salva in excel
-    mutate(DESCR_PROCED_ATTIVAZIONE = str_remove(DESCR_PROCED_ATTIVAZIONE, "\\u001a"))
+           NOTE = NA) 
+  
+  # lista caratteri anomali
+  unicode_list <- c("\\u0000","\\u0001","\\u0002","\\u0003","\\u0004","\\u0005","\\u0006","\\u0007", 
+                    "\\u0008","\\u0009","\\u000A","\\u000B","\\u000C","\\u000D","\\u000E","\\u000F", 
+                    "\\u0010","\\u0011","\\u0012","\\u0013","\\u0014","\\u0015","\\u0016","\\u0017", 
+                    "\\u0018","\\u0019","\\u001A","\\u001B","\\u001C","\\u001D","\\u001E","\\u001F", 
+                    "\\u007F","\\u0080","\\u0081","\\u0082","\\u0083","\\u0084","\\u0085","\\u0086", 
+                    "\\u0087","\\u0088","\\u0089","\\u008A","\\u008B","\\u008C","\\u008D","\\u008E", 
+                    "\\u008F","\\u0090","\\u0091","\\u0092","\\u0093","\\u0094","\\u0095","\\u0096", 
+                    "\\u0097","\\u0098","\\u0099","\\u009A","\\u009B","\\u009C","\\u009D","\\u009E", 
+                    "\\u009F")
+  # https://en.wikipedia.org/wiki/List_of_Unicode_characters
+  
+  # clean unicode
+  out <- appo
+  for (i in seq_along(unicode_list)) {
+      x <- unicode_list[i] 
+      
+      out <- out %>% 
+        mutate(DESCR_PROCED_ATTIVAZIONE = str_remove(DESCR_PROCED_ATTIVAZIONE, x))
+  }
+  
+  # CHK
+  for (i in seq_along(unicode_list)) {
+    x <- unicode_list[i] 
+    # x <- "\\u0080"
+    
+    chk <- appo %>% 
+      mutate(CHK = str_detect(DESCR_PROCED_ATTIVAZIONE, x)) %>%
+      filter(CHK)
+    
+    print(paste0(x, ": ", nrow(chk)))
+    
+    # DEBUG:
+    # cat(chk$DESCR_PROCED_ATTIVAZIONE)
+    
+    # DEBUG:
+    # fileConn <- file(file.path(TEMP, "chk.txt"))
+    # writeLines(chk$DESCR_PROCED_ATTIVAZIONE, con = fileConn, sep = "\n\r")
+    # close(fileConn)
+    
+  }
 
+  # export
   write_delim(out, file.path(getwd(), "setup", "data-raw", file_name), delim = ";", na = "")
 }
 
