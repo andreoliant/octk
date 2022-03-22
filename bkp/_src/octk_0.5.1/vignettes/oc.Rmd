@@ -1,0 +1,185 @@
+---
+title: "OpenCoesione Toolkit"
+author: "Antonio Andreoli"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Il toolkit contiene funzioni per svolgere task di analisi e preparazione di reportistica tipiche del Team di OpenCoesione. 
+
+Potenzialmente lo strumento potrebbe essere utilizzato per l'analisi dei dati aperti pubblicati nel portale OpenCoesione, tuttavia per il momento funziona solo con dataset speciali riservati al team e disponbili in Drive.
+
+Le funzioni assumono l'utilizzo delle denominazioni delle variabili in uso nel portale (vedi [metadati](https://opencoesione.gov.it/media/opendata/metadati_progetti_tracciato_esteso.xls)) con l'eccezione di alcune variabili speciali non ancora pubblicate.
+
+Il package funziona prioritariamente con la struttura della cartella ELAB di Drive, ma può anche essere configurato diversamente, anche per l'uso interamente locale.
+
+
+## Installazione
+Il package non è pubblicato su CRAN, va installato con una delle seguenti modalità. Dopo l'intallazione è consigliabile verificare la versione installata.
+
+```{r, echo = TRUE, eval = FALSE}
+# installazione da archivio disponible in locale
+# download da DRIVE > TOOLS > OCTK > octk_X.X.X.tar.gz
+install.packages("path/to/local/octk_X.X.X.tar.gz", repos = NULL, type="source")
+library("octk")
+
+# installazione direttamente da GitHub
+# install.packages("devtools")
+devtools::install_github("andreoliant/oc")
+library("octk")
+
+# caricamento da sorgente
+# install.packages("devtools")
+# download da DRIVE > TOOLS > OCTK > _src > octk_X.X.X 
+devtools::load_all(path = "path/to/local/octk")
+# non è necessario invocare library("octk")
+
+
+# per verificare la versione installata:
+packageVersion("octk") # es. 0.4.2
+
+```
+
+
+
+## Dati di attuazione
+Per non gravare eccessivamente sulla banda in download e ridurre i tempi di caricamento è fortemente consigliato utilizzare una copia dei file dati disponibile in locale.
+In tal caso è necessario copiare i nuovi dati di ogni bimestre in un folder con la seguente struttura:
+
+**Folder per dati OC**
+
+    PATH_TO_DATI/
+      BIMESTRE/ # es. "20180630"
+        progetti_light_XXXXXXXX.csv
+        operazioni_light_XXXXXXXX.csv
+        ...
+
+I dati di attuazione specifici di un bimestre sono disponbili al percorso DRIVE > DATI > BIMESTRE > DASAS > DATAMART
+
+Se si usa *Google Drive per desktop* (ex Google Drive file tream) è possibile rendere disponbile offline la cartella dati in Drive.   
+
+
+## Setup con GoogleDrive
+Le elaborazioni del Team sono fatte nel drive condiviso ELAB del pertinente bimestre con la seguente struttura.
+
+**Folder per elaborazione in Drive**
+
+    BIMESTRE/
+      ELAB/
+        elaborazione/ # es. perimetri
+          elaborazione_specifica/ # es. perimetro dissesto
+            V.01/
+              script_principale.R 
+              script_secondario.R
+              ...
+              input/
+              temp/
+              output/
+              
+*ATTENZIONE*: per assicurare una buona tracciabilità, script, dati di input e file con i risultati devono essere riferiti ad una sola versione dell'elaborazione, quindi devo essere salvati dentro una cartella tipo "V.01"
+
+Il setup si fa con l'apposita funzione con la seguente configurazione, che automaticamente definisce nel global environment i principali percorsi (DATA, DB, INPUT, TEMP, OUTPUT, WORK e ROOT) e, se necessario, crea le cartelle "input", "temp" e "output".
+
+Per gli utenti già noti è implicito nel package il riferimento al percorso in cui Drive è disponbile nel file system locale.
+
+
+```{r, echo = TRUE, eval = FALSE}
+
+library("octk")
+
+# setup per utenti già noti (con dati in Drive)
+oc_init(
+  bimestre = "20201031",
+  db_ver = "20201231.01",
+  elab = "elaborazione",
+  focus = "elaborazione_specifica",
+  ver = "V.01",
+  use_drive = TRUE,
+  user = "Antonio"
+)
+
+# setup per utenti già noti (con dati in locale)
+oc_init(
+  bimestre = "20201031",
+  db_ver = "20201231.01",
+  elab = "elaborazione",
+  focus = "elaborazione_specifica",
+  ver = "V.01",
+  use_drive = TRUE,
+  user = "Antonio",
+  data_path = "/path/to/dati/oc" # esplicitare percorso locale
+)
+
+
+# setup per altri utenti
+oc_init(
+  bimestre = "20201031",
+  db_ver = "20201231.01",
+  elab = "elaborazione",
+  focus = "elaborazione_specifica",
+  ver = "V.01",
+  use_drive = TRUE,
+  drive_root = "/path/to/drive/cartelle_condivise"
+)
+
+
+```
+
+
+## Setup locale
+E' possibile usare il package esclusivamente in locale (DA TESTARE)
+
+```{r, echo = TRUE, eval = FALSE}
+
+# setuplocale
+oc_init(
+  bimestre = "20201031",
+  db_path = "/path/to/dbcoe"
+  db_ver = "20201231.01",
+  elab = "elaborazione",
+  focus = "elaborazione_specifica",
+  ver = "V.01",
+  data_path = "/path/to/dati/oc",
+  use_drive = TRUE,
+  drive_root = "/path/to/drive/cartelle_condivise"
+)
+```
+
+
+## Versioni
+Al momento è programmato un rilascio del package in corrispondenza di goni rilascio dei dati di attuazione, con numerazione sequenziale.
+In caso di necessità sono effettuati rilasci intermedi per la correzione di bug o implementazione di evolutive.
+Ogni rilascio è accompagnato da una mail esplicativa al Team.
+
+
+## Debug
+Per effettuare test durante le operazioni di debug è disponbile una apposita versione del sorgente in Drive
+```{r, echo = TRUE, eval = FALSE}
+
+# caricamento da sorgente NIGHTLY
+# install.packages("devtools")
+# ROOT <- path/to/drive
+path_to_nightly <- file.path(ROOT, "TOOLS", "OCTK", "_src", "_NIGHTLY")
+devtools::load_all(path = path_to_nightly)
+# non è necessario invocare library("octk")
+
+```
+
+A breve useremo github per gestire issues e nuovi sviluppi.
+
+
+
+
+
+
