@@ -6,6 +6,7 @@
 \usage{
 make_report_programmi_macroaree_coesione(
   perimetro,
+  perimetro_sie = NULL,
   usa_meuro = FALSE,
   use_713 = FALSE,
   use_flt = FALSE,
@@ -16,12 +17,15 @@ make_report_programmi_macroaree_coesione(
   tipo_ciclo = "CICLO_STRATEGIA",
   focus = "report",
   export = FALSE,
+  export_xls = FALSE,
   progetti = NULL,
   po_riclass = NULL
 )
 }
 \arguments{
-\item{perimetro}{Dataset di classe perimetro.}
+\item{perimetro}{Dataset di classe operazioni}
+
+\item{perimetro_sie}{Dataset con valori per macroaree dai livelli gerarchici}
 
 \item{usa_meuro}{Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo}
 
@@ -42,6 +46,8 @@ make_report_programmi_macroaree_coesione(
 \item{focus}{nome per file.}
 
 \item{export}{vuoi salvare il file?}
+
+\item{export_xls}{Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?}
 
 \item{progetti}{dataset di tipo "progetti" da utilizzare per con add_totali == TRUE}
 

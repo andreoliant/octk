@@ -8,6 +8,7 @@ make_report_programmi_coesione(
   perimetro,
   usa_meuro = FALSE,
   use_713 = FALSE,
+  use_eu = FALSE,
   use_flt = FALSE,
   use_po_psc = FALSE,
   add_totali = FALSE,
@@ -16,16 +17,19 @@ make_report_programmi_coesione(
   tipo_ciclo = "CICLO_STRATEGIA",
   focus = "report",
   export = FALSE,
+  export_xls = FALSE,
   progetti = NULL,
   po_riclass = NULL
 )
 }
 \arguments{
-\item{perimetro}{Dataset di classe perimetro.}
+\item{perimetro}{Dataset di classe operazioni}
 
 \item{usa_meuro}{Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo}
 
 \item{use_713}{Vuoi caricare anche i dati di programmaizone per il 2007-2013?}
+
+\item{use_eu}{Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)}
 
 \item{use_flt}{Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?}
 
@@ -42,6 +46,8 @@ make_report_programmi_coesione(
 \item{focus}{nome per file.}
 
 \item{export}{vuoi salvare il file?}
+
+\item{export_xls}{Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?}
 
 \item{progetti}{dataset di tipo "progetti" da utilizzare per con add_totali == TRUE}
 

@@ -12,15 +12,14 @@ prep_dati_psc_bimestre(
   matrix_1420,
   matrix_713,
   matrix_temi_settori,
-  progetti = NULL
+  progetti = NULL,
+  progetti_pub = NULL
 )
 }
 \arguments{
 \item{bimestre}{Bimestre di riferimento}
 
 \item{matrix_po_psc}{Matrice di riconciliazione PO - PSC}
-
-\item{po_naz}{Ricodifica programmi nazionali su base regionale (direttrici ferroviarie e autostrada SA-RC)}
 
 \item{art44}{Dati di base per istruttoria art44 al 20200630}
 
@@ -30,7 +29,9 @@ prep_dati_psc_bimestre(
 
 \item{matrix_temi_settori}{Dominio per aree tematiche e settori di intervento PSC}
 
-\item{progetti}{Dataset progetti da load_progetti(visualizzati = FALSE, light = FALSE). Attennzione: serve light = FALSE perché non contiene finanziamento privato}
+\item{progetti}{Dataset progetti da load_progetti(visualizzati = FALSE, light = FALSE)}
+
+\item{progetti_pub}{Dataset progetti esteso pubblicato}
 }
 \value{
 File "dati_psc_BIMESTRE.csv" in TEMP

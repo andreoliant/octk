@@ -90,6 +90,14 @@ init_psc <- function(PSC=NULL) {
            COE_PAG = OC_PAG_COESIONE, # CHK: verificare associazione
            # COE_ECO = FINANZ_STATO_FSC - OC_FINANZ_STATO_FSC_NETTO,
            COE_ECO = FINANZ_STATO_FSC - OC_FINANZ_COESIONE_NETTO) %>% 
+    # ricodifica po_naz
+    left_join(po_naz %>% 
+                select(COD_LOCALE_PROGETTO, 
+                       OC_CODICE_PROGRAMMA_NEW = OC_CODICE_PROGRAMMA, 
+                       OC_CODICE_PROGRAMMA = OC_CODICE_PROGRAMMA_EVO),
+              by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
+    mutate(OC_CODICE_PROGRAMMA = case_when(is.na(OC_CODICE_PROGRAMMA_NEW) ~ OC_CODICE_PROGRAMMA,
+                                           TRUE ~ OC_CODICE_PROGRAMMA_NEW)) %>% 
     select(COD_LOCALE_PROGETTO, 
            CUP, 
            OC_TITOLO_PROGETTO = TITOLO_PROGETTO,
@@ -119,6 +127,14 @@ init_psc <- function(PSC=NULL) {
                                        "lista_progetti_all.csv"))%>% 
     rename(COD_LOCALE_PROGETTO = CODICE_LOCALE_PROGETTO) %>% 
     mutate(AREA_TEMATICA = gsub(" - ", "-", AREA_TEMATICA)) %>%
+    # ricodifica po_naz
+    left_join(po_naz %>% 
+                select(COD_LOCALE_PROGETTO, 
+                       OC_CODICE_PROGRAMMA_NEW = OC_CODICE_PROGRAMMA, 
+                       OC_CODICE_PROGRAMMA = OC_CODICE_PROGRAMMA_EVO),
+              by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
+    mutate(OC_CODICE_PROGRAMMA = case_when(is.na(OC_CODICE_PROGRAMMA_NEW) ~ OC_CODICE_PROGRAMMA,
+                                           TRUE ~ OC_CODICE_PROGRAMMA_NEW)) %>% 
     rename(x_MACROAREA = MACROAREA,
            SETTORE_INTERVENTO = SETTORE_INTERVENTO_PSC,
            OC_TITOLO_PROGETTO = TITOLO_PROGETTO,
@@ -151,22 +167,32 @@ init_psc <- function(PSC=NULL) {
 #' 
 #' @param bimestre Bimestre di riferimento
 #' @param matrix_po_psc Matrice di riconciliazione PO - PSC
-#' @param po_naz Ricodifica programmi nazionali su base regionale (direttrici ferroviarie e autostrada SA-RC)
 #' @param art44 Dati di base per istruttoria art44 al 20200630
 #' @param matrix_1420 Matrice di riconciliazione tra temi prioritari FSC 2014-2020 e settori di intervento PSC
 #' @param matrix_713 Matrice di riconciliazione tra obiettivi specifici QSN 2007-2013 e settori di intervento PSC
 #' @param matrix_temi_settori Dominio per aree tematiche e settori di intervento PSC
-#' @param progetti Dataset progetti da load_progetti(visualizzati = FALSE, light = FALSE). Attennzione: serve light = FALSE perché non contiene finanziamento privato
+#' @param progetti Dataset progetti da load_progetti(visualizzati = FALSE, light = FALSE)
+#' @param progetti_pub Dataset progetti esteso pubblicato
 #' @return File "dati_psc_BIMESTRE.csv" in TEMP 
 #' @note ...
 prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44, 
-                                   matrix_1420, matrix_713, matrix_temi_settori, progetti=NULL) {
+                                   matrix_1420, matrix_713, matrix_temi_settori, progetti=NULL, progetti_pub=NULL) {
   
   if (is.null(progetti)) {
-    progetti <- load_progetti(bimestre, visualizzati = FALSE, light = FALSE)
-    # MEMO: serve light = FALSE perché non contiene finanziamento privato
+    progetti <- load_progetti(bimestre, visualizzati = FALSE, light = FALSE) %>% 
+      select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_COD_ARTICOLAZ_PROGRAMMA, 
+             COD_STRUMENTO, COD_PROCED_ATTIVAZIONE, OC_DENOM_PROGRAMMATORE, OC_TITOLO_PROGETTO)
+    # MEMO: serve light = FALSE perché light non contiene finanziamento privato (che ora non serve più)
   }
   
+  if (is.null(progetti_pub)) {
+    progetti_pub <- read_csv2(file.path(DATA, paste0("progetti_esteso_", bimestre, ".csv")), guess_max = 1200000) %>% 
+      select(COD_LOCALE_PROGETTO, COSTO_REALIZZATO, 
+             FINANZ_STATO_FSC, OC_FINANZ_STATO_FSC_NETTO,
+             FINANZ_TOTALE_PUBBLICO, FINANZ_PRIVATO, FINANZ_DA_REPERIRE, ECONOMIE_TOTALI,
+             OC_FINANZ_TOT_PUB_NETTO)
+  }
+
   PSC <- file.path(DRIVE, "DATI", "PSC")
   
   print(bimestre)
@@ -232,6 +258,16 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
              OC_CODICE_PROGRAMMA = oc_cod_programma)
   }
   
+  # ----------------------- chk ---------------------- #
+  
+  # operazioni_713 %>% filter(COD_LOCALE_PROGETTO == "1MISE770") %>% select(QSN_CODICE_OBIETTIVO_SPECIFICO) # 6.1.3 mappato male in matrix
+  # appo %>% filter(COD_LOCALE_PROGETTO == "1MISE770") %>% select(COD_SETTORE_INTERVENTO) # NA (fino a 279)
+  # appo %>% filter(COD_LOCALE_PROGETTO == "1MISE770") %>% select(COD_SETTORE_INTERVENTO) # 05.05 (tutto)
+  # art44 %>% filter(COD_LOCALE_PROGETTO == "1MISE770") %>% select(COD_SETTORE_INTERVENTO) # 07.02
+  # art44 %>% filter(COD_LOCALE_PROGETTO == "1MISE770") %>% select(COD_OPOS_NEW) # 07.02
+  # appo %>% filter(COD_LOCALE_PROGETTO == "1MISE770") %>% select(OC_CODICE_PROGRAMMA) # 2007IT001FA005
+  # art44 %>% filter(COD_LOCALE_PROGETTO == "1MISE770") %>% select(OC_CODICE_PROGRAMMA) # CIS_NABA_CAM
+  # art44_liste %>% filter(COD_LOCALE_PROGETTO == "1MISE770") %>% select(OC_CODICE_PROGRAMMA) # CIS_NABA_CAM
   
   
   # ------------------ elaborazione ------------------ #
@@ -247,14 +283,14 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
     # select(-ID_PSC.y, -ID_PSC.x, -PSC.x, -PSC.y) %>% 
     filter(x_AMBITO == "FSC") %>% 
     # ricodifica direttrici ferroviarie e salerno-reggio calabria
-    left_join(po_naz, # %>% 
-              # select(-OC_CODICE_PROGRAMMA),
+    left_join(po_naz %>% 
+              select(-OC_CODICE_PROGRAMMA_EVO),
               by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
     # codice psc
     left_join(matrix_po_psc %>% 
                 distinct(OC_CODICE_PROGRAMMA, ID_PSC), 
               by = "OC_CODICE_PROGRAMMA") %>% 
-    mutate(ID_PSC = if_else(is.na(ID_PSC.y), ID_PSC.x, ID_PSC.y)) %>% 
+    mutate(ID_PSC = if_else(is.na(ID_PSC.y), ID_PSC.x, ID_PSC.y)) %>% # MEMO: x viene da po_naz, y da matrix genrale
     select(-ID_PSC.y, -ID_PSC.x) %>% 
     # label psc
     left_join(matrix_po_psc %>% 
@@ -334,15 +370,36 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
   # calcola costo realizzato e economie
   appo1 <- appo %>% 
     # filter(OC_FLAG_VISUALIZZAZIONE == 0) %>% 
-    left_join(progetti %>% 
-              select(COD_LOCALE_PROGETTO, COSTO_REALIZZATO, FINANZ_STATO_FSC, OC_FINANZ_STATO_FSC_NETTO, OC_FINANZ_TOT_PUB_NETTO, OC_FINANZ_PRIVATO_NETTO),
+    # OLD:
+    # left_join(progetti %>% 
+    #             select(COD_LOCALE_PROGETTO, COSTO_REALIZZATO, FINANZ_STATO_FSC, OC_FINANZ_STATO_FSC_NETTO, OC_FINANZ_TOT_PUB_NETTO, OC_FINANZ_PRIVATO_NETTO),
+    #           by = "COD_LOCALE_PROGETTO") %>% 
+    # mutate_if(is.numeric, replace_na, replace = 0) %>% 
+    # mutate(FINANZ_TOT = OC_FINANZ_TOT_PUB_NETTO + OC_FINANZ_PRIVATO_NETTO,
+    #        # x = OC_FINANZ_STATO_FSC_NETTO/FINANZ_TOT,
+    #        x = COE/FINANZ_TOT, # deve rimanere COE al numeratore perché ci sono progetti fatti da due oeprazione FSC
+    #        COSTO_REALIZZATO_2 = COSTO_REALIZZATO * x,
+    #        COE_ECO = FINANZ_STATO_FSC - OC_FINANZ_STATO_FSC_NETTO) %>%
+    # NEW:
+    left_join(progetti_pub %>% 
+                select(COD_LOCALE_PROGETTO, COSTO_REALIZZATO, 
+                       FINANZ_STATO_FSC, OC_FINANZ_STATO_FSC_NETTO,
+                       FINANZ_TOTALE_PUBBLICO, FINANZ_PRIVATO, FINANZ_DA_REPERIRE, ECONOMIE_TOTALI,
+                       OC_FINANZ_TOT_PUB_NETTO) %>% 
+                mutate(across(where(is.numeric), ~replace_na(., replace = 0))),
               by = "COD_LOCALE_PROGETTO") %>% 
     mutate_if(is.numeric, replace_na, replace = 0) %>% 
-    mutate(FINANZ_TOT = OC_FINANZ_TOT_PUB_NETTO + OC_FINANZ_PRIVATO_NETTO,
+    mutate(FINANZ_TOT = FINANZ_TOTALE_PUBBLICO + FINANZ_PRIVATO + FINANZ_DA_REPERIRE - ECONOMIE_TOTALI,
            # x = OC_FINANZ_STATO_FSC_NETTO/FINANZ_TOT,
-           x = COE/FINANZ_TOT,
+           x = COE/FINANZ_TOT, # deve rimanere COE al numeratore perché ci sono progetti fatti da due oeprazione FSC
            COSTO_REALIZZATO_2 = COSTO_REALIZZATO * x,
-           COE_ECO = FINANZ_STATO_FSC - OC_FINANZ_STATO_FSC_NETTO)
+           COE_ECO = FINANZ_STATO_FSC - OC_FINANZ_STATO_FSC_NETTO,
+           CP = OC_FINANZ_TOT_PUB_NETTO)
+
+
+ 
+  
+  
   
   dim(appo)[1] == dim(appo1)[1]
   
@@ -428,10 +485,23 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
   # fix visualizzati PRA Campania
   appo4 <- fix_visualizzati_pra_campania(progetti_psc = appo3)
   
-  # accoda 06
-  temp <- read_csv2(file.path(PSC, "sgp", paste0("dati_sgp_", bimestre, ".csv")), col_types = "ccccccccccdddddcccd")
+  # fix assegnazioni di legge  PRA Campania
+  appo5 <- fix_assegnazioni_legge_pra_campania(progetti_psc = appo4, progetti = progetti)
   
-  out <- appo4 %>%
+  # sposta progetti su PSC Turismo
+  appo6 <- fix_sposta_psc_turismo(progetti_psc = appo5, progetti = progetti)
+  
+  # fix temi amministrazioni centrali
+  appo7 <- fix_aree_settori_amm_centrali(progetti_psc = appo6, progetti = progetti)
+  
+  # fix macroarea
+  appo8 <- fix_macroarea_progetti_psc(progetti_psc = appo7)
+  
+  
+  # accoda 06
+  temp <- read_csv2(file.path(PSC, "sgp", paste0("dati_sgp_", bimestre, ".csv")), col_types = "ccccccccccddddddcccd")
+  
+  out <- appo8 %>%
     select(COD_LOCALE_PROGETTO, 
            CUP, 
            OC_TITOLO_PROGETTO,
@@ -447,6 +517,7 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
            COE_CR,
            COE_PAG,
            COE_ECO,
+           CP,
            PSC,
            ID_PSC,
            STATO,
@@ -496,6 +567,11 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
   if ("TITOLO_PROGETTO" %in% names(appo)) {
     appo <- appo %>% 
       rename(TITOLO = TITOLO_PROGETTO)
+  }
+  
+  if ("descrizione strumento" %in% names(appo) & "DESCRIZIONE_STRUMENTO" %!in% names(appo)) {
+    appo <- appo %>% 
+      rename(DESCRIZIONE_STRUMENTO = `descrizione strumento`)
   }
   
   if ("CODICE_STRUMENTO...2" %in% names(appo)) {
@@ -581,7 +657,7 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
   
   # chk pagamenti fSC
   appo %>% summarise(PAG = sum(PAGAMENTI_FSC, na.rm = TRUE))
-  
+  appo %>% summarise(CP = sum(FINANZIAMENTO_TOTALE_PUBBLICO_NETTO, na.rm = TRUE))
   
   # chk su economie
   appo %>% 
@@ -599,11 +675,13 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
   # elab
   appo2 <- appo1 %>% 
     mutate(CICLO = "2000-2006") %>% 
+    mutate(DENOMINAZIONE_INTESA = toupper(DENOMINAZIONE_INTESA)) %>% 
     mutate(OC_CODICE_PROGRAMMA = case_when(DENOMINAZIONE_INTESA == "ABRUZZO" ~ "33",
                                            DENOMINAZIONE_INTESA == "BASILICATA" ~ "37",
                                            DENOMINAZIONE_INTESA == "CALABRIA" ~ "38",
                                            DENOMINAZIONE_INTESA == "CAMPANIA" ~ "35",
                                            DENOMINAZIONE_INTESA == "EMILIA-ROMAGNA" ~ "28",
+                                           DENOMINAZIONE_INTESA == "EMILIA ROMAGNA" ~ "28",
                                            DENOMINAZIONE_INTESA == "FRIULI-VENEZIA GIULIA" ~ "26",
                                            DENOMINAZIONE_INTESA == "LAZIO" ~ "32",
                                            DENOMINAZIONE_INTESA == "LIGURIA" ~ "27",
@@ -625,6 +703,7 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
                                  DENOMINAZIONE_INTESA == "CALABRIA" ~ "Mezzogiorno",
                                  DENOMINAZIONE_INTESA == "CAMPANIA" ~ "Mezzogiorno",
                                  DENOMINAZIONE_INTESA == "EMILIA-ROMAGNA" ~ "Centro-Nord",
+                                 DENOMINAZIONE_INTESA == "EMILIA ROMAGNA" ~ "Centro-Nord",
                                  DENOMINAZIONE_INTESA == "FRIULI-VENEZIA GIULIA" ~ "Centro-Nord",
                                  DENOMINAZIONE_INTESA == "LAZIO" ~ "Centro-Nord",
                                  DENOMINAZIONE_INTESA == "LIGURIA" ~ "Centro-Nord",
@@ -667,17 +746,27 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
     get_stato_attuazione(., chk_today = chk_today) %>% 
     # risorse coesione
     mutate(across(where(is.numeric), ~replace_na(., replace = 0))) %>% 
-    mutate(x = FINANZIAMENTO_FSC_NETTO / FINANZIAMENTO_TOTALE_PUBBLICO_NETTO,
-           # x = FINANZIAMENTO_FSC / FINANZIAMENTO_TOTALE_PUBBLICO,
-           # k = if_else(is.na(IMPORTO_REGIONALE), 0, # MEMO: da 2010630 non si verifica più il problema; prima c'era quota random di 0.75
-           #             IMPORTO_REGIONALE/(IMPORTO_REGIONALE+IMPORTO_NAZIONALE+IMPORTO_NON_DEFINITO)),
+    # OLD:
+    # mutate(x = FINANZIAMENTO_FSC_NETTO / FINANZIAMENTO_TOTALE_PUBBLICO_NETTO,
+    #        # x = FINANZIAMENTO_FSC / FINANZIAMENTO_TOTALE_PUBBLICO,
+    #        # k = if_else(is.na(IMPORTO_REGIONALE), 0, # MEMO: da 2010630 non si verifica più il problema; prima c'era quota random di 0.75
+    #        #             IMPORTO_REGIONALE/(IMPORTO_REGIONALE+IMPORTO_NAZIONALE+IMPORTO_NON_DEFINITO)),
+    #        k = IMPORTO_REGIONALE / (IMPORTO_REGIONALE + IMPORTO_NAZIONALE + IMPORTO_NON_DEFINITO),
+    #        COE = FINANZIAMENTO_FSC_NETTO * k,
+    #        COE_IMP = IMPEGNI * x * k,
+    #        COE_CR = COSTO_REALIZZATO * x * k,
+    #        COE_PAG = PAGAMENTI_TOTALI * x * k, # MEMO: PAGAMENTI_FSC sono vuoti
+    #        COE_ECO = TOTALE_ECONOMIE_FSC * k)  %>% 
+    # NEW:
+    mutate(x = FINANZIAMENTO_FSC_NETTO / (FINANZIAMENTO_TOTALE_PUBBLICO + TOTALE_FINANZIAMENTI_PVT + TOTALE_FINANZIAMENTI_RPR - TOTALE_ECONOMIE),
            k = IMPORTO_REGIONALE / (IMPORTO_REGIONALE + IMPORTO_NAZIONALE + IMPORTO_NON_DEFINITO),
            COE = FINANZIAMENTO_FSC_NETTO * k,
            COE_IMP = IMPEGNI * x * k,
            COE_CR = COSTO_REALIZZATO * x * k,
            COE_PAG = PAGAMENTI_TOTALI * x * k, # MEMO: PAGAMENTI_FSC sono vuoti
-           COE_ECO = TOTALE_ECONOMIE_FSC * k) 
-
+           COE_ECO = TOTALE_ECONOMIE_FSC * k,
+           CP = FINANZIAMENTO_TOTALE_PUBBLICO_NETTO) 
+  
   # calcola costo realizzato
   # appo3 <- appo2 %>% 
   #   mutate_if(is.numeric, replace_na, replace = 0) %>% 
@@ -759,6 +848,7 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
            COE_CR,
            COE_PAG,
            COE_ECO,
+           CP,
            PSC,
            ID_PSC, 
            STATO,
@@ -774,7 +864,8 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
           summarise(COE = sum(COE, na.rm = TRUE),
                     COE_IMP = sum(COE_IMP, na.rm = TRUE),
                     COE_CR = sum(COE_CR, na.rm = TRUE),
-                    COE_PAG = sum(COE_PAG, na.rm = TRUE)))
+                    COE_PAG = sum(COE_PAG, na.rm = TRUE),
+                    CP = sum(CP, na.rm = TRUE)))
   
   write_csv2(out, file.path(PSC, "sgp", paste0("dati_sgp_", bimestre, ".csv")))
   
@@ -914,10 +1005,9 @@ load_progetti_psc <- function(bimestre, fix_no_temi_no_coe=FALSE) {
 #' @param  usa_meuro Logico. Vuoi dati in Meuro?
 #' @param export Vuoi salvare il file csv in TEMP?
 #' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
-#' @param fix_cis_taranto Vuoi correggere il ciclo del CIS Taranto? Nel PSC i progetti PRA del CIS per 320 sono spostati da 713 a 1420, il fix crea un programma fittizio lato risorse. Lato attuazione va sviluppato.
 #' @return Report di confronto programmazione attuazione per PSC e PO d'origine. Le risorse delle sezioni speciali, nuove o da riprogrammazione, sono in righe separate.
 #' @note Contiene patch per incorporare patti città metro anche se non sono PSC in DBCOE
-make_report_report_po_psc <- function(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=FALSE, export=FALSE, export_xls=FALSE, fix_cis_taranto=TRUE) {
+make_report_report_po_psc <- function(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=FALSE, export=FALSE, export_xls=FALSE) {
   
   # DEV: uso matrice_po_psc senza dichiararla!!!
   
@@ -938,30 +1028,31 @@ make_report_report_po_psc <- function(progetti_psc, programmazione=NULL, visuali
     #   bind_rows(patti)
   }
   
-  # fix per CIS Taranto (nel PSC i progetti PRA per 320 sono spostati da 713 a 1420)
-  # 2007PU001FA010
-  temp <- programmazione %>% 
-    filter(OC_CODICE_PROGRAMMA == "2007PU001FA010")
-  
-  appo <- programmazione %>% 
-    filter(OC_CODICE_PROGRAMMA != "2007PU001FA010")
-  
-  programmazione_2 <- appo %>% 
-    # pra puglia normale
-    bind_rows(temp %>% 
-                mutate(# CICLO_PROGRAMMAZIONE = "2007-2013",
-                       FINANZ_TOTALE = 2318573538)) %>% 
-    # pra puglia in CIS
-    bind_rows(temp %>% 
-                mutate(CICLO_PROGRAMMAZIONE = "2014-2020",
-                       FINANZ_TOTALE = 320667143))
-  # MEMO: la somma delle due parti del PSC presa dalla Tavola 2 del PSC sballa rispetto al valore nel DB, ma è trascurabile
-  # 2639264638 - 2639240681 = 23957
-  
-  # sum(programmazione$FINANZ_TOTALE) - sum(programmazione_2$FINANZ_TOTALE)
-  # 23957.45
-  
-  programmazione <- programmazione_2
+  # OLD:
+  # # fix per CIS Taranto (nel PSC i progetti PRA per 320 sono spostati da 713 a 1420)
+  # # 2007PU001FA010
+  # temp <- programmazione %>% 
+  #   filter(OC_CODICE_PROGRAMMA == "2007PU001FA010")
+  # 
+  # appo <- programmazione %>% 
+  #   filter(OC_CODICE_PROGRAMMA != "2007PU001FA010")
+  # 
+  # programmazione_2 <- appo %>% 
+  #   # pra puglia normale
+  #   bind_rows(temp %>% 
+  #               mutate(# CICLO_PROGRAMMAZIONE = "2007-2013",
+  #                      FINANZ_TOTALE = 2318573538)) %>% 
+  #   # pra puglia in CIS
+  #   bind_rows(temp %>% 
+  #               mutate(CICLO_PROGRAMMAZIONE = "2014-2020",
+  #                      FINANZ_TOTALE = 320667143))
+  # # MEMO: la somma delle due parti del PSC presa dalla Tavola 2 del PSC sballa rispetto al valore nel DB, ma è trascurabile
+  # # 2639264638 - 2639240681 = 23957
+  # 
+  # # sum(programmazione$FINANZ_TOTALE) - sum(programmazione_2$FINANZ_TOTALE)
+  # # 23957.45
+  # 
+  # programmazione <- programmazione_2
   
   if (visualizzati == TRUE){
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
@@ -1018,7 +1109,8 @@ make_report_report_po_psc <- function(progetti_psc, programmazione=NULL, visuali
     }
     
     if (export_xls == TRUE) {
-      message("Da implementare")
+      # message("Da implementare")
+      write.xlsx(report, file.path(TEMP, "report_po_psc_nodupli.xlsx"))
     }
   } else {
     if (export == TRUE) {
@@ -1026,7 +1118,8 @@ make_report_report_po_psc <- function(progetti_psc, programmazione=NULL, visuali
     }
     
     if (export_xls == TRUE) {
-      message("Da implementare")
+      # message("Da implementare")
+      write.xlsx(report, file.path(TEMP, "report_po_psc_dupli.xlsx"))
     }
   }
 
@@ -1040,7 +1133,254 @@ make_report_report_po_psc <- function(progetti_psc, programmazione=NULL, visuali
 
 #' Report PSC per temi
 #'
-#' Crea report di confronto programmazione attuazione per PSC e PO in essi confluiti
+#' Crea report di confronto programmazione attuazione per PSC e tema
+#' 
+#' @param progetti_psc Dataset da load_progetti_psc()
+#' @param programmazione Dati di programmazione DBCOE di tipo "fsc_matrice_po_psc.xlsx"
+#' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
+#' @param usa_meuro Logico. Vuoi dati in Meuro?
+#' @param show_cp Logico. Vuoi calcolare anche il costo pubblico (CP)?
+#' @param export Vuoi salvare il file csv in TEMP?
+#' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
+#' @return Report di confronto programmazione attuazione per PSC e PO in essi confluiti. I nuovi 
+#' @note ...
+make_report_report_temi_psc <- function(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=FALSE, show_cp=FALSE, export=FALSE, export_xls=FALSE) {
+  
+  # OLD:
+  # if (is.null(programmazione)) {
+  #   programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE) %>% 
+  #     filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
+  #     rename(ID_PSC = OC_CODICE_PROGRAMMA)
+  # }
+  # DEV: qui ho già perso articolazione che contiene sezione
+  
+  # NEW:
+  if (is.null(programmazione)) {
+    programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, use_articolaz = TRUE) %>% 
+      filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
+      rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1) %>% 
+      # clean
+      select(-COD_RISULTATO_ATTESO, -DESCR_RISULTATO_ATTESO, -COD_LIVELLO_1) 
+  }
+  
+  # if (is.null(progetti)) {
+  #   progetti <- load_progetti(bimetre, visualizzati = FALSE, light = TRUE)
+  # }
+  # 
+  # # add totali
+  # progetti_psc <- progetti_psc %>% 
+  #   left_join(progetti %>% 
+  #               select(COD_LOCALE_PROGETTO, CP = OC_FINANZ_TOT_PUB_NETTO), 
+  #             by = "COD_LOCALE_PROGETTO")
+  
+  # fix 
+  # progetti_psc <- progetti_psc %>%
+  #   mutate(CP = 0)
+  
+  if (visualizzati == TRUE){
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
+  } else {
+    # appo1 <- progetti_psc
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
+                                       OC_FLAG_VISUALIZZAZIONE != 5)
+    # MEMO: così scarto solo casi anomali PSC, rilevante per debiti e opcm campania
+    
+  }
+  
+  # temp <- tibble(ID_PSC = c("PSC_BARI", "PSC_BOLOGNA", "PSC_CAGLIARI", "PSC_CATANIA",
+  #                           "PSC_FIRENZE", "PSC_GENOVA", "PSC_MESSINA", "PSC_MILANO", 
+  #                           "PSC_NAPOLI", "PSC_PALERMO", "PSC_REGGIO_CALABRIA", "PSC_VENEZIA"))
+  
+  # OLD:
+  # appo2 <- appo1 %>% 
+  #   # anti_join(temp) %>% 
+  #   group_by(ID_PSC, AREA_TEMATICA, x_CICLO) %>%
+  #   summarise(COE = sum(COE, na.rm = TRUE),
+  #             COE_IMP = sum(COE_IMP, na.rm = TRUE),
+  #             COE_CR = sum(COE_CR, na.rm = TRUE),
+  #             COE_PAG = sum(COE_PAG, na.rm = TRUE),
+  #             N = n())
+  # DEV: qui perdo settore di intervento
+  
+  # NEW:
+  temp <- programmazione %>% as_tibble() %>% filter(TIPOLOGIA_AMMINISTRAZIONE == "NAZIONALE") %>% distinct(ID_PSC) %>% mutate(TEMP = 1)
+  
+  
+  if (show_cp == TRUE) {
+    appo2 <- appo1 %>% 
+      left_join(temp, by = "ID_PSC") %>%
+      # forza NA su settore di intervento per psc regionali e metropolitani
+      mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
+                                            TRUE ~ "")) %>% 
+      group_by(ID_PSC, AREA_TEMATICA, SETTORE_INTERVENTO, x_CICLO) %>%
+      summarise(COE = sum(COE, na.rm = TRUE),
+                COE_IMP = sum(COE_IMP, na.rm = TRUE),
+                COE_CR = sum(COE_CR, na.rm = TRUE),
+                COE_PAG = sum(COE_PAG, na.rm = TRUE),
+                N = n(),
+                CP = sum(CP, na.rm = TRUE)) %>% 
+      # aggiunge valore di default (per ora non ci sono casi riferibili alle sezioni speciali)
+      mutate(SEZIONE = "SEZ_ORD")%>% 
+      select(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO, 
+             COE, COE_IMP, COE_CR, COE_PAG, N, CP)
+  } else {
+    appo2 <- appo1 %>% 
+      left_join(temp, by = "ID_PSC") %>%
+      # forza NA su settore di intervento per psc regionali e metropolitani
+      mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
+                                            TRUE ~ "")) %>% 
+      group_by(ID_PSC, AREA_TEMATICA, SETTORE_INTERVENTO, x_CICLO) %>%
+      summarise(COE = sum(COE, na.rm = TRUE),
+                COE_IMP = sum(COE_IMP, na.rm = TRUE),
+                COE_CR = sum(COE_CR, na.rm = TRUE),
+                COE_PAG = sum(COE_PAG, na.rm = TRUE),
+                N = n()) %>% 
+      # aggiunge valore di default (per ora non ci sono casi riferibili alle sezioni speciali)
+      mutate(SEZIONE = "SEZ_ORD") %>% 
+      select(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO, 
+             COE, COE_IMP, COE_CR, COE_PAG, N)
+  }
+  
+  
+  # OLD:
+  # # confronto programmazione e attuazione
+  # report <- programmazione %>% 
+  #   # filter(TIPOLOGIA_PROGRAMMA != "COVID", # considero solo sezione ordinaria
+  #   #        TIPOLOGIA_PROGRAMMA != "CSR") %>% 
+  #   select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, RISORSE = FINANZ_TOTALE,
+  #          AREA_TEMATICA = DESCR_AREA_TEMATICA_PSC) %>% 
+  #   group_by(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, AREA_TEMATICA) %>% 
+  #   summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>%
+  #   # MEMO: que serve full join perché ci possono essere progetti monitorati associati a temi assenti in programmazione
+  #   full_join(appo2 %>% 
+  #               select(ID_PSC, x_CICLO, AREA_TEMATICA, COE, COE_IMP, COE_CR, COE_PAG, N),
+  #             by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA")) %>% 
+  #   mutate_if(is.numeric, list(~replace_na(., 0))) %>% 
+  #   # recupera variabili perse da full_join
+  #   left_join(programmazione %>% 
+  #               distinct(ID_PSC, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE),
+  #             by = "ID_PSC") %>% 
+  #   mutate(DESCRIZIONE_PROGRAMMA = if_else(is.na(DESCRIZIONE_PROGRAMMA.x),  DESCRIZIONE_PROGRAMMA.y, DESCRIZIONE_PROGRAMMA.x),
+  #          TIPOLOGIA_AMMINISTRAZIONE= if_else(is.na(TIPOLOGIA_AMMINISTRAZIONE.x),  TIPOLOGIA_AMMINISTRAZIONE.y, TIPOLOGIA_AMMINISTRAZIONE.x)) %>% 
+  #   select(-DESCRIZIONE_PROGRAMMA.y, -DESCRIZIONE_PROGRAMMA.x, -TIPOLOGIA_AMMINISTRAZIONE.y, -TIPOLOGIA_AMMINISTRAZIONE.x) %>% 
+  #   select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, AREA_TEMATICA, RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N)
+  
+  # NEW:
+  # confronto programmazione e attuazione
+  report <- programmazione %>% 
+    # filter(TIPOLOGIA_PROGRAMMA != "COVID", # considero solo sezione ordinaria
+    #        TIPOLOGIA_PROGRAMMA != "CSR") %>% 
+    select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, RISORSE = FINANZ_TOTALE,
+           SEZIONE,
+           AREA_TEMATICA = DESCR_AREA_TEMATICA_PSC,
+           SETTORE_INTERVENTO = DESCR_SETTORE_INTERVENTO_PSC) %>% 
+      # toglie NA da settore di intervento
+    mutate(SETTORE_INTERVENTO = case_when(is.na(SETTORE_INTERVENTO) ~ "",
+                                          TRUE ~ SETTORE_INTERVENTO)) %>% 
+    group_by(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, 
+             SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% 
+    summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>%
+    # MEMO: qui serve full join perché ci possono essere progetti monitorati associati a temi assenti in programmazione
+    full_join(appo2,
+              by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO")) %>% 
+    mutate_if(is.numeric, list(~replace_na(., 0))) %>% 
+    # recupera variabili perse da full_join
+    left_join(programmazione %>% 
+                distinct(ID_PSC, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE),
+              by = "ID_PSC") %>% 
+    mutate(DESCRIZIONE_PROGRAMMA = if_else(is.na(DESCRIZIONE_PROGRAMMA.x),  DESCRIZIONE_PROGRAMMA.y, DESCRIZIONE_PROGRAMMA.x),
+           TIPOLOGIA_AMMINISTRAZIONE= if_else(is.na(TIPOLOGIA_AMMINISTRAZIONE.x),  TIPOLOGIA_AMMINISTRAZIONE.y, TIPOLOGIA_AMMINISTRAZIONE.x)) %>% 
+    select(-DESCRIZIONE_PROGRAMMA.y, -DESCRIZIONE_PROGRAMMA.x, -TIPOLOGIA_AMMINISTRAZIONE.y, -TIPOLOGIA_AMMINISTRAZIONE.x) 
+  
+  if (show_cp == TRUE) {
+    report <- report %>% 
+      select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO, 
+             RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N, CP)
+  } else {
+    report <- report%>% 
+      select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO, 
+             RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N)
+  }
+  
+  
+  # OLD:
+  # report %>% count(ID_PSC, x_CICLO, AREA_TEMATICA) %>% filter(n>1)
+  # appo2 %>% count(ID_PSC, x_CICLO, AREA_TEMATICA) %>% filter(n>1)
+  # chk1 <- report %>% anti_join(appo2, by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA"))
+  # chk2 <- appo2 %>% anti_join(report, by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA"))
+  
+  report %>% count(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% filter(n>1)
+  appo2 %>% count(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% filter(n>1)
+  chk1 <- report %>% anti_join(appo2, by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO"))
+  chk2 <- appo2 %>% anti_join(report, by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO"))
+  # in chk1 tutte le assegnazioni nei psc non monitorate
+  
+  # OLD:
+  # crea sezione
+  # report <- report %>% 
+  #   mutate(SEZIONE = case_when(AREA_TEMATICA == "Risorse da nuove assegnazioni FSC 2014-2020" ~ "Sez. speciale",
+  #                              AREA_TEMATICA == "Risorse da riprogrammazione ex art. 44" ~ "Sez. speciale",
+  #                              AREA_TEMATICA == "Risorse da compensazioni CSR" ~ "Sez. speciale",
+  #                              TRUE ~ "Sez. ordinaria"))
+  
+  # NEW:
+  report <- report %>% 
+    mutate(SEZIONE = case_when(SEZIONE == "SEZ_ORD" ~ "Sez. ordinaria",
+                               SEZIONE == "SEZ_SPEC_1_COVID" ~ "Sez. speciale 1-Covid",
+                               SEZIONE == "SEZ_SPEC_2_FS" ~ "Sez. speciale 2-FS",
+                               SEZIONE == "CSR" ~ "Da programmare",
+                               TRUE ~ "CHK"))
+  # fix
+  report <- report %>% 
+    # fix SIN BRINDISI lato DBCOE
+    filter(!(ID_PSC == "PSC_MATTM" & is.na(AREA_TEMATICA) & RISORSE == 0))
+
+  if (usa_meuro == TRUE) {
+    if (show_cp == TRUE) {
+      report <- report %>% 
+        mutate(RISORSE = RISORSE/1000000, 
+               COE = COE/1000000, 
+               COE_IMP = COE_IMP/1000000, 
+               COE_CR = COE_CR/1000000, 
+               COE_PAG = COE_PAG/1000000,
+               CP = CP/1000000)
+    } else {
+      report <- report %>% 
+        mutate(RISORSE = RISORSE/1000000, 
+               COE = COE/1000000, 
+               COE_IMP = COE_IMP/1000000, 
+               COE_CR = COE_CR/1000000, 
+               COE_PAG = COE_PAG/1000000)
+    }
+  }
+
+  if (visualizzati == TRUE){
+    if (export == TRUE) {
+      write_csv2(report, file.path(TEMP, "report_temi_psc_nodupli.csv"))
+    }
+    
+    if (export_xls == TRUE) {
+      write.xlsx(report, file.path(TEMP, "report_temi_psc_nodupli.xlsx"))
+      
+    }
+  } else {
+    if (export == TRUE) {
+      write_csv2(report, file.path(TEMP, "report_temi_psc_dupli.csv"))
+    }
+    
+    if (export_xls == TRUE) {
+      write.xlsx(report, file.path(OUT, "report_temi_psc_dupli.xlsx"))
+    }
+  }
+  
+  return(report)
+}
+
+
+
+#' Report PSC per temi con macroarea
+#'
+#' Crea report di confronto programmazione attuazione per temi con apertura per macroarea
 #' 
 #' @param progetti_psc Dataset da load_progetti_psc()
 #' @param programmazione Dati di programmazione DBCOE di tipo "fsc_matrice_po_psc.xlsx"
@@ -1050,12 +1390,24 @@ make_report_report_po_psc <- function(progetti_psc, programmazione=NULL, visuali
 #' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
 #' @return Report di confronto programmazione attuazione per PSC e PO in essi confluiti. I nuovi 
 #' @note ...
-make_report_report_temi_psc <- function(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=FALSE, export=FALSE, export_xls=FALSE) {
+make_report_report_temi_macroaree_psc <- function(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=FALSE, export=FALSE, export_xls=FALSE) {
   
+  # OLD:
+  # if (is.null(programmazione)) {
+  #   programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE) %>% 
+  #     filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
+  #     rename(ID_PSC = OC_CODICE_PROGRAMMA)
+  # }
+  # DEV: qui ho già perso articolazione che contiene sezione
+  
+  # NEW:
   if (is.null(programmazione)) {
-    programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE) %>% 
+    programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, 
+                                               use_articolaz = TRUE, use_location = TRUE) %>% 
       filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
-      rename(ID_PSC = OC_CODICE_PROGRAMMA)
+      rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1) %>% 
+      # clean
+      select(-COD_RISULTATO_ATTESO, -DESCR_RISULTATO_ATTESO, -COD_LIVELLO_1, x_MACROAREA) 
   }
   
   if (visualizzati == TRUE){
@@ -1072,27 +1424,76 @@ make_report_report_temi_psc <- function(progetti_psc, programmazione=NULL, visua
   #                           "PSC_FIRENZE", "PSC_GENOVA", "PSC_MESSINA", "PSC_MILANO", 
   #                           "PSC_NAPOLI", "PSC_PALERMO", "PSC_REGGIO_CALABRIA", "PSC_VENEZIA"))
   
+  # OLD:
+  # appo2 <- appo1 %>% 
+  #   # anti_join(temp) %>% 
+  #   group_by(ID_PSC, AREA_TEMATICA, x_CICLO) %>%
+  #   summarise(COE = sum(COE, na.rm = TRUE),
+  #             COE_IMP = sum(COE_IMP, na.rm = TRUE),
+  #             COE_CR = sum(COE_CR, na.rm = TRUE),
+  #             COE_PAG = sum(COE_PAG, na.rm = TRUE),
+  #             N = n())
+  # DEV: qui perdo settore di intervento
+  
+  # NEW:
+  temp <- programmazione %>% as_tibble() %>% filter(TIPOLOGIA_AMMINISTRAZIONE == "NAZIONALE") %>% distinct(ID_PSC) %>% mutate(TEMP = 1)
   appo2 <- appo1 %>% 
-    # anti_join(temp) %>% 
-    group_by(ID_PSC, AREA_TEMATICA, x_CICLO) %>%
+    left_join(temp, by = "ID_PSC") %>%
+    # forza NA su settore di intervento per psc regionali e metropolitani
+    mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
+                                          TRUE ~ "")) %>% 
+    group_by(ID_PSC, AREA_TEMATICA, SETTORE_INTERVENTO, x_CICLO, x_MACROAREA) %>%
     summarise(COE = sum(COE, na.rm = TRUE),
               COE_IMP = sum(COE_IMP, na.rm = TRUE),
               COE_CR = sum(COE_CR, na.rm = TRUE),
               COE_PAG = sum(COE_PAG, na.rm = TRUE),
-              N = n())
+              N = n()) %>% 
+    # aggiunge valore di default (per ora non ci sono casi riferibili alle sezioni speciali)
+    mutate(SEZIONE = "SEZ_ORD")
   
+  # OLD:
+  # # confronto programmazione e attuazione
+  # report <- programmazione %>% 
+  #   # filter(TIPOLOGIA_PROGRAMMA != "COVID", # considero solo sezione ordinaria
+  #   #        TIPOLOGIA_PROGRAMMA != "CSR") %>% 
+  #   select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, RISORSE = FINANZ_TOTALE,
+  #          AREA_TEMATICA = DESCR_AREA_TEMATICA_PSC) %>% 
+  #   group_by(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, AREA_TEMATICA) %>% 
+  #   summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>%
+  #   # MEMO: que serve full join perché ci possono essere progetti monitorati associati a temi assenti in programmazione
+  #   full_join(appo2 %>% 
+  #               select(ID_PSC, x_CICLO, AREA_TEMATICA, COE, COE_IMP, COE_CR, COE_PAG, N),
+  #             by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA")) %>% 
+  #   mutate_if(is.numeric, list(~replace_na(., 0))) %>% 
+  #   # recupera variabili perse da full_join
+  #   left_join(programmazione %>% 
+  #               distinct(ID_PSC, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE),
+  #             by = "ID_PSC") %>% 
+  #   mutate(DESCRIZIONE_PROGRAMMA = if_else(is.na(DESCRIZIONE_PROGRAMMA.x),  DESCRIZIONE_PROGRAMMA.y, DESCRIZIONE_PROGRAMMA.x),
+  #          TIPOLOGIA_AMMINISTRAZIONE= if_else(is.na(TIPOLOGIA_AMMINISTRAZIONE.x),  TIPOLOGIA_AMMINISTRAZIONE.y, TIPOLOGIA_AMMINISTRAZIONE.x)) %>% 
+  #   select(-DESCRIZIONE_PROGRAMMA.y, -DESCRIZIONE_PROGRAMMA.x, -TIPOLOGIA_AMMINISTRAZIONE.y, -TIPOLOGIA_AMMINISTRAZIONE.x) %>% 
+  #   select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, AREA_TEMATICA, RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N)
+  
+  # NEW:
   # confronto programmazione e attuazione
   report <- programmazione %>% 
     # filter(TIPOLOGIA_PROGRAMMA != "COVID", # considero solo sezione ordinaria
     #        TIPOLOGIA_PROGRAMMA != "CSR") %>% 
     select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, RISORSE = FINANZ_TOTALE,
-           AREA_TEMATICA = DESCR_AREA_TEMATICA_PSC) %>% 
-    group_by(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, AREA_TEMATICA) %>% 
+           SEZIONE,
+           AREA_TEMATICA = DESCR_AREA_TEMATICA_PSC,
+           SETTORE_INTERVENTO = DESCR_SETTORE_INTERVENTO_PSC, 
+           x_MACROAREA) %>% 
+    # toglie NA da settore di intervento
+    mutate(SETTORE_INTERVENTO = case_when(is.na(SETTORE_INTERVENTO) ~ "",
+                                          TRUE ~ SETTORE_INTERVENTO)) %>% 
+    group_by(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, 
+             SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO, x_MACROAREA) %>% 
     summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>%
-    # MEMO: que serve full join perché ci possono essere progetti monitorati associati a temi assenti in programmazione
+    # MEMO: qui serve full join perché ci possono essere progetti monitorati associati a temi assenti in programmazione
     full_join(appo2 %>% 
-                select(ID_PSC, x_CICLO, AREA_TEMATICA, COE, COE_IMP, COE_CR, COE_PAG, N),
-              by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA")) %>% 
+                select(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO, x_MACROAREA, COE, COE_IMP, COE_CR, COE_PAG, N),
+              by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO", "x_MACROAREA")) %>% 
     mutate_if(is.numeric, list(~replace_na(., 0))) %>% 
     # recupera variabili perse da full_join
     left_join(programmazione %>% 
@@ -1101,26 +1502,40 @@ make_report_report_temi_psc <- function(progetti_psc, programmazione=NULL, visua
     mutate(DESCRIZIONE_PROGRAMMA = if_else(is.na(DESCRIZIONE_PROGRAMMA.x),  DESCRIZIONE_PROGRAMMA.y, DESCRIZIONE_PROGRAMMA.x),
            TIPOLOGIA_AMMINISTRAZIONE= if_else(is.na(TIPOLOGIA_AMMINISTRAZIONE.x),  TIPOLOGIA_AMMINISTRAZIONE.y, TIPOLOGIA_AMMINISTRAZIONE.x)) %>% 
     select(-DESCRIZIONE_PROGRAMMA.y, -DESCRIZIONE_PROGRAMMA.x, -TIPOLOGIA_AMMINISTRAZIONE.y, -TIPOLOGIA_AMMINISTRAZIONE.x) %>% 
-    select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, AREA_TEMATICA, RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N)
+    select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO, x_MACROAREA, RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N)
   
-  report %>% count(ID_PSC, x_CICLO, AREA_TEMATICA) %>% filter(n>1)
-  appo2 %>% count(ID_PSC, x_CICLO, AREA_TEMATICA) %>% filter(n>1)
-  chk1 <- report %>% anti_join(appo2, by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA"))
-  chk2 <- appo2 %>% anti_join(report, by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA"))
+  # OLD:
+  # report %>% count(ID_PSC, x_CICLO, AREA_TEMATICA) %>% filter(n>1)
+  # appo2 %>% count(ID_PSC, x_CICLO, AREA_TEMATICA) %>% filter(n>1)
+  # chk1 <- report %>% anti_join(appo2, by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA"))
+  # chk2 <- appo2 %>% anti_join(report, by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA"))
+  
+  report %>% count(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% filter(n>1)
+  appo2 %>% count(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% filter(n>1)
+  chk1 <- report %>% anti_join(appo2, by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO"))
+  chk2 <- appo2 %>% anti_join(report, by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO"))
   # in chk1 tutte le assegnazioni nei psc non monitorate
   
+  # OLD:
   # crea sezione
-  report <- report %>% 
-    mutate(SEZIONE = case_when(AREA_TEMATICA == "Risorse da nuove assegnazioni FSC 2014-2020" ~ "Sez. speciale",
-                               AREA_TEMATICA == "Risorse da riprogrammazione ex art. 44" ~ "Sez. speciale",
-                               AREA_TEMATICA == "Risorse da compensazioni CSR" ~ "Sez. speciale",
-                               TRUE ~ "Sez. ordinaria"))
+  # report <- report %>% 
+  #   mutate(SEZIONE = case_when(AREA_TEMATICA == "Risorse da nuove assegnazioni FSC 2014-2020" ~ "Sez. speciale",
+  #                              AREA_TEMATICA == "Risorse da riprogrammazione ex art. 44" ~ "Sez. speciale",
+  #                              AREA_TEMATICA == "Risorse da compensazioni CSR" ~ "Sez. speciale",
+  #                              TRUE ~ "Sez. ordinaria"))
   
+  # NEW:
+  report <- report %>% 
+    mutate(SEZIONE = case_when(SEZIONE == "SEZ_ORD" ~ "Sez. ordinaria",
+                               SEZIONE == "SEZ_SPEC_1_COVID" ~ "Sez. speciale 1-Covid",
+                               SEZIONE == "SEZ_SPEC_2_FS" ~ "Sez. speciale 2-FS",
+                               SEZIONE == "CSR" ~ "Da programmare",
+                               TRUE ~ "CHK"))
   # fix
   report <- report %>% 
     # fix SIN BRINDISI lato DBCOE
     filter(!(ID_PSC == "PSC_MATTM" & is.na(AREA_TEMATICA) & RISORSE == 0))
-
+  
   if (usa_meuro == TRUE) {
     report <- report %>% 
       mutate(RISORSE = RISORSE/1000000, 
@@ -1129,22 +1544,224 @@ make_report_report_temi_psc <- function(progetti_psc, programmazione=NULL, visua
              COE_CR = COE_CR/1000000, 
              COE_PAG = COE_PAG/1000000)
   }
-
+  
   if (visualizzati == TRUE){
     if (export == TRUE) {
-      write_csv2(report, file.path(TEMP, "report_temi_psc_nodupli.csv"))
+      write_csv2(report, file.path(TEMP, "report_temi_macroaree_psc_nodupli.csv"))
     }
     
     if (export_xls == TRUE) {
-      message("Da implementare")
+      # message("Da implementare")
+      write.xlsx(report, file.path(TEMP, "report_temi_macroaree_psc_nodupli.xlsx"))
+      
     }
   } else {
     if (export == TRUE) {
-      write_csv2(report, file.path(TEMP, "report_temi_psc_dupli.csv"))
+      write_csv2(report, file.path(TEMP, "report_temi_macroaree_psc_dupli.csv"))
     }
     
     if (export_xls == TRUE) {
-      message("Da implementare")
+      # message("Da implementare")
+      write.xlsx(report, file.path(OUT, "report_temi_macroaree_psc_dupli.xlsx"))
+    }
+  }
+  
+  return(report)
+}
+
+
+
+#' Report PSC per temi con stato procedurale
+#'
+#' Crea report di confronto programmazione attuazione per temi con apertura per stato procedurale
+#' 
+#' @param progetti_psc Dataset da load_progetti_psc()
+#' @param programmazione Dati di programmazione DBCOE di tipo "fsc_matrice_po_psc.xlsx"
+#' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
+#' @param  usa_meuro Logico. Vuoi dati in Meuro?
+#' @param export Vuoi salvare il file csv in TEMP?
+#' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
+#' @return Report di confronto programmazione attuazione per PSC e PO in essi confluiti. I nuovi 
+#' @note ...
+make_report_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=FALSE, export=FALSE, export_xls=FALSE) {
+  
+  # OLD:
+  # if (is.null(programmazione)) {
+  #   programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE) %>% 
+  #     filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
+  #     rename(ID_PSC = OC_CODICE_PROGRAMMA)
+  # }
+  # DEV: qui ho già perso articolazione che contiene sezione
+  
+  # NEW:
+  if (is.null(programmazione)) {
+    programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, use_articolaz = TRUE) %>% 
+      filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
+      rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1) %>% 
+      # clean
+      select(-COD_RISULTATO_ATTESO, -DESCR_RISULTATO_ATTESO, -COD_LIVELLO_1) 
+  }
+  
+  if (visualizzati == TRUE){
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
+  } else {
+    # appo1 <- progetti_psc
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
+                                       OC_FLAG_VISUALIZZAZIONE != 5)
+    # MEMO: così scarto solo casi anomali PSC, rilevante per debiti e opcm campania
+    
+  }
+  
+  # temp <- tibble(ID_PSC = c("PSC_BARI", "PSC_BOLOGNA", "PSC_CAGLIARI", "PSC_CATANIA",
+  #                           "PSC_FIRENZE", "PSC_GENOVA", "PSC_MESSINA", "PSC_MILANO", 
+  #                           "PSC_NAPOLI", "PSC_PALERMO", "PSC_REGGIO_CALABRIA", "PSC_VENEZIA"))
+  
+  # OLD:
+  # appo2 <- appo1 %>% 
+  #   # anti_join(temp) %>% 
+  #   group_by(ID_PSC, AREA_TEMATICA, x_CICLO) %>%
+  #   summarise(COE = sum(COE, na.rm = TRUE),
+  #             COE_IMP = sum(COE_IMP, na.rm = TRUE),
+  #             COE_CR = sum(COE_CR, na.rm = TRUE),
+  #             COE_PAG = sum(COE_PAG, na.rm = TRUE),
+  #             N = n())
+  # DEV: qui perdo settore di intervento
+  
+  # NEW:
+  temp <- programmazione %>% as_tibble() %>% filter(TIPOLOGIA_AMMINISTRAZIONE == "NAZIONALE") %>% distinct(ID_PSC) %>% mutate(TEMP = 1)
+  appo2 <- appo1 %>% 
+    left_join(temp, by = "ID_PSC") %>%
+    # forza NA su settore di intervento per psc regionali e metropolitani
+    mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
+                                          TRUE ~ "")) %>% 
+    mutate(OC_STATO_PROCEDURALE = case_when(OC_STATO_PROCEDURALE == "Non avviato" ~ "Non_avviato",
+                                            OC_STATO_PROCEDURALE == "In avvio di progettazione" ~ "Progettazione",
+                                            OC_STATO_PROCEDURALE == "In corso di progettazione" ~ "Progettazione",
+                                            OC_STATO_PROCEDURALE == "In affidamento" ~ "Affidamento",
+                                            OC_STATO_PROCEDURALE == "In esecuzione" ~ "Esecuzione",
+                                            OC_STATO_PROCEDURALE == "Eseguito" ~ "Eseguito")) %>% 
+    group_by(ID_PSC, AREA_TEMATICA, SETTORE_INTERVENTO, x_CICLO, OC_STATO_PROCEDURALE) %>%
+    summarise(COE = sum(COE, na.rm = TRUE)) %>% 
+    # aggiunge valore di default (per ora non ci sono casi riferibili alle sezioni speciali)
+    mutate(SEZIONE = "SEZ_ORD") %>% 
+    pivot_wider(names_from = OC_STATO_PROCEDURALE, values_from = COE, values_fill = 0)
+  
+  # OLD:
+  # # confronto programmazione e attuazione
+  # report <- programmazione %>% 
+  #   # filter(TIPOLOGIA_PROGRAMMA != "COVID", # considero solo sezione ordinaria
+  #   #        TIPOLOGIA_PROGRAMMA != "CSR") %>% 
+  #   select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, RISORSE = FINANZ_TOTALE,
+  #          AREA_TEMATICA = DESCR_AREA_TEMATICA_PSC) %>% 
+  #   group_by(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, AREA_TEMATICA) %>% 
+  #   summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>%
+  #   # MEMO: que serve full join perché ci possono essere progetti monitorati associati a temi assenti in programmazione
+  #   full_join(appo2 %>% 
+  #               select(ID_PSC, x_CICLO, AREA_TEMATICA, COE, COE_IMP, COE_CR, COE_PAG, N),
+  #             by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA")) %>% 
+  #   mutate_if(is.numeric, list(~replace_na(., 0))) %>% 
+  #   # recupera variabili perse da full_join
+  #   left_join(programmazione %>% 
+  #               distinct(ID_PSC, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE),
+  #             by = "ID_PSC") %>% 
+  #   mutate(DESCRIZIONE_PROGRAMMA = if_else(is.na(DESCRIZIONE_PROGRAMMA.x),  DESCRIZIONE_PROGRAMMA.y, DESCRIZIONE_PROGRAMMA.x),
+  #          TIPOLOGIA_AMMINISTRAZIONE= if_else(is.na(TIPOLOGIA_AMMINISTRAZIONE.x),  TIPOLOGIA_AMMINISTRAZIONE.y, TIPOLOGIA_AMMINISTRAZIONE.x)) %>% 
+  #   select(-DESCRIZIONE_PROGRAMMA.y, -DESCRIZIONE_PROGRAMMA.x, -TIPOLOGIA_AMMINISTRAZIONE.y, -TIPOLOGIA_AMMINISTRAZIONE.x) %>% 
+  #   select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, AREA_TEMATICA, RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N)
+  
+  # NEW:
+  # confronto programmazione e attuazione
+  report <- programmazione %>% 
+    # filter(TIPOLOGIA_PROGRAMMA != "COVID", # considero solo sezione ordinaria
+    #        TIPOLOGIA_PROGRAMMA != "CSR") %>% 
+    select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, RISORSE = FINANZ_TOTALE,
+           SEZIONE,
+           AREA_TEMATICA = DESCR_AREA_TEMATICA_PSC,
+           SETTORE_INTERVENTO = DESCR_SETTORE_INTERVENTO_PSC) %>% 
+    # toglie NA da settore di intervento
+    mutate(SETTORE_INTERVENTO = case_when(is.na(SETTORE_INTERVENTO) ~ "",
+                                          TRUE ~ SETTORE_INTERVENTO)) %>% 
+    group_by(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, 
+             SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% 
+    summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>%
+    # MEMO: qui serve full join perché ci possono essere progetti monitorati associati a temi assenti in programmazione
+    full_join(appo2,
+              by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO")) %>% 
+    mutate_if(is.numeric, list(~replace_na(., 0))) %>% 
+    mutate(temp = RISORSE - Eseguito - Affidamento - Esecuzione - Progettazione - Non_avviato, # non monitorato
+           Non_avviato = Non_avviato + temp) %>% 
+    # fix temporaneo
+    mutate(Non_avviato =  if_else(Non_avviato < 0, 0, Non_avviato)) %>% 
+    # recupera variabili perse da full_join
+    left_join(programmazione %>% 
+                distinct(ID_PSC, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE),
+              by = "ID_PSC") %>% 
+    mutate(DESCRIZIONE_PROGRAMMA = if_else(is.na(DESCRIZIONE_PROGRAMMA.x),  DESCRIZIONE_PROGRAMMA.y, DESCRIZIONE_PROGRAMMA.x),
+           TIPOLOGIA_AMMINISTRAZIONE= if_else(is.na(TIPOLOGIA_AMMINISTRAZIONE.x),  TIPOLOGIA_AMMINISTRAZIONE.y, TIPOLOGIA_AMMINISTRAZIONE.x)) %>% 
+    select(-DESCRIZIONE_PROGRAMMA.y, -DESCRIZIONE_PROGRAMMA.x, -TIPOLOGIA_AMMINISTRAZIONE.y, -TIPOLOGIA_AMMINISTRAZIONE.x) %>% 
+    select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO, 
+           RISORSE, Non_avviato, Progettazione, Affidamento, Esecuzione, Eseguito)
+  
+  # OLD:
+  # report %>% count(ID_PSC, x_CICLO, AREA_TEMATICA) %>% filter(n>1)
+  # appo2 %>% count(ID_PSC, x_CICLO, AREA_TEMATICA) %>% filter(n>1)
+  # chk1 <- report %>% anti_join(appo2, by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA"))
+  # chk2 <- appo2 %>% anti_join(report, by = c("ID_PSC", "x_CICLO", "AREA_TEMATICA"))
+  
+  report %>% count(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% filter(n>1)
+  appo2 %>% count(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% filter(n>1)
+  chk1 <- report %>% anti_join(appo2, by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO"))
+  chk2 <- appo2 %>% anti_join(report, by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO"))
+  # in chk1 tutte le assegnazioni nei psc non monitorate
+  
+  # OLD:
+  # crea sezione
+  # report <- report %>% 
+  #   mutate(SEZIONE = case_when(AREA_TEMATICA == "Risorse da nuove assegnazioni FSC 2014-2020" ~ "Sez. speciale",
+  #                              AREA_TEMATICA == "Risorse da riprogrammazione ex art. 44" ~ "Sez. speciale",
+  #                              AREA_TEMATICA == "Risorse da compensazioni CSR" ~ "Sez. speciale",
+  #                              TRUE ~ "Sez. ordinaria"))
+  
+  # NEW:
+  report <- report %>% 
+    mutate(SEZIONE = case_when(SEZIONE == "SEZ_ORD" ~ "Sez. ordinaria",
+                               SEZIONE == "SEZ_SPEC_1_COVID" ~ "Sez. speciale 1-Covid",
+                               SEZIONE == "SEZ_SPEC_2_FS" ~ "Sez. speciale 2-FS",
+                               SEZIONE == "CSR" ~ "Da programmare",
+                               TRUE ~ "CHK"))
+  # fix
+  report <- report %>% 
+    # fix SIN BRINDISI lato DBCOE
+    filter(!(ID_PSC == "PSC_MATTM" & is.na(AREA_TEMATICA) & RISORSE == 0))
+  
+  if (usa_meuro == TRUE) {
+    report <- report %>% 
+      mutate(RISORSE = RISORSE/1000000, 
+             Non_avviato = Non_avviato/1000000, 
+             Progettazione = Progettazione/1000000, 
+             Affidamento = Affidamento/1000000, 
+             Esecuzione = Esecuzione/1000000, 
+             Eseguito = Eseguito/1000000)
+  }
+  
+  if (visualizzati == TRUE){
+    if (export == TRUE) {
+      write_csv2(report, file.path(TEMP, "report_temi_stato_psc_nodupli.csv"))
+    }
+    
+    if (export_xls == TRUE) {
+      # message("Da implementare")
+      write.xlsx(report, file.path(TEMP, "report_temi_stato_psc_nodupli.xlsx"))
+      
+    }
+  } else {
+    if (export == TRUE) {
+      write_csv2(report, file.path(TEMP, "report_temi_stato_psc_dupli.csv"))
+    }
+    
+    if (export_xls == TRUE) {
+      # message("Da implementare")
+      write.xlsx(report, file.path(OUT, "report_temi_stato_psc_dupli.xlsx"))
     }
   }
   
@@ -1383,3 +2000,341 @@ fix_visualizzati_pra_campania <- function(progetti_psc) {
 
 
 
+
+
+#' Cambia programma per progetti in assegnazioni di legge PRA Campania
+#'
+#' Cambia programma per progetti in assegnazioni di legge PRA Campania, che sono ricompresi nelle articolazioni 21 (rifiuti) e 22 (compensazioni ambientali).
+#'
+#' @param progetti_psc Dataset progetti PSC da dentro prep_dati_psc_bimestre()
+#' @param progetti Dataset progetti da load_progetti(bimestre, visualizzati = FALSE, light = FALSE), come usato in dentro prep_dati_psc_bimestre()
+#' @return dataframe
+#' @note Da usare dentro prep_dati_psc_bimestre(). Deve seguire fix_visualizzati_pra_campania() altrimenti il fix visualizzati non funziona perché qui cambia il codice programma
+fix_assegnazioni_legge_pra_campania <- function(progetti_psc, progetti) {
+  
+  fix_list <- progetti %>% 
+    filter(OC_CODICE_PROGRAMMA == "2007CA001FA009") %>% 
+    filter(OC_COD_ARTICOLAZ_PROGRAMMA == "21" | OC_COD_ARTICOLAZ_PROGRAMMA == "22") %>% 
+    mutate(OC_CODICE_PROGRAMMA_NEW = case_when(OC_COD_ARTICOLAZ_PROGRAMMA == "21" ~ "OPCM_CAM_A", # rifiuti
+                                               OC_COD_ARTICOLAZ_PROGRAMMA == "22" ~ "OPCM_CAM_B", # compensazioni ambientali
+                                               TRUE ~ "CHK"),
+           x_PROGRAMMA_NEW = case_when(OC_COD_ARTICOLAZ_PROGRAMMA == "21" ~ "CICLO INTEGRATO DEI RIFIUTI", # rifiuti
+                                       OC_COD_ARTICOLAZ_PROGRAMMA == "22"  ~ "COMPENSAZIONI AMBIENTALI", # compensazioni ambientali
+                                       TRUE ~ "CHK")) %>% 
+    select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA_NEW, x_PROGRAMMA_NEW)
+  
+  # OPCM_CAM_A	CICLO INTEGRATO DEI RIFIUTI
+  # OPCM_CAM_B	COMPENSAZIONI AMBIENTALI
+
+  progetti_psc <- progetti_psc %>% 
+    left_join(fix_list, by = "COD_LOCALE_PROGETTO") %>% 
+    mutate(OC_CODICE_PROGRAMMA  = if_else(is.na(OC_CODICE_PROGRAMMA_NEW), OC_CODICE_PROGRAMMA, OC_CODICE_PROGRAMMA_NEW),
+           x_PROGRAMMA  = if_else(is.na(x_PROGRAMMA_NEW), x_PROGRAMMA, x_PROGRAMMA_NEW)) %>% 
+    select(-OC_CODICE_PROGRAMMA_NEW, -x_PROGRAMMA_NEW)
+  
+  return(progetti_psc)
+  
+}
+
+
+#' Associa progetti a PSC Turismo
+#'
+#' Associa progetti a PSC Turismo
+#'
+#' @param progetti_psc Dataset progetti PSC da dentro prep_dati_psc_bimestre()
+#' @param progetti Dataset progetti da load_progetti(bimestre, visualizzati = FALSE, light = FALSE), come usato in dentro prep_dati_psc_bimestre()
+#' @return dataframe
+#' @note Da usare dentro prep_dati_psc_bimestre()
+fix_sposta_psc_turismo <- function(progetti_psc, progetti) {
+  
+  fix_list <- progetti %>% 
+    filter(OC_CODICE_PROGRAMMA == "2016MBCSGFSC006") %>% 
+    mutate(ID_PSC = case_when(COD_STRUMENTO == "FSC_WIFI_I" ~ "PSC_MTUR", # Wi-Fi Italia
+                              COD_STRUMENTO == "FSC_IDMS" ~ "PSC_MTUR", # Italia Destination Management System
+                              COD_STRUMENTO == "FSC_GDTS" ~ "PSC_MTUR", # Grandi destinazioni per un turismo sostenibile
+                              COD_STRUMENTO == "FSC_DT" ~ "PSC_MTUR", # Dashboard turismo
+                              # ... "Montagna Italia"
+                              # ... AT
+                              TRUE ~ "PSC_MIBACT"),
+           PSC = case_when(COD_STRUMENTO == "FSC_WIFI_I" ~ "PSC MINISTERO DEL TURISMO", # Wi-Fi Italia
+                           COD_STRUMENTO == "FSC_IDMS" ~ "PSC MINISTERO DEL TURISMO", # Italia Destination Management System
+                           COD_STRUMENTO == "FSC_GDTS" ~ "PSC MINISTERO DEL TURISMO", # Grandi destinazioni per un turismo sostenibile
+                           COD_STRUMENTO == "FSC_DT" ~ "PSC MINISTERO DEL TURISMO", # Dashboard turismo
+                           # ... "Montagna Italia"
+                           # ... AT
+                           TRUE ~ "PSC MINISTERO CULTURA E TURISMO"),
+           OC_CODICE_PROGRAMMA = case_when(COD_STRUMENTO == "FSC_WIFI_I" ~ "SCORPORO_TURISMO", # Wi-Fi Italia
+                           COD_STRUMENTO == "FSC_IDMS" ~ "SCORPORO_TURISMO", # Italia Destination Management System
+                           COD_STRUMENTO == "FSC_GDTS" ~ "SCORPORO_TURISMO", # Grandi destinazioni per un turismo sostenibile
+                           COD_STRUMENTO == "FSC_DT" ~ "SCORPORO_TURISMO", # Dashboard turismo
+                           # ... "Montagna Italia"
+                           # ... AT
+                           TRUE ~ OC_CODICE_PROGRAMMA),
+           x_PROGRAMMA = case_when(COD_STRUMENTO == "FSC_WIFI_I" ~ "SCORPORO PSC TURISMO DA MIBACT", # Wi-Fi Italia
+                                           COD_STRUMENTO == "FSC_IDMS" ~ "SCORPORO PSC TURISMO DA MIBACT", # Italia Destination Management System
+                                           COD_STRUMENTO == "FSC_GDTS" ~ "SCORPORO PSC TURISMO DA MIBACT", # Grandi destinazioni per un turismo sostenibile
+                                           COD_STRUMENTO == "FSC_DT" ~ "SCORPORO PSC TURISMO DA MIBACT", # Dashboard turismo
+                                           # ... "Montagna Italia"
+                                           # ... AT
+                                           TRUE ~ "PIANO OPERATIVO CULTURA E TURISMO")) %>% 
+    select(COD_LOCALE_PROGETTO, ID_PSC_NEW = ID_PSC, PSC_NEW = PSC, OC_CODICE_PROGRAMMA_NEW = OC_CODICE_PROGRAMMA, x_PROGRAMMA_NEW = x_PROGRAMMA)
+
+  
+  progetti_psc <- progetti_psc %>% 
+    left_join(fix_list, by = "COD_LOCALE_PROGETTO") %>% 
+    mutate(ID_PSC  = if_else(is.na(ID_PSC_NEW), ID_PSC, ID_PSC_NEW),
+           PSC  = if_else(is.na(PSC_NEW), PSC, PSC_NEW),
+           OC_CODICE_PROGRAMMA  = if_else(is.na(OC_CODICE_PROGRAMMA_NEW), OC_CODICE_PROGRAMMA, OC_CODICE_PROGRAMMA_NEW),
+           x_PROGRAMMA  = if_else(is.na(x_PROGRAMMA_NEW), x_PROGRAMMA, x_PROGRAMMA_NEW)) %>% 
+    select(-ID_PSC_NEW, -PSC_NEW, -OC_CODICE_PROGRAMMA_NEW, -x_PROGRAMMA_NEW)
+  
+  return(progetti_psc)
+  
+}
+
+
+
+
+#' Cambia classificazioni tematiche per amministrazioni centrali
+#'
+#' Cambia classificazioni tematiche per amministrazioni centrali
+#'
+#' @param progetti_psc Dataset progetti PSC da dentro prep_dati_psc_bimestre()
+#' @param progetti Dataset progetti da load_progetti(bimestre, visualizzati = FALSE, light = FALSE), come usato in dentro prep_dati_psc_bimestre()
+#' @return dataframe
+#' @note Da usare dentro prep_dati_psc_bimestre(). 
+fix_aree_settori_amm_centrali <- function(progetti_psc, progetti) {
+  
+  # progetti_psc <- appo6
+  
+  # PSC_PCM-SPORT
+  # 11.01-STRUTTURE EDUCATIVE E FORMATIVE -> 08.01-EDILIZIA PUBBLICA
+  fix_list_sport <- progetti_psc %>% 
+    filter(OC_CODICE_PROGRAMMA == "POSPORTFSC") %>% 
+    mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "08.01-EDILIZIA PUBBLICA" ~ "08.01-EDILIZIA PUBBLICA",
+                                              SETTORE_INTERVENTO == "11.01-STRUTTURE EDUCATIVE E FORMATIVE" ~ "08.01-EDILIZIA PUBBLICA",
+                                              TRUE ~ "CHK"),
+           AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "08.01-EDILIZIA PUBBLICA" ~ "08-RIQUALIFICAZIONE URBANA",
+                                         SETTORE_INTERVENTO == "11.01-STRUTTURE EDUCATIVE E FORMATIVE" ~ "08-RIQUALIFICAZIONE URBANA",
+                                         TRUE ~ "CHK")) %>% 
+    select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
+  
+  
+  # PSC_MUR
+  # 01.02-STRUTTURE DI RICERCA resta vuoto ma forse è PRATT8293	Avviso PIR -Potenziamento Infrastrutture Ricerca
+  fix_list_mur <- progetti_psc %>% 
+    filter(OC_CODICE_PROGRAMMA == "2017FSCRICERCA") %>% 
+    mutate(SETTORE_INTERVENTO_NEW = case_when(COD_PROCED_ATTIVAZIONE == "PRATT8293" ~ "01.02-STRUTTURE DI RICERCA",
+                                              TRUE ~ SETTORE_INTERVENTO),
+           AREA_TEMATICA_NEW = case_when(COD_PROCED_ATTIVAZIONE == "PRATT8293" ~ "01-RICERCA E INNOVAZIONE",
+                                         TRUE ~ AREA_TEMATICA)) %>% 
+    select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
+  
+  
+  
+  
+  # PSC_MTUR
+  fix_list_mtur <- progetti_psc %>% 
+    filter(ID_PSC == "PSC_MTUR") %>% 
+    # semi_join(progetti_psc %>% 
+    #             filter(ID_PSC == "PSC_MTUR"), 
+    #           by = "COD_LOCALE_PROGETTO") %>% 
+    mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITA’" ~ "03.02-TURISMO E OSPITALITA’",
+                                              SETTORE_INTERVENTO == "06.01-PATRIMONIO E PAESAGGIO" ~ "03.02-TURISMO E OSPITALITA’",
+                                              SETTORE_INTERVENTO == "06.02-ATTIVITA’ CULTURALI" ~ "03.02-TURISMO E OSPITALITA’",
+                                              SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITA'" ~ "03.02-TURISMO E OSPITALITA’",
+                                              TRUE ~ "CHK"),
+           AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITA’" ~ "03-COMPETITIVITA' IMPRESE",
+                                         SETTORE_INTERVENTO == "06.01-PATRIMONIO E PAESAGGIO" ~ "03-COMPETITIVITA' IMPRESE",
+                                         SETTORE_INTERVENTO == "06.02-ATTIVITA’ CULTURALI" ~ "03-COMPETITIVITA' IMPRESE",
+                                         SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITA'" ~ "03-COMPETITIVITA' IMPRESE",
+                                         TRUE ~ "CHK")) %>% 
+    select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
+
+  # PSC_MIT
+  # usare soggetto programmatore, poi resta vuoto "dissesto" (tutto in "strade")
+  fix_list_mit <- progetti_psc %>% 
+    filter(OC_CODICE_PROGRAMMA == "2017POINFRASFSC") %>% 
+    left_join(progetti %>% 
+                distinct(COD_LOCALE_PROGETTO, OC_DENOM_PROGRAMMATORE), 
+              by = "COD_LOCALE_PROGETTO") %>% 
+    mutate(SETTORE_INTERVENTO_NEW = case_when(COD_LOCALE_PROGETTO == "5MTRA1E7003" ~ "12.02-ASSISTENZA TECNICA",
+                                              OC_DENOM_PROGRAMMATORE == "MIT" ~ "12.02-ASSISTENZA TECNICA",
+                                              OC_DENOM_PROGRAMMATORE == "MIT - DG DIGHE" ~ "05.02-RISORSE IDRICHE",
+                                              OC_DENOM_PROGRAMMATORE == "MIT SVILTER DIV V" ~ "08.01-EDILIZIA E SPAZI PUBBLICI",
+                                              OC_DENOM_PROGRAMMATORE == "MIT SVILTER STRUTT" ~ "08.01-EDILIZIA E SPAZI PUBBLICI",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DG AEREO" ~ "07.04-TRASPORTO AEREO",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DG PORTI" ~ "07.03-TRASPORTO MARITTIMO",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" & grepl("ciclovi", OC_TITOLO_PROGETTO) ~ "05.05-NATURA E BIODIVERSITA'",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" & grepl("ciclab", OC_TITOLO_PROGETTO) ~ "05.05-NATURA E BIODIVERSITA'",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" ~ "07.05-MOBILITÀ URBANA",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DG TPL4" ~ "07.05-MOBILITÀ URBANA",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DG TPL5" ~ "07.05-MOBILITÀ URBANA",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DGDIGHE" ~ "05.02-RISORSE IDRICHE",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DGFERRO" ~ "07.02-TRASPORTO FERROVIARIO",
+                                              # OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" ~ SETTORE_INTERVENTO,
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("frana", OC_TITOLO_PROGETTO) ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("frane", OC_TITOLO_PROGETTO) ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("dissest", OC_TITOLO_PROGETTO) ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("versant", OC_TITOLO_PROGETTO) ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" ~ "07.01-TRASPORTO STRADALE",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DGTPL4" ~ "07.05-MOBILITÀ URBANA",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DIGES" ~ "08.01-EDILIZIA E SPAZI PUBBLICI",
+                                              TRUE ~ "CHK"),
+           AREA_TEMATICA_NEW = case_when(COD_LOCALE_PROGETTO == "5MTRA1E7003" ~ "12-CAPACITA' AMMINISTRATIVA",
+                                         OC_DENOM_PROGRAMMATORE == "MIT" ~ "12-CAPACITA' AMMINISTRATIVA",
+                                         OC_DENOM_PROGRAMMATORE == "MIT - DG DIGHE" ~ "05-AMBIENTE E RISORSE NATURALI",
+                                         OC_DENOM_PROGRAMMATORE == "MIT SVILTER DIV V" ~ "08-RIQUALIFICAZIONE URBANA",
+                                         OC_DENOM_PROGRAMMATORE == "MIT SVILTER STRUTT" ~ "08-RIQUALIFICAZIONE URBANA",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG AEREO" ~ "07-TRASPORTI E MOBILITA'",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG PORTI" ~ "07-TRASPORTI E MOBILITA'",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" & grepl("ciclovi", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" & grepl("ciclab", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" ~ "07-TRASPORTI E MOBILITA'",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG TPL4" ~ "07-TRASPORTI E MOBILITA'",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG TPL5" ~ "07-TRASPORTI E MOBILITA'",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DGDIGHE" ~ "05-AMBIENTE E RISORSE NATURALI",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DGFERRO" ~ "07-TRASPORTI E MOBILITA'",
+                                         # OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" ~ AREA_TEMATICA,
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("frana", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("frane", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("dissest", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("versant", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" ~ "07-TRASPORTI E MOBILITA'",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DGTPL4" ~ "07-TRASPORTI E MOBILITA'",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DIGES" ~ "08-RIQUALIFICAZIONE URBANA",
+                                         TRUE ~ "CHK")) %>% 
+    select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
+
+  # PSC_MISE
+  # sembra sensato ma da verificare per singoli progetti
+  
+  # PSC_MISALUTE
+  fix_list_salute <- progetti_psc %>% 
+    filter(OC_CODICE_PROGRAMMA == "2018POSALUTEFSC") %>% 
+    mutate(SETTORE_INTERVENTO_NEW = case_when(COD_LOCALE_PROGETTO == "2MSALDG02_12818_AT_FSC_POSALUTE" ~ "12.02-ASSISTENZA TECNICA",
+                                              TRUE ~ "01.01-RICERCA E SVILUPPO"),
+           AREA_TEMATICA_NEW = case_when(COD_LOCALE_PROGETTO == "2MSALDG02_12818_AT_FSC_POSALUTE" ~ "12-CAPACITA' AMMINISTRATIVA",
+                                         TRUE ~ "01-RICERCA E INNOVAZIONE")) %>% 
+    select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
+  
+  # PSC_MIPAAF
+  # 05.02-RISORSE IDRICHE -> 03.03-AGRICOLTURA
+  # 05.04-BONIFICHE -> 03.03-AGRICOLTURA
+  fix_list_mipaaf <- progetti_psc %>% 
+    filter(OC_CODICE_PROGRAMMA == "2017POAGRICOFSC") %>% 
+    mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "03.03-AGRICOLTURA" ~ "03.03-AGRICOLTURA",
+                                              SETTORE_INTERVENTO == "05.02-RISORSE IDRICHE" ~ "03.03-AGRICOLTURA",
+                                              SETTORE_INTERVENTO == "05.04-BONIFICHE" ~ "03.03-AGRICOLTURA",
+                                              SETTORE_INTERVENTO == "03.01-INDUSTRIA E SERVIZI" ~ "03.01-INDUSTRIA E SERVIZI",
+                                              TRUE ~ "CHK"),
+           AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "03.03-AGRICOLTURA" ~ "03-COMPETITIVITA' IMPRESE",
+                                         SETTORE_INTERVENTO == "05.02-RISORSE IDRICHE" ~ "03-COMPETITIVITA' IMPRESE",
+                                         SETTORE_INTERVENTO == "05.04-BONIFICHE" ~ "03-COMPETITIVITA' IMPRESE",
+                                         SETTORE_INTERVENTO == "03.01-INDUSTRIA E SERVIZI" ~ "03-COMPETITIVITA' IMPRESE",
+                                         TRUE ~ "CHK")) %>% 
+    select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
+  
+  
+  # PSC_MIBACT
+  # 05.05-NATURA E BIODIVERSITA' -> 06.01-PATRIMONIO E PAESAGGIO (ma controllare progetti)
+  # 06.02-ATTIVITA’ CULTURALI -> 06.01-PATRIMONIO E PAESAGGIO (ma controllare progetti)
+  # 03.02-TURISMO E OSPITALITA’ in overbooking anche senza PSC_MTUR
+  fix_list_mibact <- progetti_psc %>% 
+    semi_join(progetti_psc %>% 
+                filter(ID_PSC == "PSC_MIBACT"), 
+              by = "COD_LOCALE_PROGETTO") %>%
+    mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITA’" ~ "03.02-TURISMO E OSPITALITA’",
+                                              SETTORE_INTERVENTO == "06.01-PATRIMONIO E PAESAGGIO" ~ "06.01-PATRIMONIO E PAESAGGIO",
+                                              SETTORE_INTERVENTO == "06.02-ATTIVITA’ CULTURALI" ~ "06.01-PATRIMONIO E PAESAGGIO",
+                                              SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITA'" ~ "03.02-TURISMO E OSPITALITA’",
+                                              SETTORE_INTERVENTO == "12.02-ASSISTENZA TECNICA" ~ "12.02-ASSISTENZA TECNICA",
+                                              TRUE ~ "CHK"),
+           AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITA’" ~ "03-COMPETITIVITA' IMPRESE",
+                                         SETTORE_INTERVENTO == "06.01-PATRIMONIO E PAESAGGIO" ~ "06-CULTURA",
+                                         SETTORE_INTERVENTO == "06.02-ATTIVITA’ CULTURALI" ~ "06-CULTURA",
+                                         SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITA'" ~ "03-COMPETITIVITA' IMPRESE",
+                                         SETTORE_INTERVENTO == "12.02-ASSISTENZA TECNICA" ~ "12-CAPACITA' AMMINISTRATIVA",
+                                         TRUE ~ "CHK")) %>% 
+    select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
+  
+  
+  # PSC_MI
+  # ok
+  
+  # PSC_MATTM
+  # mapping su strumento attuativo
+  fix_list_mattm <- progetti %>% 
+    filter(OC_CODICE_PROGRAMMA == "2017POAMBIENFSC") %>% 
+    mutate(SETTORE_INTERVENTO_NEW = case_when(COD_STRUMENTO == "POFSCMAC25" ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO", 
+                                              COD_STRUMENTO == "POFSCPNM25" ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO", 
+                                              COD_STRUMENTO == "POFSCSTA25" ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO", 
+                                              COD_STRUMENTO == "POFSCRIN21" ~ "05.03-RIFIUTI", 
+                                              COD_STRUMENTO == "POFSCSTA23" ~ "05.04-BONIFICHE", 
+                                              COD_STRUMENTO == "POFSCCLE24" ~ "04.01-EFFICIENZA ENERGETICA", 
+                                              COD_STRUMENTO == "POFSCSTA22" ~ "05.02-RISORSE IDRICHE", 
+                                              TRUE ~ "CHK"),
+           AREA_TEMATICA_NEW = case_when(COD_STRUMENTO == "POFSCMAC25" ~ "05-AMBIENTE E RISORSE NATURALI", 
+                                         COD_STRUMENTO == "POFSCPNM25" ~ "05-AMBIENTE E RISORSE NATURALI", 
+                                         COD_STRUMENTO == "POFSCSTA25" ~ "05-AMBIENTE E RISORSE NATURALI", 
+                                         COD_STRUMENTO == "POFSCRIN21" ~ "05-AMBIENTE E RISORSE NATURALI", 
+                                         COD_STRUMENTO == "POFSCSTA23" ~ "05-AMBIENTE E RISORSE NATURALI", 
+                                         COD_STRUMENTO == "POFSCCLE24" ~ "04-ENERGIA", 
+                                         COD_STRUMENTO == "POFSCSTA22" ~ "05-AMBIENTE E RISORSE NATURALI", 
+                                         TRUE ~ "CHK")) %>% 
+    distinct(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
+
+  # unione fix
+  fix_list <- fix_list_mattm %>% 
+    bind_rows(fix_list_mtur) %>% 
+    bind_rows(fix_list_mibact) %>% 
+    bind_rows(fix_list_sport) %>% 
+    bind_rows(fix_list_mipaaf) %>% 
+    bind_rows(fix_list_mur) %>% 
+    bind_rows(fix_list_mit) %>% 
+    bind_rows(fix_list_salute)
+  
+  # chk duplicati
+  temp <- fix_list %>% count(COD_LOCALE_PROGETTO) %>% filter(n > 1)
+  message("Controlla se ci sono duplicati in fix_list:")
+  print(temp)
+  
+  # chk NA
+  temp <- fix_list %>% filter(AREA_TEMATICA_NEW == "CHK") %>% 
+    left_join(progetti_psc %>% 
+                distinct(COD_LOCALE_PROGETTO, ID_PSC)) %>% 
+    count(ID_PSC)
+  message("Controlla se ci sono errori segnati con CHK in fix_list:")
+  print(temp)
+  
+  progetti_psc <- progetti_psc %>% 
+    left_join(fix_list, by = "COD_LOCALE_PROGETTO") %>% 
+    mutate(SETTORE_INTERVENTO  = if_else(is.na(SETTORE_INTERVENTO_NEW), SETTORE_INTERVENTO, SETTORE_INTERVENTO_NEW),
+           AREA_TEMATICA  = if_else(is.na(AREA_TEMATICA_NEW), AREA_TEMATICA, AREA_TEMATICA_NEW)) %>% 
+    select(-SETTORE_INTERVENTO_NEW, -AREA_TEMATICA_NEW)
+  
+  return(progetti_psc)
+  
+}
+
+
+#' Correzione macroarea per progetti anomali
+#'
+#' Correzione macroarea per progetti anomali
+#'
+#' @param progetti_psc Dataset progetti PSC da dentro prep_dati_psc_bimestre()
+#' @return dataframe
+#' @note Da usare dentro prep_dati_psc_bimestre()
+fix_macroarea_progetti_psc <- function(progetti_psc) {
+  
+  progetti_psc <- progetti_psc %>% 
+    mutate(x_MACROAREA = as.character(x_MACROAREA)) %>% 
+    mutate(x_MACROAREA = case_when(COD_LOCALE_PROGETTO == "4MISEF/130052/01/X38" ~ "Mezzogiorno",
+                                   COD_LOCALE_PROGETTO == "1MISE761" ~ "Mezzogiorno",
+                                   TRUE ~ x_MACROAREA)) %>% 
+    refactor_macroarea(.)
+  
+  return(progetti_psc)
+  
+
+}

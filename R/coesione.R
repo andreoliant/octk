@@ -964,9 +964,10 @@ load_operazioni <- function(bimestre, usa_meuro=TRUE) {
 #' Report con apertura per programma e fase procedurale rispetto al focus selezionato.
 #' E' costruito su operaizoni e dati coesione.
 #'
-#' @param perimetro Dataset di classe perimetro.
+#' @param perimetro Dataset di classe operazioni
 #' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo
 #' @param use_713 Vuoi caricare anche i dati di programmaizone per il 2007-2013?
+#' @param use_eu Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)
 #' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
 #' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?
 #' @param add_totali Vuoi aggiungere valori calcolati in termini di costo pubblico?
@@ -975,13 +976,14 @@ load_operazioni <- function(bimestre, usa_meuro=TRUE) {
 #' @param tipo_ciclo Vuoi usare CICLO_STRATEGIA (default in x_AMBITO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_AMBITO da DB)?
 #' @param focus nome per file.
 #' @param export vuoi salvare il file?
+#' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
 #' @param  progetti dataset di tipo "progetti" da utilizzare per con add_totali == TRUE
 #' @param  po_riclass dataset di tipo "po_riclass" da utilizzare (altrimenti usa default nel package)
 #' @return Un file csv con apertura per programma e fase procedurale.
-make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=FALSE, use_flt=FALSE, use_po_psc=FALSE,
+make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=FALSE, use_eu=FALSE, use_flt=FALSE, use_po_psc=FALSE,
                                            add_totali=FALSE, use_cp2=FALSE, cut_no_risorse=FALSE,
                                            tipo_ciclo="CICLO_STRATEGIA",
-                                           focus="report", export=FALSE, progetti=NULL, po_riclass=NULL) {
+                                           focus="report", export=FALSE, export_xls=FALSE, progetti=NULL, po_riclass=NULL) {
   
   # perimetro <- operazioni
   # DEBUG: 
@@ -990,9 +992,14 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
   # tipo_ciclo <- "CICLO_STRATEGIA"
   # use_po_psc <- TRUE
   
-  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) %>%
+  # OLD:
+  # programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) %>%
+  #   rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
+  #          x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
+  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_eu=use_eu, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
+  message("programmi caricato")
   
   if (use_flt == TRUE) {
     
@@ -1045,13 +1052,22 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
     #                                               "FEAD", "FAMI", "CTE", "ORD")),
     #        x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006"))) %>%
     group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA) %>%
-    summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE),
+              RISORSE_UE = sum(FINANZ_UE, na.rm = TRUE))
   # MEMO: questo group_by è sufficiente a gestire direttrici ferroviarie con use_po_psc = TRUE
+  
   
   if (usa_meuro == TRUE) {
     spalla <- spalla %>%
-      mutate(RISORSE = round(RISORSE / 1000000, 1))
+      mutate(RISORSE = round(RISORSE / 1000000, 1),
+             RISORSE_UE = round(RISORSE_UE / 1000000, 1))
   }
+  
+  if (use_eu == FALSE) {
+    spalla <- spalla %>% 
+      select(-RISORSE_UE)
+  } 
+  
   
   if (is.null(po_riclass)) {
     po_riclass <- octk::po_riclass
@@ -1130,21 +1146,34 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
              `Eseguito` = round(`Eseguito` / 1000000, 1))
   }
   
-  
-  out <- out %>%
-    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE, N, COE, COE_IMP, COE_PAG,
-           `Non avviato`,
-           `In avvio di progettazione`,
-           `In corso di progettazione`,
-           `In affidamento`,
-           `In esecuzione`,
-           `Eseguito`,
-           `Eseguito`)
+  if (use_eu == TRUE) {
+    out <- out %>%
+      select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG,
+             `Non avviato`,
+             `In avvio di progettazione`,
+             `In corso di progettazione`,
+             `In affidamento`,
+             `In esecuzione`,
+             `Eseguito`,
+             `Eseguito`)
+    
+  } else {
+    out <- out %>%
+      select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE, N, COE, COE_IMP, COE_PAG,
+             `Non avviato`,
+             `In avvio di progettazione`,
+             `In corso di progettazione`,
+             `In affidamento`,
+             `In esecuzione`,
+             `Eseguito`,
+             `Eseguito`)
+    
+  }
   
   
   # aggiunge valori calcolati in termini di FTPN
   if (add_totali == TRUE) {
-    
+    message("integrazione risorse totali")
     if (is.null(progetti)) {
       progetti <- load_progetti(bimestre, light = TRUE, refactor = TRUE)
     }
@@ -1251,23 +1280,43 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
         left_join(programmi %>%
                     as_tibble(.) %>%
                     distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA),
-                  by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO")) %>%
+                  by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO"))# %>%
         # mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
         #                                               "FEAD", "FAMI", "CTE", "ORD")),
         #        x_CICLO = factor(x_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006"))) %>%
         # ripristina struttura per bindrows
-        mutate(RISORSE = 0,
-               N = 0,
-               COE = 0,
-               COE_IMP = 0,
-               COE_PAG = 0,
-               `Non avviato` = 0,
-               `In avvio di progettazione` = 0,
-               `In corso di progettazione` = 0,
-               `In affidamento` = 0,
-               `In esecuzione` = 0,
-               `Eseguito` = 0) %>%
-        select(names(out))
+      
+      if (use_eu == TRUE) {
+        appo <- appo %>% 
+          mutate(RISORSE = 0,
+                 RISORSE_UE = 0,
+                 N = 0,
+                 COE = 0,
+                 COE_IMP = 0,
+                 COE_PAG = 0,
+                 `Non avviato` = 0,
+                 `In avvio di progettazione` = 0,
+                 `In corso di progettazione` = 0,
+                 `In affidamento` = 0,
+                 `In esecuzione` = 0,
+                 `Eseguito` = 0) %>%
+          select(names(out))
+      } else {
+        appo <- appo %>% 
+          mutate(RISORSE = 0,
+                 N = 0,
+                 COE = 0,
+                 COE_IMP = 0,
+                 COE_PAG = 0,
+                 `Non avviato` = 0,
+                 `In avvio di progettazione` = 0,
+                 `In corso di progettazione` = 0,
+                 `In affidamento` = 0,
+                 `In esecuzione` = 0,
+                 `Eseguito` = 0) %>%
+          select(names(out))
+      }
+     
       
       # TODO: qui va aggiustata la parte PAC di direttrici ferroviarie e di giustizia digitale perché CP resta vuoto (o forse dentro report programmi)
       
@@ -1302,6 +1351,14 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
       write.csv2(out, file.path(TEMP, paste0(focus, "_programmi_cp2.csv")), row.names = FALSE)
     } else {
       write.csv2(out, file.path(TEMP, paste0(focus, "_programmi.csv")), row.names = FALSE)
+    }
+  }
+  
+  if (export_xls == TRUE) {
+    if (use_cp2 == TRUE) {
+      write.xlsx(out, file.path(OUTPUT, paste0(focus, "_programmi_cp2.xlsx")))
+    } else {
+      write.xlsx(out, file.path(OUTPUT, paste0(focus, "_programmi.xlsx")))
     }
   }
   
@@ -2337,7 +2394,8 @@ chk_allineamento_costo_coe <- function(report, programmi, report_macroaree, peri
 #' Report con apertura per programma e fase procedurale rispetto al focus selezionato.
 #' E' costruito su operaizoni e dati coesione.
 #'
-#' @param perimetro Dataset di classe perimetro.
+#' @param perimetro Dataset di classe operazioni
+#' @param perimetro_sie Dataset con valori per macroaree dai livelli gerarchici
 #' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo
 #' @param use_713 Vuoi caricare anche i dati di programmaizone per il 2007-2013?
 #' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
@@ -2348,13 +2406,14 @@ chk_allineamento_costo_coe <- function(report, programmi, report_macroaree, peri
 #' @param tipo_ciclo Vuoi usare CICLO_STRATEGIA (default in x_AMBITO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_AMBITO da DB)?
 #' @param focus nome per file.
 #' @param export vuoi salvare il file?
+#' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
 #' @param  progetti dataset di tipo "progetti" da utilizzare per con add_totali == TRUE
 #' @param  po_riclass dataset di tipo "po_riclass" da utilizzare (altrimenti usa default nel package)
 #' @return Un file csv con apertura per programma e fase procedurale.
-make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE, use_713=FALSE, use_flt=FALSE, use_po_psc=FALSE,
+make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NULL, usa_meuro=FALSE, use_713=FALSE, use_flt=FALSE, use_po_psc=FALSE,
                                            add_totali=FALSE, use_cp2=FALSE, cut_no_risorse=FALSE,
                                            tipo_ciclo="CICLO_STRATEGIA",
-                                           focus="report", export=FALSE, progetti=NULL, po_riclass=NULL) {
+                                           focus="report", export=FALSE, export_xls=FALSE, progetti=NULL, po_riclass=NULL) {
   
   # DEBUG: 
   # use_713 <- TRUE
@@ -2378,6 +2437,22 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     mutate(x_AMBITO = case_when(OC_CODICE_PROGRAMMA == "2014IT05M9OP001" ~ "YEI", # sovrascrive FSE
                                 TRUE ~ x_AMBITO)) %>%
     refactor_ambito(.)
+  
+  # NEW: switch per dati da livelli gerarchici
+  if (!is.null(perimetro_sie)) {
+    perimetro_2 <- perimetro %>% 
+      # scarta le righe sie di cui uso dati da livelli gerarchici
+      anti_join(perimetro_sie, by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_AMBITO")) %>% 
+      # accoda nuove righe sie
+      bind_rows(perimetro_sie)
+    
+    # chk
+    temp <- sum(perimetro_2$COE, na.rm = TRUE) - sum(perimetro$COE, na.rm = TRUE)
+    message(paste0("Questo è il delta usando i dati per livelli gerarchici di FESR, FSE e YEI: ", temp))
+   
+    perimetro <- perimetro_2
+  }
+  
   
   # patch YEI anche per perimetro 
   perimetro <- perimetro  %>%
@@ -2591,7 +2666,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     
     # versione con cp2
     if (use_cp2 == TRUE) {
-      
+      message("------------- QUESTA SEZIONE NON E' VERIFCATA -----------------")
       message("Inizio calcolo cp2")
       
       appo <- out %>%
@@ -2696,6 +2771,14 @@ make_report_programmi_macroaree_coesione <- function(perimetro, usa_meuro=FALSE,
     }
   }
   
+  
+  if (export_xls == TRUE) {
+    if (use_cp2 == TRUE) {
+      write.xlsx(out, file.path(TEMP, paste0(focus, "_programmi_macroaree_cp2.xlsx")), row.names = FALSE)
+    } else {
+      write.xlsx(out, file.path(TEMP, paste0(focus, "_programmi_macroaree.xlsx")), row.names = FALSE)
+    }
+  }
   
   return(out)
 }
@@ -3238,3 +3321,5 @@ add_delta_report_bimestre_coesione <- function(report, path_to_old, export=FALSE
   return(out)
   
 }
+
+

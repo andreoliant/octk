@@ -9,6 +9,7 @@ make_report_report_temi_psc(
   programmazione = NULL,
   visualizzati = TRUE,
   usa_meuro = FALSE,
+  show_cp = FALSE,
   export = FALSE,
   export_xls = FALSE
 )
@@ -22,6 +23,8 @@ make_report_report_temi_psc(
 
 \item{usa_meuro}{Logico. Vuoi dati in Meuro?}
 
+\item{show_cp}{Logico. Vuoi calcolare anche il costo pubblico (CP)?}
+
 \item{export}{Vuoi salvare il file csv in TEMP?}
 
 \item{export_xls}{Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?}
@@ -30,7 +33,7 @@ make_report_report_temi_psc(
 Report di confronto programmazione attuazione per PSC e PO in essi confluiti. I nuovi
 }
 \description{
-Crea report di confronto programmazione attuazione per PSC e PO in essi confluiti
+Crea report di confronto programmazione attuazione per PSC e tema
 }
 \note{
 ...
