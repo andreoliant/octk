@@ -1,0 +1,134 @@
+---
+title: "psc"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{psc}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, echo = TRUE, eval = FALSE}
+library(octk)
+```
+
+
+# Flusso per report su PSC.
+
+## Preparazione dei dati
+I dati di base sono qui:
+
+> 
+--- Drive/DATI/PSC  
+------ info  (dati di supporto)
+--------- mapping.xlsx
+--------- matrix_po_psc.csv
+--------- matrix_temi_settori.csv
+--------- quota_regionale_sgp_20191231.csv
+--------- ricodifica_po_naz.csv
+--------- split_temi_AACC.csv  [CHK: CAPIRE A CHE SERVE]
+--------- art44_progetti_20201209.csv (file finale elaborazione PSC da ELAB > 20200630 > PSC > psc > V.05 > input)
+------ sgp  
+--------- dati_sgp_[BIMESTRE-1].csv
+--------- dati_sgp_[BIMESTRE-2].csv
+------ psc  
+--------- dati_psc_[BIMESTRE-1].csv
+--------- dati_psc_[BIMESTRE-2].csv
+# DEV: il flusso di preparazione dati va rieseguito per pulire alcuni bug
+
+Inoltre, per l'esecuzione del flusso di preparazione dei dati, è necessario lo scarico di SGP di ACT da archiviare qui:
+
+> 
+--- Drive/DATI/SGP  
+------ [BIMESTRE-1]
+--------- Estrazioni dati e calcolo indicatori_XXXXXX_v01.xlsx  
+--------- (altro eventuale materiale di supporto)  
+------ [BIMESTRE-2]
+
+Il flusso di preparazione dei dati, da eseguire ogni bimestre, alimenta la cartella dei dati di base sopra. 
+
+La variabile "costo realizzato" (COE_CR) viene creata sepratamente per i progetti del ciclo 2000-2006 (in prep_dati_sgp_bimestre) e dei cicli 2007-2013 e 2014-2020 (prep_dati_psc_bimestre, prima del bind dei dati da SGP), mediante riproporzionamento sulla base del rapporto tra finanziamenti FSC (per il 2000-2006 in quota regionale) e finanziamenti totali (al lorodo dei privati).
+
+Rispetto al solo ciclo 2000-2006, è rilevante la "quota regionale"...
+[DA COMPLETARE]
+
+
+
+Nel file finale dell'elaborazione art. 44 (art44_progetti_20201209.csv) sono rilevanti le seguenti variabili:
+[DA COMPLETARE]
+
+
+
+
+Le tematizzazioni sono attribuite per ciclo, sulla base di specifiche variabili:
+[DA COMPLETARE]
+
+Se a valle della tematizzazione risltano casi con ... pari a "NA-NA"...
+[DA COMPLETARE]
+
+Le principali elaborazioni svolte in precedenza sono:
+
+* ELAB > 20200630 > PSC > psc: crea tavole PSC prima approvazione per Regioni e Amministrazioni centrali (per Amministrazini centrali poi rifatti a mano i quadri per temi da "interventi")
+* ELAB > 20201031 > DB_FSC > crea_db > V.01 > chk_dati_interventi.R: crea liste di progetti trasmesse a Regioni (ma non ad Amministrazioni centrali per questione "interventi")
+* ELAB > 20201031 > DB_FSC > crea_db > V.01 > traspone_strumenti.R e inizializza_info.R: file per setup DBCOE da elaboraizoni art. 44 
+* ELAB > 20201231 > PSC > psc: crea tavole PSC prima approvazione per Città metropolitane
+* ELAB > 20201231 > PSC > metro: crea liste di progetti trasmesse a Città metropolitane
+* ELAB > 20210228 > DEV > psc: prove per dashboard PSC
+* ELAB > 20210430 > PSC > psc_cr: tavole su stato di attuazione PSC con integrazione del costo realizzato [DA SPOSTARE FUORI DA ELAB]
+
+Le liste di progetti trasmesse alle regioni sono state prodotte partendo dal file "art44_progetti_20201209.csv" (sopra) con alcune integrazioni che modificano sia gli importi che la tematizzazione, che sono salvate in "lista_progetti_all.csv" (in ELAB > 20201031 > DB_FSC). Nel file lista_progetti_all.csv sono presenti anche MIT, MATTM e MIBACT perché inclusi nel db di test in merging_struttdb.xlsx".
+
+TODO: integrare convenzioni condivise con Roberta e spiegare questione CIS Taranto in PRA Puglia
+
+
+Seguono le funzioni del workflow di preprazione dei dati.
+
+```{r, echo = TRUE, eval = FALSE}
+
+# carica file di supporto e crea variabile PSC con path ai dati di base
+init_psc()
+
+
+# dati sgp per 2000-2006
+prep_dati_sgp_bimestre(bimestre = "20210430",
+                       filename = "Estrazioni dati e calcolo indicatori_XXXXXX.xlsx",
+                       matrix_06,
+                       chk_today = "2021-04-30") # data di riferimento per il calcolo dello stato procedurale
+# Se mancano i dati sgp del bimestre si copia il bimestre precedente:
+# file.copy(file.path(PSC, "sgp", "dati_sgp_20210228.csv"), file.path(PSC, "sgp", "dati_sgp_20210430.csv"), overwrite = TRUE)
+
+
+# dati bimestre per tre cicli
+prep_dati_psc_bimestre(bimestre = "20210430", matrix, po_naz, art44, matrix_1420, matrix_713, matrix_temi_settori)
+ 
+
+```
+
+
+## Analisi dei dati
+Sono disponbili questi report focalizzati sul confronto tra programmazione e attuazione:
+```{r, echo = TRUE, eval = FALSE}
+
+# caricamento de, dataset attuazione PSC
+progetti_psc <- load_progetti_psc(bimestre)
+
+# report con apertura per psc e po di origine
+report1 <- make_report_report_po_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, export=TRUE, export_xls=FALSE) 
+
+# report con apertura per psc e temi
+report2 <- make_report_report_temi_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, export=TRUE, export_xls=FALSE)
+
+
+```
+
+Nel report per temi sono già considerati i patti delle Città metropolitane, anche se relativi PSC non sono approvati.
+
+Tra il report per po-psc e quello per temi c'è una leggera differenza nell'importo delle risorse programmate che deriva dalle due modalità del DBCOE, in particolare dagli arrotondamenti presenti nelle tavole ufficiali dei PSC deliberate (quindi lato "temi").
+
