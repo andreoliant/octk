@@ -996,7 +996,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, use_713=F
   # programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) %>%
   #   rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
   #          x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
-  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_eu=use_eu, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) %>%
+  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_eu=TRUE, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   message("programmi caricato")
@@ -2398,6 +2398,7 @@ chk_allineamento_costo_coe <- function(report, programmi, report_macroaree, peri
 #' @param perimetro_sie Dataset con valori per macroaree dai livelli gerarchici
 #' @param usa_meuro Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo
 #' @param use_713 Vuoi caricare anche i dati di programmaizone per il 2007-2013?
+#' @param use_eu Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)
 #' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
 #' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?
 #' @param add_totali Vuoi aggiungere valori calcolati in termini di costo pubblico?
@@ -2410,10 +2411,11 @@ chk_allineamento_costo_coe <- function(report, programmi, report_macroaree, peri
 #' @param  progetti dataset di tipo "progetti" da utilizzare per con add_totali == TRUE
 #' @param  po_riclass dataset di tipo "po_riclass" da utilizzare (altrimenti usa default nel package)
 #' @return Un file csv con apertura per programma e fase procedurale.
-make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NULL, usa_meuro=FALSE, use_713=FALSE, use_flt=FALSE, use_po_psc=FALSE,
-                                           add_totali=FALSE, use_cp2=FALSE, cut_no_risorse=FALSE,
-                                           tipo_ciclo="CICLO_STRATEGIA",
-                                           focus="report", export=FALSE, export_xls=FALSE, progetti=NULL, po_riclass=NULL) {
+make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NULL, usa_meuro=FALSE, use_713=FALSE, use_eu=FALSE,
+                                                     use_flt=FALSE, use_po_psc=FALSE,
+                                                     add_totali=FALSE, use_cp2=FALSE, cut_no_risorse=FALSE,
+                                                     tipo_ciclo="CICLO_STRATEGIA",
+                                                     focus="report", export=FALSE, export_xls=FALSE, progetti=NULL, po_riclass=NULL) {
   
   # DEBUG: 
   # use_713 <- TRUE
@@ -2421,7 +2423,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NU
   # tipo_ciclo <- "CICLO_STRATEGIA"
   # perimetro <- operazioni
   
-  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE, use_po_psc=use_po_psc) %>%
+  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_eu=TRUE, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE, use_po_psc=use_po_psc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   
@@ -2469,12 +2471,19 @@ make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NU
   # crea spalla
   spalla <- programmi %>%
     group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_MACROAREA) %>%
-    summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE),
+              RISORSE_UE = sum(FINANZ_UE, na.rm = TRUE))
   
   if (usa_meuro == TRUE) {
     spalla <- spalla %>%
-      mutate(RISORSE = round(RISORSE / 1000000, 1))
+      mutate(RISORSE = round(RISORSE / 1000000, 1),
+             RISORSE_UE = round(RISORSE_UE / 1000000, 1))
   }
+  
+  if (use_eu == FALSE) {
+    spalla <- spalla %>% 
+      select(-RISORSE_UE)
+  } 
   
   if (is.null(po_riclass)) {
     # po_riclass <- octk::po_riclass

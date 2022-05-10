@@ -165,7 +165,7 @@ init_psc <- function(PSC=NULL) {
 #'
 #' Crea il file con operazioni FSC compatibile con PSC
 #' 
-#' @param bimestre Bimestre di riferimento
+#' @param bimestre Bimestre di riferimento, nella versione specifica per i dati PSC (es. 20211231.01 oppure 20211231), che viene ricondotto automaticamente al bimestre OC
 #' @param matrix_po_psc Matrice di riconciliazione PO - PSC
 #' @param art44 Dati di base per istruttoria art44 al 20200630
 #' @param matrix_1420 Matrice di riconciliazione tra temi prioritari FSC 2014-2020 e settori di intervento PSC
@@ -178,6 +178,8 @@ init_psc <- function(PSC=NULL) {
 prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44, 
                                    matrix_1420, matrix_713, matrix_temi_settori, progetti=NULL, progetti_pub=NULL) {
   
+  bimestre_oc <- str_sub(bimestre, 1, 8) # 
+  
   if (is.null(progetti)) {
     progetti <- load_progetti(bimestre, visualizzati = FALSE, light = FALSE) %>% 
       select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_COD_ARTICOLAZ_PROGRAMMA, 
@@ -186,7 +188,7 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
   }
   
   if (is.null(progetti_pub)) {
-    progetti_pub <- read_csv2(file.path(DATA, paste0("progetti_esteso_", bimestre, ".csv")), guess_max = 1200000) %>% 
+    progetti_pub <- read_csv2(file.path(DATA, paste0("progetti_esteso_", bimestre_oc, ".csv")), guess_max = 1200000) %>% 
       select(COD_LOCALE_PROGETTO, COSTO_REALIZZATO, 
              FINANZ_STATO_FSC, OC_FINANZ_STATO_FSC_NETTO,
              FINANZ_TOTALE_PUBBLICO, FINANZ_PRIVATO, FINANZ_DA_REPERIRE, ECONOMIE_TOTALI,
@@ -195,17 +197,18 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
 
   PSC <- file.path(DRIVE, "DATI", "PSC")
   
-  print(bimestre)
   # rettifica DATA per bimestri diversi
-  bimestre <- bimestre
-  DATA <- paste0(str_sub(DATA, 1, nchar(DATA)-8), bimestre)
+  # OLD:
+  # DATA <- paste0(str_sub(DATA, 1, nchar(DATA)-8), bimestre)
+  # NEW:
+  DATA <- paste0(str_sub(DATA, 1, nchar(DATA)-8), bimestre_oc)
   # print(DATA)
   
   # ------------------ load dati ------------------ #
   
   # operazioni <- load_operazioni(bimestre, usa_meuro = FALSE) 
   # TODO: qui c'è chiamata interna a DATA che non viene ridefinita, forse perché in cache?
-  operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1e+06) %>% 
+  operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre_oc, ".csv")), guess_max = 1e+06) %>% 
     # filter(OC_FLAG_VISUALIZZAZIONE == 0) %>% 
     get_simply_non_loc() %>% 
     refactor_ambito() %>% 
@@ -347,7 +350,7 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
   # debug classi
   print(appo %>% count(AREA_TEMATICA))
   chk <- appo %>% filter(AREA_TEMATICA == "NA-NA")
-  write_csv2(chk, file.path(TEMP, paste0("chk_classi_missing_", bimestre, ".csv")))
+  write_csv2(chk, file.path(TEMP, paste0("chk_classi_missing_", bimestre_oc, ".csv")))
   
   message("Questi sono gli strumenti attuativi non censiti in matrix:")
   chk2 <- chk %>% 
@@ -356,7 +359,7 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
                            is.na(COE) ~ "na")) %>% 
     count(x_CICLO, OC_CODICE_PROGRAMMA, x_PROGRAMMA, SETTORE_INTERVENTO, CHK)
   print(chk2)
-  write_csv2(chk2, file.path(TEMP, paste0("fix_mapping_", bimestre, ".csv")))
+  write_csv2(chk2, file.path(TEMP, paste0("fix_mapping_", bimestre_oc, ".csv")))
   message("Se ci sono NA-NA con COE NA va bene, restano così. Per tutti gli altri casi va rivisto lo script, che incorpora direttamente le correzioni")
   
   # fix classi
@@ -540,7 +543,7 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
 #'
 #' Crea dati SGP compatibili per elaborazioni PSC partendo da repository in DATI > SGP
 #' 
-#' @param bimestre Bimestre di riferimento
+#' @param bimestre Bimestre di riferimento, nella versione specifica per i dati PSC (es. 20211231.01 oppure 20211231)
 #' @param filename Nome file xlsx in DATI > SGP
 #' @param matrix06 Matrice di riconciliazione tra denominazione APQ 2000-20006 e settori di intervento PSC
 #' @param chk_today Parametro da passare a get_stato_attuazione(), con formato "2021-02-28"
@@ -554,11 +557,81 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
   
   PSC <- file.path(DRIVE, "DATI", "PSC")
   
-  print(bimestre)
+  # print(bimestre)
   DATA <- paste0(str_sub(DATA, 1, nchar(DATA)-8), bimestre)
   
   SGP <- file.path(DRIVE, "DATI", "SGP", bimestre)
-  appo <- read_xlsx(file.path(SGP, filename), guess_max = 25000)
+  
+  
+  # # fix per sovrascrivere dati
+  # appo <- read.table(file.path(SGP, filename),
+  #                    header = TRUE, sep = ";", dec = ".", quote = "\"", fill = TRUE,
+  #                    stringsAsFactors = FALSE)
+  # appo1 <- appo %>% 
+  #   mutate(COSTO_REALIZZATO = as.numeric(str_replace(COSTO_REALIZZATO, "^\\.", "0.")),
+  #                  COSTO_DA_REALIZZARE = as.numeric(str_replace(COSTO_DA_REALIZZARE, "^\\.", "0.")),
+  #                  COSTO_TOTALE = as.numeric(str_replace(COSTO_TOTALE, "^\\.", "0.")),
+  #                  TOTALE_IMPEGNI = as.numeric(str_replace(TOTALE_IMPEGNI, "^\\.", "0.")),
+  #                  TOTALE_PAGAMENTI = as.numeric(str_replace(TOTALE_PAGAMENTI, "^\\.", "0.")),
+  #                  TOTALE_FINANZIAMENTI_FSC = as.numeric(str_replace(TOTALE_FINANZIAMENTI_FSC, "^\\.", "0.")),
+  #                  TOTALE_FINANZIAMENTI_PVT = as.numeric(str_replace(TOTALE_FINANZIAMENTI_PVT, "^\\.", "0.")),
+  #                  TOTALE_FINANZIAMENTI_RPR = as.numeric(str_replace(TOTALE_FINANZIAMENTI_RPR, "^\\.", "0.")),
+  #                  TOTALE_FINANZIAMENTI_ALTRO = as.numeric(str_replace(TOTALE_FINANZIAMENTI_ALTRO, "^\\.", "0.")),
+  #                  TOTALE_FINANZIAMENTI = as.numeric(str_replace(TOTALE_FINANZIAMENTI, "^\\.", "0.")),
+  #                  TOTALE_ECONOMIE_FSC = as.numeric(str_replace(TOTALE_ECONOMIE_FSC, "^\\.", "0.")),
+  #                  TOTALE_ECONOMIE_PVT = as.numeric(str_replace(TOTALE_ECONOMIE_PVT, "^\\.", "0.")),
+  #                  TOTALE_ECONOMIE_ALTRO = as.numeric(str_replace(TOTALE_ECONOMIE_ALTRO, "^\\.", "0.")),
+  #                  TOTALE_PAGAMENTI_TIPO_P = as.numeric(str_replace(TOTALE_PAGAMENTI_TIPO_P, "^\\.", "0.")),
+  #                  TOTALE_PAGAMENTI_TIPO_R = as.numeric(str_replace(TOTALE_PAGAMENTI_TIPO_R, "^\\.", "0.")),
+  #                  TOTALE_PAGAMENTI_FAS_TIPO_P = as.numeric(str_replace(TOTALE_PAGAMENTI_FAS_TIPO_P, "^\\.", "0.")),
+  #                  TOTALE_PAGAMENTI_FAS_TIPO_R = as.numeric(str_replace(TOTALE_PAGAMENTI_FAS_TIPO_R, "^\\.", "0.")),
+  #                  TOTALE_IMPEGNI_TIPO_I = as.numeric(str_replace(TOTALE_IMPEGNI_TIPO_I, "^\\.", "0.")),
+  #                  TOTALE_IMPEGNI_TIPO_D = as.numeric(str_replace(TOTALE_IMPEGNI_TIPO_D, "^\\.", "0.")),
+  #                  TOTALE_ECONOMIE = as.numeric(str_replace(TOTALE_ECONOMIE, "^\\.", "0.")),
+  #                  TOTALE_ECONOMIE_RPR = as.numeric(str_replace(TOTALE_ECONOMIE_RPR, "^\\.", "0.")),
+  #                  FINANZIAMENTO_TOTALE_PUBBLICO = as.numeric(str_replace(FINANZIAMENTO_TOTALE_PUBBLICO, "^\\.", "0.")),
+  #                  FINANZIAMENTO_TOTALE_PUBBLICO_NETTO = as.numeric(str_replace(FINANZIAMENTO_TOTALE_PUBBLICO_NETTO, "^\\.", "0.")),
+  #                  FINANZIAMENTO_FSC = as.numeric(str_replace(FINANZIAMENTO_FSC, "^\\.", "0.")),
+  #                  FINANZIAMENTO_FSC_NETTO = as.numeric(str_replace(FINANZIAMENTO_FSC_NETTO, "^\\.", "0.")),
+  #                  IMPEGNI = as.numeric(str_replace(IMPEGNI, "^\\.", "0.")),
+  #                  PAGAMENTI_TOTALI = as.numeric(str_replace(PAGAMENTI_TOTALI, "^\\.", "0.")),
+  #                  PAGAMENTI_FSC = as.numeric(str_replace(PAGAMENTI_FSC, "^\\.", "0.")),
+  #                  IMPORTO_NAZIONALE = as.numeric(str_replace(IMPORTO_NAZIONALE, "^\\.", "0.")),
+  #                  IMPORTO_REGIONALE = as.numeric(str_replace(IMPORTO_REGIONALE, "^\\.", "0.")),
+  #                  IMPORTO_NON_DEFINITO = as.numeric(str_replace(IMPORTO_NON_DEFINITO, "^\\.", "0.")))
+  # chk <- appo1 %>% 
+  #   select(COD_LOCALE_PROGETTO, IMPEGNI) %>% 
+  #   filter(is.na(IMPEGNI)) %>% 
+  #   left_join(appo %>% 
+  #               select(COD_LOCALE_PROGETTO, IMPEGNI),
+  #             by = "COD_LOCALE_PROGETTO")
+  
+  temp <- str_sub(filename, start = -4, end = -1)
+  if (temp == "xlsx") {
+    appo <- read_xlsx(file.path(SGP, filename), guess_max = 25000)
+  } else {
+    appo <- read.table(file.path(SGP, filename),
+                       skip = 1,
+                       header = TRUE, sep = "~", dec = ".", 
+                       quote = "\"",
+                       fill = TRUE,
+                       stringsAsFactors = FALSE)
+    # appo <- read_csv2(file.path(SGP, filename), guess_max = 25000, 
+    #                   locale = locale(decimal_mark = "."))
+  }
+  
+  for (x in names(appo)) {
+    temp <- paste(names(appo[x]), class(appo[[x]]), sep = ": ")
+    print(temp)
+  }
+  
+  # chk <- appo %>% 
+  #   filter(IMPEGNI != "") %>% 
+  #   select(COD_LOCALE_PROGETTO, IMPEGNI) %>% 
+  #   # filter(COD_LOCALE_PROGETTO == "TOSCWCW028PT") # 106376,99
+  #   filter(COD_LOCALE_PROGETTO == "CMFZ18MSC-03") # ".1"
+
+
   # appo <- read_csv2(file.path(SGP, filename), guess_max = 25000) # 24928 progetti
   # sum(appo$FINANZIAMENTO_FSC_NETTO) # 19027452171
   # sum(appo$FINANZIAMENTO_TOTALE_PUBBLICO_NETTO) # 71662352262
@@ -637,23 +710,29 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
   #   summarise(CHK = sum(CHK, na.rm=TRUE))
   
   # chk NA su importi
-  appo %>% 
-    filter(is.na(IMPORTO_NAZIONALE) | is.na(IMPORTO_REGIONALE) | is.na(IMPORTO_NON_DEFINITO)) %>% 
-    count()
+  chk <- appo %>% 
+    filter(is.na(IMPORTO_NAZIONALE) | is.na(IMPORTO_REGIONALE) | is.na(IMPORTO_NON_DEFINITO)) 
+  chk %>% count()
+  chk %>% count(COD_LOCALE_PROGETTO)
+  chk <- appo %>% filter(COD_LOCALE_PROGETTO == "PIERSR/01/144")
+  # PIERSR/01/144 1
   
   # chk finanziamenti
   appo %>% 
     mutate(TOT_IMPORTI = IMPORTO_NAZIONALE + IMPORTO_REGIONALE + IMPORTO_NON_DEFINITO) %>% 
     summarise(TOT_IMPORTI = sum(TOT_IMPORTI, na.rm = TRUE),
-              FINANZIAMENTO_FSC = sum(FINANZIAMENTO_FSC, na.rm = TRUE))
+              FINANZIAMENTO_FSC = sum(FINANZIAMENTO_FSC, na.rm = TRUE)) %>% 
+    mutate(TOT_IMPORTI - FINANZIAMENTO_FSC)
   
-  appo %>% 
+  chk <- appo %>% 
     mutate(TOT_IMPORTI = IMPORTO_NAZIONALE + IMPORTO_REGIONALE + IMPORTO_NON_DEFINITO,
            CHK = TOT_IMPORTI - FINANZIAMENTO_FSC) %>% 
-    filter(CHK != 0) %>% 
+    filter(CHK != 0) 
+  chk %>% 
     summarise(N = n(),
               TOT_IMPORTI = sum(TOT_IMPORTI, na.rm = TRUE),
               FINANZIAMENTO_FSC = sum(FINANZIAMENTO_FSC, na.rm = TRUE))
+  # write.csv2(chk, file.path(TEMP, "progetti_delta_importi.csv"))
   
   # chk pagamenti fSC
   appo %>% summarise(PAG = sum(PAGAMENTI_FSC, na.rm = TRUE))
@@ -661,6 +740,8 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
   
   # chk su economie
   appo %>% 
+    # mutate(FINANZIAMENTO_FSC_NETTO = as.numeric(FINANZIAMENTO_FSC_NETTO),
+    #        TOTALE_ECONOMIE_FSC = as.numeric(TOTALE_ECONOMIE_FSC)) %>% 
     mutate(FINANZIAMENTO_FSC = if_else(is.na(FINANZIAMENTO_FSC), 0, FINANZIAMENTO_FSC),
            FINANZIAMENTO_FSC_NETTO = if_else(is.na(FINANZIAMENTO_FSC_NETTO), 0, FINANZIAMENTO_FSC_NETTO),
            TOTALE_ECONOMIE_FSC = if_else(is.na(TOTALE_ECONOMIE_FSC), 0, TOTALE_ECONOMIE_FSC)) %>% 
@@ -671,6 +752,17 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
               DELTA = sum(DELTA, na.rm = TRUE),
               ECO = sum(TOTALE_ECONOMIE_FSC, na.rm = TRUE),
               CHK = sum(CHK, na.rm = TRUE))
+  
+  chk <- appo %>% select(COD_LOCALE_PROGETTO, FINANZIAMENTO_FSC_NETTO, TOTALE_ECONOMIE_FSC)
+  # write.csv2(chk, file.path(TEMP, "progetti_finanziamento_carattere.csv"))
+  
+  # fix
+  # appo1 <- appo1 %>% 
+  #   mutate(FINANZIAMENTO_FSC_NETTO = as.numeric(FINANZIAMENTO_FSC_NETTO),
+  #        TOTALE_ECONOMIE_FSC = as.numeric(TOTALE_ECONOMIE_FSC),
+  #        TOTALE_FINANZIAMENTI_PVT = as.numeric(TOTALE_FINANZIAMENTI_PVT),
+  #        TOTALE_ECONOMIE = as.numeric(TOTALE_ECONOMIE),
+  #        IMPEGNI = as.numeric(IMPEGNI))
   
   # elab
   appo2 <- appo1 %>% 
@@ -766,6 +858,9 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
            COE_PAG = PAGAMENTI_TOTALI * x * k, # MEMO: PAGAMENTI_FSC sono vuoti
            COE_ECO = TOTALE_ECONOMIE_FSC * k,
            CP = FINANZIAMENTO_TOTALE_PUBBLICO_NETTO) 
+  
+  chk <- appo2 %>% 
+    filter(STATO_PROCED == "Non avviato")
   
   # calcola costo realizzato
   # appo3 <- appo2 %>% 
@@ -889,9 +984,41 @@ get_stato_attuazione <- function(df, chk_today) {
   chk_today <- as.POSIXct(chk_today)
   
   # DEBUG:
-  # df <- appo1
+  # df <- appo2
   
   appo <- df %>%
+    mutate(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_INIZIO_EFFETTIVA) ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                TRUE ~ DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA),
+           DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_FINE_EFFETTIVA) ~ A00_DATA_FINE_EFFETTIVA,
+                                                              TRUE ~ DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA),
+           DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_INIZIO_EFFETTIVA) ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                 TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE),
+           DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_FINE_EFFETTIVA) ~ A01_DATA_FINE_EFFETTIVA,
+                                                               TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE),
+           DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_INIZIO_EFFETTIVA) ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA),
+           DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_FINE_EFFETTIVA) ~ A02_DATA_FINE_EFFETTIVA,
+                                                              TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA),
+           DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_INIZIO_EFFETTIVA) ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                               TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA),
+           DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_FINE_EFFETTIVA) ~ A03_DATA_FINE_EFFETTIVA,
+                                                               TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA),
+           DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_INIZIO_EFFETTIVA) ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                               is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_INIZIO_EFFETTIVA) ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                               # step non presente per lavori
+                                                               TRUE ~ DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO),
+           DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_FINE_EFFETTIVA) ~ B01_DATA_FINE_EFFETTIVA,
+                                                             is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_FINE_EFFETTIVA) ~ C01_DATA_FINE_EFFETTIVA,
+                                                             # step non presente per lavori
+                                                             TRUE ~ DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO),
+           DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_INIZIO_EFFETTIVA) ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                         is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_INIZIO_EFFETTIVA) ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                         is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_INIZIO_EFFETTIVA) ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                         TRUE ~ DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE),
+           DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_FINE_EFFETTIVA) ~ A04_DATA_FINE_EFFETTIVA,
+                                                                       is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_FINE_EFFETTIVA) ~ B02_DATA_FINE_EFFETTIVA,
+                                                                       is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_FINE_EFFETTIVA) ~ C02_DATA_FINE_EFFETTIVA,
+                                                                       TRUE ~ DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE)) %>%
     select(COD_LOCALE_PROGETTO,
            # DATA_FINE_EFF_COLLAUDO,
            # DATA_INIZIO_EFF_COLLAUDO,
@@ -936,21 +1063,23 @@ get_stato_attuazione <- function(df, chk_today) {
                            # is.na(DATA_INIZIO_EFF_ESECUZIONE) ~ 0,
                            TRUE ~ 0),
       CHK_GARA = case_when(DATA_INIZIO_EFF_STIP_ATTRIB <= chk_today ~ 1,
+                           DATA_FINE_EFF_PROG_ESEC <= chk_today ~ 1, # MEMO: allineamento a regola OC
                            # DATA_FINE_EFF_AGG_BANDO <= chk_today ~ 1,
                            # DATA_INIZIO_EFF_AGG_BANDO <= chk_today ~ 1,
                            # DATA_FINE_EFF_PROG_ESEC <= chk_today ~ 1,
                            TRUE ~ 0),
       # MEMO: blocco su progettazione presente solo per le opere
-      CHK_PROG = case_when(as.POSIXct(DATA_FINE_EFF_PROG_ESEC) <= chk_today ~ 1,
-                           as.POSIXct(DATA_INIZIO_EFF_PROG_ESEC) <= chk_today ~ 1,
+      CHK_PROG = case_when( # as.POSIXct(DATA_FINE_EFF_PROG_ESEC) <= chk_today ~ 1, # MEMO: allineamento a regola OC
+                           as.POSIXct(DATA_INIZIO_EFF_PROG_ESEC) <= chk_today ~ 1, 
                            as.POSIXct(DATA_FINE_EFF_PROG_DEF) <= chk_today ~ 1,
                            as.POSIXct(DATA_INIZIO_EFF_PROG_DEF) <= chk_today ~ 1,
                            as.POSIXct(DATA_FINE_EFF_PROG_PREL) <= chk_today ~ 1,
                            as.POSIXct(DATA_INIZIO_EFF_PROG_PREL) <= chk_today ~ 1,
+                           as.POSIXct(DATA_FINE_EFF_STUDIO_FATT) <= chk_today ~ 1, # MEMO: allineamento a regola OC
                            # DATA_FINE_EFF_STUDIO_FATT <= chk_today ~ 1,
                            # DATA_INIZIO_EFF_STUDIO_FATT <= chk_today ~ 1,
                            TRUE ~ 0),
-      CHK_AVVP = case_when(DATA_FINE_EFF_STUDIO_FATT <= chk_today ~ 1,
+      CHK_AVVP = case_when(# DATA_FINE_EFF_STUDIO_FATT <= chk_today ~ 1, # MEMO: allineamento a regola OC
                            DATA_INIZIO_EFF_STUDIO_FATT <= chk_today ~ 1,
                            TRUE ~ 0)) %>%
     mutate(STATO_PROCED = case_when(CHK_END == 1 ~ "Eseguito",
@@ -1628,9 +1757,9 @@ make_report_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL,
   # DEV: qui perdo settore di intervento
   
   # NEW:
-  temp <- programmazione %>% as_tibble() %>% filter(TIPOLOGIA_AMMINISTRAZIONE == "NAZIONALE") %>% distinct(ID_PSC) %>% mutate(TEMP = 1)
+  psc_naz <- programmazione %>% as_tibble() %>% filter(TIPOLOGIA_AMMINISTRAZIONE == "NAZIONALE") %>% distinct(ID_PSC) %>% mutate(TEMP = 1)
   appo2 <- appo1 %>% 
-    left_join(temp, by = "ID_PSC") %>%
+    left_join(psc_naz, by = "ID_PSC") %>%
     # forza NA su settore di intervento per psc regionali e metropolitani
     mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
                                           TRUE ~ "")) %>% 
@@ -1642,8 +1771,9 @@ make_report_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL,
                                             OC_STATO_PROCEDURALE == "Eseguito" ~ "Eseguito")) %>% 
     group_by(ID_PSC, AREA_TEMATICA, SETTORE_INTERVENTO, x_CICLO, OC_STATO_PROCEDURALE) %>%
     summarise(COE = sum(COE, na.rm = TRUE)) %>% 
-    # aggiunge valore di default (per ora non ci sono casi riferibili alle sezioni speciali)
-    mutate(SEZIONE = "SEZ_ORD") %>% 
+    mutate(SEZIONE = "SEZ_ORD") # aggiunge valore di default (per ora non ci sono casi riferibili alle sezioni speciali)
+  
+  appo3 <- appo2 %>% 
     pivot_wider(names_from = OC_STATO_PROCEDURALE, values_from = COE, values_fill = 0)
   
   # OLD:
@@ -1684,14 +1814,27 @@ make_report_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL,
     group_by(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, 
              SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% 
     summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>%
+    # OLD:
     # MEMO: qui serve full join perché ci possono essere progetti monitorati associati a temi assenti in programmazione
-    full_join(appo2,
+    # full_join(appo2,
+    #           by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO")) %>% 
+    # mutate_if(is.numeric, list(~replace_na(., 0))) %>% 
+    # mutate(temp = RISORSE - Eseguito - Affidamento - Esecuzione - Progettazione - Non_avviato, # non monitorato
+    #        Non_avviato = Non_avviato + temp) %>% 
+    # fix temporaneo
+    # mutate(Non_avviato =  if_else(Non_avviato < 0, 0, Non_avviato)) %>% 
+    full_join(appo2 %>% 
+                group_by(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% 
+                summarise(COE = sum(COE, na.rm = TRUE)),
+              by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO")) %>% 
+    full_join(appo3,
               by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO")) %>% 
     mutate_if(is.numeric, list(~replace_na(., 0))) %>% 
-    mutate(temp = RISORSE - Eseguito - Affidamento - Esecuzione - Progettazione - Non_avviato, # non monitorato
-           Non_avviato = Non_avviato + temp) %>% 
-    # fix temporaneo
-    mutate(Non_avviato =  if_else(Non_avviato < 0, 0, Non_avviato)) %>% 
+    mutate(RISK_NO_MONIT = RISORSE - COE,
+           CANTIERABILI = Affidamento + Esecuzione + Eseguito,
+           RISK_RITARDO = Progettazione + Non_avviato,
+           # RISK_NET = if_else(RISK_NO_MONIT + RISK_RITARDO < 0, 0, RISK_NO_MONIT + RISK_RITARDO)) %>% 
+           RISK_NET = RISK_NO_MONIT + RISK_RITARDO) %>% 
     # recupera variabili perse da full_join
     left_join(programmazione %>% 
                 distinct(ID_PSC, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE),
@@ -1700,7 +1843,22 @@ make_report_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL,
            TIPOLOGIA_AMMINISTRAZIONE= if_else(is.na(TIPOLOGIA_AMMINISTRAZIONE.x),  TIPOLOGIA_AMMINISTRAZIONE.y, TIPOLOGIA_AMMINISTRAZIONE.x)) %>% 
     select(-DESCRIZIONE_PROGRAMMA.y, -DESCRIZIONE_PROGRAMMA.x, -TIPOLOGIA_AMMINISTRAZIONE.y, -TIPOLOGIA_AMMINISTRAZIONE.x) %>% 
     select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO, 
-           RISORSE, Non_avviato, Progettazione, Affidamento, Esecuzione, Eseguito)
+           RISORSE, COE, RISK_NO_MONIT, Non_avviato, Progettazione, Affidamento, Esecuzione, Eseguito, 
+           CANTIERABILI, RISK_RITARDO, RISK_NET)
+  
+  # NEW: integra valore duplicati
+  report <- report %>% 
+    left_join(progetti_psc %>% 
+                filter(OC_FLAG_VISUALIZZAZIONE == 1) %>% 
+                left_join(psc_naz, by = "ID_PSC") %>%
+                # forza NA su settore di intervento per psc regionali e metropolitani
+                mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
+                                                      TRUE ~ "")) %>% 
+                mutate(SEZIONE = "SEZ_ORD") %>% 
+                group_by(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% 
+                summarise(COE_DUPLI = sum(COE, na.rm = TRUE)),
+              by = c("ID_PSC", "x_CICLO", "SEZIONE", "AREA_TEMATICA", "SETTORE_INTERVENTO")) %>% 
+    mutate_if(is.numeric, list(~replace_na(., 0))) 
   
   # OLD:
   # report %>% count(ID_PSC, x_CICLO, AREA_TEMATICA) %>% filter(n>1)
@@ -1737,11 +1895,18 @@ make_report_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL,
   if (usa_meuro == TRUE) {
     report <- report %>% 
       mutate(RISORSE = RISORSE/1000000, 
+             COE = COE/1000000,
+             RISK_NO_MONIT = RISK_NO_MONIT/1000000,
              Non_avviato = Non_avviato/1000000, 
              Progettazione = Progettazione/1000000, 
              Affidamento = Affidamento/1000000, 
              Esecuzione = Esecuzione/1000000, 
-             Eseguito = Eseguito/1000000)
+             Eseguito = Eseguito/1000000,
+             CANTIERABILI = CANTIERABILI/1000000,
+             RISK_RITARDO = RISK_RITARDO/1000000,
+             RISK_NET = RISK_NET/1000000,
+             COE_DUPLI = COE_DUPLI/1000000)
+    
   }
   
   if (visualizzati == TRUE){
@@ -2338,3 +2503,82 @@ fix_macroarea_progetti_psc <- function(progetti_psc) {
   
 
 }
+
+
+#' Controlla report PSC
+#'
+#' Controlla allineamento tra report PSC
+#' 
+#' @param progetti_psc Lista progetti PSC da load_progetti_psc()
+#' @return Lista con esito controlli
+#' @note Il label nella lsita indica la variabile controllata (RISORSE o COE) e i report esaminati nell'ordine della sottrazione.
+chk_report_psc <- function(progetti_psc) {
+  
+  # report po-psc
+  report1 <- make_report_report_po_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, 
+                                       export=FALSE, export_xls=FALSE) 
+  
+  # report temi-psc
+  report2 <- make_report_report_temi_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, 
+                                         show_cp = TRUE, export=FALSE, export_xls=FALSE) 
+  
+  # report temi-psc-macorarea
+  report3 <- make_report_report_temi_macroaree_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, export=FALSE, export_xls=FALSE) 
+  
+  # report temi-psc-stato
+  report4 <- make_report_report_temi_stato_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, export=FALSE, export_xls=FALSE) 
+  
+  
+  # --------------------------------------------------------------------------------------------------- #
+  # controlli
+  
+  memo <- list()
+  
+  chk <- report1 %>% 
+    group_by(ID_PSC) %>% 
+    summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>% 
+    full_join(report2 %>% 
+                group_by(ID_PSC) %>% 
+                summarise(RISORSE = sum(RISORSE, na.rm = TRUE)), 
+              by = "ID_PSC") %>% 
+    mutate(CHK = RISORSE.x - RISORSE.y)
+  memo[["risorse_popsc_vs_temi"]] <- sum(chk$CHK, na.rm = TRUE)
+  # -0.03167309 fisiologico per arrotondamenti lato temi
+  
+  chk <- report1 %>% 
+    group_by(ID_PSC) %>% 
+    summarise(COE = sum(COE, na.rm = TRUE)) %>% 
+    full_join(report2 %>% 
+                group_by(ID_PSC) %>% 
+                summarise(COE = sum(COE, na.rm = TRUE)), 
+              by = "ID_PSC") %>% 
+    mutate(CHK = COE.x - COE.y)
+  memo[["coe_popsc_vs_temi"]] <- sum(chk$CHK, na.rm = TRUE)
+  # delta trascurabile
+  
+  chk <- report3 %>% 
+    group_by(ID_PSC) %>% 
+    summarise(COE = sum(COE, na.rm = TRUE)) %>% 
+    full_join(report2 %>% 
+                group_by(ID_PSC) %>% 
+                summarise(COE = sum(COE, na.rm = TRUE)), 
+              by = "ID_PSC") %>% 
+    mutate(CHK = COE.x - COE.y)
+  memo[["coe_macroaree_vs_temi"]]  <- sum(chk$CHK, na.rm = TRUE)
+  # delta trascurabile
+  
+  chk <- report4 %>% 
+    group_by(ID_PSC) %>% 
+    summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>% 
+    full_join(report2 %>% 
+                group_by(ID_PSC) %>% 
+                summarise(RISORSE = sum(RISORSE, na.rm = TRUE)), 
+              by = "ID_PSC") %>% 
+    mutate(CHK = RISORSE.x - RISORSE.y)
+  memo[["risorse_stato_vs_temi"]] <- sum(chk$CHK, na.rm = TRUE)
+  # 0
+  
+  return(memo)
+  
+}
+

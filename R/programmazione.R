@@ -190,7 +190,8 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
   # use_713 = TRUE
   # use_ciclo = TRUE
   # use_flt = TRUE
-  # use_location = FALSE
+  # use_location = TRUE
+  # use_articolaz = FALSE
   po_fsc <- load_db("2014-2020", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt, use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz) #AF aggiunto use_locatione che prima mancava
   po_fesr <- load_db("2014-2020", "FESR", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
   po_fse <- load_db("2014-2020", "FSE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
@@ -284,7 +285,9 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
   
   if (use_location == TRUE) {
     # ricodifica x_MACROAREA
+    programmi %>% count(MACROAREA)
     programmi <- ricodifica_macroaree(programmi)
+    programmi %>% count(x_MACROAREA)
   }
   
   if (use_po_psc == TRUE){
@@ -295,8 +298,15 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
     # programmi <- memo
     # sum(memo$FINANZ_TOTALE, na.rm=T)
     
-    po_psc <- read_xlsx(file.path(DB, "fsc_matrice_po_psc.xlsx")) %>% 
-      rename(x_MACROAREA = MACROAREA) %>% 
+    po_psc <- read_xlsx(file.path(DB, "fsc_matrice_po_psc.xlsx"))
+    
+    if ("x_MACROAREA" %in% names(programmi)) {
+      po_psc <- po_psc %>% 
+        # rename(x_MACROAREA = MACROAREA) 
+        ricodifica_macroaree()
+    }
+   
+    po_psc <- po_psc %>% 
       mutate(x_CICLO = CICLO_PROGRAMMAZIONE,
              x_AMBITO = "FSC") %>% 
       select(names(programmi)) %>%
@@ -861,6 +871,10 @@ ricodifica_macroaree <- function(programmi) {
     programmi <- programmi %>% 
       rename(x_MACROAREA = MACROAREA)
   }
+  
+  # DEBUG:
+  # programmi <- out
+  # programmi %>% count(x_MACROAREA)
   
   out <- programmi %>% 
     # rename(x_MACROAREA = MACROAREA) %>%
