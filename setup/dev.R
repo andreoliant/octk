@@ -231,7 +231,7 @@ system(
   )
 
 library(gitcreds)
-gitcreds_set() # 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
+gitcreds_set() #.github_token
 gitcreds_get()
 
 # HAND: push
