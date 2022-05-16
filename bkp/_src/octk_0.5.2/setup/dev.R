@@ -45,7 +45,7 @@ oc_init(
   bimestre = "20220228",
   elab = "SETUP",
   focus = "setup",
-  ver = "V.01",
+  ver = "V.02",
   # user = "Antonio",
   data_path = "/media/antonio/Volume/dati/oc",
   db_ver = "20211231.00",
@@ -231,7 +231,7 @@ system(
   )
 
 library(gitcreds)
-# gitcreds_set() # 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
+gitcreds_set() # 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
 gitcreds_get()
 
 # HAND: push
