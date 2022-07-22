@@ -13,6 +13,8 @@ prep_dati_sgp_bimestre(bimestre, filename, matrix_06, chk_today)
 
 \item{chk_today}{Parametro da passare a get_stato_attuazione(), con formato "2021-02-28"}
 
+\item{versione}{Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)}
+
 \item{matrix06}{Matrice di riconciliazione tra denominazione APQ 2000-20006 e settori di intervento PSC}
 }
 \value{

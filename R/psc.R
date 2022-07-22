@@ -166,6 +166,7 @@ init_psc <- function(PSC=NULL) {
 #' Crea il file con operazioni FSC compatibile con PSC
 #' 
 #' @param bimestre Bimestre di riferimento, nella versione specifica per i dati PSC (es. 20211231.01 oppure 20211231), che viene ricondotto automaticamente al bimestre OC
+#' @param versione Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)
 #' @param matrix_po_psc Matrice di riconciliazione PO - PSC
 #' @param art44 Dati di base per istruttoria art44 al 20200630
 #' @param matrix_1420 Matrice di riconciliazione tra temi prioritari FSC 2014-2020 e settori di intervento PSC
@@ -175,7 +176,7 @@ init_psc <- function(PSC=NULL) {
 #' @param progetti_pub Dataset progetti esteso pubblicato
 #' @return File "dati_psc_BIMESTRE.csv" in TEMP 
 #' @note ...
-prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44, 
+prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, art44, 
                                    matrix_1420, matrix_713, matrix_temi_settori, progetti=NULL, progetti_pub=NULL) {
   
   bimestre_oc <- str_sub(bimestre, 1, 8) # 
@@ -502,7 +503,7 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
   
   
   # accoda 06
-  temp <- read_csv2(file.path(PSC, "sgp", paste0("dati_sgp_", bimestre, ".csv")), col_types = "ccccccccccddddddcccd")
+  temp <- read_csv2(file.path(PSC, "sgp", paste0("dati_sgp_", bimestre, "_", versione, ".csv")), col_types = "ccccccccccddddddcccd")
   
   out <- appo8 %>%
     select(COD_LOCALE_PROGETTO, 
@@ -535,7 +536,7 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
   # fix temi
   # TODO: ora è in main script, forse da aggiungere qui
   
-  write.csv2(out, file.path(PSC, "psc", paste0("dati_psc_", bimestre, ".csv")), row.names = FALSE)
+  write.csv2(out, file.path(PSC, "psc", paste0("dati_psc_", bimestre, "_", versione, ".csv")), row.names = FALSE)
   
 }
 
@@ -544,6 +545,7 @@ prep_dati_psc_bimestre <- function(bimestre, matrix_po_psc, po_naz, art44,
 #' Crea dati SGP compatibili per elaborazioni PSC partendo da repository in DATI > SGP
 #' 
 #' @param bimestre Bimestre di riferimento, nella versione specifica per i dati PSC (es. 20211231.01 oppure 20211231)
+#' @param versione Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)
 #' @param filename Nome file xlsx in DATI > SGP
 #' @param matrix06 Matrice di riconciliazione tra denominazione APQ 2000-20006 e settori di intervento PSC
 #' @param chk_today Parametro da passare a get_stato_attuazione(), con formato "2021-02-28"
@@ -558,7 +560,7 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
   PSC <- file.path(DRIVE, "DATI", "PSC")
   
   # print(bimestre)
-  DATA <- paste0(str_sub(DATA, 1, nchar(DATA)-8), bimestre)
+  # DATA <- paste0(str_sub(DATA, 1, nchar(DATA)-8), bimestre)
   
   SGP <- file.path(DRIVE, "DATI", "SGP", bimestre)
   
@@ -718,27 +720,37 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
   chk %>% count(COD_LOCALE_PROGETTO)
   chk <- appo %>% filter(COD_LOCALE_PROGETTO == "PIERSR/01/144")
   # PIERSR/01/144 1
+  # MEMO: questo è il progetto che veniva con importo NA perché conteneva un "#" in una stringa
   
   # chk finanziamenti
   appo %>% 
     mutate(TOT_IMPORTI = IMPORTO_NAZIONALE + IMPORTO_REGIONALE + IMPORTO_NON_DEFINITO) %>% 
     summarise(TOT_IMPORTI = sum(TOT_IMPORTI, na.rm = TRUE),
-              FINANZIAMENTO_FSC = sum(FINANZIAMENTO_FSC, na.rm = TRUE)) %>% 
-    mutate(TOT_IMPORTI - FINANZIAMENTO_FSC)
+              FINANZIAMENTO_FSC = sum(FINANZIAMENTO_FSC, na.rm = TRUE),
+              FINANZIAMENTO_FSC_NETTO = sum(FINANZIAMENTO_FSC_NETTO, na.rm = TRUE)) %>% 
+    mutate(CHK = TOT_IMPORTI - FINANZIAMENTO_FSC,
+           CHK_NET = TOT_IMPORTI - FINANZIAMENTO_FSC_NETTO)
   
   chk <- appo %>% 
     mutate(TOT_IMPORTI = IMPORTO_NAZIONALE + IMPORTO_REGIONALE + IMPORTO_NON_DEFINITO,
-           CHK = TOT_IMPORTI - FINANZIAMENTO_FSC) %>% 
-    filter(CHK != 0) 
+           CHK = TOT_IMPORTI - FINANZIAMENTO_FSC,
+           CHK_NET = TOT_IMPORTI - FINANZIAMENTO_FSC_NETTO) %>% 
+    # filter(CHK != 0 | CHK_NET != 0) %>% 
+    filter(CHK != 0) %>% 
+    select(COD_LOCALE_PROGETTO, DENOMINAZIONE_INTESA, CODICE_STRUMENTO, 
+           TOT_IMPORTI,
+           IMPORTO_NAZIONALE, IMPORTO_REGIONALE, IMPORTO_NON_DEFINITO,
+           FINANZIAMENTO_FSC, FINANZIAMENTO_FSC_NETTO,
+           CHK, CHK_NET)
   chk %>% 
     summarise(N = n(),
               TOT_IMPORTI = sum(TOT_IMPORTI, na.rm = TRUE),
               FINANZIAMENTO_FSC = sum(FINANZIAMENTO_FSC, na.rm = TRUE))
-  # write.csv2(chk, file.path(TEMP, "progetti_delta_importi.csv"))
+  write.csv2(chk, file.path(TEMP, paste0("progetti_delta_importi_", bimestre, ".csv")))
   
   # chk pagamenti fSC
-  appo %>% summarise(PAG = sum(PAGAMENTI_FSC, na.rm = TRUE))
-  appo %>% summarise(CP = sum(FINANZIAMENTO_TOTALE_PUBBLICO_NETTO, na.rm = TRUE))
+  # appo %>% summarise(PAG = sum(PAGAMENTI_FSC, na.rm = TRUE))
+  # appo %>% summarise(CP = sum(FINANZIAMENTO_TOTALE_PUBBLICO_NETTO, na.rm = TRUE))
   
   # chk su economie
   appo %>% 
@@ -755,7 +767,7 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
               ECO = sum(TOTALE_ECONOMIE_FSC, na.rm = TRUE),
               CHK = sum(CHK, na.rm = TRUE))
   
-  chk <- appo %>% select(COD_LOCALE_PROGETTO, FINANZIAMENTO_FSC_NETTO, TOTALE_ECONOMIE_FSC)
+  # chk <- appo %>% select(COD_LOCALE_PROGETTO, FINANZIAMENTO_FSC_NETTO, TOTALE_ECONOMIE_FSC)
   # write.csv2(chk, file.path(TEMP, "progetti_finanziamento_carattere.csv"))
   
   # fix
@@ -964,15 +976,21 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
                     COE_PAG = sum(COE_PAG, na.rm = TRUE),
                     CP = sum(CP, na.rm = TRUE)))
   
-  write_csv2(out, file.path(PSC, "sgp", paste0("dati_sgp_", bimestre, ".csv")))
+  write_csv2(out, file.path(PSC, "sgp", paste0("dati_sgp_", bimestre, "_", versione, ".csv")))
   
   
 }
 
 
 clean_data <- function(colonna_data) {
-  temp <- sapply(colonna_data, function(x) {tryCatch(as.POSIXct(x), error = function(e) NA)}, USE.NAMES = FALSE)
-  out <- as.POSIXct(temp, origin = "1970-01-01")
+  # OLD:
+  # temp <- sapply(colonna_data, function(x) {tryCatch(as.POSIXct(x), error = function(e) NA)}, USE.NAMES = FALSE)
+  # out <- as.POSIXct(temp, origin = "1970-01-01")
+  # return(out)
+  
+  # NEW:
+  require("lubridate")
+  out <- dmy(colonna_data)
   return(out)
 }
 
@@ -990,72 +1008,72 @@ get_stato_attuazione <- function(df, chk_today) {
   
   appo <- df %>%
     mutate(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_INIZIO_EFFETTIVA) ~ A00_DATA_INIZIO_EFFETTIVA,
-                                                                DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_INIZIO_EFFETTIVA != "" ~ A00_DATA_INIZIO_EFFETTIVA,
-                                                                DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_INIZIO_EFFETTIVA) ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                # DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_INIZIO_EFFETTIVA != "" ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_INIZIO_EFFETTIVA) & A00_DATA_INIZIO_EFFETTIVA != "" ~ A00_DATA_INIZIO_EFFETTIVA,
                                                                 TRUE ~ DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA),
            DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_FINE_EFFETTIVA) ~ A00_DATA_FINE_EFFETTIVA,
-                                                              DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_FINE_EFFETTIVA != "" ~ A00_DATA_FINE_EFFETTIVA,
-                                                              DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_FINE_EFFETTIVA) ~ A00_DATA_FINE_EFFETTIVA,
+                                                              # DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_FINE_EFFETTIVA != "" ~ A00_DATA_FINE_EFFETTIVA,
+                                                              DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_FINE_EFFETTIVA) & A00_DATA_FINE_EFFETTIVA != "" ~ A00_DATA_FINE_EFFETTIVA,
                                                               TRUE ~ DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA),
            DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_INIZIO_EFFETTIVA) ~ A01_DATA_INIZIO_EFFETTIVA,
-                                                                 DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_INIZIO_EFFETTIVA != "" ~ A01_DATA_INIZIO_EFFETTIVA,
-                                                                 DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_INIZIO_EFFETTIVA) ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                 # DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_INIZIO_EFFETTIVA != "" ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                 DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_INIZIO_EFFETTIVA) & A01_DATA_INIZIO_EFFETTIVA != "" ~ A01_DATA_INIZIO_EFFETTIVA,
                                                                  TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE),
            DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_FINE_EFFETTIVA) ~ A01_DATA_FINE_EFFETTIVA,
-                                                               DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_FINE_EFFETTIVA != "" ~ A01_DATA_FINE_EFFETTIVA,
-                                                               DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_FINE_EFFETTIVA) ~ A01_DATA_FINE_EFFETTIVA,
+                                                               # DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_FINE_EFFETTIVA != "" ~ A01_DATA_FINE_EFFETTIVA,
+                                                               DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_FINE_EFFETTIVA) & A01_DATA_FINE_EFFETTIVA != "" ~ A01_DATA_FINE_EFFETTIVA,
                                                                TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE),
            DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_INIZIO_EFFETTIVA) ~ A02_DATA_INIZIO_EFFETTIVA,
-                                                                DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & A02_DATA_INIZIO_EFFETTIVA != "" ~ A02_DATA_INIZIO_EFFETTIVA,
-                                                                DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & !is.na(A02_DATA_INIZIO_EFFETTIVA) ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                # DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & A02_DATA_INIZIO_EFFETTIVA != "" ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & !is.na(A02_DATA_INIZIO_EFFETTIVA) & A02_DATA_INIZIO_EFFETTIVA != "" ~ A02_DATA_INIZIO_EFFETTIVA,
                                                                 TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA),
            DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_FINE_EFFETTIVA) ~ A02_DATA_FINE_EFFETTIVA,
-                                                              DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & A02_DATA_FINE_EFFETTIVA != "" ~ A02_DATA_FINE_EFFETTIVA,
-                                                              DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & !is.na(A02_DATA_FINE_EFFETTIVA) ~ A02_DATA_FINE_EFFETTIVA,
+                                                              # DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & A02_DATA_FINE_EFFETTIVA != "" ~ A02_DATA_FINE_EFFETTIVA,
+                                                              DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & !is.na(A02_DATA_FINE_EFFETTIVA) & A02_DATA_FINE_EFFETTIVA != "" ~ A02_DATA_FINE_EFFETTIVA,
                                                               TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA),
            DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_INIZIO_EFFETTIVA) ~ A03_DATA_INIZIO_EFFETTIVA,
-                                                               DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_INIZIO_EFFETTIVA != "" ~ A03_DATA_INIZIO_EFFETTIVA,
-                                                               DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_INIZIO_EFFETTIVA) ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                               # DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_INIZIO_EFFETTIVA != "" ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                               DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_INIZIO_EFFETTIVA) & A03_DATA_INIZIO_EFFETTIVA != "" ~ A03_DATA_INIZIO_EFFETTIVA,
                                                                TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA),
            DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_FINE_EFFETTIVA) ~ A03_DATA_FINE_EFFETTIVA,
-                                                             DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_FINE_EFFETTIVA != "" ~ A03_DATA_FINE_EFFETTIVA,
-                                                             DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_FINE_EFFETTIVA) ~ A03_DATA_FINE_EFFETTIVA,
+                                                             # DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_FINE_EFFETTIVA != "" ~ A03_DATA_FINE_EFFETTIVA,
+                                                             DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_FINE_EFFETTIVA) & A03_DATA_FINE_EFFETTIVA != "" ~ A03_DATA_FINE_EFFETTIVA,
                                                              TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA),
            DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_INIZIO_EFFETTIVA) ~ B01_DATA_INIZIO_EFFETTIVA,
-                                                               DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_INIZIO_EFFETTIVA != "" ~ B01_DATA_INIZIO_EFFETTIVA,
-                                                               DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_INIZIO_EFFETTIVA) ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                               # DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_INIZIO_EFFETTIVA != "" ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                               DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_INIZIO_EFFETTIVA) & B01_DATA_INIZIO_EFFETTIVA != "" ~ B01_DATA_INIZIO_EFFETTIVA,
                                                                is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_INIZIO_EFFETTIVA) ~ C01_DATA_INIZIO_EFFETTIVA,
-                                                               DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_INIZIO_EFFETTIVA != "" ~ C01_DATA_INIZIO_EFFETTIVA,
-                                                               DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_INIZIO_EFFETTIVA) ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                               # DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_INIZIO_EFFETTIVA != "" ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                               DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_INIZIO_EFFETTIVA) & C01_DATA_INIZIO_EFFETTIVA != "" ~ C01_DATA_INIZIO_EFFETTIVA,
                                                                # step non presente per lavori
                                                                TRUE ~ DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO),
            DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_FINE_EFFETTIVA) ~ B01_DATA_FINE_EFFETTIVA,
-                                                             DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_FINE_EFFETTIVA != "" ~ B01_DATA_FINE_EFFETTIVA,
-                                                             DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_FINE_EFFETTIVA) ~ B01_DATA_FINE_EFFETTIVA,
+                                                             # DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_FINE_EFFETTIVA != "" ~ B01_DATA_FINE_EFFETTIVA,
+                                                             DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_FINE_EFFETTIVA) & B01_DATA_FINE_EFFETTIVA != "" ~ B01_DATA_FINE_EFFETTIVA,
                                                              is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_FINE_EFFETTIVA) ~ C01_DATA_FINE_EFFETTIVA,
-                                                             DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_FINE_EFFETTIVA != "" ~ C01_DATA_FINE_EFFETTIVA,
-                                                             DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_FINE_EFFETTIVA) ~ C01_DATA_FINE_EFFETTIVA,
+                                                             # DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_FINE_EFFETTIVA != "" ~ C01_DATA_FINE_EFFETTIVA,
+                                                             DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_FINE_EFFETTIVA) & C01_DATA_FINE_EFFETTIVA != "" ~ C01_DATA_FINE_EFFETTIVA,
                                                              # step non presente per lavori
                                                              TRUE ~ DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO),
            DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_INIZIO_EFFETTIVA) ~ A04_DATA_INIZIO_EFFETTIVA,
-                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_INIZIO_EFFETTIVA != "" ~ A04_DATA_INIZIO_EFFETTIVA,
-                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_INIZIO_EFFETTIVA) ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                         # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_INIZIO_EFFETTIVA != "" ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_INIZIO_EFFETTIVA) & A04_DATA_INIZIO_EFFETTIVA != "" ~ A04_DATA_INIZIO_EFFETTIVA,
                                                                          is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_INIZIO_EFFETTIVA) ~ B02_DATA_INIZIO_EFFETTIVA,
-                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_INIZIO_EFFETTIVA != "" ~ B02_DATA_INIZIO_EFFETTIVA,
-                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_INIZIO_EFFETTIVA) ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                         # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_INIZIO_EFFETTIVA != "" ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_INIZIO_EFFETTIVA) & B02_DATA_INIZIO_EFFETTIVA != "" ~ B02_DATA_INIZIO_EFFETTIVA,
                                                                          is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_INIZIO_EFFETTIVA) ~ C02_DATA_INIZIO_EFFETTIVA,
-                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_INIZIO_EFFETTIVA != "" ~ C02_DATA_INIZIO_EFFETTIVA,
-                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_INIZIO_EFFETTIVA) ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                         # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_INIZIO_EFFETTIVA != "" ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_INIZIO_EFFETTIVA) & C02_DATA_INIZIO_EFFETTIVA != "" ~ C02_DATA_INIZIO_EFFETTIVA,
                                                                          TRUE ~ DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE),
            DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_FINE_EFFETTIVA) ~ A04_DATA_FINE_EFFETTIVA,
-                                                                       DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_FINE_EFFETTIVA != "" ~ A04_DATA_FINE_EFFETTIVA,
-                                                                       DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_FINE_EFFETTIVA) ~ A04_DATA_FINE_EFFETTIVA,
+                                                                       # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_FINE_EFFETTIVA != "" ~ A04_DATA_FINE_EFFETTIVA,
+                                                                       DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_FINE_EFFETTIVA) & A04_DATA_FINE_EFFETTIVA != "" ~ A04_DATA_FINE_EFFETTIVA,
                                                                        is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_FINE_EFFETTIVA) ~ B02_DATA_FINE_EFFETTIVA,
-                                                                       DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_FINE_EFFETTIVA != "" ~ B02_DATA_FINE_EFFETTIVA,
-                                                                       DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_FINE_EFFETTIVA) ~ B02_DATA_FINE_EFFETTIVA,
-                                                                       is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_FINE_EFFETTIVA) ~ C02_DATA_FINE_EFFETTIVA,
-                                                                       DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_FINE_EFFETTIVA != "" ~ C02_DATA_FINE_EFFETTIVA,
-                                                                       DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_FINE_EFFETTIVA) ~ C02_DATA_FINE_EFFETTIVA,
+                                                                       # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_FINE_EFFETTIVA != "" ~ B02_DATA_FINE_EFFETTIVA,
+                                                                       DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_FINE_EFFETTIVA) & B02_DATA_FINE_EFFETTIVA != "" ~ B02_DATA_FINE_EFFETTIVA,
+                                                                       is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_FINE_EFFETTIVA) ~ C02_DATA_FINE_EFFETTIVA,
+                                                                       # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_FINE_EFFETTIVA != "" ~ C02_DATA_FINE_EFFETTIVA,
+                                                                       DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_FINE_EFFETTIVA) & C02_DATA_FINE_EFFETTIVA != "" ~ C02_DATA_FINE_EFFETTIVA,
                                                                        TRUE ~ DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE)) %>%
     select(COD_LOCALE_PROGETTO,
            # DATA_FINE_EFF_COLLAUDO,
@@ -1147,10 +1165,11 @@ get_stato_attuazione <- function(df, chk_today) {
 #' Carica dati di base per PSC
 #'
 #' @param bimestre Bimestre di riferimento
+#' @param versione Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)
 #' @param fix_no_temi_no_coe Logico. Vuoi scartare i progetti con tema missing e finanziamenti pari a 0?
 #' @return Dataframe
 load_progetti_psc <- function(bimestre, fix_no_temi_no_coe=FALSE) {
-  progetti_psc <- read_csv2(file.path(PSC, "psc", paste0("dati_psc_", bimestre, ".csv")))
+  progetti_psc <- read_csv2(file.path(PSC, "psc", paste0("dati_psc_", bimestre, "_", versione, ".csv")))
   
   if (fix_no_temi_no_coe == TRUE) {
     progetti_psc <- progetti_psc %>% 

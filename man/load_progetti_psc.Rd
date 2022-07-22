@@ -10,6 +10,8 @@ load_progetti_psc(bimestre, fix_no_temi_no_coe = FALSE)
 \item{bimestre}{Bimestre di riferimento}
 
 \item{fix_no_temi_no_coe}{Logico. Vuoi scartare i progetti con tema missing e finanziamenti pari a 0?}
+
+\item{versione}{Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)}
 }
 \value{
 Dataframe

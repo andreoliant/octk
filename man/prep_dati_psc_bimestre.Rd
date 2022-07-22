@@ -6,6 +6,7 @@
 \usage{
 prep_dati_psc_bimestre(
   bimestre,
+  versione,
   matrix_po_psc,
   po_naz,
   art44,
@@ -18,6 +19,8 @@ prep_dati_psc_bimestre(
 }
 \arguments{
 \item{bimestre}{Bimestre di riferimento, nella versione specifica per i dati PSC (es. 20211231.01 oppure 20211231), che viene ricondotto automaticamente al bimestre OC}
+
+\item{versione}{Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)}
 
 \item{matrix_po_psc}{Matrice di riconciliazione PO - PSC}
 
