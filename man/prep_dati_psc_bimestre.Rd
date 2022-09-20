@@ -14,7 +14,9 @@ prep_dati_psc_bimestre(
   matrix_713,
   matrix_temi_settori,
   progetti = NULL,
-  progetti_pub = NULL
+  progetti_pub = NULL,
+  versione_sgp,
+  chk_today
 )
 }
 \arguments{
@@ -35,6 +37,10 @@ prep_dati_psc_bimestre(
 \item{progetti}{Dataset progetti da load_progetti(visualizzati = FALSE, light = FALSE)}
 
 \item{progetti_pub}{Dataset progetti esteso pubblicato}
+
+\item{versione_sgp}{Versione di riferimento dei dati provenienti da SGP}
+
+\item{chk_today}{Parametro da passare a get_stato_attuazione(), con formato "2021-02-28"}
 }
 \value{
 File "dati_psc_BIMESTRE.csv" in TEMP

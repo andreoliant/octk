@@ -185,13 +185,13 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
 init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use_flt=FALSE, use_713=FALSE, use_articolaz=FALSE, use_location=FALSE, use_ciclo=FALSE, tipo_ciclo="CICLO_STRATEGIA", use_en=FALSE, use_po_psc=FALSE)
 {
   # use_temi = FALSE
-  # use_sog=TRUE
-  # use_eu=TRUE
+  # use_sog= FALSE
+  # use_eu= FALSE
   # use_713 = TRUE
-  # use_ciclo = TRUE
-  # use_flt = TRUE
-  # use_location = TRUE
-  # use_articolaz = FALSE
+  # use_ciclo = FALSE
+  # use_flt = FALSE
+  # use_location = FALSE
+  # use_articolaz = TRUE
   po_fsc <- load_db("2014-2020", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt, use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz) #AF aggiunto use_locatione che prima mancava
   po_fesr <- load_db("2014-2020", "FESR", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
   po_fse <- load_db("2014-2020", "FSE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
@@ -298,7 +298,20 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
     # programmi <- memo
     # sum(memo$FINANZ_TOTALE, na.rm=T)
     
-    po_psc <- read_xlsx(file.path(DB, "fsc_matrice_po_psc.xlsx"))
+    # OLD:
+    # po_psc <- read_xlsx(file.path(DB, "fsc_matrice_po_psc.xlsx"))
+    
+    
+    # NEW:
+    if (file.exists(file.path(DB, "Fonti_DBCOE_PSC.xlsx"))) {
+      po_psc <- read_xlsx(file.path(DB, "Fonti_DBCOE_PSC.xlsx")) %>% 
+        mutate(CICLO_RISORSE = CICLO_PROGRAMMAZIONE)
+      
+    } else if (file.exists(file.path(DB, "fsc_matrice_po_psc.xlsx"))) {
+      po_psc <- read_xlsx(file.path(DB, "fsc_matrice_po_psc.xlsx"))
+    } else {
+      message("errore, non esistevano ancora i psc!!!")
+    }
     
     if ("x_MACROAREA" %in% names(programmi)) {
       po_psc <- po_psc %>% 
@@ -309,7 +322,7 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
     po_psc <- po_psc %>% 
       mutate(x_CICLO = CICLO_PROGRAMMAZIONE,
              x_AMBITO = "FSC") %>% 
-      select(names(programmi)) %>%
+      select(c(names(programmi), "ID_PSC", "PSC")) %>%
       # select(names(programmi), "ID_PSC") %>% # DEBUG: solo per usare chk sotto
       group_by(across(-"FINANZ_TOTALE")) %>% 
       summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
@@ -317,6 +330,8 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
     
     programmi <- programmi %>% 
       filter(TIPOLOGIA_PROGRAMMA != "PSC") %>% 
+      # mutate(ID_PSC = NA_character_,
+      #        PSC = NA_character_) %>% 
       # CHK: qui non devo eslcudere tutto, solo quello che è diverso da CSR (e COVID?)
       bind_rows(po_psc)
     # sum(programmi$FINANZ_TOTALE)
@@ -1227,7 +1242,7 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
     programmi <- workflow_programmazione(use_info=TRUE, use_flt=TRUE, progetti)
   }
   
-  info_en <- init_programmazione_info(use_en = TRUE, use_713 = TRUE, sum_po = TRUE, sum_po_last = TRUE, use_po_psc = TRUE) %>%
+  info_en <- init_programmazione_info(use_en = TRUE, use_713 = TRUE, sum_po = TRUE, sum_po_last = TRUE, use_po_psc = FALSE) %>% # TRUE
     select(OC_CODICE_PROGRAMMA, LABEL_DECISIONE_EN)
   
   # programmi_en <- read_csv2(file.path(INPUT, "programmi_SIE_EN.csv")) %>%
@@ -1311,7 +1326,8 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
   programmi <- programmi %>%
     mutate(x_AMBITO = as.character(x_AMBITO)) %>% 
     mutate(LABEL_AMBITO_IT = case_when(x_AMBITO == "YEI" ~ "IOG",  # fix YEI
-                                       x_AMBITO == "SNAI" ~ "SNAI-SERVIZI",
+                                       # x_AMBITO == "SNAI" ~ "SNAI-SERVIZI",
+                                       x_AMBITO == "SNAI" ~ "SNAI-Servizi",
                                        TRUE ~ x_AMBITO),
            LABEL_AMBITO_EN = case_when(x_AMBITO == "FESR" ~ "ERDF",
                                        x_AMBITO == "FSE" ~ "ESF",
@@ -1356,7 +1372,7 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
                                     LABEL_AMBITO_IT == "POC" & LABEL_TIPO_IT == "POC Nazionale Completamenti" ~ "COMPLETAMENTI",
                                     LABEL_AMBITO_IT == "POC" & LABEL_TIPO_IT == "POC Regionale" ~ "REGIONALI",
                                     LABEL_AMBITO_IT == "POC" & LABEL_TIPO_IT == "POC Regionale Completamenti" ~ "COMPLETAMENTI",
-                                    LABEL_AMBITO_IT == "SNAI-SERVIZI" ~ "SNAI-SERVIZI",
+                                    LABEL_AMBITO_IT == "SNAI-Servizi" ~ "SNAI-Servizi",
                                     LABEL_AMBITO_IT == "PAC" & LABEL_TIPO_IT == "PAC Nazionale" ~ "NAZIONALI",
                                     LABEL_AMBITO_IT == "PAC" & LABEL_TIPO_IT == "PAC Regionale" ~ "REGIONALI",
                                     LABEL_AMBITO_IT == "PAC" & OC_CODICE_PROGRAMMA == "2007IT001FA005" ~ "NAZIONALI", # fix per direttrici ferroviarie
@@ -1441,6 +1457,8 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
     arrange(LABEL_TIPO_IT)
   
   
+
+  
   
   # fix per CPT 713
   cpt <- programmi %>%
@@ -1489,22 +1507,45 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
            OC_CODICE_PROGRAMMA != "TEMP_0713_005",
            OC_CODICE_PROGRAMMA != "CPT_0713")
   
-  out <- out4
+  # OLD:
+  # out <- out4
+  # 
+  # # split cicli
+  # out_1420 <- out %>% 
+  #   filter(LABEL_CICLO == "2014-2020")
+  # 
+  # out_713 <- out %>% 
+  #   filter(LABEL_CICLO == "2007-2013") %>% 
+  #   # scarta psc senza 713
+  #   filter(OC_CODICE_PROGRAMMA != "PSC_MUR",
+  #          OC_CODICE_PROGRAMMA != "PSC_LAZIO",
+  #          OC_CODICE_PROGRAMMA != "PSC_MISE",
+  #          OC_CODICE_PROGRAMMA != "PSC_MIT",
+  #          OC_CODICE_PROGRAMMA != "PSC_MISALUTE",
+  #          OC_CODICE_PROGRAMMA != "PSC_PCM-SPORT",
+  #          OC_CODICE_PROGRAMMA != "PSC_MIPAAF")
+  
+  # NEW:
+  out <- out4 %>% 
+    filter(!(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_MUR"),
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_LAZIO"),
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_MISE"),
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_MIT"),
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_MISALUTE"),
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_PCM-SPORT"),
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_MIPAAF"),
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_MITUR"))
+  
+  
+
+  
   
   # split cicli
   out_1420 <- out %>% 
     filter(LABEL_CICLO == "2014-2020")
   
   out_713 <- out %>% 
-    filter(LABEL_CICLO == "2007-2013") %>% 
-    # scarta psc senza 713
-    filter(OC_CODICE_PROGRAMMA != "PSC_MUR",
-           OC_CODICE_PROGRAMMA != "PSC_LAZIO",
-           OC_CODICE_PROGRAMMA != "PSC_MISE",
-           OC_CODICE_PROGRAMMA != "PSC_MIT",
-           OC_CODICE_PROGRAMMA != "PSC_MISALUTE",
-           OC_CODICE_PROGRAMMA != "PSC_PCM-SPORT",
-           OC_CODICE_PROGRAMMA != "PSC_MIPAAF")
+    filter(LABEL_CICLO == "2007-2013")
   
   if (export == TRUE) {
     require(withr)
@@ -1544,6 +1585,8 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
     programmi <- workflow_programmazione(use_info=TRUE, use_flt=TRUE, progetti)
   }
 
+  
+  
   # versione solo per 1420
   # interventi <- init_programmazione_dati(use_temi = FALSE, use_sog = TRUE, use_eu = TRUE, use_location = TRUE, 
   #                                   use_flt = TRUE, use_ciclo = TRUE)
@@ -1953,7 +1996,15 @@ make_opendata_dotazioni_popsc <- function(programmi=NULL, progetti=NULL, export=
   
   # interventi <- init_programmazione_dati(use_temi = FALSE, use_sog = TRUE, use_eu = TRUE, use_location = TRUE, 
   #                                   use_flt = TRUE, use_ciclo = TRUE, use_po_psc=TRUE)
-  interventi <- read_xlsx(file.path(DB, "fsc_matrice_po_psc.xlsx"))
+  # interventi <- read_xlsx(file.path(DB, "fsc_matrice_po_psc.xlsx"))
+  interventi <- read_xlsx(file.path(DB, "Fonti_DBCOE_PSC.xlsx")) %>% 
+    group_by(AMBITO, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, CICLO_PROGRAMMAZIONE, AMMINISTRAZIONE,
+             TIPOLOGIA_PROGRAMMA,
+             FINANZ_TOTALE, MACROAREA,
+             CAT_REGIONE,               
+             ID_PSC, PSC, FLAG_MONITORAGGIO) %>% 
+    summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+  
 
   
   
@@ -2066,13 +2117,22 @@ make_opendata_dotazioni_popsc <- function(programmi=NULL, progetti=NULL, export=
 #' @note ...
 make_opendata_decisioni_popsc <- function(export=TRUE, export_xls=TRUE) {
   
-  dotazioni <- read_xlsx(file.path(DB, "fsc_matrice_po_psc.xlsx"))
-  decisioni <- read_xlsx(file.path(DB, "fsc_delibere_po_psc.xlsx"))
+  # dotazioni <- read_xlsx(file.path(DB, "fsc_matrice_po_psc.xlsx"))
+  dotazioni <- read_xlsx(file.path(DB, "Fonti_DBCOE_PSC.xlsx")) %>% 
+    group_by(AMBITO, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, CICLO_PROGRAMMAZIONE, AMMINISTRAZIONE,
+             TIPOLOGIA_PROGRAMMA,
+             FINANZ_TOTALE, MACROAREA,
+             CAT_REGIONE,               
+             ID_PSC, PSC, FLAG_MONITORAGGIO) %>% 
+    summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+  
+  # decisioni <- read_xlsx(file.path(DB, "fsc_delibere_po_psc.xlsx"))
+  decisioni <- read_xlsx(file.path(dirname(DB), "INFO", "PO-PSC", "fsc_delibere_po_psc.xlsx"))
   
   # chk_match(dotazioni, decisioni, "OC_CODICE_PROGRAMMA")
   
   appo1 <- dotazioni %>%
-    select(-NOTE) %>% 
+    # select(-NOTE) %>% 
     left_join(decisioni %>% 
                 select(OC_CODICE_PROGRAMMA, DATA_DECISIONE, NUMERO_DECISIONE, FLAG_ULTIMA_DECISIONE,
                 TIPO_DECISIONE, LINK_DECISIONE, VERSIONE, SEQ_DECISIONE, LINK_DOCUMENTO, NOTE),

@@ -4,12 +4,14 @@
 \alias{fix_aree_settori_amm_centrali}
 \title{Cambia classificazioni tematiche per amministrazioni centrali}
 \usage{
-fix_aree_settori_amm_centrali(progetti_psc, progetti)
+fix_aree_settori_amm_centrali(progetti_psc, progetti, interventi_cds)
 }
 \arguments{
 \item{progetti_psc}{Dataset progetti PSC da dentro prep_dati_psc_bimestre()}
 
 \item{progetti}{Dataset progetti da load_progetti(bimestre, visualizzati = FALSE, light = FALSE), come usato in dentro prep_dati_psc_bimestre()}
+
+\item{interventi_cds}{Settori di intervento definiti in CdS}
 }
 \value{
 dataframe

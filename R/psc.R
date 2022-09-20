@@ -158,6 +158,8 @@ init_psc <- function(PSC=NULL) {
   #                      COD_OPOS_NEW, DESCR_OPOS_NEW, COE))
   # DEV: mancano variabili in art44_liste
   
+  interventi_cds <<- read_csv2(file.path(PSC, "info", "lista_interventi_cds.csv"))
+  
 }
 
 
@@ -174,12 +176,15 @@ init_psc <- function(PSC=NULL) {
 #' @param matrix_temi_settori Dominio per aree tematiche e settori di intervento PSC
 #' @param progetti Dataset progetti da load_progetti(visualizzati = FALSE, light = FALSE)
 #' @param progetti_pub Dataset progetti esteso pubblicato
+#' @param versione_sgp Versione di riferimento dei dati provenienti da SGP
+#' @param chk_today Parametro da passare a get_stato_attuazione(), con formato "2021-02-28"
 #' @return File "dati_psc_BIMESTRE.csv" in TEMP 
 #' @note ...
 prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, art44, 
-                                   matrix_1420, matrix_713, matrix_temi_settori, progetti=NULL, progetti_pub=NULL) {
+                                   matrix_1420, matrix_713, matrix_temi_settori, progetti=NULL, progetti_pub=NULL, versione_sgp, chk_today) {
   
   bimestre_oc <- str_sub(bimestre, 1, 8) # 
+  DATA <- file.path(dirname(DATA), bimestre_oc)
   
   if (is.null(progetti)) {
     progetti <- load_progetti(bimestre, visualizzati = FALSE, light = FALSE) %>% 
@@ -189,11 +194,12 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   }
   
   if (is.null(progetti_pub)) {
-    progetti_pub <- read_csv2(file.path(DATA, paste0("progetti_esteso_", bimestre_oc, ".csv")), guess_max = 1200000) %>% 
-      select(COD_LOCALE_PROGETTO, COSTO_REALIZZATO, 
-             FINANZ_STATO_FSC, OC_FINANZ_STATO_FSC_NETTO,
-             FINANZ_TOTALE_PUBBLICO, FINANZ_PRIVATO, FINANZ_DA_REPERIRE, ECONOMIE_TOTALI,
-             OC_FINANZ_TOT_PUB_NETTO)
+    progetti_pub <- read_csv2(file.path(DATA, paste0("progetti_esteso_", bimestre_oc, ".csv")), guess_max = 1200000) 
+    # %>% 
+    #   select(COD_LOCALE_PROGETTO, COSTO_REALIZZATO, 
+    #          FINANZ_STATO_FSC, OC_FINANZ_STATO_FSC_NETTO,
+    #          FINANZ_TOTALE_PUBBLICO, FINANZ_PRIVATO, FINANZ_DA_REPERIRE, ECONOMIE_TOTALI,
+    #          OC_FINANZ_TOT_PUB_NETTO)
   }
 
   PSC <- file.path(DRIVE, "DATI", "PSC")
@@ -202,7 +208,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   # OLD:
   # DATA <- paste0(str_sub(DATA, 1, nchar(DATA)-8), bimestre)
   # NEW:
-  DATA <- paste0(str_sub(DATA, 1, nchar(DATA)-8), bimestre_oc)
+  # DATA <- paste0(str_sub(DATA, 1, nchar(DATA)-8), bimestre_oc)
   # print(DATA)
   
   # ------------------ load dati ------------------ #
@@ -313,6 +319,12 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
       COD_SETTORE_INTERVENTO = COD_OPOS_NEW,
       # DESCR_SETTORE_INTERVENTO = DESCR_OPOS_NEW
     ) %>% 
+    # NEW:
+    # rettifica temi da primo cds
+    left_join(interventi_cds,
+              by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
+    mutate(COD_SETTORE_INTERVENTO = if_else(is.na(COD_SETTORE_INTERVENTO.y), COD_SETTORE_INTERVENTO.x, COD_SETTORE_INTERVENTO.y)) %>% 
+    select(-COD_SETTORE_INTERVENTO.x, -COD_SETTORE_INTERVENTO.y) %>% 
     # integra temi mancanti per 1420
     left_join(operazioni_1420,
               by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
@@ -348,6 +360,15 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   # 
   # write_csv2(chk2, file.path(TEMP, "chk_classi_missing.csv"))
   
+  # fix classi
+  appo <- appo %>% 
+    mutate(AREA_TEMATICA = case_when(OC_CODICE_PROGRAMMA == "2016PATTIPUG" & AREA_TEMATICA == "NA-NA" & SETTORE_INTERVENTO == "09.02-NA" ~ "08-RIQUALIFICAZIONE URBANA",
+                                     OC_CODICE_PROGRAMMA == "2017FSCRICERCA" & AREA_TEMATICA == "NA-NA" ~ "01-RICERCA E INNOVAZIONE",
+                                     TRUE ~ AREA_TEMATICA)) %>% 
+    mutate(SETTORE_INTERVENTO = case_when(OC_CODICE_PROGRAMMA == "2016PATTIPUG" & SETTORE_INTERVENTO == "09.02-NA" ~ "08.01-EDILIZIA E SPAZI PUBBLICI",
+                                          OC_CODICE_PROGRAMMA == "2017FSCRICERCA" & SETTORE_INTERVENTO == "NA-NA" ~ "01.01-RICERCA E SVILUPPO",
+                                          TRUE ~ SETTORE_INTERVENTO))
+  
   # debug classi
   print(appo %>% count(AREA_TEMATICA))
   chk <- appo %>% filter(AREA_TEMATICA == "NA-NA")
@@ -361,15 +382,19 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
     count(x_CICLO, OC_CODICE_PROGRAMMA, x_PROGRAMMA, SETTORE_INTERVENTO, CHK)
   print(chk2)
   write_csv2(chk2, file.path(TEMP, paste0("fix_mapping_", bimestre_oc, ".csv")))
-  message("Se ci sono NA-NA con COE NA va bene, restano così. Per tutti gli altri casi va rivisto lo script, che incorpora direttamente le correzioni")
-  
-  # fix classi
-  appo <- appo %>% 
-    mutate(AREA_TEMATICA = case_when(OC_CODICE_PROGRAMMA == "2016PATTIPUG" & AREA_TEMATICA == "NA-NA" & SETTORE_INTERVENTO == "09.02-NA" ~ "08-RIQUALIFICAZIONE URBANA",
-                                     TRUE ~ AREA_TEMATICA)) %>% 
-    mutate(SETTORE_INTERVENTO = case_when(OC_CODICE_PROGRAMMA == "2016PATTIPUG" & SETTORE_INTERVENTO == "09.02-NA" ~ "08.01-EDILIZIA E SPAZI PUBBLICI",
-                                     TRUE ~ SETTORE_INTERVENTO))
-  message("Il caso Puglia con 09.02-NA è già gestito")
+  message("Se ci sono NA-NA con COE NA in 'zero' va bene, restano così.")
+  message("Per tutti gli altri casi con 'to_fix' va rivisto lo script, che incorpora direttamente le correzioni.")
+  message("Controlla in TEMP il file 'chk_classi_missing.csv'")
+
+  # # fix classi # DEV: spostato sopra
+  # appo <- appo %>% 
+  #   mutate(AREA_TEMATICA = case_when(OC_CODICE_PROGRAMMA == "2016PATTIPUG" & AREA_TEMATICA == "NA-NA" & SETTORE_INTERVENTO == "09.02-NA" ~ "08-RIQUALIFICAZIONE URBANA",
+  #                                    OC_CODICE_PROGRAMMA == "2017FSCRICERCA" & AREA_TEMATICA == "NA-NA" ~ "01-RICERCA E INNOVAZIONE",
+  #                                    TRUE ~ AREA_TEMATICA)) %>% 
+  #   mutate(SETTORE_INTERVENTO = case_when(OC_CODICE_PROGRAMMA == "2016PATTIPUG" & SETTORE_INTERVENTO == "09.02-NA" ~ "08.01-EDILIZIA E SPAZI PUBBLICI",
+  #                                         OC_CODICE_PROGRAMMA == "2017FSCRICERCA" & SETTORE_INTERVENTO == "NA-NA" ~ "01.01-RICERCA E SVILUPPO",
+  #                                    TRUE ~ SETTORE_INTERVENTO))
+  # message("Il caso Puglia con 09.02-NA è già gestito. Il caso di Ricerca è temporaneo.")
   
   # calcola costo realizzato e economie
   appo1 <- appo %>% 
@@ -399,10 +424,6 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
            COSTO_REALIZZATO_2 = COSTO_REALIZZATO * x,
            COE_ECO = FINANZ_STATO_FSC - OC_FINANZ_STATO_FSC_NETTO,
            CP = OC_FINANZ_TOT_PUB_NETTO)
-
-
- 
-  
   
   
   dim(appo)[1] == dim(appo1)[1]
@@ -496,16 +517,33 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   appo6 <- fix_sposta_psc_turismo(progetti_psc = appo5, progetti = progetti)
   
   # fix temi amministrazioni centrali
-  appo7 <- fix_aree_settori_amm_centrali(progetti_psc = appo6, progetti = progetti)
-  
+  appo7 <- fix_aree_settori_amm_centrali(progetti_psc = appo6, progetti = progetti, interventi_cds = interventi_cds)
+  # MEMO: solo mims tra le amm. centrali ha risposto alla rilevazione sulle classificazioni post cds 
+
   # fix macroarea
   appo8 <- fix_macroarea_progetti_psc(progetti_psc = appo7)
   
+  # fix stato procedurale
+  appo_stato <- progetti_pub %>% 
+    # semi_join(appo, by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% # DEV: qui confrontavo progetti e operazioni
+    semi_join(appo8, by = "COD_LOCALE_PROGETTO") %>%
+    get_stato_attuazione(., chk_today = chk_today) %>% 
+    select(COD_LOCALE_PROGETTO, OC_STATO_PROCEDURALE = STATO_PROCED)
+  
+  # DEBUG: 
+  # appo_stato <- out %>% 
+  #   select(COD_LOCALE_PROGETTO, OC_STATO_PROCEDURALE = STATO_PROCED) 
+
+  appo9 <- appo8 %>% 
+    rename(OC_STATO_PROCEDURALE_OLD = OC_STATO_PROCEDURALE) %>% 
+    left_join(appo_stato, by = "COD_LOCALE_PROGETTO")
+  
+  # chk <- appo9 %>% count(OC_STATO_PROCEDURALE, OC_STATO_PROCEDURALE_OLD)
   
   # accoda 06
-  temp <- read_csv2(file.path(PSC, "sgp", paste0("dati_sgp_", bimestre, "_", versione, ".csv")), col_types = "ccccccccccddddddcccd")
+  progetti_sgp <- read_csv2(file.path(PSC, "sgp", paste0("dati_sgp_", bimestre, "_", versione_sgp, ".csv")), col_types = "ccccccccccddddddcccd")
   
-  out <- appo8 %>%
+  out <- appo9 %>%
     select(COD_LOCALE_PROGETTO, 
            CUP, 
            OC_TITOLO_PROGETTO,
@@ -516,6 +554,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
            AREA_TEMATICA, 
            SETTORE_INTERVENTO,
            OC_STATO_PROCEDURALE, 
+           OC_STATO_PROCEDURALE_OLD, # DEV: da commentare?
            COE, 
            COE_IMP,
            COE_CR,
@@ -526,7 +565,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
            ID_PSC,
            STATO,
            OC_FLAG_VISUALIZZAZIONE) %>% 
-    bind_rows(temp)
+    bind_rows(progetti_sgp)
   
   
   # fix psc
@@ -551,7 +590,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
 #' @param chk_today Parametro da passare a get_stato_attuazione(), con formato "2021-02-28"
 #' @return File "dati_sgp_BIMESTRE.csv" in TEMP 
 #' @note ...
-prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
+prep_dati_sgp_bimestre <- function(bimestre, versione, filename, matrix_06, chk_today) {
   # filename <- "Estrazioni dati e calcolo indicatori _28_02_21_v01.xlsx"
   # filename <- "Estrazione dati e calcolo indicatori_30062021.xlsx"
   # chk_today <- as.POSIXct("2021-02-28")
@@ -836,6 +875,11 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
                        COD_OPOS_NEW, DESCR_OPOS_NEW),
               by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
     mutate(COD_SETTORE_INTERVENTO = COD_OPOS_NEW) %>% 
+    # rettifica temi da primo cds
+    left_join(interventi_cds,
+              by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
+    mutate(COD_SETTORE_INTERVENTO = if_else(is.na(COD_SETTORE_INTERVENTO.y), COD_SETTORE_INTERVENTO.x, COD_SETTORE_INTERVENTO.y)) %>% 
+    select(-COD_SETTORE_INTERVENTO.x, -COD_SETTORE_INTERVENTO.y) %>% 
     # integra temi mancanti
     left_join(matrix_06 %>% 
                 select(CODICE_STRUMENTO, COD_SETTORE_INTERVENTO),
@@ -982,130 +1026,249 @@ prep_dati_sgp_bimestre <- function(bimestre, filename, matrix_06, chk_today) {
 }
 
 
-clean_data <- function(colonna_data) {
-  # OLD:
-  # temp <- sapply(colonna_data, function(x) {tryCatch(as.POSIXct(x), error = function(e) NA)}, USE.NAMES = FALSE)
-  # out <- as.POSIXct(temp, origin = "1970-01-01")
-  # return(out)
+clean_data_dmy <- function(colonna_data) {
   
-  # NEW:
+  # DEBUG:
+  # colonna_data <- appo0$DATA_FINE_EFF_ESECUZIONE
+  # colonna_data <- appo0$DATA_FINE_EFF_STIP_ATTRIB
+
   require("lubridate")
   out <- dmy(colonna_data)
+  # out <- tryCatch(dmy(colonna_data),
+  #                 error = ymd(colonna_data))
   return(out)
+
 }
+
+clean_data_ymd <- function(colonna_data) {
+  
+  # DEBUG:
+  # colonna_data <- appo0$DATA_FINE_EFF_ESECUZIONE
+  # colonna_data <- appo0$DATA_FINE_EFF_STIP_ATTRIB
+  
+  require("lubridate")
+  out <- ymd(colonna_data)
+  return(out)
+  
+}
+
 
 get_stato_attuazione <- function(df, chk_today) {
   # MEMO: 
   # formato per data è diverso da standad oc
   # può essere necessaria qualche pulizia nelle date in excel
-  
-  
+
   # chk_today <- as.POSIXct("2019-12-31")
   chk_today <- as.POSIXct(chk_today)
   
+  require(lubridate)
   # DEBUG:
   # df <- appo2
+  # df <- appo_stato
+  # chk_today = "2022-04-30"
   
-  appo <- df %>%
-    mutate(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_INIZIO_EFFETTIVA) ~ A00_DATA_INIZIO_EFFETTIVA,
-                                                                # DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_INIZIO_EFFETTIVA != "" ~ A00_DATA_INIZIO_EFFETTIVA,
-                                                                DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_INIZIO_EFFETTIVA) & A00_DATA_INIZIO_EFFETTIVA != "" ~ A00_DATA_INIZIO_EFFETTIVA,
-                                                                TRUE ~ DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA),
-           DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_FINE_EFFETTIVA) ~ A00_DATA_FINE_EFFETTIVA,
-                                                              # DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_FINE_EFFETTIVA != "" ~ A00_DATA_FINE_EFFETTIVA,
-                                                              DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_FINE_EFFETTIVA) & A00_DATA_FINE_EFFETTIVA != "" ~ A00_DATA_FINE_EFFETTIVA,
-                                                              TRUE ~ DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA),
-           DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_INIZIO_EFFETTIVA) ~ A01_DATA_INIZIO_EFFETTIVA,
-                                                                 # DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_INIZIO_EFFETTIVA != "" ~ A01_DATA_INIZIO_EFFETTIVA,
-                                                                 DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_INIZIO_EFFETTIVA) & A01_DATA_INIZIO_EFFETTIVA != "" ~ A01_DATA_INIZIO_EFFETTIVA,
-                                                                 TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE),
-           DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_FINE_EFFETTIVA) ~ A01_DATA_FINE_EFFETTIVA,
-                                                               # DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_FINE_EFFETTIVA != "" ~ A01_DATA_FINE_EFFETTIVA,
-                                                               DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_FINE_EFFETTIVA) & A01_DATA_FINE_EFFETTIVA != "" ~ A01_DATA_FINE_EFFETTIVA,
-                                                               TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE),
-           DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_INIZIO_EFFETTIVA) ~ A02_DATA_INIZIO_EFFETTIVA,
-                                                                # DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & A02_DATA_INIZIO_EFFETTIVA != "" ~ A02_DATA_INIZIO_EFFETTIVA,
-                                                                DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & !is.na(A02_DATA_INIZIO_EFFETTIVA) & A02_DATA_INIZIO_EFFETTIVA != "" ~ A02_DATA_INIZIO_EFFETTIVA,
-                                                                TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA),
-           DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_FINE_EFFETTIVA) ~ A02_DATA_FINE_EFFETTIVA,
-                                                              # DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & A02_DATA_FINE_EFFETTIVA != "" ~ A02_DATA_FINE_EFFETTIVA,
-                                                              DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & !is.na(A02_DATA_FINE_EFFETTIVA) & A02_DATA_FINE_EFFETTIVA != "" ~ A02_DATA_FINE_EFFETTIVA,
-                                                              TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA),
-           DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_INIZIO_EFFETTIVA) ~ A03_DATA_INIZIO_EFFETTIVA,
-                                                               # DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_INIZIO_EFFETTIVA != "" ~ A03_DATA_INIZIO_EFFETTIVA,
-                                                               DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_INIZIO_EFFETTIVA) & A03_DATA_INIZIO_EFFETTIVA != "" ~ A03_DATA_INIZIO_EFFETTIVA,
-                                                               TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA),
-           DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_FINE_EFFETTIVA) ~ A03_DATA_FINE_EFFETTIVA,
-                                                             # DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_FINE_EFFETTIVA != "" ~ A03_DATA_FINE_EFFETTIVA,
-                                                             DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_FINE_EFFETTIVA) & A03_DATA_FINE_EFFETTIVA != "" ~ A03_DATA_FINE_EFFETTIVA,
-                                                             TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA),
-           DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_INIZIO_EFFETTIVA) ~ B01_DATA_INIZIO_EFFETTIVA,
-                                                               # DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_INIZIO_EFFETTIVA != "" ~ B01_DATA_INIZIO_EFFETTIVA,
-                                                               DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_INIZIO_EFFETTIVA) & B01_DATA_INIZIO_EFFETTIVA != "" ~ B01_DATA_INIZIO_EFFETTIVA,
-                                                               is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_INIZIO_EFFETTIVA) ~ C01_DATA_INIZIO_EFFETTIVA,
-                                                               # DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_INIZIO_EFFETTIVA != "" ~ C01_DATA_INIZIO_EFFETTIVA,
-                                                               DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_INIZIO_EFFETTIVA) & C01_DATA_INIZIO_EFFETTIVA != "" ~ C01_DATA_INIZIO_EFFETTIVA,
+  # switch per ciclo
+  if ("A00_DATA_INIZIO_EFFETTIVA" %in% names(df)) {
+    
+    test <- is.POSIXct(df$A00_DATA_INIZIO_EFFETTIVA)
+    
+    # fix per xls fino al 31/12/2021 (vengono lette come date e non funziona case_when dopo)
+    if (test == TRUE) {
+      df <- df %>% 
+        mutate_if(is.POSIXct, list(~str_sub(as.character(.), 1, 10)))
+    }
+    
+    #2000-2006 da sgp
+    appo0 <- df %>%
+      mutate(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_INIZIO_EFFETTIVA) ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                  # DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_INIZIO_EFFETTIVA != "" ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                  DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_INIZIO_EFFETTIVA) & A00_DATA_INIZIO_EFFETTIVA != "" ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                  TRUE ~ DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA),
+             DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_FINE_EFFETTIVA) ~ A00_DATA_FINE_EFFETTIVA,
+                                                                # DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_FINE_EFFETTIVA != "" ~ A00_DATA_FINE_EFFETTIVA,
+                                                                DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_FINE_EFFETTIVA) & A00_DATA_FINE_EFFETTIVA != "" ~ A00_DATA_FINE_EFFETTIVA,
+                                                                TRUE ~ DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA),
+             DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_INIZIO_EFFETTIVA) ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                   # DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_INIZIO_EFFETTIVA != "" ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                   DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_INIZIO_EFFETTIVA) & A01_DATA_INIZIO_EFFETTIVA != "" ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                   TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE),
+             DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_FINE_EFFETTIVA) ~ A01_DATA_FINE_EFFETTIVA,
+                                                                 # DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_FINE_EFFETTIVA != "" ~ A01_DATA_FINE_EFFETTIVA,
+                                                                 DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_FINE_EFFETTIVA) & A01_DATA_FINE_EFFETTIVA != "" ~ A01_DATA_FINE_EFFETTIVA,
+                                                                 TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE),
+             DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_INIZIO_EFFETTIVA) ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                  # DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & A02_DATA_INIZIO_EFFETTIVA != "" ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                  DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & !is.na(A02_DATA_INIZIO_EFFETTIVA) & A02_DATA_INIZIO_EFFETTIVA != "" ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                  TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA),
+             DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_FINE_EFFETTIVA) ~ A02_DATA_FINE_EFFETTIVA,
+                                                                # DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & A02_DATA_FINE_EFFETTIVA != "" ~ A02_DATA_FINE_EFFETTIVA,
+                                                                DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & !is.na(A02_DATA_FINE_EFFETTIVA) & A02_DATA_FINE_EFFETTIVA != "" ~ A02_DATA_FINE_EFFETTIVA,
+                                                                TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA),
+             DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_INIZIO_EFFETTIVA) ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                                 # DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_INIZIO_EFFETTIVA != "" ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                                 DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_INIZIO_EFFETTIVA) & A03_DATA_INIZIO_EFFETTIVA != "" ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                                 TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA),
+             DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_FINE_EFFETTIVA) ~ A03_DATA_FINE_EFFETTIVA,
+                                                               # DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_FINE_EFFETTIVA != "" ~ A03_DATA_FINE_EFFETTIVA,
+                                                               DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_FINE_EFFETTIVA) & A03_DATA_FINE_EFFETTIVA != "" ~ A03_DATA_FINE_EFFETTIVA,
+                                                               TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA),
+             DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_INIZIO_EFFETTIVA) ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                                 # DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_INIZIO_EFFETTIVA != "" ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                                 DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_INIZIO_EFFETTIVA) & B01_DATA_INIZIO_EFFETTIVA != "" ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                                 is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_INIZIO_EFFETTIVA) ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                                 # DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_INIZIO_EFFETTIVA != "" ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                                 DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_INIZIO_EFFETTIVA) & C01_DATA_INIZIO_EFFETTIVA != "" ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                                 # step non presente per lavori
+                                                                 TRUE ~ DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO),
+             DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_FINE_EFFETTIVA) ~ B01_DATA_FINE_EFFETTIVA,
+                                                               # DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_FINE_EFFETTIVA != "" ~ B01_DATA_FINE_EFFETTIVA,
+                                                               DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_FINE_EFFETTIVA) & B01_DATA_FINE_EFFETTIVA != "" ~ B01_DATA_FINE_EFFETTIVA,
+                                                               is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_FINE_EFFETTIVA) ~ C01_DATA_FINE_EFFETTIVA,
+                                                               # DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_FINE_EFFETTIVA != "" ~ C01_DATA_FINE_EFFETTIVA,
+                                                               DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_FINE_EFFETTIVA) & C01_DATA_FINE_EFFETTIVA != "" ~ C01_DATA_FINE_EFFETTIVA,
                                                                # step non presente per lavori
-                                                               TRUE ~ DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO),
-           DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_FINE_EFFETTIVA) ~ B01_DATA_FINE_EFFETTIVA,
-                                                             # DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_FINE_EFFETTIVA != "" ~ B01_DATA_FINE_EFFETTIVA,
-                                                             DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_FINE_EFFETTIVA) & B01_DATA_FINE_EFFETTIVA != "" ~ B01_DATA_FINE_EFFETTIVA,
-                                                             is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_FINE_EFFETTIVA) ~ C01_DATA_FINE_EFFETTIVA,
-                                                             # DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_FINE_EFFETTIVA != "" ~ C01_DATA_FINE_EFFETTIVA,
-                                                             DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_FINE_EFFETTIVA) & C01_DATA_FINE_EFFETTIVA != "" ~ C01_DATA_FINE_EFFETTIVA,
-                                                             # step non presente per lavori
-                                                             TRUE ~ DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO),
-           DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_INIZIO_EFFETTIVA) ~ A04_DATA_INIZIO_EFFETTIVA,
-                                                                         # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_INIZIO_EFFETTIVA != "" ~ A04_DATA_INIZIO_EFFETTIVA,
-                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_INIZIO_EFFETTIVA) & A04_DATA_INIZIO_EFFETTIVA != "" ~ A04_DATA_INIZIO_EFFETTIVA,
-                                                                         is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_INIZIO_EFFETTIVA) ~ B02_DATA_INIZIO_EFFETTIVA,
-                                                                         # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_INIZIO_EFFETTIVA != "" ~ B02_DATA_INIZIO_EFFETTIVA,
-                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_INIZIO_EFFETTIVA) & B02_DATA_INIZIO_EFFETTIVA != "" ~ B02_DATA_INIZIO_EFFETTIVA,
-                                                                         is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_INIZIO_EFFETTIVA) ~ C02_DATA_INIZIO_EFFETTIVA,
-                                                                         # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_INIZIO_EFFETTIVA != "" ~ C02_DATA_INIZIO_EFFETTIVA,
-                                                                         DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_INIZIO_EFFETTIVA) & C02_DATA_INIZIO_EFFETTIVA != "" ~ C02_DATA_INIZIO_EFFETTIVA,
-                                                                         TRUE ~ DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE),
-           DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_FINE_EFFETTIVA) ~ A04_DATA_FINE_EFFETTIVA,
-                                                                       # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_FINE_EFFETTIVA != "" ~ A04_DATA_FINE_EFFETTIVA,
-                                                                       DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_FINE_EFFETTIVA) & A04_DATA_FINE_EFFETTIVA != "" ~ A04_DATA_FINE_EFFETTIVA,
-                                                                       is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_FINE_EFFETTIVA) ~ B02_DATA_FINE_EFFETTIVA,
-                                                                       # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_FINE_EFFETTIVA != "" ~ B02_DATA_FINE_EFFETTIVA,
-                                                                       DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_FINE_EFFETTIVA) & B02_DATA_FINE_EFFETTIVA != "" ~ B02_DATA_FINE_EFFETTIVA,
-                                                                       is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_FINE_EFFETTIVA) ~ C02_DATA_FINE_EFFETTIVA,
-                                                                       # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_FINE_EFFETTIVA != "" ~ C02_DATA_FINE_EFFETTIVA,
-                                                                       DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_FINE_EFFETTIVA) & C02_DATA_FINE_EFFETTIVA != "" ~ C02_DATA_FINE_EFFETTIVA,
-                                                                       TRUE ~ DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE)) %>%
-    select(COD_LOCALE_PROGETTO,
-           # DATA_FINE_EFF_COLLAUDO,
-           # DATA_INIZIO_EFF_COLLAUDO,
-           DATA_FINE_EFF_ESECUZIONE = DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE,
-           DATA_INIZIO_EFF_ESECUZIONE = DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE,
-           DATA_FINE_EFF_STIP_ATTRIB = DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO,
-           DATA_INIZIO_EFF_STIP_ATTRIB = DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO,
-           # DATA_FINE_EFF_AGG_BANDO,
-           # DATA_INIZIO_EFF_AGG_BANDO,
-           DATA_FINE_EFF_PROG_ESEC = DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA,
-           DATA_INIZIO_EFF_PROG_ESEC = DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA,
-           DATA_FINE_EFF_PROG_DEF = DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA,
-           DATA_INIZIO_EFF_PROG_DEF = DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA,
-           DATA_FINE_EFF_PROG_PREL = DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE,
-           DATA_INIZIO_EFF_PROG_PREL = DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE, 
-           DATA_FINE_EFF_STUDIO_FATT = DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA,
-           DATA_INIZIO_EFF_STUDIO_FATT = DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA) %>% 
-    mutate(DATA_FINE_EFF_ESECUZIONE = clean_data(DATA_FINE_EFF_ESECUZIONE),
-           DATA_INIZIO_EFF_ESECUZIONE = clean_data(DATA_INIZIO_EFF_ESECUZIONE),
-           DATA_FINE_EFF_STIP_ATTRIB = clean_data(DATA_FINE_EFF_STIP_ATTRIB),
-           DATA_INIZIO_EFF_STIP_ATTRIB = clean_data(DATA_INIZIO_EFF_STIP_ATTRIB),
-           # DATA_FINE_EFF_AGG_BANDO,
-           # DATA_INIZIO_EFF_AGG_BANDO,
-           DATA_FINE_EFF_PROG_ESEC = clean_data(DATA_FINE_EFF_PROG_ESEC),
-           DATA_INIZIO_EFF_PROG_ESEC = clean_data(DATA_INIZIO_EFF_PROG_ESEC),
-           DATA_FINE_EFF_PROG_DEF = clean_data(DATA_FINE_EFF_PROG_DEF),
-           DATA_INIZIO_EFF_PROG_DEF = clean_data(DATA_INIZIO_EFF_PROG_DEF),
-           DATA_FINE_EFF_PROG_PREL = clean_data(DATA_FINE_EFF_PROG_PREL),
-           DATA_INIZIO_EFF_PROG_PREL = clean_data(DATA_INIZIO_EFF_PROG_PREL), 
-           DATA_FINE_EFF_STUDIO_FATT = clean_data(DATA_FINE_EFF_STUDIO_FATT),
-           DATA_INIZIO_EFF_STUDIO_FATT = clean_data(DATA_INIZIO_EFF_STUDIO_FATT))
+                                                               TRUE ~ DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO),
+             DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_INIZIO_EFFETTIVA) ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                           # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_INIZIO_EFFETTIVA != "" ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                           DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_INIZIO_EFFETTIVA) & A04_DATA_INIZIO_EFFETTIVA != "" ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                           is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_INIZIO_EFFETTIVA) ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                           # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_INIZIO_EFFETTIVA != "" ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                           DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_INIZIO_EFFETTIVA) & B02_DATA_INIZIO_EFFETTIVA != "" ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                           is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_INIZIO_EFFETTIVA) ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                           # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_INIZIO_EFFETTIVA != "" ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                           DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_INIZIO_EFFETTIVA) & C02_DATA_INIZIO_EFFETTIVA != "" ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                           TRUE ~ DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE),
+             DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_FINE_EFFETTIVA) ~ A04_DATA_FINE_EFFETTIVA,
+                                                                         # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_FINE_EFFETTIVA != "" ~ A04_DATA_FINE_EFFETTIVA,
+                                                                         DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_FINE_EFFETTIVA) & A04_DATA_FINE_EFFETTIVA != "" ~ A04_DATA_FINE_EFFETTIVA,
+                                                                         is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_FINE_EFFETTIVA) ~ B02_DATA_FINE_EFFETTIVA,
+                                                                         # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_FINE_EFFETTIVA != "" ~ B02_DATA_FINE_EFFETTIVA,
+                                                                         DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_FINE_EFFETTIVA) & B02_DATA_FINE_EFFETTIVA != "" ~ B02_DATA_FINE_EFFETTIVA,
+                                                                         is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_FINE_EFFETTIVA) ~ C02_DATA_FINE_EFFETTIVA,
+                                                                         # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_FINE_EFFETTIVA != "" ~ C02_DATA_FINE_EFFETTIVA,
+                                                                         DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_FINE_EFFETTIVA) & C02_DATA_FINE_EFFETTIVA != "" ~ C02_DATA_FINE_EFFETTIVA,
+                                                                         TRUE ~ DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE)) %>%
+      select(COD_LOCALE_PROGETTO,
+             # DATA_FINE_EFF_COLLAUDO,
+             # DATA_INIZIO_EFF_COLLAUDO,
+             DATA_FINE_EFF_ESECUZIONE = DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE,
+             DATA_INIZIO_EFF_ESECUZIONE = DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE,
+             DATA_FINE_EFF_STIP_ATTRIB = DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO,
+             DATA_INIZIO_EFF_STIP_ATTRIB = DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO,
+             # DATA_FINE_EFF_AGG_BANDO,
+             # DATA_INIZIO_EFF_AGG_BANDO,
+             DATA_FINE_EFF_PROG_ESEC = DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA,
+             DATA_INIZIO_EFF_PROG_ESEC = DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA,
+             DATA_FINE_EFF_PROG_DEF = DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA,
+             DATA_INIZIO_EFF_PROG_DEF = DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA,
+             DATA_FINE_EFF_PROG_PREL = DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE,
+             DATA_INIZIO_EFF_PROG_PREL = DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE, 
+             DATA_FINE_EFF_STUDIO_FATT = DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA,
+             DATA_INIZIO_EFF_STUDIO_FATT = DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA)
+    
+    if (test == TRUE) {
+      appo <- appo0 %>% 
+        mutate(DATA_FINE_EFF_ESECUZIONE = clean_data_ymd(DATA_FINE_EFF_ESECUZIONE),
+               DATA_INIZIO_EFF_ESECUZIONE = clean_data_ymd(DATA_INIZIO_EFF_ESECUZIONE),
+               DATA_FINE_EFF_STIP_ATTRIB = clean_data_ymd(DATA_FINE_EFF_STIP_ATTRIB),
+               DATA_INIZIO_EFF_STIP_ATTRIB = clean_data_ymd(DATA_INIZIO_EFF_STIP_ATTRIB),
+               # DATA_FINE_EFF_AGG_BANDO,
+               # DATA_INIZIO_EFF_AGG_BANDO,
+               DATA_FINE_EFF_PROG_ESEC = clean_data_ymd(DATA_FINE_EFF_PROG_ESEC),
+               DATA_INIZIO_EFF_PROG_ESEC = clean_data_ymd(DATA_INIZIO_EFF_PROG_ESEC),
+               DATA_FINE_EFF_PROG_DEF = clean_data_ymd(DATA_FINE_EFF_PROG_DEF),
+               DATA_INIZIO_EFF_PROG_DEF = clean_data_ymd(DATA_INIZIO_EFF_PROG_DEF),
+               DATA_FINE_EFF_PROG_PREL = clean_data_ymd(DATA_FINE_EFF_PROG_PREL),
+               DATA_INIZIO_EFF_PROG_PREL = clean_data_ymd(DATA_INIZIO_EFF_PROG_PREL), 
+               DATA_FINE_EFF_STUDIO_FATT = clean_data_ymd(DATA_FINE_EFF_STUDIO_FATT),
+               DATA_INIZIO_EFF_STUDIO_FATT = clean_data_ymd(DATA_INIZIO_EFF_STUDIO_FATT))
+      
+    } else {
+      appo <- appo0 %>% 
+        mutate(DATA_FINE_EFF_ESECUZIONE = clean_data_dmy(DATA_FINE_EFF_ESECUZIONE),
+               DATA_INIZIO_EFF_ESECUZIONE = clean_data_dmy(DATA_INIZIO_EFF_ESECUZIONE),
+               DATA_FINE_EFF_STIP_ATTRIB = clean_data_dmy(DATA_FINE_EFF_STIP_ATTRIB),
+               DATA_INIZIO_EFF_STIP_ATTRIB = clean_data_dmy(DATA_INIZIO_EFF_STIP_ATTRIB),
+               # DATA_FINE_EFF_AGG_BANDO,
+               # DATA_INIZIO_EFF_AGG_BANDO,
+               DATA_FINE_EFF_PROG_ESEC = clean_data_dmy(DATA_FINE_EFF_PROG_ESEC),
+               DATA_INIZIO_EFF_PROG_ESEC = clean_data_dmy(DATA_INIZIO_EFF_PROG_ESEC),
+               DATA_FINE_EFF_PROG_DEF = clean_data_dmy(DATA_FINE_EFF_PROG_DEF),
+               DATA_INIZIO_EFF_PROG_DEF = clean_data_dmy(DATA_INIZIO_EFF_PROG_DEF),
+               DATA_FINE_EFF_PROG_PREL = clean_data_dmy(DATA_FINE_EFF_PROG_PREL),
+               DATA_INIZIO_EFF_PROG_PREL = clean_data_dmy(DATA_INIZIO_EFF_PROG_PREL), 
+               DATA_FINE_EFF_STUDIO_FATT = clean_data_dmy(DATA_FINE_EFF_STUDIO_FATT),
+               DATA_INIZIO_EFF_STUDIO_FATT = clean_data_dmy(DATA_INIZIO_EFF_STUDIO_FATT))
+
+    }
+    
+    
+  } else {
+    appo0 <- df %>%
+      mutate(DATA_INIZIO_EFF_STUDIO_FATT = paste0(str_sub(DATA_INIZIO_EFF_STUDIO_FATT, 7, 8), "/", str_sub(DATA_INIZIO_EFF_STUDIO_FATT, 5, 6), "/", str_sub(DATA_INIZIO_EFF_STUDIO_FATT, 1, 4)),
+             DATA_FINE_EFF_STUDIO_FATT = paste0(str_sub(DATA_FINE_EFF_STUDIO_FATT, 7, 8), "/", str_sub(DATA_FINE_EFF_STUDIO_FATT, 5, 6), "/", str_sub(DATA_FINE_EFF_STUDIO_FATT, 1, 4)),
+             DATA_INIZIO_EFF_PROG_PREL = paste0(str_sub(DATA_INIZIO_EFF_PROG_PREL, 7, 8), "/", str_sub(DATA_INIZIO_EFF_PROG_PREL, 5, 6), "/", str_sub(DATA_INIZIO_EFF_PROG_PREL, 1, 4)),
+             DATA_FINE_EFF_PROG_PREL = paste0(str_sub(DATA_FINE_EFF_PROG_PREL, 7, 8), "/", str_sub(DATA_FINE_EFF_PROG_PREL, 5, 6), "/", str_sub(DATA_FINE_EFF_PROG_PREL, 1, 4)),
+             DATA_INIZIO_EFF_PROG_DEF = paste0(str_sub(DATA_INIZIO_EFF_PROG_DEF, 7, 8), "/", str_sub(DATA_INIZIO_EFF_PROG_DEF, 5, 6), "/", str_sub(DATA_INIZIO_EFF_PROG_DEF, 1, 4)),
+             DATA_FINE_EFF_PROG_DEF = paste0(str_sub(DATA_FINE_EFF_PROG_DEF, 7, 8), "/", str_sub(DATA_FINE_EFF_PROG_DEF, 5, 6), "/", str_sub(DATA_FINE_EFF_PROG_DEF, 1, 4)),
+             DATA_INIZIO_EFF_PROG_ESEC = paste0(str_sub(DATA_INIZIO_EFF_PROG_ESEC, 7, 8), "/", str_sub(DATA_INIZIO_EFF_PROG_ESEC, 5, 6), "/", str_sub(DATA_INIZIO_EFF_PROG_ESEC, 1, 4)),
+             DATA_FINE_EFF_PROG_ESEC = paste0(str_sub(DATA_FINE_EFF_PROG_ESEC, 7, 8), "/", str_sub(DATA_FINE_EFF_PROG_ESEC, 5, 6), "/", str_sub(DATA_FINE_EFF_PROG_ESEC, 1, 4)),
+             DATA_INIZIO_EFF_STIP_ATTRIB = paste0(str_sub(DATA_INIZIO_EFF_STIP_ATTRIB, 7, 8), "/", str_sub(DATA_INIZIO_EFF_STIP_ATTRIB, 5, 6), "/", str_sub(DATA_INIZIO_EFF_STIP_ATTRIB, 1, 4)),
+             DATA_FINE_EFF_STIP_ATTRIB = paste0(str_sub(DATA_FINE_EFF_STIP_ATTRIB, 7, 8), "/", str_sub(DATA_FINE_EFF_STIP_ATTRIB, 5, 6), "/", str_sub(DATA_FINE_EFF_STIP_ATTRIB, 1, 4)),
+             DATA_INIZIO_EFF_ESECUZIONE = paste0(str_sub(DATA_INIZIO_EFF_ESECUZIONE, 7, 8), "/", str_sub(DATA_INIZIO_EFF_ESECUZIONE, 5, 6), "/", str_sub(DATA_INIZIO_EFF_ESECUZIONE, 1, 4)),
+             DATA_FINE_EFF_ESECUZIONE = paste0(str_sub(DATA_FINE_EFF_ESECUZIONE, 7, 8), "/", str_sub(DATA_FINE_EFF_ESECUZIONE, 5, 6), "/", str_sub(DATA_FINE_EFF_ESECUZIONE, 1, 4))) %>%
+      select(COD_LOCALE_PROGETTO,
+             # DATA_FINE_EFF_COLLAUDO,
+             # DATA_INIZIO_EFF_COLLAUDO,
+             DATA_FINE_EFF_ESECUZIONE,
+             DATA_INIZIO_EFF_ESECUZIONE,
+             DATA_FINE_EFF_STIP_ATTRIB,
+             DATA_INIZIO_EFF_STIP_ATTRIB,
+             # DATA_FINE_EFF_AGG_BANDO,
+             # DATA_INIZIO_EFF_AGG_BANDO,
+             DATA_FINE_EFF_PROG_ESEC,
+             DATA_INIZIO_EFF_PROG_ESEC,
+             DATA_FINE_EFF_PROG_DEF,
+             DATA_INIZIO_EFF_PROG_DEF,
+             DATA_FINE_EFF_PROG_PREL,
+             DATA_INIZIO_EFF_PROG_PREL, 
+             DATA_FINE_EFF_STUDIO_FATT,
+             DATA_INIZIO_EFF_STUDIO_FATT)
+    
+    appo <- appo0 %>% 
+      mutate(DATA_FINE_EFF_ESECUZIONE = clean_data_dmy(DATA_FINE_EFF_ESECUZIONE),
+             DATA_INIZIO_EFF_ESECUZIONE = clean_data_dmy(DATA_INIZIO_EFF_ESECUZIONE),
+             DATA_FINE_EFF_STIP_ATTRIB = clean_data_dmy(DATA_FINE_EFF_STIP_ATTRIB),
+             DATA_INIZIO_EFF_STIP_ATTRIB = clean_data_dmy(DATA_INIZIO_EFF_STIP_ATTRIB),
+             # DATA_FINE_EFF_AGG_BANDO,
+             # DATA_INIZIO_EFF_AGG_BANDO,
+             DATA_FINE_EFF_PROG_ESEC = clean_data_dmy(DATA_FINE_EFF_PROG_ESEC),
+             DATA_INIZIO_EFF_PROG_ESEC = clean_data_dmy(DATA_INIZIO_EFF_PROG_ESEC),
+             DATA_FINE_EFF_PROG_DEF = clean_data_dmy(DATA_FINE_EFF_PROG_DEF),
+             DATA_INIZIO_EFF_PROG_DEF = clean_data_dmy(DATA_INIZIO_EFF_PROG_DEF),
+             DATA_FINE_EFF_PROG_PREL = clean_data_dmy(DATA_FINE_EFF_PROG_PREL),
+             DATA_INIZIO_EFF_PROG_PREL = clean_data_dmy(DATA_INIZIO_EFF_PROG_PREL), 
+             DATA_FINE_EFF_STUDIO_FATT = clean_data_dmy(DATA_FINE_EFF_STUDIO_FATT),
+             DATA_INIZIO_EFF_STUDIO_FATT = clean_data_dmy(DATA_INIZIO_EFF_STUDIO_FATT))
+    
+  }
+  
+  
+  # appo <- appo0 %>% 
+  #   mutate(DATA_FINE_EFF_ESECUZIONE = clean_data(DATA_FINE_EFF_ESECUZIONE),
+  #          DATA_INIZIO_EFF_ESECUZIONE = clean_data(DATA_INIZIO_EFF_ESECUZIONE),
+  #          DATA_FINE_EFF_STIP_ATTRIB = clean_data(DATA_FINE_EFF_STIP_ATTRIB),
+  #          DATA_INIZIO_EFF_STIP_ATTRIB = clean_data(DATA_INIZIO_EFF_STIP_ATTRIB),
+  #          # DATA_FINE_EFF_AGG_BANDO,
+  #          # DATA_INIZIO_EFF_AGG_BANDO,
+  #          DATA_FINE_EFF_PROG_ESEC = clean_data(DATA_FINE_EFF_PROG_ESEC),
+  #          DATA_INIZIO_EFF_PROG_ESEC = clean_data(DATA_INIZIO_EFF_PROG_ESEC),
+  #          DATA_FINE_EFF_PROG_DEF = clean_data(DATA_FINE_EFF_PROG_DEF),
+  #          DATA_INIZIO_EFF_PROG_DEF = clean_data(DATA_INIZIO_EFF_PROG_DEF),
+  #          DATA_FINE_EFF_PROG_PREL = clean_data(DATA_FINE_EFF_PROG_PREL),
+  #          DATA_INIZIO_EFF_PROG_PREL = clean_data(DATA_INIZIO_EFF_PROG_PREL), 
+  #          DATA_FINE_EFF_STUDIO_FATT = clean_data(DATA_FINE_EFF_STUDIO_FATT),
+  #          DATA_INIZIO_EFF_STUDIO_FATT = clean_data(DATA_INIZIO_EFF_STUDIO_FATT))
   # MEMO: recupera solo le variabili che non sono gia presenti in df
   
   out <- appo %>%
@@ -1168,7 +1331,7 @@ get_stato_attuazione <- function(df, chk_today) {
 #' @param versione Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)
 #' @param fix_no_temi_no_coe Logico. Vuoi scartare i progetti con tema missing e finanziamenti pari a 0?
 #' @return Dataframe
-load_progetti_psc <- function(bimestre, fix_no_temi_no_coe=FALSE) {
+load_progetti_psc <- function(bimestre, versione, fix_no_temi_no_coe=FALSE) {
   progetti_psc <- read_csv2(file.path(PSC, "psc", paste0("dati_psc_", bimestre, "_", versione, ".csv")))
   
   if (fix_no_temi_no_coe == TRUE) {
@@ -1198,22 +1361,19 @@ make_report_report_po_psc <- function(progetti_psc, programmazione=NULL, visuali
   # DEV: uso matrice_po_psc senza dichiararla!!!
   
   if (is.null(programmazione)) {
-    programmazione <- read_xlsx(file.path(DB, "fsc_matrice_po_psc.xlsx")) %>% 
-      select(ID_PSC, PSC, CICLO_PROGRAMMAZIONE, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, FINANZ_TOTALE)
+    # OLD:
+    # programmazione <- read_xlsx(file.path(DB, "fsc_matrice_po_psc.xlsx")) %>% 
+    #   select(ID_PSC, PSC, CICLO_PROGRAMMAZIONE, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, FINANZ_TOTALE)
     
-    # # patch per patti metro
-    # patti <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE) %>% 
-    #   filter(TIPOLOGIA_PROGRAMMA == "PATTI") %>% 
-    #   left_join(matrix_po_psc %>% 
-    #               select(OC_CODICE_PROGRAMMA, ID_PSC, PSC),
-    #             by = "OC_CODICE_PROGRAMMA") %>% 
-    #   mutate(DESCRIZIONE_PROGRAMMA = PSC) %>% 
-    #   select(ID_PSC, PSC, CICLO_PROGRAMMAZIONE = x_CICLO, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, FINANZ_TOTALE)
-    # 
-    # programmazione <- programmazione %>% 
-    #   bind_rows(patti)
-  }
+    # NEW:
+    programmazione <- init_programmazione_dati(use_713=TRUE, use_sog = TRUE, use_articolaz=TRUE, use_po_psc=TRUE) %>%
+      filter(AMBITO == "FSC") %>% 
+      filter(COD_LIVELLO_1 == "SEZ_ORD" | COD_LIVELLO_1 == "DA_PROGRAMMARE") %>% # MEMO: esclude "da programmare"
+      filter(!is.na(ID_PSC)) %>% 
+      select(ID_PSC, PSC, x_CICLO, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, FINANZ_TOTALE)
+    message("programmi caricato")
   
+  }
   # OLD:
   # # fix per CIS Taranto (nel PSC i progetti PRA per 320 sono spostati da 713 a 1420)
   # # 2007PU001FA010
@@ -1263,7 +1423,7 @@ make_report_report_po_psc <- function(progetti_psc, programmazione=NULL, visuali
   report <- programmazione %>% 
     # filter(TIPOLOGIA_PROGRAMMA != "COVID", # considero solo sezione ordinaria
     #        TIPOLOGIA_PROGRAMMA != "CSR") %>% 
-    select(ID_PSC, PSC, x_CICLO = CICLO_PROGRAMMAZIONE, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, RISORSE = FINANZ_TOTALE) %>% 
+    select(ID_PSC, PSC, x_CICLO, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, RISORSE = FINANZ_TOTALE) %>% 
     group_by(ID_PSC, PSC, x_CICLO, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE) %>% 
     summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>% 
     left_join(appo2 %>% 
@@ -1296,7 +1456,7 @@ make_report_report_po_psc <- function(progetti_psc, programmazione=NULL, visuali
     
     if (export_xls == TRUE) {
       # message("Da implementare")
-      write.xlsx(report, file.path(TEMP, "report_po_psc_nodupli.xlsx"))
+      write.xlsx(report, file.path(OUTPUT, "report_po_psc_nodupli.xlsx"))
     }
   } else {
     if (export == TRUE) {
@@ -1305,7 +1465,7 @@ make_report_report_po_psc <- function(progetti_psc, programmazione=NULL, visuali
     
     if (export_xls == TRUE) {
       # message("Da implementare")
-      write.xlsx(report, file.path(TEMP, "report_po_psc_dupli.xlsx"))
+      write.xlsx(report, file.path(OUTPUT, "report_po_psc_dupli.xlsx"))
     }
   }
 
@@ -1345,9 +1505,27 @@ make_report_report_temi_psc <- function(progetti_psc, programmazione=NULL, visua
     programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, use_articolaz = TRUE) %>% 
       filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
       rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1) %>% 
+      filter(SEZIONE != "SEZ_SPEC_1_COVID", SEZIONE != "SEZ_SPEC_2_FS") %>% 
+      # sposta CIS su sezione ordinaria
+      mutate(SEZIONE = case_when(SEZIONE == "SEZ_CIS_ABR" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_BZP" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_CS" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_MECTPA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_NA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_NABA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_PA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_SARC" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_SSOT" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_TA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_VENTO" ~ "SEZ_ORD",
+                                 TRUE ~ SEZIONE)) %>% 
       # clean
       select(-COD_RISULTATO_ATTESO, -DESCR_RISULTATO_ATTESO, -COD_LIVELLO_1) 
   }
+  
+  # fix per ciclo
+  progetti_psc <- progetti_psc %>% 
+    mutate(x_CICLO = "2014-2020")
   
   # if (is.null(progetti)) {
   #   progetti <- load_progetti(bimetre, visualizzati = FALSE, light = TRUE)
@@ -1389,15 +1567,15 @@ make_report_report_temi_psc <- function(progetti_psc, programmazione=NULL, visua
   # DEV: qui perdo settore di intervento
   
   # NEW:
-  temp <- programmazione %>% as_tibble() %>% filter(TIPOLOGIA_AMMINISTRAZIONE == "NAZIONALE") %>% distinct(ID_PSC) %>% mutate(TEMP = 1)
+  # temp <- programmazione %>% as_tibble() %>% filter(TIPOLOGIA_AMMINISTRAZIONE == "NAZIONALE") %>% distinct(ID_PSC) %>% mutate(TEMP = 1)
   
   
   if (show_cp == TRUE) {
     appo2 <- appo1 %>% 
-      left_join(temp, by = "ID_PSC") %>%
-      # forza NA su settore di intervento per psc regionali e metropolitani
-      mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
-                                            TRUE ~ "")) %>% 
+      # left_join(temp, by = "ID_PSC") %>%
+      # # forza NA su settore di intervento per psc regionali e metropolitani
+      # mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
+      #                                       TRUE ~ "")) %>% 
       group_by(ID_PSC, AREA_TEMATICA, SETTORE_INTERVENTO, x_CICLO) %>%
       summarise(COE = sum(COE, na.rm = TRUE),
                 COE_IMP = sum(COE_IMP, na.rm = TRUE),
@@ -1411,10 +1589,10 @@ make_report_report_temi_psc <- function(progetti_psc, programmazione=NULL, visua
              COE, COE_IMP, COE_CR, COE_PAG, N, CP)
   } else {
     appo2 <- appo1 %>% 
-      left_join(temp, by = "ID_PSC") %>%
-      # forza NA su settore di intervento per psc regionali e metropolitani
-      mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
-                                            TRUE ~ "")) %>% 
+      # left_join(temp, by = "ID_PSC") %>%
+      # # forza NA su settore di intervento per psc regionali e metropolitani
+      # mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
+      #                                       TRUE ~ "")) %>% 
       group_by(ID_PSC, AREA_TEMATICA, SETTORE_INTERVENTO, x_CICLO) %>%
       summarise(COE = sum(COE, na.rm = TRUE),
                 COE_IMP = sum(COE_IMP, na.rm = TRUE),
@@ -1546,7 +1724,7 @@ make_report_report_temi_psc <- function(progetti_psc, programmazione=NULL, visua
     }
     
     if (export_xls == TRUE) {
-      write.xlsx(report, file.path(TEMP, "report_temi_psc_nodupli.xlsx"))
+      write.xlsx(report, file.path(OUTPUT, "report_temi_psc_nodupli.xlsx"))
       
     }
   } else {
@@ -1555,7 +1733,7 @@ make_report_report_temi_psc <- function(progetti_psc, programmazione=NULL, visua
     }
     
     if (export_xls == TRUE) {
-      write.xlsx(report, file.path(OUT, "report_temi_psc_dupli.xlsx"))
+      write.xlsx(report, file.path(OUTPUT, "report_temi_psc_dupli.xlsx"))
     }
   }
   
@@ -1591,10 +1769,28 @@ make_report_report_temi_macroaree_psc <- function(progetti_psc, programmazione=N
     programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, 
                                                use_articolaz = TRUE, use_location = TRUE) %>% 
       filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
-      rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1) %>% 
+      rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1)  %>% 
+      filter(SEZIONE != "SEZ_SPEC_1_COVID", SEZIONE != "SEZ_SPEC_2_FS") %>% 
+      # sposta CIS su sezione ordinaria
+      mutate(SEZIONE = case_when(SEZIONE == "SEZ_CIS_ABR" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_BZP" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_CS" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_MECTPA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_NA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_NABA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_PA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_SARC" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_SSOT" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_TA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_VENTO" ~ "SEZ_ORD",
+                                 TRUE ~ SEZIONE)) %>% 
       # clean
       select(-COD_RISULTATO_ATTESO, -DESCR_RISULTATO_ATTESO, -COD_LIVELLO_1, x_MACROAREA) 
   }
+
+  # fix per ciclo
+  progetti_psc <- progetti_psc %>% 
+    mutate(x_CICLO = "2014-2020")
   
   if (visualizzati == TRUE){
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
@@ -1605,6 +1801,7 @@ make_report_report_temi_macroaree_psc <- function(progetti_psc, programmazione=N
     # MEMO: così scarto solo casi anomali PSC, rilevante per debiti e opcm campania
     
   }
+
   
   # temp <- tibble(ID_PSC = c("PSC_BARI", "PSC_BOLOGNA", "PSC_CAGLIARI", "PSC_CATANIA",
   #                           "PSC_FIRENZE", "PSC_GENOVA", "PSC_MESSINA", "PSC_MILANO", 
@@ -1738,7 +1935,7 @@ make_report_report_temi_macroaree_psc <- function(progetti_psc, programmazione=N
     
     if (export_xls == TRUE) {
       # message("Da implementare")
-      write.xlsx(report, file.path(TEMP, "report_temi_macroaree_psc_nodupli.xlsx"))
+      write.xlsx(report, file.path(OUTPUT, "report_temi_macroaree_psc_nodupli.xlsx"))
       
     }
   } else {
@@ -1748,7 +1945,7 @@ make_report_report_temi_macroaree_psc <- function(progetti_psc, programmazione=N
     
     if (export_xls == TRUE) {
       # message("Da implementare")
-      write.xlsx(report, file.path(OUT, "report_temi_macroaree_psc_dupli.xlsx"))
+      write.xlsx(report, file.path(OUTPUT, "report_temi_macroaree_psc_dupli.xlsx"))
     }
   }
   
@@ -1784,9 +1981,28 @@ make_report_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL,
     programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, use_articolaz = TRUE) %>% 
       filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
       rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1) %>% 
+      filter(SEZIONE != "SEZ_SPEC_1_COVID", SEZIONE != "SEZ_SPEC_2_FS") %>% 
+      # sposta CIS su sezione ordinaria
+      mutate(SEZIONE = case_when(SEZIONE == "SEZ_CIS_ABR" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_BZP" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_CS" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_MECTPA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_NA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_NABA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_PA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_SARC" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_SSOT" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_TA" ~ "SEZ_ORD",
+                                 SEZIONE == "SEZ_CIS_VENTO" ~ "SEZ_ORD",
+                                 TRUE ~ SEZIONE)) %>% 
       # clean
       select(-COD_RISULTATO_ATTESO, -DESCR_RISULTATO_ATTESO, -COD_LIVELLO_1) 
   }
+  
+  
+  # fix per ciclo
+  progetti_psc <- progetti_psc %>% 
+    mutate(x_CICLO = "2014-2020")
   
   if (visualizzati == TRUE){
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
@@ -1814,12 +2030,12 @@ make_report_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL,
   # DEV: qui perdo settore di intervento
   
   # NEW:
-  psc_naz <- programmazione %>% as_tibble() %>% filter(TIPOLOGIA_AMMINISTRAZIONE == "NAZIONALE") %>% distinct(ID_PSC) %>% mutate(TEMP = 1)
+  # psc_naz <- programmazione %>% as_tibble() %>% filter(TIPOLOGIA_AMMINISTRAZIONE == "NAZIONALE") %>% distinct(ID_PSC) %>% mutate(TEMP = 1)
   appo2 <- appo1 %>% 
-    left_join(psc_naz, by = "ID_PSC") %>%
-    # forza NA su settore di intervento per psc regionali e metropolitani
-    mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
-                                          TRUE ~ "")) %>% 
+    # left_join(psc_naz, by = "ID_PSC") %>%
+    # # forza NA su settore di intervento per psc regionali e metropolitani
+    # mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
+    #                                       TRUE ~ "")) %>% 
     mutate(OC_STATO_PROCEDURALE = case_when(OC_STATO_PROCEDURALE == "Non avviato" ~ "Non_avviato",
                                             OC_STATO_PROCEDURALE == "In avvio di progettazione" ~ "Progettazione",
                                             OC_STATO_PROCEDURALE == "In corso di progettazione" ~ "Progettazione",
@@ -1907,10 +2123,10 @@ make_report_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL,
   report <- report %>% 
     left_join(progetti_psc %>% 
                 filter(OC_FLAG_VISUALIZZAZIONE == 1) %>% 
-                left_join(psc_naz, by = "ID_PSC") %>%
-                # forza NA su settore di intervento per psc regionali e metropolitani
-                mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
-                                                      TRUE ~ "")) %>% 
+                # left_join(psc_naz, by = "ID_PSC") %>%
+                # # forza NA su settore di intervento per psc regionali e metropolitani
+                # mutate(SETTORE_INTERVENTO = case_when(TEMP == 1 ~ SETTORE_INTERVENTO,
+                #                                       TRUE ~ "")) %>% 
                 mutate(SEZIONE = "SEZ_ORD") %>% 
                 group_by(ID_PSC, x_CICLO, SEZIONE, AREA_TEMATICA, SETTORE_INTERVENTO) %>% 
                 summarise(COE_DUPLI = sum(COE, na.rm = TRUE)),
@@ -1973,7 +2189,7 @@ make_report_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL,
     
     if (export_xls == TRUE) {
       # message("Da implementare")
-      write.xlsx(report, file.path(TEMP, "report_temi_stato_psc_nodupli.xlsx"))
+      write.xlsx(report, file.path(OUTPUT, "report_temi_stato_psc_nodupli.xlsx"))
       
     }
   } else {
@@ -1983,7 +2199,7 @@ make_report_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL,
     
     if (export_xls == TRUE) {
       # message("Da implementare")
-      write.xlsx(report, file.path(OUT, "report_temi_stato_psc_dupli.xlsx"))
+      write.xlsx(report, file.path(OUTPUT, "report_temi_stato_psc_dupli.xlsx"))
     }
   }
   
@@ -2277,14 +2493,15 @@ fix_sposta_psc_turismo <- function(progetti_psc, progetti) {
                               COD_STRUMENTO == "FSC_DT" ~ "PSC_MTUR", # Dashboard turismo
                               # ... "Montagna Italia"
                               # ... AT
-                              TRUE ~ "PSC_MIBACT"),
+                              # TRUE ~ "PSC_MIBACT"),
+                              TRUE ~ "PSC_MIC"),
            PSC = case_when(COD_STRUMENTO == "FSC_WIFI_I" ~ "PSC MINISTERO DEL TURISMO", # Wi-Fi Italia
                            COD_STRUMENTO == "FSC_IDMS" ~ "PSC MINISTERO DEL TURISMO", # Italia Destination Management System
                            COD_STRUMENTO == "FSC_GDTS" ~ "PSC MINISTERO DEL TURISMO", # Grandi destinazioni per un turismo sostenibile
                            COD_STRUMENTO == "FSC_DT" ~ "PSC MINISTERO DEL TURISMO", # Dashboard turismo
                            # ... "Montagna Italia"
                            # ... AT
-                           TRUE ~ "PSC MINISTERO CULTURA E TURISMO"),
+                           TRUE ~ "PSC MINISTERO CULTURA"),
            OC_CODICE_PROGRAMMA = case_when(COD_STRUMENTO == "FSC_WIFI_I" ~ "SCORPORO_TURISMO", # Wi-Fi Italia
                            COD_STRUMENTO == "FSC_IDMS" ~ "SCORPORO_TURISMO", # Italia Destination Management System
                            COD_STRUMENTO == "FSC_GDTS" ~ "SCORPORO_TURISMO", # Grandi destinazioni per un turismo sostenibile
@@ -2323,9 +2540,10 @@ fix_sposta_psc_turismo <- function(progetti_psc, progetti) {
 #'
 #' @param progetti_psc Dataset progetti PSC da dentro prep_dati_psc_bimestre()
 #' @param progetti Dataset progetti da load_progetti(bimestre, visualizzati = FALSE, light = FALSE), come usato in dentro prep_dati_psc_bimestre()
+#' @param interventi_cds Settori di intervento definiti in CdS
 #' @return dataframe
 #' @note Da usare dentro prep_dati_psc_bimestre(). 
-fix_aree_settori_amm_centrali <- function(progetti_psc, progetti) {
+fix_aree_settori_amm_centrali <- function(progetti_psc, progetti, interventi_cds) {
   
   # progetti_psc <- appo6
   
@@ -2333,10 +2551,10 @@ fix_aree_settori_amm_centrali <- function(progetti_psc, progetti) {
   # 11.01-STRUTTURE EDUCATIVE E FORMATIVE -> 08.01-EDILIZIA PUBBLICA
   fix_list_sport <- progetti_psc %>% 
     filter(OC_CODICE_PROGRAMMA == "POSPORTFSC") %>% 
-    mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "08.01-EDILIZIA PUBBLICA" ~ "08.01-EDILIZIA PUBBLICA",
-                                              SETTORE_INTERVENTO == "11.01-STRUTTURE EDUCATIVE E FORMATIVE" ~ "08.01-EDILIZIA PUBBLICA",
+    mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "08.01-EDILIZIA E SPAZI PUBBLICI" ~ "08.01-EDILIZIA E SPAZI PUBBLICI",
+                                              SETTORE_INTERVENTO == "11.01-STRUTTURE EDUCATIVE E FORMATIVE" ~ "08.01-EDILIZIA E SPAZI PUBBLICI",
                                               TRUE ~ "CHK"),
-           AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "08.01-EDILIZIA PUBBLICA" ~ "08-RIQUALIFICAZIONE URBANA",
+           AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "08.01-EDILIZIA E SPAZI PUBBLICI" ~ "08-RIQUALIFICAZIONE URBANA",
                                          SETTORE_INTERVENTO == "11.01-STRUTTURE EDUCATIVE E FORMATIVE" ~ "08-RIQUALIFICAZIONE URBANA",
                                          TRUE ~ "CHK")) %>% 
     select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
@@ -2346,9 +2564,17 @@ fix_aree_settori_amm_centrali <- function(progetti_psc, progetti) {
   # 01.02-STRUTTURE DI RICERCA resta vuoto ma forse è PRATT8293	Avviso PIR -Potenziamento Infrastrutture Ricerca
   fix_list_mur <- progetti_psc %>% 
     filter(OC_CODICE_PROGRAMMA == "2017FSCRICERCA") %>% 
-    mutate(SETTORE_INTERVENTO_NEW = case_when(COD_PROCED_ATTIVAZIONE == "PRATT8293" ~ "01.02-STRUTTURE DI RICERCA",
+    mutate(SETTORE_INTERVENTO_NEW = case_when(COD_LOCALE_PROGETTO == "1MISEATARS" ~ "12.02-ASSISTENZA TECNICA",
+                                              COD_LOCALE_PROGETTO == "1MISEFSCSISTEMA2" ~ "12.02-ASSISTENZA TECNICA",
+                                              # COD_PROCED_ATTIVAZIONE == "PRATT8293" ~ "01.02-STRUTTURE DI RICERCA",
+                                              # COD_PROCED_ATTIVAZIONE == "PRATT8293:::PRATT8293" ~ "01.02-STRUTTURE DI RICERCA",
+                                              COD_PROCED_ATTIVAZIONE == "PRATT23582" ~ "01.02-STRUTTURE DI RICERCA",
                                               TRUE ~ SETTORE_INTERVENTO),
-           AREA_TEMATICA_NEW = case_when(COD_PROCED_ATTIVAZIONE == "PRATT8293" ~ "01-RICERCA E INNOVAZIONE",
+           AREA_TEMATICA_NEW = case_when(COD_LOCALE_PROGETTO == "1MISEATARS" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         COD_LOCALE_PROGETTO == "1MISEFSCSISTEMA2" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         # COD_PROCED_ATTIVAZIONE == "PRATT8293" ~ "01-RICERCA E INNOVAZIONE",
+                                         # COD_PROCED_ATTIVAZIONE == "PRATT8293:::PRATT8293" ~ "01-RICERCA E INNOVAZIONE",
+                                         COD_PROCED_ATTIVAZIONE == "PRATT23582" ~ "01-RICERCA E INNOVAZIONE",
                                          TRUE ~ AREA_TEMATICA)) %>% 
     select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
   
@@ -2361,25 +2587,26 @@ fix_aree_settori_amm_centrali <- function(progetti_psc, progetti) {
     # semi_join(progetti_psc %>% 
     #             filter(ID_PSC == "PSC_MTUR"), 
     #           by = "COD_LOCALE_PROGETTO") %>% 
-    mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITA’" ~ "03.02-TURISMO E OSPITALITA’",
-                                              SETTORE_INTERVENTO == "06.01-PATRIMONIO E PAESAGGIO" ~ "03.02-TURISMO E OSPITALITA’",
-                                              SETTORE_INTERVENTO == "06.02-ATTIVITA’ CULTURALI" ~ "03.02-TURISMO E OSPITALITA’",
-                                              SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITA'" ~ "03.02-TURISMO E OSPITALITA’",
+    mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITÀ" ~ "03.02-TURISMO E OSPITALITÀ",
+                                              SETTORE_INTERVENTO == "06.01-PATRIMONIO E PAESAGGIO" ~ "03.02-TURISMO E OSPITALITÀ",
+                                              SETTORE_INTERVENTO == "06.02-ATTIVITÀ CULTURALI" ~ "03.02-TURISMO E OSPITALITÀ",
+                                              SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITÀ" ~ "03.02-TURISMO E OSPITALITÀ",
                                               TRUE ~ "CHK"),
-           AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITA’" ~ "03-COMPETITIVITA' IMPRESE",
-                                         SETTORE_INTERVENTO == "06.01-PATRIMONIO E PAESAGGIO" ~ "03-COMPETITIVITA' IMPRESE",
-                                         SETTORE_INTERVENTO == "06.02-ATTIVITA’ CULTURALI" ~ "03-COMPETITIVITA' IMPRESE",
-                                         SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITA'" ~ "03-COMPETITIVITA' IMPRESE",
+           AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITÀ" ~ "03-COMPETITIVITÀ IMPRESE",
+                                         SETTORE_INTERVENTO == "06.01-PATRIMONIO E PAESAGGIO" ~ "03-COMPETITIVITÀ IMPRESE",
+                                         SETTORE_INTERVENTO == "06.02-ATTIVITÀ CULTURALI" ~ "03-COMPETITIVITÀ IMPRESE",
+                                         SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITÀ" ~ "03-COMPETITIVITÀ IMPRESE",
                                          TRUE ~ "CHK")) %>% 
     select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
 
   # PSC_MIT
+  # MEMO: va in funzione a parte perché deve lavorare solo su delta che non è in interventi_cds
   # usare soggetto programmatore, poi resta vuoto "dissesto" (tutto in "strade")
-  fix_list_mit <- progetti_psc %>% 
-    filter(OC_CODICE_PROGRAMMA == "2017POINFRASFSC") %>% 
-    left_join(progetti %>% 
-                distinct(COD_LOCALE_PROGETTO, OC_DENOM_PROGRAMMATORE), 
-              by = "COD_LOCALE_PROGETTO") %>% 
+  fix_list_mit <- progetti_psc %>%
+    filter(OC_CODICE_PROGRAMMA == "2017POINFRASFSC") %>%
+    left_join(progetti %>%
+                distinct(COD_LOCALE_PROGETTO, OC_DENOM_PROGRAMMATORE),
+              by = "COD_LOCALE_PROGETTO") %>%
     mutate(SETTORE_INTERVENTO_NEW = case_when(COD_LOCALE_PROGETTO == "5MTRA1E7003" ~ "12.02-ASSISTENZA TECNICA",
                                               OC_DENOM_PROGRAMMATORE == "MIT" ~ "12.02-ASSISTENZA TECNICA",
                                               OC_DENOM_PROGRAMMATORE == "MIT - DG DIGHE" ~ "05.02-RISORSE IDRICHE",
@@ -2387,8 +2614,8 @@ fix_aree_settori_amm_centrali <- function(progetti_psc, progetti) {
                                               OC_DENOM_PROGRAMMATORE == "MIT SVILTER STRUTT" ~ "08.01-EDILIZIA E SPAZI PUBBLICI",
                                               OC_DENOM_PROGRAMMATORE == "MIT-DG AEREO" ~ "07.04-TRASPORTO AEREO",
                                               OC_DENOM_PROGRAMMATORE == "MIT-DG PORTI" ~ "07.03-TRASPORTO MARITTIMO",
-                                              OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" & grepl("ciclovi", OC_TITOLO_PROGETTO) ~ "05.05-NATURA E BIODIVERSITA'",
-                                              OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" & grepl("ciclab", OC_TITOLO_PROGETTO) ~ "05.05-NATURA E BIODIVERSITA'",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" & grepl("ciclovi", OC_TITOLO_PROGETTO) ~ "05.05-NATURA E BIODIVERSITÀ",
+                                              OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" & grepl("ciclab", OC_TITOLO_PROGETTO) ~ "05.05-NATURA E BIODIVERSITÀ",
                                               OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" ~ "07.05-MOBILITÀ URBANA",
                                               OC_DENOM_PROGRAMMATORE == "MIT-DG TPL4" ~ "07.05-MOBILITÀ URBANA",
                                               OC_DENOM_PROGRAMMATORE == "MIT-DG TPL5" ~ "07.05-MOBILITÀ URBANA",
@@ -2403,60 +2630,113 @@ fix_aree_settori_amm_centrali <- function(progetti_psc, progetti) {
                                               OC_DENOM_PROGRAMMATORE == "MIT-DGTPL4" ~ "07.05-MOBILITÀ URBANA",
                                               OC_DENOM_PROGRAMMATORE == "MIT-DIGES" ~ "08.01-EDILIZIA E SPAZI PUBBLICI",
                                               TRUE ~ "CHK"),
-           AREA_TEMATICA_NEW = case_when(COD_LOCALE_PROGETTO == "5MTRA1E7003" ~ "12-CAPACITA' AMMINISTRATIVA",
-                                         OC_DENOM_PROGRAMMATORE == "MIT" ~ "12-CAPACITA' AMMINISTRATIVA",
+           AREA_TEMATICA_NEW = case_when(COD_LOCALE_PROGETTO == "5MTRA1E7003" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         OC_DENOM_PROGRAMMATORE == "MIT" ~ "12-CAPACITÀ AMMINISTRATIVA",
                                          OC_DENOM_PROGRAMMATORE == "MIT - DG DIGHE" ~ "05-AMBIENTE E RISORSE NATURALI",
                                          OC_DENOM_PROGRAMMATORE == "MIT SVILTER DIV V" ~ "08-RIQUALIFICAZIONE URBANA",
                                          OC_DENOM_PROGRAMMATORE == "MIT SVILTER STRUTT" ~ "08-RIQUALIFICAZIONE URBANA",
-                                         OC_DENOM_PROGRAMMATORE == "MIT-DG AEREO" ~ "07-TRASPORTI E MOBILITA'",
-                                         OC_DENOM_PROGRAMMATORE == "MIT-DG PORTI" ~ "07-TRASPORTI E MOBILITA'",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG AEREO" ~ "07-TRASPORTI E MOBILITÀ",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG PORTI" ~ "07-TRASPORTI E MOBILITÀ",
                                          OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" & grepl("ciclovi", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
                                          OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" & grepl("ciclab", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
-                                         OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" ~ "07-TRASPORTI E MOBILITA'",
-                                         OC_DENOM_PROGRAMMATORE == "MIT-DG TPL4" ~ "07-TRASPORTI E MOBILITA'",
-                                         OC_DENOM_PROGRAMMATORE == "MIT-DG TPL5" ~ "07-TRASPORTI E MOBILITA'",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG TPL3" ~ "07-TRASPORTI E MOBILITÀ",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG TPL4" ~ "07-TRASPORTI E MOBILITÀ",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DG TPL5" ~ "07-TRASPORTI E MOBILITÀ",
                                          OC_DENOM_PROGRAMMATORE == "MIT-DGDIGHE" ~ "05-AMBIENTE E RISORSE NATURALI",
-                                         OC_DENOM_PROGRAMMATORE == "MIT-DGFERRO" ~ "07-TRASPORTI E MOBILITA'",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DGFERRO" ~ "07-TRASPORTI E MOBILITÀ",
                                          # OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" ~ AREA_TEMATICA,
                                          OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("frana", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
                                          OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("frane", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
                                          OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("dissest", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
                                          OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" & grepl("versant", OC_TITOLO_PROGETTO) ~ "05-AMBIENTE E RISORSE NATURALI",
-                                         OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" ~ "07-TRASPORTI E MOBILITA'",
-                                         OC_DENOM_PROGRAMMATORE == "MIT-DGTPL4" ~ "07-TRASPORTI E MOBILITA'",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DGSTRADE" ~ "07-TRASPORTI E MOBILITÀ",
+                                         OC_DENOM_PROGRAMMATORE == "MIT-DGTPL4" ~ "07-TRASPORTI E MOBILITÀ",
                                          OC_DENOM_PROGRAMMATORE == "MIT-DIGES" ~ "08-RIQUALIFICAZIONE URBANA",
                                          TRUE ~ "CHK")) %>% 
-    select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
+    anti_join(interventi_cds, by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>%
+    select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW) 
 
   # PSC_MISE
-  # sembra sensato ma da verificare per singoli progetti
+  fix_list_mise <- progetti_psc %>% 
+    filter(OC_CODICE_PROGRAMMA == "2017POIMPCOMFSC" | OC_CODICE_PROGRAMMA == "2018FSCVOUCHER" | 
+             OC_CODICE_PROGRAMMA == "FONDOGARANFSC" | OC_CODICE_PROGRAMMA == "2015MSIAIFSC011" | 
+             OC_CODICE_PROGRAMMA == "2016MISEBULFSC1") %>% 
+    mutate(SETTORE_INTERVENTO_NEW = case_when(# 2017POIMPCOMFSC (piano imprese)
+                                              COD_PROCED_ATTIVAZIONE == "PRATT12954" ~ "01.01-RICERCA E SVILUPPO", # Piano Space Economy
+                                              COD_PROCED_ATTIVAZIONE == "PRATT19931" ~ "02.02-CONNETTIVITÀ DIGITALE", # BUL Bolzano
+                                              COD_PROCED_ATTIVAZIONE == "PRATT20376" ~ "12.02-ASSISTENZA TECNICA", # Progetto Blockchain
+                                              COD_PROCED_ATTIVAZIONE == "PRATT20379" ~ "12.02-ASSISTENZA TECNICA", # 	AT - Capacità strumentale
+                                              COD_PROCED_ATTIVAZIONE == "PRATT20378" ~ "12.02-ASSISTENZA TECNICA", # 	AT CDS FSC
+                                              COD_PROCED_ATTIVAZIONE == "PRATT7716" ~ "12.02-ASSISTENZA TECNICA", # Convenzione MISE-Invitalia FSC
+                                              COD_PROCED_ATTIVAZIONE == "PRATT20377" ~ "12.02-ASSISTENZA TECNICA", #	AT - Space Economy
+                                              OC_CODICE_PROGRAMMA == "2017POIMPCOMFSC" ~ "03.01-INDUSTRIA E SERVIZI",
+                                              # 2016MISEBULFSC1 (piano BUL)
+                                              COD_PROCED_ATTIVAZIONE == "PRATT28156" ~ "02.01-TECNOLOGIE E SERVIZI DIGITALI", # Voucher fase 1
+                                              COD_PROCED_ATTIVAZIONE == "PRATT20393" ~ "02.01-TECNOLOGIE E SERVIZI DIGITALI", # 	Radio Monitoring
+                                              OC_CODICE_PROGRAMMA == "2016MISEBULFSC1" ~ "02.02-CONNETTIVITÀ DIGITALE",
+                                              # altri programmi
+                                              OC_CODICE_PROGRAMMA == "2018FSCVOUCHER" ~ "02.01-TECNOLOGIE E SERVIZI DIGITALI",
+                                              OC_CODICE_PROGRAMMA == "FONDOGARANFSC" ~ "03.01-INDUSTRIA E SERVIZI",
+                                              OC_CODICE_PROGRAMMA == "2015MSIAIFSC011" ~ "03.01-INDUSTRIA E SERVIZI",
+                                              TRUE ~ "CHK"),
+           AREA_TEMATICA_NEW = case_when(# 2017POIMPCOMFSC (piano imprese)
+                                         COD_PROCED_ATTIVAZIONE == "PRATT12954" ~ "01-RICERCA E INNOVAZIONE",
+                                         COD_PROCED_ATTIVAZIONE == "PRATT19931" ~ "02-DIGITALIZZAZIONE",
+                                         COD_PROCED_ATTIVAZIONE == "PRATT20376" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         COD_PROCED_ATTIVAZIONE == "PRATT20379" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         COD_PROCED_ATTIVAZIONE == "PRATT20378" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         COD_PROCED_ATTIVAZIONE == "PRATT7716" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         COD_PROCED_ATTIVAZIONE == "PRATT20377" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         OC_CODICE_PROGRAMMA == "2017POIMPCOMFSC" ~ "03-COMPETITIVITÀ IMPRESE",
+                                         # 2016MISEBULFSC1 (piano BUL)
+                                         OC_CODICE_PROGRAMMA == "2016MISEBULFSC1" ~ "02-DIGITALIZZAZIONE",
+                                         # altri programmi
+                                         OC_CODICE_PROGRAMMA == "2018FSCVOUCHER" ~ "02-DIGITALIZZAZIONE",
+                                         OC_CODICE_PROGRAMMA == "FONDOGARANFSC" ~ "03-COMPETITIVITÀ IMPRESE",
+                                         OC_CODICE_PROGRAMMA == "2015MSIAIFSC011" ~ "03-COMPETITIVITÀ IMPRESE",
+                                         TRUE ~ "CHK")) %>% 
+    select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
+  
+  
+  
   
   # PSC_MISALUTE
   fix_list_salute <- progetti_psc %>% 
     filter(OC_CODICE_PROGRAMMA == "2018POSALUTEFSC") %>% 
     mutate(SETTORE_INTERVENTO_NEW = case_when(COD_LOCALE_PROGETTO == "2MSALDG02_12818_AT_FSC_POSALUTE" ~ "12.02-ASSISTENZA TECNICA",
                                               TRUE ~ "01.01-RICERCA E SVILUPPO"),
-           AREA_TEMATICA_NEW = case_when(COD_LOCALE_PROGETTO == "2MSALDG02_12818_AT_FSC_POSALUTE" ~ "12-CAPACITA' AMMINISTRATIVA",
+           AREA_TEMATICA_NEW = case_when(COD_LOCALE_PROGETTO == "2MSALDG02_12818_AT_FSC_POSALUTE" ~ "12-CAPACITÀ AMMINISTRATIVA",
                                          TRUE ~ "01-RICERCA E INNOVAZIONE")) %>% 
     select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
   
   # PSC_MIPAAF
   # 05.02-RISORSE IDRICHE -> 03.03-AGRICOLTURA
   # 05.04-BONIFICHE -> 03.03-AGRICOLTURA
+  # OLD:
+  # fix_list_mipaaf <- progetti_psc %>% 
+  #   filter(OC_CODICE_PROGRAMMA == "2017POAGRICOFSC") %>% 
+  #   mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "03.03-AGRICOLTURA" ~ "03.03-AGRICOLTURA",
+  #                                             SETTORE_INTERVENTO == "05.02-RISORSE IDRICHE" ~ "03.03-AGRICOLTURA",
+  #                                             SETTORE_INTERVENTO == "05.04-BONIFICHE" ~ "03.03-AGRICOLTURA",
+  #                                             SETTORE_INTERVENTO == "03.01-INDUSTRIA E SERVIZI" ~ "03.01-INDUSTRIA E SERVIZI",
+  #                                             TRUE ~ "CHK"),
+  #          AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "03.03-AGRICOLTURA" ~ "03-COMPETITIVITA' IMPRESE",
+  #                                        SETTORE_INTERVENTO == "05.02-RISORSE IDRICHE" ~ "03-COMPETITIVITA' IMPRESE",
+  #                                        SETTORE_INTERVENTO == "05.04-BONIFICHE" ~ "03-COMPETITIVITA' IMPRESE",
+  #                                        SETTORE_INTERVENTO == "03.01-INDUSTRIA E SERVIZI" ~ "03-COMPETITIVITA' IMPRESE",
+  #                                        TRUE ~ "CHK")) %>% 
+  #   select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
+  # NEW:
   fix_list_mipaaf <- progetti_psc %>% 
     filter(OC_CODICE_PROGRAMMA == "2017POAGRICOFSC") %>% 
-    mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "03.03-AGRICOLTURA" ~ "03.03-AGRICOLTURA",
-                                              SETTORE_INTERVENTO == "05.02-RISORSE IDRICHE" ~ "03.03-AGRICOLTURA",
-                                              SETTORE_INTERVENTO == "05.04-BONIFICHE" ~ "03.03-AGRICOLTURA",
-                                              SETTORE_INTERVENTO == "03.01-INDUSTRIA E SERVIZI" ~ "03.01-INDUSTRIA E SERVIZI",
+    mutate(SETTORE_INTERVENTO_NEW = case_when(COD_PROCED_ATTIVAZIONE == "PRATT18580" ~ "03.03-AGRICOLTURA", # Interventi in infrastrutture irrigue
+                                              COD_PROCED_ATTIVAZIONE == "PRATT20984" ~ "03.03-AGRICOLTURA", # Interventi in infrastrutture irrigue
+                                              COD_PROCED_ATTIVAZIONE == "PRATT6940" ~ "03.03-AGRICOLTURA", # Agricoltura 2.0
+                                              COD_PROCED_ATTIVAZIONE == "PRATT17968" ~ "03.01-INDUSTRIA E SERVIZI", # IV Bando nazionale - DM 1192 contratti di filiera e distretto
                                               TRUE ~ "CHK"),
-           AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "03.03-AGRICOLTURA" ~ "03-COMPETITIVITA' IMPRESE",
-                                         SETTORE_INTERVENTO == "05.02-RISORSE IDRICHE" ~ "03-COMPETITIVITA' IMPRESE",
-                                         SETTORE_INTERVENTO == "05.04-BONIFICHE" ~ "03-COMPETITIVITA' IMPRESE",
-                                         SETTORE_INTERVENTO == "03.01-INDUSTRIA E SERVIZI" ~ "03-COMPETITIVITA' IMPRESE",
+           AREA_TEMATICA_NEW = case_when(OC_CODICE_PROGRAMMA == "2017POAGRICOFSC" ~ "03-COMPETITIVITÀ IMPRESE",
                                          TRUE ~ "CHK")) %>% 
     select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
-  
   
   # PSC_MIBACT
   # 05.05-NATURA E BIODIVERSITA' -> 06.01-PATRIMONIO E PAESAGGIO (ma controllare progetti)
@@ -2464,19 +2744,20 @@ fix_aree_settori_amm_centrali <- function(progetti_psc, progetti) {
   # 03.02-TURISMO E OSPITALITA’ in overbooking anche senza PSC_MTUR
   fix_list_mibact <- progetti_psc %>% 
     semi_join(progetti_psc %>% 
-                filter(ID_PSC == "PSC_MIBACT"), 
+                # filter(ID_PSC == "PSC_MIBACT"), 
+                filter(ID_PSC == "PSC_MIC"), 
               by = "COD_LOCALE_PROGETTO") %>%
-    mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITA’" ~ "03.02-TURISMO E OSPITALITA’",
+    mutate(SETTORE_INTERVENTO_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITÀ" ~ "03.02-TURISMO E OSPITALITÀ",
                                               SETTORE_INTERVENTO == "06.01-PATRIMONIO E PAESAGGIO" ~ "06.01-PATRIMONIO E PAESAGGIO",
-                                              SETTORE_INTERVENTO == "06.02-ATTIVITA’ CULTURALI" ~ "06.01-PATRIMONIO E PAESAGGIO",
-                                              SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITA'" ~ "03.02-TURISMO E OSPITALITA’",
+                                              SETTORE_INTERVENTO == "06.02-ATTIVITÀ CULTURALI" ~ "06.01-PATRIMONIO E PAESAGGIO",
+                                              SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITÀ" ~ "03.02-TURISMO E OSPITALITÀ",
                                               SETTORE_INTERVENTO == "12.02-ASSISTENZA TECNICA" ~ "12.02-ASSISTENZA TECNICA",
                                               TRUE ~ "CHK"),
-           AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITA’" ~ "03-COMPETITIVITA' IMPRESE",
+           AREA_TEMATICA_NEW = case_when(SETTORE_INTERVENTO == "03.02-TURISMO E OSPITALITÀ" ~ "03-COMPETITIVITÀ IMPRESE",
                                          SETTORE_INTERVENTO == "06.01-PATRIMONIO E PAESAGGIO" ~ "06-CULTURA",
-                                         SETTORE_INTERVENTO == "06.02-ATTIVITA’ CULTURALI" ~ "06-CULTURA",
-                                         SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITA'" ~ "03-COMPETITIVITA' IMPRESE",
-                                         SETTORE_INTERVENTO == "12.02-ASSISTENZA TECNICA" ~ "12-CAPACITA' AMMINISTRATIVA",
+                                         SETTORE_INTERVENTO == "06.02-ATTIVITÀ CULTURALI" ~ "06-CULTURA",
+                                         SETTORE_INTERVENTO == "05.05-NATURA E BIODIVERSITÀ" ~ "03-COMPETITIVITÀ IMPRESE",
+                                         SETTORE_INTERVENTO == "12.02-ASSISTENZA TECNICA" ~ "12-CAPACITÀ AMMINISTRATIVA",
                                          TRUE ~ "CHK")) %>% 
     select(COD_LOCALE_PROGETTO, SETTORE_INTERVENTO_NEW, AREA_TEMATICA_NEW)
   
@@ -2488,7 +2769,12 @@ fix_aree_settori_amm_centrali <- function(progetti_psc, progetti) {
   # mapping su strumento attuativo
   fix_list_mattm <- progetti %>% 
     filter(OC_CODICE_PROGRAMMA == "2017POAMBIENFSC") %>% 
-    mutate(SETTORE_INTERVENTO_NEW = case_when(COD_STRUMENTO == "POFSCMAC25" ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO", 
+    mutate(SETTORE_INTERVENTO_NEW = case_when(COD_LOCALE_PROGETTO == "1MATTMDGCLE_24_0067" ~ "12.02-ASSISTENZA TECNICA",
+                                              COD_LOCALE_PROGETTO == "1MATTMDGRIN_21_0027" ~ "12.02-ASSISTENZA TECNICA",
+                                              COD_LOCALE_PROGETTO == "1MATTMDGSTA_22_0269" ~ "12.02-ASSISTENZA TECNICA",
+                                              COD_LOCALE_PROGETTO == "1MATTMDGSTA_22_0270" ~ "12.02-ASSISTENZA TECNICA",
+                                              COD_LOCALE_PROGETTO == "1MATTMDGSTA_22_23_25_0001" ~ "12.02-ASSISTENZA TECNICA",
+                                              COD_STRUMENTO == "POFSCMAC25" ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO", 
                                               COD_STRUMENTO == "POFSCPNM25" ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO", 
                                               COD_STRUMENTO == "POFSCSTA25" ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO", 
                                               COD_STRUMENTO == "POFSCRIN21" ~ "05.03-RIFIUTI", 
@@ -2496,7 +2782,12 @@ fix_aree_settori_amm_centrali <- function(progetti_psc, progetti) {
                                               COD_STRUMENTO == "POFSCCLE24" ~ "04.01-EFFICIENZA ENERGETICA", 
                                               COD_STRUMENTO == "POFSCSTA22" ~ "05.02-RISORSE IDRICHE", 
                                               TRUE ~ "CHK"),
-           AREA_TEMATICA_NEW = case_when(COD_STRUMENTO == "POFSCMAC25" ~ "05-AMBIENTE E RISORSE NATURALI", 
+           AREA_TEMATICA_NEW = case_when(COD_LOCALE_PROGETTO == "1MATTMDGCLE_24_0067" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         COD_LOCALE_PROGETTO == "1MATTMDGRIN_21_0027" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         COD_LOCALE_PROGETTO == "1MATTMDGSTA_22_0269" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         COD_LOCALE_PROGETTO == "1MATTMDGSTA_22_0270" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         COD_LOCALE_PROGETTO == "1MATTMDGSTA_22_23_25_0001" ~ "12-CAPACITÀ AMMINISTRATIVA",
+                                         COD_STRUMENTO == "POFSCMAC25" ~ "05-AMBIENTE E RISORSE NATURALI", 
                                          COD_STRUMENTO == "POFSCPNM25" ~ "05-AMBIENTE E RISORSE NATURALI", 
                                          COD_STRUMENTO == "POFSCSTA25" ~ "05-AMBIENTE E RISORSE NATURALI", 
                                          COD_STRUMENTO == "POFSCRIN21" ~ "05-AMBIENTE E RISORSE NATURALI", 
@@ -2513,8 +2804,9 @@ fix_aree_settori_amm_centrali <- function(progetti_psc, progetti) {
     bind_rows(fix_list_sport) %>% 
     bind_rows(fix_list_mipaaf) %>% 
     bind_rows(fix_list_mur) %>% 
-    bind_rows(fix_list_mit) %>% 
-    bind_rows(fix_list_salute)
+    bind_rows(fix_list_mit) %>%
+    bind_rows(fix_list_salute) %>% 
+    bind_rows(fix_list_mise)
   
   # chk duplicati
   temp <- fix_list %>% count(COD_LOCALE_PROGETTO) %>% filter(n > 1)
@@ -2638,4 +2930,5 @@ chk_report_psc <- function(progetti_psc) {
   return(memo)
   
 }
+
 

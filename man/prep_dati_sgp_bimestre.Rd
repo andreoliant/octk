@@ -4,16 +4,16 @@
 \alias{prep_dati_sgp_bimestre}
 \title{Dati SGP per elaborazioni PSC}
 \usage{
-prep_dati_sgp_bimestre(bimestre, filename, matrix_06, chk_today)
+prep_dati_sgp_bimestre(bimestre, versione, filename, matrix_06, chk_today)
 }
 \arguments{
 \item{bimestre}{Bimestre di riferimento, nella versione specifica per i dati PSC (es. 20211231.01 oppure 20211231)}
 
+\item{versione}{Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)}
+
 \item{filename}{Nome file xlsx in DATI > SGP}
 
 \item{chk_today}{Parametro da passare a get_stato_attuazione(), con formato "2021-02-28"}
-
-\item{versione}{Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)}
 
 \item{matrix06}{Matrice di riconciliazione tra denominazione APQ 2000-20006 e settori di intervento PSC}
 }
