@@ -9,8 +9,9 @@ workflow_cis(
   interventi = NULL,
   operazioni = NULL,
   progetti = NULL,
-  debug = TRUE,
-  export = TRUE
+  debug = FALSE,
+  debug_peri = FALSE,
+  export = FALSE
 )
 }
 \arguments{
@@ -23,6 +24,8 @@ workflow_cis(
 \item{progetti}{Dataset da progetti_light}
 
 \item{debug}{Vuoi verificare il DB e il mappging con i clp?}
+
+\item{debug_peri}{Vuoi verificare i se tutti i clp nel perimetro sono mappati nel DB?}
 
 \item{export}{Vuoi esportare in TEMP in xlsx?}
 }

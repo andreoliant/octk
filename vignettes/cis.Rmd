@@ -64,3 +64,13 @@ workflow_cis(bimestre, interventi=NULL, operazioni=NULL, progetti=NULL, debug=TR
 
 
 ```
+
+Per l'aggiornamento del DBCOE, essendo un file di tipo "interventi", è necessario:
+
+* aggiornare il quadro di programmazione con i nuovi interventi
+* elaborare il perimetro di progetti monitorati a partire dalle query sy po_linee_azioni e strum_att
+* integrare il mapping dei CLP sugli interventi programmati
+
+Il processo è descritto in ELAB/20220630/PERIMETRI/Cis/V.01/analisi_cis.R
+
+
