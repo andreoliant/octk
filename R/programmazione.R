@@ -926,7 +926,7 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
  # crea nome file da importare
   if (tipo == "CIS") {
 
-    filename <- paste0("DBCOE_interventi_CIS.xlsx") 
+    filename <- paste0("Interventi_DBCOE_CIS.xlsx") 
     
   } else {
     message("Non è ancora implementato")
@@ -941,7 +941,7 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
   # switch varibili da tenere
   var_ls <- c("OC_CODICE_PROGRAMMA", "OC_TITOLO_PROGETTO",
               "AMBITO",
-              "FINANZ_TOTALE")
+              "FINANZ_TOTALE_PUBBLICO")
   
   if (use_temi == TRUE) {
     var_ls <- c(var_ls,
@@ -1149,7 +1149,9 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
     refactor_macroarea() %>% 
     pivot_wider(id_cols = c("x_CICLO", "x_AMBITO"), names_from = "x_MACROAREA", 
                 values_from = c("RISORSE", "RISORSE_UE"), values_fill = 0) %>% 
-    arrange(desc(x_CICLO), x_AMBITO) 
+    arrange(desc(x_CICLO), x_AMBITO) %>% 
+    mutate(RISORSE = `RISORSE_Centro-Nord` + `RISORSE_Mezzogiorno` + `RISORSE_Ambito nazionale`,
+           RISORSE_UE = `RISORSE_UE_Centro-Nord` + `RISORSE_UE_Mezzogiorno` + `RISORSE_UE_Ambito nazionale`)
   
   
   
@@ -1525,7 +1527,7 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
   #          OC_CODICE_PROGRAMMA != "PSC_PCM-SPORT",
   #          OC_CODICE_PROGRAMMA != "PSC_MIPAAF")
   
-  # NEW:
+  # NEW: elimina dupli di 713
   out <- out4 %>% 
     filter(!(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_MUR"),
            !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_LAZIO"),
@@ -1534,7 +1536,13 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
            !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_MISALUTE"),
            !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_PCM-SPORT"),
            !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_MIPAAF"),
-           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_MITUR"))
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSC_MITUR"),
+           # fix per nuovi codici
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSCTURISMO"),
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSCSVILECONOM"),
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSCLAZIO"),
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSCSALUTE"),
+           !(LABEL_CICLO == "2007-2013" & OC_CODICE_PROGRAMMA == "PSCUNIVRICERCA"))
   
   
 
@@ -2003,7 +2011,19 @@ make_opendata_dotazioni_popsc <- function(programmi=NULL, progetti=NULL, export=
              FINANZ_TOTALE, MACROAREA,
              CAT_REGIONE,               
              ID_PSC, PSC, FLAG_MONITORAGGIO) %>% 
-    summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE)) %>% 
+    # NEW: elimina programmi duplicati per nuovo codice
+    filter(OC_CODICE_PROGRAMMA != "PSCCAMPANIA",
+           OC_CODICE_PROGRAMMA != "PSCCIMTCAGLIARI",
+           OC_CODICE_PROGRAMMA != "PSCEMILROMAGNA",
+           OC_CODICE_PROGRAMMA != "PSCLAZIO",
+           OC_CODICE_PROGRAMMA != "PSCPIEMONTE",
+           OC_CODICE_PROGRAMMA != "PSCSALUTE",
+           OC_CODICE_PROGRAMMA != "PSCSVILECONOM",
+           OC_CODICE_PROGRAMMA != "PSCTRENTO",
+           OC_CODICE_PROGRAMMA != "PSCTURISMO",
+           OC_CODICE_PROGRAMMA != "PSCUNIVRICERCA",
+           OC_CODICE_PROGRAMMA != "PSCVALLEAOSTA")
   
 
   
@@ -2081,7 +2101,23 @@ make_opendata_dotazioni_popsc <- function(programmi=NULL, progetti=NULL, export=
                                    x_MACROAREA == "SUD" ~ "Mezzogiorno"),
            # RISORSE = format(RISORSE, nsmall=2, big.mark=".", decimal.mark=","),
            CATEGORIA_REGIONI = ifelse(is.na(CATEGORIA_REGIONI), "-", as.character(CATEGORIA_REGIONI)),
-           AMMINISTRAZIONE = ifelse(is.na(AMMINISTRAZIONE), "Amministrazioni varie", as.character(AMMINISTRAZIONE)))
+           AMMINISTRAZIONE = ifelse(is.na(AMMINISTRAZIONE), "Amministrazioni varie", as.character(AMMINISTRAZIONE))) %>% 
+    # aggiorna codici
+    mutate(ID_PSC = case_when(ID_PSC == "PSC_CAMPANIA" ~ "PSCCAMPANIA",
+                              ID_PSC == "PSC_CAGLIARI" ~ "PSCCIMTCAGLIARI",
+                              ID_PSC == "PSC_EMILIA-ROMA" ~ "PSCEMILROMAGNA",
+                              ID_PSC == "PSC_LAZIO" ~ "PSCLAZIO",
+                              ID_PSC == "PSC_PIEMONTE" ~ "PSCPIEMONTE",
+                              ID_PSC == "PSC_MISALUTE" ~ "PSCSALUTE",
+                              ID_PSC == "PSC_MISE" ~ "PSCSVILECONOM",
+                              ID_PSC == "PSC_PA_TRENTO" ~ "PSCTRENTO",
+                              ID_PSC == "PSC_MTUR" ~ "PSCTURISMO",
+                              ID_PSC == "PSC_MUR" ~ "PSCUNIVRICERCA",
+                              ID_PSC == "PSC_VALLE_D_AOS" ~ "PSCVALLEAOSTA",
+                              TRUE ~ ID_PSC))
+  
+  
+  
   
   
   # export
@@ -2124,7 +2160,19 @@ make_opendata_decisioni_popsc <- function(export=TRUE, export_xls=TRUE) {
              FINANZ_TOTALE, MACROAREA,
              CAT_REGIONE,               
              ID_PSC, PSC, FLAG_MONITORAGGIO) %>% 
-    summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE)) %>% 
+    # NEW: elimina programmi duplicati per nuovo codice
+    filter(OC_CODICE_PROGRAMMA != "PSCCAMPANIA",
+           OC_CODICE_PROGRAMMA != "PSCCIMTCAGLIARI",
+           OC_CODICE_PROGRAMMA != "PSCEMILROMAGNA",
+           OC_CODICE_PROGRAMMA != "PSCLAZIO",
+           OC_CODICE_PROGRAMMA != "PSCPIEMONTE",
+           OC_CODICE_PROGRAMMA != "PSCSALUTE",
+           OC_CODICE_PROGRAMMA != "PSCSVILECONOM",
+           OC_CODICE_PROGRAMMA != "PSCTRENTO",
+           OC_CODICE_PROGRAMMA != "PSCTURISMO",
+           OC_CODICE_PROGRAMMA != "PSCUNIVRICERCA",
+           OC_CODICE_PROGRAMMA != "PSCVALLEAOSTA")
   
   # decisioni <- read_xlsx(file.path(DB, "fsc_delibere_po_psc.xlsx"))
   decisioni <- read_xlsx(file.path(dirname(DB), "INFO", "PO-PSC", "fsc_delibere_po_psc.xlsx"))
@@ -2197,7 +2245,20 @@ make_opendata_decisioni_popsc <- function(export=TRUE, export_xls=TRUE) {
            NUMERO_DECISIONE	= ifelse(is.na(NUMERO_DECISIONE), "n.d.", as.character(NUMERO_DECISIONE)),
            DATA_DECISIONE	= ifelse(is.na(DATA_DECISIONE), "n.d.", as.character(DATA_DECISIONE)),
            VERSIONE_PROGRAMMA	= ifelse(is.na(VERSIONE_PROGRAMMA), "-", as.character(VERSIONE_PROGRAMMA)),
-           SEQ_DECISIONE	= ifelse(is.na(SEQ_DECISIONE), "-", as.character(SEQ_DECISIONE)))
+           SEQ_DECISIONE	= ifelse(is.na(SEQ_DECISIONE), "-", as.character(SEQ_DECISIONE)))%>% 
+    # aggiorna codici
+    mutate(ID_PSC = case_when(ID_PSC == "PSC_CAMPANIA" ~ "PSCCAMPANIA",
+                              ID_PSC == "PSC_CAGLIARI" ~ "PSCCIMTCAGLIARI",
+                              ID_PSC == "PSC_EMILIA-ROMA" ~ "PSCEMILROMAGNA",
+                              ID_PSC == "PSC_LAZIO" ~ "PSCLAZIO",
+                              ID_PSC == "PSC_PIEMONTE" ~ "PSCPIEMONTE",
+                              ID_PSC == "PSC_MISALUTE" ~ "PSCSALUTE",
+                              ID_PSC == "PSC_MISE" ~ "PSCSVILECONOM",
+                              ID_PSC == "PSC_PA_TRENTO" ~ "PSCTRENTO",
+                              ID_PSC == "PSC_MTUR" ~ "PSCTURISMO",
+                              ID_PSC == "PSC_MUR" ~ "PSCUNIVRICERCA",
+                              ID_PSC == "PSC_VALLE_D_AOS" ~ "PSCVALLEAOSTA",
+                              TRUE ~ ID_PSC))
   
   
   # export
@@ -4411,7 +4472,9 @@ fix_id_psc_ministeri <- function(df, var1="PSC") {
       mutate(DESCRIZIONE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "PSC_MIT" ~ "PSC MINISTERO INFRASTRUTTURE E MOBILITA' SOSTENIBILE",
                              OC_CODICE_PROGRAMMA == "PSC_MATTM" ~ "PSC MINISTERO TRANSIZIONE ECOLOGICA",
                              OC_CODICE_PROGRAMMA == "PSC_MI" ~ "PSC MINISTERO ISTRUZIONE",
-                             OC_CODICE_PROGRAMMA == "PSC_MIBACT" ~ "PSC MINISTERO CULTURA E TURISMO",
+                             # OC_CODICE_PROGRAMMA == "PSC_MIBACT" ~ "PSC MINISTERO CULTURA E TURISMO",
+                             OC_CODICE_PROGRAMMA == "PSC_MIC" ~ "PSC MINISTERO CULTURA",
+                             OC_CODICE_PROGRAMMA == "PSC_MITUR" ~ "PSC MINISTERO TURISMO",
                              OC_CODICE_PROGRAMMA == "PSC_MISE" ~ "PSC MINISTERO SVILUPPO ECONOMICO",
                              OC_CODICE_PROGRAMMA == "PSC_MUR" ~ "PSC MINISTERO UNIVERSITA' RICERCA SCIENTIFICA",
                              OC_CODICE_PROGRAMMA == "PSC_MIPAAF" ~ "PSC MINISTERO POLITICHE AGRICOLO ALIMENTARI FORESTALI",
@@ -4423,7 +4486,9 @@ fix_id_psc_ministeri <- function(df, var1="PSC") {
       mutate(PSC = case_when(ID_PSC == "PSC_MIT" ~ "PSC MINISTERO INFRASTRUTTURE E MOBILITA' SOSTENIBILE",
                              ID_PSC == "PSC_MATTM" ~ "PSC MINISTERO TRANSIZIONE ECOLOGICA",
                              ID_PSC == "PSC_MI" ~ "PSC MINISTERO ISTRUZIONE",
-                             ID_PSC == "PSC_MIBACT" ~ "PSC MINISTERO CULTURA E TURISMO",
+                             # ID_PSC == "PSC_MIBACT" ~ "PSC MINISTERO CULTURA E TURISMO",
+                             ID_PSC == "PSC_MIC" ~ "PSC MINISTERO CULTURA",
+                             ID_PSC == "PSC_MITUR" ~ "PSC MINISTERO TURISMO",
                              ID_PSC == "PSC_MISE" ~ "PSC MINISTERO SVILUPPO ECONOMICO",
                              ID_PSC == "PSC_MUR" ~ "PSC MINISTERO UNIVERSITA' RICERCA SCIENTIFICA",
                              ID_PSC == "PSC_MIPAAF" ~ "PSC MINISTERO POLITICHE AGRICOLO ALIMENTARI FORESTALI",
