@@ -4,25 +4,14 @@
 \alias{make_report_macroaree_coesione}
 \title{Esporta report per ciclo, ambito e macroarea con dati coesione}
 \usage{
-make_report_macroaree_coesione(
-  risorse = NULL,
-  perimetro = NULL,
-  use_meuro = TRUE,
-  cut_no_risorse = FALSE,
-  focus = "report",
-  export = TRUE
-)
+make_report_macroaree_coesione(programmi, usa_meuro = TRUE, export = TRUE)
 }
 \arguments{
-\item{risorse}{Dataset proveniente da make_report_risorse()}
-
-\item{perimetro}{Dataset di classe "operazioni"}
-
-\item{cut_no_risorse}{Vuoi eliminare i programmi monitorati senza risorse lato DB?}
-
-\item{export}{vuoi salvare il file?}
+\item{programmi}{Dataset in formato "programmi" da make_report_programmi_coesione()}
 
 \item{usa_meuro}{Vuoi i dati in Meuro? Di default sono in euro. Attenzione: per usare Meuro il perimetro deve essere in euro, viene arrotondato dopo}
+
+\item{export}{vuoi salvare il file?}
 }
 \value{
 Un file csv con apertura per ciclo, ambto e macroarea.
