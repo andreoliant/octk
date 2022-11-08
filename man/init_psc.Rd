@@ -4,10 +4,12 @@
 \alias{init_psc}
 \title{Inizializza PSC}
 \usage{
-init_psc(PSC = NULL)
+init_psc(PSC = NULL, light = FALSE)
 }
 \arguments{
 \item{PSC}{Folder di supporto per dati PSC}
+
+\item{light}{Vuoi usare versione leggera (senza liste progetti art44, cds, ecc.)?}
 }
 \value{
 Carica i file necessario al flusso nel global environment
