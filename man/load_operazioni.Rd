@@ -4,10 +4,10 @@
 \alias{load_operazioni}
 \title{Prepara perimetro operazioni con dati coesione}
 \usage{
-load_operazioni(bimestre, usa_meuro = TRUE)
+load_operazioni(bimestre, visualizzati = TRUE)
 }
 \arguments{
-\item{usa_meuro}{Vuoi i dati in Meuro? Di default sono in euro.}
+\item{visualizzati}{Logico. Vuoi solo i progetti visualizzati sul portale OC?}
 
 \item{perimetro}{Dataset di classe perimetro.}
 }

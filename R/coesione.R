@@ -1582,11 +1582,11 @@ make_report_bimestre_coesione <- function(programmi, usa_meuro=TRUE, export=TRUE
   # MEMO: serve bimestre
   
   # fix
-  programmi <- programmi %>% 
-    mutate(N_CLP = 0,
-           IMP = 0,
-           PAG = 0)
-  
+  programmi <- programmi %>%
+    mutate(N_CLP = N) #,
+           # IMP = 0,
+           # PAG = 0)
+           
   if ("RISORSE_UE" %in% names(programmi)) {
     report <- programmi  %>%
       # MEMO: patch per factor di x_AMBITO e x_CICLO
@@ -3088,6 +3088,7 @@ workflow_operazioni_sito <- function(bimestre, progetti, debug=FALSE) {
   #  variabili COE per 2014-2020
   
   # chk
+  # operazioni_1420_raw %>% count(oc_cod_fonte, ue_descr_fondo)
   # operazioni_1420_raw %>% count(oc_cod_fonte, ue_descr_fondo, CODICE_TIPOLOGIA_PROGRAMMA, STATO)
   # oc_cod_fonte ue_descr_fondo      n
   # <chr>        <chr>           <int>

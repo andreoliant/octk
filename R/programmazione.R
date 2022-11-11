@@ -1559,11 +1559,11 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
     require(withr)
     withr::with_options(
       c(scipen = 10), 
-      write.csv2(out_1420, file.path(TEMP, "programmi_1420.csv"), row.names = FALSE, na = "")
+      write.csv2(out_1420, file.path(OUTPUT, "programmi_1420.csv"), row.names = FALSE, na = "")
       )
     withr::with_options(
       c(scipen = 10), 
-      write.csv2(out_713, file.path(TEMP, "programmi_0713.csv"), row.names = FALSE, na = "")
+      write.csv2(out_713, file.path(OUTPUT, "programmi_0713.csv"), row.names = FALSE, na = "")
     )
   }
   

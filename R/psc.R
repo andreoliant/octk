@@ -400,6 +400,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
     mutate(COD_SETTORE_INTERVENTO = if_else(is.na(COD_SETTORE_INTERVENTO.x), COD_SETTORE_INTERVENTO.y, COD_SETTORE_INTERVENTO.x)) %>% 
     select(-COD_SETTORE_INTERVENTO.x, -COD_SETTORE_INTERVENTO.y)
   
+  
   # sovrascrive temi per psc già monitorati e scarta sezioni speciali
   if ("psc_area_tematica" %in% names(temp_operazioni)) {
     appo1 <- appo %>% 
@@ -3119,18 +3120,18 @@ fix_macroarea_progetti_psc <- function(progetti_psc) {
 chk_report_psc <- function(progetti_psc) {
   
   # report po-psc
-  report1 <- make_report_report_po_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, 
+  report1 <- make_report_po_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, 
                                        export=FALSE, export_xls=FALSE) 
   
   # report temi-psc
-  report2 <- make_report_report_temi_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, 
+  report2 <- make_report_temi_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, 
                                          show_cp = TRUE, export=FALSE, export_xls=FALSE) 
   
   # report temi-psc-macorarea
-  report3 <- make_report_report_temi_macroaree_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, export=FALSE, export_xls=FALSE) 
+  report3 <- make_report_temi_macroaree_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, export=FALSE, export_xls=FALSE) 
   
   # report temi-psc-stato
-  report4 <- make_report_report_temi_stato_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, export=FALSE, export_xls=FALSE) 
+  report4 <- make_report_temi_stato_psc(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=TRUE, export=FALSE, export_xls=FALSE) 
   
   
   # --------------------------------------------------------------------------------------------------- #

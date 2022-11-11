@@ -28,6 +28,7 @@ oc_init <- function (bimestre, db_ver, data_path = NULL, db_path = NULL,
   library("haven")
   library("readxl")
   library("openxlsx")
+  library("lubridate")
   
   # configurazione con drive
   if (use_drive == TRUE) {
@@ -203,7 +204,8 @@ set_developer <- function(user) {
                           path = c(file.path("G:","Drive condivisi"), # "G:/Drive condivisi"
                                    file.path("G:","Drive condivisi"),
                                    file.path("G:","Drive condivisi"),
-                                   file.path("/Volumes", "GoogleDrive", "Drive condivisi"), # "/Volumes/GoogleDrive/Drive condivisi"
+                                   # file.path("/Volumes", "GoogleDrive", "Drive condivisi"), # "/Volumes/GoogleDrive/Drive condivisi"
+                                   file.path("/Users", "nicoladechiara", "Library", "CloudStorage", "GoogleDrive-nicola.dechiara@opencoesione.team", "Drive condivisi"), # "/Users/nicoladechiara/Library/CloudStorage/GoogleDrive-nicola.dechiara@opencoesione.team/Drive condivisi"
                                    file.path("/home", "antonio", "ExpanDrive", "OC", "Shared Drives"))) # "/home/antonio/ExpanDrive/OC/Shared Drives"))
   
   drive_root <- developer%>%
@@ -213,3 +215,14 @@ set_developer <- function(user) {
   
   return(drive_root)
 }
+
+
+#' !%in%
+#'
+#' Not in
+#'
+#' @param x Vettore da confrontare
+#' @param y Vettore da confrontare
+#' @return Vettore logico
+'%!in%' <- function(x, y) {!('%in%'(x, y))}
+

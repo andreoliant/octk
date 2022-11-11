@@ -2,7 +2,7 @@
 % Please edit documentation in R/psc.R
 \name{make_report_sezioni_psc}
 \alias{make_report_sezioni_psc}
-\title{Report PSC per temi}
+\title{Report PSC per temi con sezioni speciali}
 \usage{
 make_report_sezioni_psc(
   progetti_psc,

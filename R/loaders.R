@@ -143,7 +143,7 @@ refactor_ambito <- function(df) {
 #' @return Il dataset integrato.
 refactor_ciclo <- function(df) {
   
-  levels_ciclo <- c("2014-2020", "2007-2013", "2000-2006")
+  levels_ciclo <- c("2021-2027", "2014-2020", "2007-2013", "2000-2006")
   
   df <- df %>%
     mutate(x_CICLO = factor(x_CICLO, levels = levels_ciclo))
