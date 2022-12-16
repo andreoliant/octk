@@ -1,0 +1,315 @@
+---
+title: "Risorse Coesione e DB Programmazione"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{coesione}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(octk)
+```
+
+NB: tutte le funzioni citate sono presenti nella guida di R, per i dettagli digitare "?nomefunzione" nella console di R. 
+
+## Dati di programmazione
+Il database con i dati di programmazione (DBCOE) è disponbile in [Drive](https://drive.google.com/drive/u/0/folders/0AAr8I9mnkonmUk9PVA)
+
+La cartella è organizzata in folder che corrispondono alle date di riferimento, eventualmente versionate in caso di rilasci multipli per correzioni su dati di un rilascio precedente. E' presente anche un repository documentale sempre riferito all'ultima data disponibile e un folder di lavoro con informazioni varie.
+Per ogni data di riferimento sono presenti quattro tipi di file:
+
+
+* __Dati__: risorse per programma e articolazione (gerarchica, territoriale e tematica) alla data di riferimento, suddivise per ambito e ciclo di programmazione
+* __Info__: storico delle versioni e delle decisioni di finanziamento per programma, suddivise per ambito e ciclo di programmazione; contiene anche la dotazione finanziaria totale per ogni data di riferimento
+* __Interventi__: risorse per intervento, articolazione e programma alla data di riferimento, presenti solo per specifici sub-ambiti di programmazione (CIS, SNAI, COVID, ecc.)
+* __Extra__: vari file di supporto (denominazioni in inglese dei programmi, siti web dei programmi, file di raccordo per FSC ante art. 44 con risorse nei programmi originali confluiti nei PSC e relative delibere, metadati con il tracciato delle variabili, ecc.)
+
+Questa è la struttura del drive PROGRAMMAZIONE:
+
+
+> 
+--- Drive/PROGRAMMAZIONE/  
+------ AAAAMMGG.V0  
+--------- DBCOE_Dati_FSC1240.xlsx  
+--------- DBCOE_Info_FSC1240.xlsx  
+--------- DBCOE_Interventi_CIS.xlsx  
+--------- DBCOE_[...].xlsx  
+--------- link_sito_programmi.xlsx  
+--------- label_programmi_en.xlsx  
+--------- fsc_matrice_po_psc.xlsx  
+--------- fsc_delibere_psc.xlsx  
+--------- Metadati_DB_Programmazione.xlsx  
+------ AAAAMMGG.V1  
+--------- ...  
+--------- ...  
+------ REPOSITORY  
+------ INFO  
+
+
+L'accesso ai dati di programmazione può avvenire direttamente dai __file xlsx__ in Drive oppure attraverso le funzioni del package, che prevede funzioni specifiche per la costruzione di specifici report insieme a funzioni generiche destinate allo sviluppo.
+Le funzioni utilizzano i seguenti parametri principali:
+
+
+* **use_flt**: consente di scartare i programmi che non sono monitorabili (vedi sotto le modalità)
+* **use_po_psc**: per il solo FSC, sostituisce ai dati aggregati per PSC i valori riferiti ai programmi originari confluiti nei PSC (vedi sotto) 
+* **tipo_ciclo**: per il solo FSC, sostituisce il riferimento al ciclo di programmazione per "ciclo strategia" di riferimento per i programmi (a prescindere dalla fonte finanziaria) con quello per "ciclo contabile" di provenienza delle risorse
+* **use_713**: integra dati riferiti ai programmi del ciclo 2007-2013
+* **use_eu**: integra il valore delle risorse UE programmate
+* **use_en**: integra la traduzione in inglese per i campi pertinenti
+
+
+```{r, echo = TRUE, eval = FALSE}
+
+# ---------------- FUNZIONI GENERICHE ----------------
+# caricamento di singolo file "Dati"
+load_db()
+
+# caricamento di tutti i file "Dati" del DB programmazione
+init_programmazione_dati()
+
+# caricamento di tutti i file "Info" del DB programmazione
+init_info_info()
+
+# caricamento e pre-processing per pubblicazione su OpenCoesione 
+workflow_programmazione()
+
+
+# ---------------- REPORT SPECIFICI ---------------- 
+
+# report di riepilogo per ciclo, ambito e macroarea  per caricamento pagina "risorse" su OpenCoesione
+risorse <- make_report_risorse()
+
+# report di riepilogo per ciclo, ambito e macroarea con evidenza degli scambi tra cicli e ambiti
+fonti_impieghi <- make_report_fonti_impieghi()
+
+# report per caricamento pagina "programmi" su OpenCoesione
+programmi <- make_pagina_programmi()
+
+# report per caricamento opendata "dotazioni" su OpenCoesione
+dotazioni <- make_opendata_dotazioni()
+
+# report per caricamento opendata "decisioni" su OpenCoesione
+decisioni <- make_opendata_decisioni()
+
+# report per caricamento della lista dei programmi confluiti nei PSC nella pagina dedicata su OpenCoesione
+dotazioni_popsc <- make_opendata_dotazioni_popsc()
+decisioni_popsc <- make_opendata_decisioni_popsc()
+
+
+```
+
+Ulteriori funzioni relative all'utilizzo dei file di tipo "Info" sono descritte nelle vignette dedicate:
+
+
+* *CIS*: riconciliazione tra interventi programmati nei CIS, trasversali a diversi ambiti di programmazione e programmi, e progetti in attuazione
+* ...
+
+
+### Alcune precisazioni
+
+Il parametro **use_flt** è associato alla variabile FLAG_MONITORAGGIO dei file "Dati" del DBCOE, che ha questi valori:
+
+
+* __1__: assegnazione monitorabile in BDU (anche se non ancora necessariamente monitorata); viene conteggiata sempre
+* __2__: assegnazione pertinente con politiche di coesione ma non monitorabile in BDU (ad es. è "narrata" nell'Allegato Coesione al DEF ma viene "monitorata" con reportistica dedicata al di fuori del SNM; viene conteggiata nel quadro risorse (**make_report_risorse**), ma non negli altri report
+* __3__: risorse non ancora programmate (esistono per FSC e POC 1420, eventualmente per REACT); vengono conteggiate nel quadro risorse (**make_report_risorse**), ma non negli altri report
+* __9__: assegnazioni che corrispondono a spostamenti verso altri cicli e/o ambiti di programmazione; sono presenti nel DBCOE per memoria (e per eventuali report di tipo contabile) ma non vengono conteggiate nei report
+* __0__: assegnazione non pertinente con politiche di coesione e non monitorabile (es. riduzione FSC o assimilabile); non viene conteggiata mai
+
+Il parametro **use_po_psc** consente lo switch tra le modalità di rappresentazione dei PSC, ripristinando l'organizzazione originaria:
+
+
+* TRUE: risorse per PSC, ciclo strategico di proveninenza, programma originario, con valori al netto delle riprogrammazioni ex art. 44; le risorse oggetto di riprogrammazione e le risorse aggiuntive parte della strategia anti COVID sono temporaneamente riportate in programmi fittizi  
+* FALSE: risorse per PSC, ciclo strategico di proveninenza, sezione, area tematica e -per i programmi nazionali- settore di intervento
+
+Per la ricostruzione completa delle variazioni legate all'istruttoria art.44 e alla costruzione dei PSC è necessario utilizzare i file delle serie "strumenti_evo.xlsx" e "PSC_articolazione_tematiche_chk_decimali.xlsx" disponibili in [Drive](https://drive.google.com/drive/u/0/folders/1SyGzwcrDHWYtTAzVmWh6Y3L0dKt3Xn0e):
+
+> 
+--- Drive/PROGRAMMAZIONE/  
+------ INFO  
+--------- PO-PSC 
+------------ "strumenti_evo_XXXXXXXX.xlsx" 
+------------ "PSC_articolazione_tematiche_chk_decimali_v.XX.xlsx"  
+
+
+
+## Aggiornamento del database programmazione
+L'aggiornamento del DBCOE si basa sulla logica che segue:
+
+
+* per il FSC di tutti i cicli, si crea una nuova versione dei file "strumenti_evo.xlsx" e "PSC_articolazione_tematiche_chk_decimali.xlsx" disponibili in [Drive](https://drive.google.com/drive/u/0/folders/1SyGzwcrDHWYtTAzVmWh6Y3L0dKt3Xn0e) e si eseguono le funzioni che generano automatica i file di ambito FSC del DBCOE. Per la costruzione fino alla versione DBCOE del 20210630.01 si rinvia agli [script dedicati](https://drive.google.com/drive/u/0/folders/17u6HoXgy4SRNAIT1cSIcqviwWk2LTOyU).
+* per i FS 2014-2020, si eseguono le funzioni per l'interrogazione delle API per l'accesso adi dati di programmazione di [cohesion data](https://cohesiondata.ec.europa.eu). L'aggiornamento del file "info" e del repository documentale viene svolta manualmente.
+* per il PAC 2007-2013, si procede manualmente direttamente nei __file xlsx__ in Drive. La procedura prevede la ricerca di nuovi decreti MEF sul [sito dedicato](https://def.finanze.it) usando ricerca testo libero su stringhe come “Piano di Azione Coesione Regione ...”; dal punto sopra acquisire estremi di pubblicazione in [Gazzetta Ufficiale](https://www.gazzettaufficiale.it/ricerca/testuale/serie_generale) per estrarre permalink del decreto da riportare nel file "info"
+* per gli altri ambiti e cicli, si procede manualmente direttamente nei __file xlsx__ in Drive, generalmente attraverso ricerca di nuove [delibere CIPESS](https://ricerca-delibere.programmazioneeconomica.gov.it) o mediante monitoraggio del tool [A che punto è la delibera](https://www.programmazioneeconomica.gov.it/a-che-punto-e-la-delibera/).
+
+```{r, echo = TRUE, eval = FALSE}
+
+# copia file non FSC nel nuovo folder DBCOE
+setup_dbcoe_no_fsc(db_path_old, db_path_new=NULL)
+
+# setup FSC con PSC
+setup_dbcoe_dati_fsc_po()
+setup_dbcoe_info_fsc_po()
+
+# setup file solo PSC con apertura per programmi d'origine
+setup_dbcoe_dati_fsc_popsc()
+setup_dbcoe_info_fsc_popsc()
+
+# setup SIE 1420
+#TODO: integrare nel package gli script di Nicola
+
+```
+
+
+Il flusso di controllo, da svolgere ad ogni aggiornamento del DBCOE, prevede i seguenti step:
+
+
+* verifica differenze tra ultima e penultima versione del report per il quadro risorse
+* verifica differenze tra ultima e penultima versione del report per la pagina programmi
+* ... [DA COMPLETARE]
+
+
+Per svolgere il flusso di controllo sono disponbili apposite funzioni di controllo.
+
+```{r, echo = TRUE, eval = FALSE}
+
+# variazione quadro risorse
+OLD <- file.path(DRIVE, "ELAB", "20210430", "PROGRAMMAZIONE", "sito", "V.03", "temp")
+chk <- chk_variazione_risorse_ciclo_ambito(risorse_new = risorse, 
+                                    path_to_old = file.path(OLD, "risorse_coesione.csv"),
+                                    export=TRUE)
+
+# variazione lista programmi
+chk <- chk_variazione_risorse_programmi(programmi_new = programmi, 
+                                 path_to_old = OLD, 
+                                 export = TRUE)
+
+# confronto tra ciclo contabile e ciclo strategia
+chk <- chk_risorse_ciclo_contabile_strategia(use_flt=TRUE, force_yei=FALSE, use_eu=FALSE, export=FALSE)
+
+```
+
+
+
+## Preparazione dei dati per operazione
+Le variabili finanziarie relative alle risorse coesione (COE, COE_IMP e COE_PAG) sono disponbili in relazione a **operazioni** (progetti appartenenti a specifici programmi) e non a semplici **progetti**. Le regole di riconciliazione tra dati di programmazione (nel DBCOE) e dati di attuazione (provenienti dal flusso bimestrale a livello di "preesteso") viene effettuata automarticamente dal package *otck*.
+
+L'update del package fatto in occasione del rilascio bimestrale dei dati su OpenCoesione comprende anche l'aggiornamento del file *operazioni_light_AAAAMMGG.csv*.
+
+Il flusso di elaborazione è svolto da un'apposita funzione di setup:
+
+```{r, echo = TRUE, eval = FALSE}
+
+# bimestre <- 20201231
+setup_operazioni(bimestre, progetti=NULL, export=FALSE, use_fix=FALSE, use_ecomix=FALSE, debug=FALSE)
+
+```
+
+
+Il dataset operazioni che è disponbile in:
+
+> Drive/DATI/AAAAMMGG/DASAS/DATAMART
+
+
+## Caricamento dei dati di attuazione
+Il caricamento dei dati di attuazione per operazione può essere effettuato con la specifica funzione, che consente di uare valori in meuro o in euro, oltre che di richiamare i factor di x_AMBITO e x_CICLO.
+
+```{r, echo = TRUE, eval = FALSE}
+
+# caricamento del perimetro operazioni
+# OLD: prep_perimetro_bimestre_coesione(bimestre, usa_meuro=FALSE)
+load_operazioni(bimestre, usa_meuro=FALSE)
+
+```
+
+
+
+## Analisi bimestrale
+L'analisi dello stato di attuazione dei programmi viene effettuata ogni bimestre in concomitanza con il rilascio dei dati.
+E' disponibile un insieme di funzioni dedicate, ciascuna delle quali produce uno specifio report a partire dal merge tra dati di **programmazione** (provenienti dal DB programmazione) e dati di **attuazione** (provenieneti dal dataset operazioni).
+
+```{r, echo = TRUE, eval = FALSE}
+
+# report per programma
+make_report_programmi_coesione(perimetro, usa_meuro=FALSE, use_713=FALSE, use_flt=FALSE,
+                                           add_totali=FALSE, use_cp2=FALSE, cut_no_risorse=FALSE,
+                                           tipo_ciclo="CICLO_STRATEGIA",
+                                           focus="report", export=FALSE, progetti=NULL, po_riclass=NULL)
+
+# confronto con bimestre precedente per programma 
+add_delta_programmi_coesione(bimestre, programmi, last_bimestre, last_data_path=NULL,
+                                         usa_meuro=FALSE, focus="delta", export=FALSE) 
+
+
+# report per ciclo e ambito
+make_report_bimestre_coesione(programmi, usa_meuro=TRUE, export=TRUE)
+
+
+
+# report in format standard per allegato DEF
+# TODO: integrare funzione da script di Nicola
+
+# OLD:
+# report per ciclo, ambito e macroarea
+# make_report_macroaree_coesione(risorse=NULL, perimetro=NULL, use_meuro=TRUE, export=TRUE)
+# 
+# 
+# report attuazione per programmi e macroarea
+# make_report_programmi_macroaree_coesione(perimetro, usa_meuro=TRUE, use_713=TRUE, use_flt=TRUE, 
+#                                          add_totali=TRUE, use_cp2=TRUE, cut_no_risorse=FALSE,
+#                                          tipo_ciclo="CICLO_STRATEGIA",
+#                                          focus="report_DEF", export=TRUE, progetti)
+
+
+
+
+
+
+
+
+
+
+
+```
+
+Per facilitare i controlli su funzionamento dei report esistono funzioni dedicate:
+
+```{r, echo = TRUE, eval = FALSE}
+
+chk_allineamento_risorse <- function(report, programmi, report_macroaree, risorse=NULL) 
+chk_allineamento_costo_coe <- function(report, programmi, report_macroaree, perimetro=NULL)
+
+# variazioni risorse per programmi
+OLD <- file.path(getwd(), "20191231", "STATO", "stato", "V.01", "temp", "report_meuro_programmi_cp2.csv")
+chk <- chk_variazione_risorse_programmi(programmi_new=programmi_2, programmi_old=NULL, 
+                                 path_to_new=NULL, path_to_old=OLD, 
+                                 export=FALSE)
+# MEMO: confronta due dataframe risultanti da make_report_programmi_coesione(), descritto sotto
+  
+  
+  
+```
+
+
+Per assicurare la confrontabilità con i dati pubblicati si usa il parametro *cut_no_risorse=FALSE*, che esclude i programmi monitorati che non corrispondono a risorse programmate, anticipando correzioni che saranno apportate anche ai progetti visualizzati. Le stesse funzioni sopra sono utilizzate per l'analisi dei dati di programmazione e attuazione contenuta nell'Allegato Coesione al DEF: per massimizzare la centralità delle risorse coesione, lato attuazione si usa il parametro *cut_no_risorse=TRUE* mentre lato programmazione rimane valido il *use_flt=TRUE*.
+
+Rispetto ai dati di attuazione, sono apportate le seguenti modifiche:
+
+
+* "2017TOPIOMBIFSC" -> "SIN_PIOMBINO"
+* "2018TOSPIOMFSC" -> "SIN_PIOMBINO"
+* lista di progetti PRA Campania -> "OPCM_CAM_A"
+* lista di progetti PRA Campania -> "OPCM_CAM_B"
+* lista di progetti PRA Campania -> "DEBITI_CAM"
+* lista di progetti PRA Molise -> "MOL_DEBITI_1"
+
+[DA COMPLETARE]
+
