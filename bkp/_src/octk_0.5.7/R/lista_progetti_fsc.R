@@ -1,6 +1,8 @@
 # Report regionali
 # Liste progetti per programmi FSC
 
+# DEPRECATO
+
 #' Lista di progetti dei Patti
 #'
 #' Esporta la lista di progetti di uno o più Patto, in formato Report Ministro.

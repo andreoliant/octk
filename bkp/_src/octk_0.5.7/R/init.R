@@ -200,13 +200,15 @@ set_developer <- function(user) {
                                     "Luca",
                                     "Andrea",
                                     "Nicola", 
-                                    "Antonio"),
+                                    "Antonio",
+                                    "Antonio2"),
                           path = c(file.path("G:","Drive condivisi"), # "G:/Drive condivisi"
                                    file.path("G:","Drive condivisi"),
                                    file.path("G:","Drive condivisi"),
                                    # file.path("/Volumes", "GoogleDrive", "Drive condivisi"), # "/Volumes/GoogleDrive/Drive condivisi"
                                    file.path("/Users", "nicoladechiara", "Library", "CloudStorage", "GoogleDrive-nicola.dechiara@opencoesione.team", "Drive condivisi"), # "/Users/nicoladechiara/Library/CloudStorage/GoogleDrive-nicola.dechiara@opencoesione.team/Drive condivisi"
-                                   file.path("/home", "antonio", "ExpanDrive", "OC", "Shared Drives"))) # "/home/antonio/ExpanDrive/OC/Shared Drives"))
+                                   file.path("/home", "antonio", "ExpanDrive", "OC", "Shared Drives"),
+                                   file.path("/home", "aa", "oc_drive"))) 
   
   drive_root <- developer%>%
     filter(developer == user)%>%

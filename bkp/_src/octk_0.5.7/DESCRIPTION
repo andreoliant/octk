@@ -15,7 +15,7 @@ Imports:
     readxl,
     openxlsx,
     haven
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3
 Suggests: 
     knitr,
     rmarkdown

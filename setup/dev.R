@@ -262,6 +262,7 @@ system(
 # gitcreds_get()
 # VEDI NUOVA SOLUZIONE IN DRIVE SETUP
 
+usethis::git_sitrep()
 
 # HAND: push
 

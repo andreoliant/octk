@@ -41,17 +41,30 @@ devtools::load_all(path = ".")
 packageVersion("octk")
 
 # setup
+# oc_init(
+#   bimestre = "20221031",
+#   elab = "SETUP",
+#   focus = "setup",
+#   ver = "V.01",
+#   # user = "Antonio",
+#   data_path = "/media/antonio/Volume/dati/oc",
+#   db_ver = "20221031.00",
+#   use_drive = TRUE,
+#   # drive_root = "/home/antonio/ExpanDrive/OC/Team Drives"
+#   drive_root = "/home/antonio/ExpanDrive/OC/Shared Drives"
+# )
+
 oc_init(
   bimestre = "20221031",
   elab = "SETUP",
   focus = "setup",
   ver = "V.01",
   # user = "Antonio",
-  data_path = "/media/antonio/Volume/dati/oc",
+  data_path = "/media/aa/22F70AE20061C7C8/dati/oc",
   db_ver = "20221031.00",
   use_drive = TRUE,
   # drive_root = "/home/antonio/ExpanDrive/OC/Team Drives"
-  drive_root = "/home/antonio/ExpanDrive/OC/Shared Drives"
+  drive_root = "/home/aa/oc_drive"
 )
 
 # MEMO: con DEV_MODE la workarea è in locale octk/test
@@ -123,13 +136,15 @@ devtools::load_all(path = ".")
 packageVersion("octk")
 
 # devtools::check(path = "~/coding/octk")
-devtools::build(pkg = ".", path = "/home/antonio/coding/octk/bkp")
+# devtools::build(pkg = ".", path = "/home/antonio/coding/octk/bkp")
+devtools::build(pkg = ".", path = "/home/aa/coding/octk/bkp")
 # MEMO: build to boundle "oc_X.X.X.tar.gz"
 
 # install
 # remove.packages("octk")
 message(oc_ver)
-temp <- paste0("/home/antonio/coding/octk/bkp/octk_", oc_ver, ".tar.gz")
+# temp <- paste0("/home/antonio/coding/octk/bkp/octk_", oc_ver, ".tar.gz")
+temp <- paste0("/home/aa/coding/octk/bkp/octk_", oc_ver, ".tar.gz")
 install.packages(temp, repos = NULL, type="source")
 
 # build as binary
@@ -164,9 +179,11 @@ system(
 
 # drive
 system(
-  paste0("DEV_BKP='/home/antonio/coding/octk/bkp/_src/_NIGHTLY/';",
+  paste0(# "DEV_BKP='/home/antonio/coding/octk/bkp/_src/_NIGHTLY/';",
+         "DEV_BKP='/home/aa/coding/octk/bkp/_src/_NIGHTLY/';",
          # "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/_src/_NIGHTLY/';",
-         "GOOGLE='/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/_src/_NIGHTLY/';",
+         # "GOOGLE='/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/_src/_NIGHTLY/';",
+         "GOOGLE='/home/aa/oc_drive/TOOLS/OCTK/_src/_NIGHTLY/';",
          'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"'
   )
 )
@@ -209,18 +226,22 @@ system(
 
 # src
 system(
-  paste0("DEV_BKP='/home/antonio/coding/octk/bkp/_src/octk_", oc_ver, "/';",
+  paste0(# "DEV_BKP='/home/antonio/coding/octk/bkp/_src/octk_", oc_ver, "/';",
+         "DEV_BKP='/home/aa/coding/octk/bkp/_src/octk_", oc_ver, "/';",
          # "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/_src/octk_", oc_ver, "';",
-         "GOOGLE='/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/_src/octk_", oc_ver, "';",
+         # "GOOGLE='/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/_src/octk_", oc_ver, "';",
+         "GOOGLE='/home/aa/oc_drive/TOOLS/OCTK/_src/octk_", oc_ver, "';",
          'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE";'
   )
 )
 
 # file tar.gz 
 system(
-  paste0("DEV_BKP='/home/antonio/coding/octk/bkp/octk_", oc_ver,".tar.gz';",
-         'GOOGLE="/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/octk_', oc_ver, '.tar.gz";',
+  paste0(# "DEV_BKP='/home/antonio/coding/octk/bkp/octk_", oc_ver,".tar.gz';",
+         "DEV_BKP='/home/aa/coding/octk/bkp/octk_", oc_ver,".tar.gz';",
+         # 'GOOGLE="/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/octk_', oc_ver, '.tar.gz";',
          # 'GOOGLE="/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/octk_', oc_ver, '.tar.gz";',
+         'GOOGLE="/home/aa/oc_drive/TOOLS/OCTK/octk_', oc_ver, '.tar.gz";',
          'cp -r "$DEV_BKP" "$GOOGLE";'
   )
 )
@@ -232,14 +253,19 @@ system(
 # HAND: fare commit prima di inserire tag
 
 system(
-  paste0("git tag v", oc_ver)
-  # paste0("git tag v", oc_ver, "-REV.01")
+  # paste0("git tag v", oc_ver)
+  paste0("git tag v", oc_ver, "_REV.01")
   )
 
-library(gitcreds)
-gitcreds_set() #.github_token
-gitcreds_get()
+# library(gitcreds)
+# gitcreds_set() #.github_token
+# gitcreds_get()
+# VEDI NUOVA SOLUZIONE IN DRIVE SETUP
+
 
 # HAND: push
+
+# git push origin --tags
+# https://stackoverflow.com/questions/18216991/create-a-tag-in-a-github-repository
 
 # WARNING: ASPETTA CHE EXPANDRIVE FINISCA RSYNC PRIMA DI CHIUDERE E INVIARE MAIL!!!!!!!!!!!

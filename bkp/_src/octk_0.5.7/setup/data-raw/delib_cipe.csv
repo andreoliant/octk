@@ -1,5 +1,5 @@
 NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
-;;"";0;
+;;;0;
 104;2009;Quota Ordinaria;0;
 97;2017;Assegnazione per norma;0;
 68;2003;Assegnazione delle risorse a carico delle aree depresse;0;
@@ -8,7 +8,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 56;2016;Patto per lo Sviluppo;0;
 6;2012;Quota Ordinaria;0;
 104;2010;Fondo Infrastrutture;0;
-99999;9999;"";0;
+99999;9999;;0;
 41;2021;Assegnazione per norma;0;
 26;2019;Assegnazione delle risorse a carico delle aree depresse;0;
 27;2019;Assegnazione delle risorse a carico delle aree depresse;0;
