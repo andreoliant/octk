@@ -1278,8 +1278,110 @@ update_input_with_delta <- function(OLD) {
   
   for (input_tab in appo) {
     
+    
+    # read new input data from octk
+    tab_new <- eval(as.name(input_tab))
+    
     # read data from input xls in OLD
     tab <- read_xlsx(temp_file, sheet = input_tab, col_types = "text")
+    
+    
+    
+    
+    
+    
+    
+    
+    # DEV: tab semi_join tab_new
+    if (input_tab == "delib_cipe") {
+      tab <- tab %>%
+        mutate_if(is.numeric, as.character) %>%
+        semi_join(tab_new %>%
+                    mutate_if(is.numeric, as.character) %>%
+                    select(-QUERY, -NOTE) %>%
+                    select(NUMERO_DEL_CIPE, ANNO_DEL_CIPE))
+      
+      # chk <- tab %>%
+      #   select(-QUERY, -NOTE) %>%
+      #   select(NUMERO_DEL_CIPE, ANNO_DEL_CIPE)%>%
+      #   anti_join(tab_new %>%
+      #               mutate_if(is.numeric, as.character))
+      
+    } else if (input_tab == "patt") {
+      tab <- tab %>%
+        mutate_if(is.numeric, as.character) %>%
+        semi_join(tab_new %>%
+                    mutate_if(is.numeric, as.character) %>%
+                    select(-QUERY, -NOTE) %>%
+                    select(contains("COD"))) %>% 
+        # patch per eliminare caratteri speciali che fanno saltare righe durante la pubblicazione in excel
+        mutate(DESCR_PROCED_ATTIVAZIONE = str_remove(DESCR_PROCED_ATTIVAZIONE, "\\u001a"))
+      
+      
+      # chk <- tab %>%
+      #   select(-QUERY, -NOTE) %>%
+      #   select(contains("COD")) %>%
+      #   anti_join(tab_new %>%
+      #               mutate_if(is.numeric, as.character))
+      
+    } else if (input_tab == "flag_beniconf") {
+      tab <- tab %>%
+        mutate_if(is.numeric, as.character) %>%
+        semi_join(tab_new %>%
+                    mutate_if(is.numeric, as.character) %>%
+                    select(-QUERY, -NOTE) %>%
+                    select(OC_FLAG_BENICONF), 
+                  by = "OC_FLAG_BENICONF")
+      
+      
+      # chk <- tab %>%
+      #   select(-QUERY, -NOTE) %>%
+      #   select(OC_FLAG_BENICONF) %>%
+      #   anti_join(tab_new %>%
+      #               mutate_if(is.numeric, as.character))
+      
+    } else if (input_tab == "keyword") {
+      tab <- tab %>%
+        mutate_if(is.numeric, as.character) %>%
+        semi_join(tab_new %>%
+                    mutate_if(is.numeric, as.character) %>%
+                    select(-QUERY, -NOTE) %>%
+                    select(LEMMA, KEYWORD), 
+                  by = c("LEMMA", "KEYWORD"))
+      
+      
+      # chk <- tab %>%
+      #   select(-QUERY, -NOTE) %>%
+      #   select(LEMMA, KEYWORD) %>%
+      #   anti_join(tab_new %>%
+      #               mutate_if(is.numeric, as.character))
+      
+      
+    } else {
+      tab <- tab %>%
+        mutate_if(is.numeric, as.character) %>%
+        semi_join(tab_new %>%
+                    mutate_if(is.numeric, as.character) %>%
+                    select(-QUERY, -NOTE) %>%
+                    select(contains("COD")))
+      
+      # chk <- tab %>%
+      #   select(-QUERY, -NOTE) %>%
+      #   select(contains("COD")) %>%
+      #   anti_join(tab_new %>%
+      #               mutate_if(is.numeric, as.character))
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     # read data from delta
     tab_delta <- read_xlsx(temp_file_delta, sheet = input_tab, col_types = "text")
