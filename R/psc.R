@@ -169,6 +169,9 @@ init_psc <- function(PSC=NULL, light=FALSE) {
     # DEV: mancano variabili in art44_liste
     
     interventi_cds <<- read_csv2(file.path(PSC, "info", "lista_interventi_cds.csv")) 
+    
+    salvaguardia <<- read_xlsx(file.path(PSC, "info", "salvaguardia_dl50.xlsx"))
+    
   }
 }
 
@@ -822,7 +825,10 @@ prep_dati_sgp_bimestre <- function(bimestre, versione, filename, matrix_06, chk_
   if (temp == "xlsx") {
     appo <- read_xlsx(file.path(SGP, filename), guess_max = 25000)
   } else {
-    appo <- read.csv(file.path(SGP, filename), sep = "~", dec = ".", skip = 1, stringsAsFactors = FALSE)
+    # NEW:
+    appo <- read.csv(file.path(SGP, filename), sep = ";", dec = ".", stringsAsFactors = FALSE)
+    # OLD:
+    # appo <- read.csv(file.path(SGP, filename), sep = "~", dec = ".", skip = 1, stringsAsFactors = FALSE)
     # appo <- read.table(file.path(SGP, filename),
     #                    skip = 1,
     #                    header = TRUE, sep = "~", dec = ".", 
@@ -1944,6 +1950,7 @@ make_report_temi_psc <- function(progetti_psc, programmazione=NULL, visualizzati
 #' Crea report di confronto programmazione attuazione per temi con apertura per macroarea
 #' 
 #' @param progetti_psc Dataset da load_progetti_psc()
+#' @param operazioni Dataset da load_operazioni()
 #' @param programmazione Dati di programmazione DBCOE di tipo "fsc_matrice_po_psc.xlsx"
 #' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
 #' @param usa_meuro Logico. Vuoi dati in Meuro?
@@ -1952,12 +1959,28 @@ make_report_temi_psc <- function(progetti_psc, programmazione=NULL, visualizzati
 #' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
 #' @return Report di confronto programmazione attuazione per PSC e PO in essi confluiti. I nuovi 
 #' @note ...
-make_report_temi_macroaree_psc <- function(progetti_psc, programmazione=NULL, visualizzati=TRUE, usa_meuro=FALSE, show_cp=FALSE, export=FALSE, export_xls=FALSE) {
+make_report_temi_macroaree_psc <- function(progetti_psc, operazioni=NULL, programmazione=NULL, visualizzati=TRUE, usa_meuro=FALSE, show_cp=FALSE, export=FALSE, export_xls=FALSE) {
   
   # isola sezione ordinaria
   progetti_psc <- progetti_psc %>% 
     filter(SEZIONE != "SS_1" & SEZIONE != "SS_2" | is.na(SEZIONE)) %>% 
-    select(-SEZIONE)
+    select(-SEZIONE) %>%
+    # forzo a 0 perché non ha senso rispetto a COE_IMP e COE_PAG, andrebbe riproporzionato per macroarea
+    mutate(COE_CR = 0)
+  
+  if (is.null(operazioni)) {
+    operazioni <- load_operazioni(bimestre, visualizzati = FALSE)
+  }
+  
+  
+  progetti_psc_migrati <- setup_macroaree_psc(progetti_psc, operazioni)
+  
+  appo <- progetti_psc %>% 
+    anti_join(progetti_psc_migrati, 
+              by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_CICLO")) %>% 
+    bind_rows(progetti_psc_migrati)
+
+  progetti_psc <- appo
   
   # OLD:
   # if (is.null(programmazione)) {
@@ -1991,7 +2014,7 @@ make_report_temi_macroaree_psc <- function(progetti_psc, programmazione=NULL, vi
       select(-COD_RISULTATO_ATTESO, -DESCR_RISULTATO_ATTESO, -COD_LIVELLO_1, x_MACROAREA) 
   }
 
-  # fix per ciclo
+  # fix per ciclo (lato programmazione è tutto 1420)
   progetti_psc <- progetti_psc %>% 
     mutate(x_CICLO = "2014-2020")
   
@@ -3154,6 +3177,10 @@ fix_macroarea_progetti_psc <- function(progetti_psc) {
     mutate(x_MACROAREA = as.character(x_MACROAREA)) %>% 
     mutate(x_MACROAREA = case_when(COD_LOCALE_PROGETTO == "4MISEF/130052/01/X38" ~ "Mezzogiorno",
                                    COD_LOCALE_PROGETTO == "1MISE761" ~ "Mezzogiorno",
+                                   # progetti patto campania gestiti da MISE (su ambito nazionale)
+                                   OC_CODICE_PROGRAMMA == "2016PATTICAMP" & COD_LOCALE_PROGETTO == "4MISECDS000605_RS1_1_2_3" ~ "Mezzogiorno",
+                                   OC_CODICE_PROGRAMMA == "2016PATTICAMP" & COD_LOCALE_PROGETTO == "4MISECDS000609_0_RS1_1_R1_2" ~ "Mezzogiorno",
+                                   OC_CODICE_PROGRAMMA == "2016PATTICAMP" & COD_LOCALE_PROGETTO == "4MISEFONDO_CDS_FSC" ~ "Mezzogiorno",
                                    TRUE ~ x_MACROAREA)) %>% 
     refactor_macroarea(.)
   
@@ -3497,3 +3524,117 @@ make_report_sezioni_psc <- function(progetti_psc, programmazione=NULL, visualizz
 }
 
 
+#' Crea file di base per macroaree
+#'
+#' Crea file di base per macroaree, da operazioni, per psc migrati.
+#'
+#' @param progetti_psc Dataset da load_progetti_psc()
+#' @param operazioni Dataset da load_operazioni(), con visualizzati=FALSE
+#' @param export vuoi salvare il file?
+#' @return Dataset macroaree per il report make_report_temi_macroaree_psc
+setup_macroaree_psc <- function(progetti_psc, operazioni, export=FALSE) {
+  
+  # MEMO:
+  # progetti_psc non contiene x_GRUPPO e variabili COE_SUD, COE_IMP_SUD, ecc., che devo riprendere da operazioni
+  # vengono trattati solo i progetti monitorati nei PSC migrati
+  
+  # WARNING: c'è un progetto 4VAPSC0010209XX00001INV in PSCVALLEAOSTA con OC_FLAG_VISUALIZZAZIONE == 1 
+  
+  progetti_psc <- progetti_psc %>% 
+    filter(str_starts(OC_CODICE_PROGRAMMA, "PSC")) 
+
+  if (is.null(operazioni)) {
+    operazioni_1420_raw <- load_operazioni(bimestre, visualizzati=FALSE) %>%
+      # filter(x_GRUPPO == "PSC") %>%
+      filter(str_starts(OC_CODICE_PROGRAMMA, "PSC")) %>% 
+      # elimina sezione speciale se assente in progetti (serve per controlli dopo)
+      semi_join(progetti_psc, 
+                by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_CICLO"))
+
+  } else {
+    operazioni_1420_raw <- operazioni %>%
+      # filter(x_GRUPPO == "PSC") %>%
+      filter(str_starts(OC_CODICE_PROGRAMMA, "PSC")) %>% 
+      # elimina sezione speciale se assente in progetti (serve per controlli dopo)
+      semi_join(progetti_psc, 
+                by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_CICLO"))
+  }
+  
+  # 
+  # %>% 
+  #   filter(SEZIONE != "SS_1" & SEZIONE != "SS_2" | is.na(SEZIONE)) %>% 
+  #   select(-SEZIONE)
+
+  nrow(operazioni_1420_raw) - nrow(progetti_psc)
+  # CHK:
+  # -1
+  
+  # chk
+  # progetti_psc %>% 
+  #   count(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_CICLO) %>% 
+  #   filter(n>1)
+  # 
+  # chk <- progetti_psc %>% 
+  #   anti_join(operazioni_1420_raw, 
+  #             by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_CICLO"))
+ 
+  # fix temporaneo su imp e pag
+  appo <- operazioni_1420_raw %>% 
+    mutate(QUOTA_SUD = COE_SUD/COE) %>% 
+    mutate(COE_IMP_SUD = QUOTA_SUD * COE_IMP,
+           COE_IMP_CN = COE_IMP - COE_IMP_SUD,
+           COE_PAG_SUD = QUOTA_SUD * COE_PAG,
+           COE_PAG_CN = COE_PAG - COE_PAG_SUD)
+  
+  # chk fix
+  appo %>% 
+    summarise(COE_IMP = sum(COE_IMP, na.rm = TRUE),
+              COE_PAG = sum(COE_PAG, na.rm = TRUE),
+              COE_IMP_SUD = sum(COE_IMP_SUD, na.rm = TRUE),
+              COE_IMP_CN = sum(COE_IMP_CN, na.rm = TRUE),
+              COE_PAG_SUD = sum(COE_PAG_SUD, na.rm = TRUE),
+              COE_PAG_CN = sum(COE_PAG_CN, na.rm = TRUE)) %>% 
+    mutate(CHK_IMP = COE_IMP - COE_IMP_SUD - COE_IMP_CN,
+           CHK_PAG = COE_PAG - COE_PAG_SUD - COE_PAG_CN)
+  # COE_IMP     COE_PAG COE_IMP_SUD  COE_IMP_CN COE_PAG_SUD  COE_PAG_CN     CHK_IMP      CHK_PAG
+  # <dbl>       <dbl>       <dbl>       <dbl>       <dbl>       <dbl>       <dbl>        <dbl>
+  # 13720805269. 4075468994. 9318101036. 4402704233. 2421109661. 1654359333. 0.000000954 -0.000000238
+  
+  # chk quota fix
+  appo %>% filter(QUOTA_SUD > 1)
+  # 0
+  
+  # integra variabili finanziarie per macroaree
+  operazioni_1420 <- progetti_psc %>% 
+    mutate(x_AMBITO = "FSC") %>% 
+    left_join(appo %>% 
+                select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_CICLO,
+                       COE_SUD, COE_CN, COE_IMP_SUD, COE_IMP_CN, COE_PAG_SUD, COE_PAG_CN),
+              by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_CICLO"))
+
+  pivo <- workflow_pivot_macroaree(operazioni_1420)
+  
+  out <- pivo %>% 
+    # select(-QUOTA_SUD) %>% 
+    left_join(operazioni_1420 %>% 
+                select(-COE, -COE_IMP, -COE_PAG, -x_MACROAREA), 
+              by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_AMBITO")) 
+  
+  nrow(pivo) - nrow(out)
+  sum(pivo$COE, na.rm = TRUE) - sum(out$COE, na.rm = TRUE)
+  sum(operazioni_1420$COE, na.rm = TRUE) - sum(out$COE, na.rm = TRUE)
+  sum(operazioni_1420_raw$COE, na.rm = TRUE) - sum(out$COE, na.rm = TRUE)
+  # CHK:
+  # 0
+  
+  # pulisce dupli per macroaree vuote
+  out <- out %>%
+    filter(COE != 0)
+  # MEMO: vanno escluse per non duplicare le altre variabili
+  
+  if (export == TRUE) {
+    write_csv2(out, file.path(TEMP, "progetti_psc_macroaree.csv"))
+  }
+  
+  return(out)
+}
