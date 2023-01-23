@@ -4323,7 +4323,8 @@ make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NU
     message(paste0("Questo è il delta usando i dati per livelli gerarchici di FESR, FSE e YEI: ", temp))
     
   } else {
-    perimetro_sie <- setup_macroaree_sie(bimestre, operazioni)
+    # perimetro_sie <- setup_macroaree_sie(bimestre, operazioni)
+    perimetro_sie <- setup_macroaree_sie(operazioni = perimetro)
     
     perimetro_2 <- perimetro %>% 
       # scarta le righe sie di cui uso dati da livelli gerarchici

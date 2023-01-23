@@ -196,6 +196,9 @@ init_psc <- function(PSC=NULL, light=FALSE) {
 prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, art44, 
                                    matrix_1420, matrix_713, matrix_temi_settori, progetti=NULL, progetti_pub=NULL, versione_sgp, chk_today) {
   
+  # DEBUG:
+  # progetti_pub <- progetti
+  
   bimestre_oc <- str_sub(bimestre, 1, 8) # 
   DATA <- file.path(dirname(DATA), bimestre_oc)
   
@@ -469,7 +472,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
                                           OC_CODICE_PROGRAMMA == "2017FSCRICERCA" & SETTORE_INTERVENTO == "NA-NA" ~ "01.01-RICERCA E SVILUPPO",
                                           OC_CODICE_PROGRAMMA == "PSCTURISMO" & SETTORE_INTERVENTO == "03:::12.02-NA" ~ "03.02-TURISMO E OSPITALITÀ",
                                           TRUE ~ SETTORE_INTERVENTO))
-  
+
   # debug classi
   print(appo2 %>% count(AREA_TEMATICA))
   chk <- appo2 %>% filter(AREA_TEMATICA == "NA-NA")
