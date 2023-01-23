@@ -132,6 +132,7 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
                                            FLAG_MONITORAGGIO == 0 ~ 0,
                                            FLAG_MONITORAGGIO == 2 ~ 2, # presente per FSC e POC
                                            FLAG_MONITORAGGIO == 3 ~ 3, # presente per FSC e POC
+                                           FLAG_MONITORAGGIO == 4 ~ 4, # presente per POC (valori exart. 242 conteggiati anche nei FS)
                                            FLAG_MONITORAGGIO == 9 ~ 9, # presente per FSC
                                            TRUE ~ 0))
     
@@ -1091,7 +1092,9 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
   if (use_flt == TRUE) {
     programmi <- programmi %>%
       # filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2)
-      filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2 | FLAG_MONITORAGGIO == 3)
+      # filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2 | FLAG_MONITORAGGIO == 3)
+      filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2 | FLAG_MONITORAGGIO == 3 | FLAG_MONITORAGGIO == 4)
+    # MEMO: FLAG_MONITORAGGIO == 4 contiene valori negativi per scontare da quadro risorse le risorse ex art. 242 che sarebbero altrimenti duplicate tra POC e FS
     # MEMO: in FSC resta anche tipo 9 che viene scartato
   }
   
