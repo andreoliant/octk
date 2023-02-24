@@ -955,7 +955,8 @@ load_operazioni <- function(bimestre, visualizzati=TRUE) {
   # viz
   if (visualizzati == TRUE) {
     perimetro <- perimetro %>%
-      filter(OC_FLAG_VISUALIZZAZIONE == 0)
+      # filter(OC_FLAG_VISUALIZZAZIONE == 0)
+      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9) # include progetti FEASR per SNAI
   }
 
   # meuro
