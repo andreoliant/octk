@@ -140,7 +140,8 @@ devtools::load_all(path = ".")
 # progetti light
 # setup_light(bimestre, fix = TRUE)
 temp <- paste0("ELAB/", bimestre, "/SNAI/snai/V.01/output/perimetro_snai.xlsx")
-setup_light(bimestre, fix = TRUE, path_snai = temp) # MEMO: fix per snai
+# temp <- paste0("ELAB/", "20221031", "/SNAI/snai/V.01/output/perimetro_snai.xlsx")
+setup_light(bimestre, fix = TRUE, path_snai = temp) # MEMO: fix per snai che integra variabili che mancano in preesteso
 # setup_light(bimestre, fix = FALSE)
 
 # operazioni light

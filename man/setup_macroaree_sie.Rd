@@ -4,18 +4,18 @@
 \alias{setup_macroaree_sie}
 \title{Crea file di base per macroaree}
 \usage{
-setup_macroaree_sie(bimestre, operazioni, export = FALSE)
+setup_macroaree_sie(operazioni, bimestre = NULL, export = FALSE)
 }
 \arguments{
-\item{bimestre}{Bimestre di riferimento}
+\item{operazioni}{Dataset di classe operazioni}
+
+\item{bimestre}{Bimestre di riferimento (serve se non è disponbile operazzoni)}
 
 \item{export}{vuoi salvare il file?}
-
-\item{perimetro}{Dataset di classe operazioni}
 }
 \value{
 Dataset macroaree per i report make_report_programmi_macroaree e make_report_macroaree_coesione
 }
 \description{
-Crea file di base per macroaree, da operazioni.
+Crea file di base per macroaree, da operazioni, per programmim sie non react.
 }

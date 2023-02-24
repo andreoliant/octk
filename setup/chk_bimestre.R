@@ -177,7 +177,7 @@ devtools::load_all(path = ".")
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20220831"
+bimestre_old <- "20221031"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
 progetti_all_old <- load_progetti(bimestre = bimestre_old,
@@ -238,8 +238,9 @@ chk2 <- progetti_all_old %>%
 
 # ricerca progetti persi
 # temp <- chk2 %>% filter(!is.na(OC_CODICE_PROGRAMMA.new), x_AMBITO.old != "FEAMP", is.na(x_AMBITO.new))
-temp <- chk2 %>% filter(is.na(x_AMBITO.old))
-temp %>% filter(x_AMBITO.new == "FSC")
+# temp <- chk2 %>% filter(is.na(x_AMBITO.old))
+# temp %>% filter(x_AMBITO.new == "FSC")
+temp <- chk2 %>% filter(x_AMBITO.old == "PAC", x_AMBITO.new == "FESR")
 write.xlsx(temp, file.path(TEMP, paste0("chk_nuovi_progetti.xlsx")), row.names = FALSE)
 
 
