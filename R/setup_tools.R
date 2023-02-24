@@ -238,18 +238,21 @@ setup_light <- function(bimestre, fix = FALSE, ...) {
              OC_FLAG_BENICONF = OC_FLAG_TAG_BENICONF,
              OC_FLAG_COVID = COVID,
              OC_MACROAREA,
-             SNAI # ,
+             SNAI,
              # COD_AREA_INT, # MEMO: queste entrano dopo
              # AREA_INTERNA
+             IMPORTO_AGGIUDICATO,
+             IMPORTO_AGGIUDICATO_NODATA,
+             IMPORTO_AGGIUDICATO_BANDITO
       )
 
     # add QSN
     operazioni_713_raw <- read_sas(file.path(DATA, "oper_fltok_preesteso.sas7bdat"))
     
-     appo <- operazioni_713_raw %>%
+    appo <- operazioni_713_raw %>%
       distinct(COD_LOCALE_PROGETTO = cod_locale_progetto,
-             QSN_CODICE_OBIETTIVO_SPECIFICO = qsn_codice_obiettivo_specifico,
-             QSN_DESCR_OBIETTIVO_SPECIFICO = qsn_descr_obiettivo_specifico)
+               QSN_CODICE_OBIETTIVO_SPECIFICO = qsn_codice_obiettivo_specifico,
+               QSN_DESCR_OBIETTIVO_SPECIFICO = qsn_descr_obiettivo_specifico)
     
     progetti_light <- progetti_light %>%
       left_join(appo, by = "COD_LOCALE_PROGETTO")
@@ -272,8 +275,9 @@ setup_light <- function(bimestre, fix = FALSE, ...) {
     # MEMO: confronta con recap_preesteso.xlsx
     
     # ripristina solo visualizzati (inclusa SNAI su FEASR)
-    progetti_light <- progetti_light %>%
-      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9)
+    # progetti_light <- progetti_light %>%
+    #   filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9)
+    # MEMO: per allineamento a operazioni, tengo tutto, poi c'è parametro
 
     # export
     write.csv2(progetti_light, file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), row.names = FALSE)
@@ -685,11 +689,12 @@ fix_snai <- function(progetti, path_snai) {
   
   # path_snai <- "ELAB/20211031/SNAI/snai/V.01/output/perimetro_snai.xlsx"
   snai <- read_xlsx(file.path(DRIVE, path_snai)) %>% 
-    select(COD_LOCALE_PROGETTO, SNAI_OC, COD_AREA_INT, AREA_INTERNA) %>% 
+    # select(COD_LOCALE_PROGETTO, SNAI_OC, COD_AREA_INT, AREA_INTERNA) %>% 
+    distinct(COD_LOCALE_PROGETTO, SNAI_OC, COD_AREA_INT, AREA_INTERNA) %>%
     filter(SNAI_OC == 1) %>% 
     select(-SNAI_OC)
   
-  # fix temporaneo per IOG>YEI
+  # fix temporaneo
   progetti <- progetti %>%
     left_join(snai, by = "COD_LOCALE_PROGETTO")
   
