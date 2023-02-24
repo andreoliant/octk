@@ -6,6 +6,7 @@
 \usage{
 make_report_temi_macroaree_psc(
   progetti_psc,
+  operazioni = NULL,
   programmazione = NULL,
   visualizzati = TRUE,
   usa_meuro = FALSE,
@@ -16,6 +17,8 @@ make_report_temi_macroaree_psc(
 }
 \arguments{
 \item{progetti_psc}{Dataset da load_progetti_psc()}
+
+\item{operazioni}{Dataset da load_operazioni()}
 
 \item{programmazione}{Dati di programmazione DBCOE di tipo "fsc_matrice_po_psc.xlsx"}
 

@@ -172,6 +172,8 @@ init_psc <- function(PSC=NULL, light=FALSE) {
     
     salvaguardia <<- read_xlsx(file.path(PSC, "info", "salvaguardia_dl50.xlsx"))
     
+    ogv_conseguita <<- read_xlsx(file.path(PSC, "info", "ogv_conseguita_dl50.xlsx"))
+    
   }
 }
 
@@ -306,6 +308,9 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
                                                TRUE ~ COD_ASSE_TEMATICO_FSC))
   }
 
+  # chk <- operazioni_1420 %>% 
+  #   filter(OC_CODICE_PROGRAMMA == "PSCFRIULI")
+  
   temp <- read_sas(file.path(DATA, "oper_fltok_preesteso.sas7bdat")) 
   
   # risolve conflitti di naming (che ancora cambiano ogni volta...)
@@ -467,10 +472,14 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
     mutate(AREA_TEMATICA = case_when(OC_CODICE_PROGRAMMA == "2016PATTIPUG" & AREA_TEMATICA == "NA-NA" & SETTORE_INTERVENTO == "09.02-NA" ~ "08-RIQUALIFICAZIONE URBANA",
                                      OC_CODICE_PROGRAMMA == "2017FSCRICERCA" & AREA_TEMATICA == "NA-NA" ~ "01-RICERCA E INNOVAZIONE",
                                      OC_CODICE_PROGRAMMA == "PSCTURISMO" & AREA_TEMATICA == "NA-NA" ~ "03-COMPETITIVITÀ IMPRESE",
+                                     OC_CODICE_PROGRAMMA == "2016PATTISICI" & SETTORE_INTERVENTO == "NA-NA" &
+                                       grepl("05.1", COD_RISULTATO_ATTESO) ~ "05-AMBIENTE E RISORSE NATURALI",
                                      TRUE ~ AREA_TEMATICA)) %>% 
     mutate(SETTORE_INTERVENTO = case_when(OC_CODICE_PROGRAMMA == "2016PATTIPUG" & SETTORE_INTERVENTO == "09.02-NA" ~ "08.01-EDILIZIA E SPAZI PUBBLICI",
                                           OC_CODICE_PROGRAMMA == "2017FSCRICERCA" & SETTORE_INTERVENTO == "NA-NA" ~ "01.01-RICERCA E SVILUPPO",
                                           OC_CODICE_PROGRAMMA == "PSCTURISMO" & SETTORE_INTERVENTO == "03:::12.02-NA" ~ "03.02-TURISMO E OSPITALITÀ",
+                                          OC_CODICE_PROGRAMMA == "2016PATTISICI" & SETTORE_INTERVENTO == "NA-NA" &
+                                            grepl("05.1", COD_RISULTATO_ATTESO) ~ "05.01-RISCHI E ADATTAMENTO CLIMATICO",
                                           TRUE ~ SETTORE_INTERVENTO))
 
   # debug classi
@@ -490,6 +499,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   message("Per tutti gli altri casi con 'to_fix' va rivisto lo script, che incorpora direttamente le correzioni.")
   message("Controlla in TEMP il file 'chk_classi_missing.csv'")
 
+  chk3 <- chk %>% filter(!is.na(COE))
   # # fix classi # DEV: spostato sopra
   # appo <- appo %>% 
   #   mutate(AREA_TEMATICA = case_when(OC_CODICE_PROGRAMMA == "2016PATTIPUG" & AREA_TEMATICA == "NA-NA" & SETTORE_INTERVENTO == "09.02-NA" ~ "08-RIQUALIFICAZIONE URBANA",
@@ -539,12 +549,13 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   
   # chk finanziamenti vs costi
   chk <- appo3 %>% 
-    group_by(COD_LOCALE_PROGETTO, x_CICLO) %>% 
+    group_by(COD_LOCALE_PROGETTO, x_CICLO, x_PROGRAMMA) %>% 
     summarise(COE = sum(COE, na.rm = TRUE),
               FINANZ_STATO_FSC = sum(FINANZ_STATO_FSC, na.rm = TRUE),
               OC_FINANZ_STATO_FSC_NETTO = sum(OC_FINANZ_STATO_FSC_NETTO, na.rm = TRUE),
               COSTO_AMM_FSC = sum(COSTO_AMM_FSC, na.rm = TRUE)) %>% 
-    mutate(CHK = case_when(x_CICLO == "2014-2020" & abs(COE - COSTO_AMM_FSC) < 0.1 ~ "cost", # possibile solo su 1420
+    mutate(CHK = case_when(# x_CICLO == "2014-2020" & abs(COE - COSTO_AMM_FSC) < 0.1 ~ "cost", # possibile solo su 1420
+                           abs(COE - COSTO_AMM_FSC) < 0.1 ~ "cost", # MEMO: post migrazione 
                            abs(COE - OC_FINANZ_STATO_FSC_NETTO) < 0.1 ~ "fin_net",
                            abs(COE- FINANZ_STATO_FSC) < 0.1 ~ "fin",
                            TRUE ~ "chk")) 
@@ -616,6 +627,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   # DEV: allineare numerazione
   appo2 <- appo4
   
+  
   # fix CIS Taranto in PRA Puglia
   appo3 <- fix_ciclo_cis_taranto_pra_puglia(progetti_psc = appo2)
   
@@ -679,8 +691,14 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
            OC_STATO_PROCEDURALE_OLD = OC_STATO_PROCEDURALE,
            OC_STATO_PROCEDURALE_NEW = OC_STATO_PROCEDURALE) # MEMO: crea colonne per allineamento (il valore è sempre equivaente a NEW)
 
+  # integra aggiudicazioni
+  appo11 <- appo10 %>% 
+    left_join(progetti %>% 
+                select(COD_LOCALE_PROGETTO, IMPORTO_AGGIUDICATO, 
+                IMPORTO_AGGIUDICATO_NODATA, IMPORTO_AGGIUDICATO_BANDITO))
+  
   if ("psc_area_tematica" %in% names(temp_operazioni)) {
-    out <- appo10 %>%
+    out <- appo11 %>%
       mutate(OC_STATO_PROCEDURALE = OC_STATO_PROCEDURALE_NEW) %>% # MEMO: valore di default, serve per report
       select(COD_LOCALE_PROGETTO, 
              CUP, 
@@ -706,10 +724,13 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
              PSC,
              ID_PSC,
              STATO,
-             OC_FLAG_VISUALIZZAZIONE) %>% 
+             OC_FLAG_VISUALIZZAZIONE,
+             IMPORTO_AGGIUDICATO, 
+             IMPORTO_AGGIUDICATO_NODATA, 
+             IMPORTO_AGGIUDICATO_BANDITO) %>% 
       bind_rows(progetti_sgp)
   } else {
-    out <- appo10 %>%
+    out <- appo11 %>%
       mutate(OC_STATO_PROCEDURALE = OC_STATO_PROCEDURALE_NEW) %>% # MEMO: valore di default, serve per report
       select(COD_LOCALE_PROGETTO, 
              CUP, 
@@ -2357,6 +2378,17 @@ make_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL, visual
   #          TIPOLOGIA_AMMINISTRAZIONE= if_else(is.na(TIPOLOGIA_AMMINISTRAZIONE.x),  TIPOLOGIA_AMMINISTRAZIONE.y, TIPOLOGIA_AMMINISTRAZIONE.x)) %>% 
   #   select(-DESCRIZIONE_PROGRAMMA.y, -DESCRIZIONE_PROGRAMMA.x, -TIPOLOGIA_AMMINISTRAZIONE.y, -TIPOLOGIA_AMMINISTRAZIONE.x) %>% 
   #   select(ID_PSC, x_CICLO, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, AREA_TEMATICA, RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N)
+  
+  
+  # fix per nuove codifiche (riporto tutto a codifica fittizia)
+  programmazione <- programmazione %>% 
+    left_join(matrix_po_psc %>% 
+                filter(str_starts(OC_CODICE_PROGRAMMA, "PSC")) %>% 
+                select(OC_CODICE_PROGRAMMA, TEMP = ID_PSC) %>%
+                rename(ID_PSC = OC_CODICE_PROGRAMMA),
+              by = "ID_PSC") %>% 
+    mutate(ID_PSC = if_else(is.na(TEMP), ID_PSC, TEMP)) %>% 
+    select(-TEMP)
   
   # NEW:
   # confronto programmazione e attuazione
