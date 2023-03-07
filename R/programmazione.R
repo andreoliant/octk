@@ -1089,6 +1089,12 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
   programmi <- init_programmazione_dati(use_temi = FALSE, use_713 = TRUE, use_location = TRUE, use_ciclo = TRUE, use_eu=use_eu, 
                                         use_flt=use_flt, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) 
   
+  # NEW: split REACT-EU per allineamento a struttura tavole
+  programmi <- programmi %>% 
+    mutate (x_AMBITO=case_when(x_AMBITO=="FESR" & CAT_REGIONE=="REACT"~ "FESR_REACT",
+                               x_AMBITO=="FSE" & CAT_REGIONE=="REACT"~"FSE_REACT",
+                               TRUE~x_AMBITO))
+  
   if (use_flt == TRUE) {
     programmi <- programmi %>%
       # filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2)
@@ -1156,7 +1162,9 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
   
   out_2 <- out %>% 
     refactor_ciclo() %>% 
-    refactor_ambito() %>% 
+    # refactor_ambito() %>% # NEW: integra react nel facctor
+    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR","FESR_REACT", "FSE", "FSE_REACT", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
+                                                  "FEAD", "FAMI", "CTE", "ORD", "PAC"))) %>%
     refactor_macroarea() %>% 
     pivot_wider(id_cols = c("x_CICLO", "x_AMBITO"), names_from = "x_MACROAREA", 
                 values_from = c("RISORSE", "RISORSE_UE"), values_fill = 0) %>% 
@@ -1167,11 +1175,15 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
   
   
     if (export == TRUE) {
-    if (!is.null(ciclo)) {
-      fname <- paste0("risorse_coesione_", ciclo, ".csv")
-    } else {
-      fname <- "risorse_coesione.csv"
-    }
+      if (!is.null(ciclo)) {
+        fname <- paste0("risorse_coesione_", ciclo, ".csv")
+        } else {
+          if (use_meuro==TRUE) {
+            fname <- "risorse_coesione_meuro.csv"
+            } else {
+              fname <- "risorse_coesione.csv"
+            }
+          }
     
     write.csv2(out_2, file.path(TEMP, fname), row.names = FALSE)
   }
