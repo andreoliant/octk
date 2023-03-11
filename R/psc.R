@@ -347,6 +347,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   
   # chk <- appo %>% filter(COD_LOCALE_PROGETTO == "9CA20015CP000000095")
   
+  
   appo <- operazioni %>% 
     # filter(COD_LOCALE_PROGETTO == "9CA20015CP000000095") %>% #DEBUG
     # filter(x_AMBITO == "FSC") %>% 
@@ -569,6 +570,18 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
               OC_FINANZ_STATO_FSC_NETTO = sum(OC_FINANZ_STATO_FSC_NETTO, na.rm = TRUE),
               COSTO_AMM_FSC = sum(COSTO_AMM_FSC, na.rm = TRUE))
   
+  chk %>% 
+    ungroup() %>% 
+    filter(x_CICLO == "2014-2020") %>%
+    # filter(x_CICLO == "2007-2013") %>%
+    filter(CHK == "fin_net") %>% 
+    group_by(x_CICLO, x_PROGRAMMA) %>% 
+    summarise(N = n(),
+              COE = sum(COE, na.rm = TRUE),
+              FINANZ_STATO_FSC = sum(FINANZ_STATO_FSC, na.rm = TRUE),
+              OC_FINANZ_STATO_FSC_NETTO = sum(OC_FINANZ_STATO_FSC_NETTO, na.rm = TRUE),
+              COSTO_AMM_FSC = sum(COSTO_AMM_FSC, na.rm = TRUE))
+  
   # chk economie
   appo3 %>% 
     mutate(FINANZ_STATO_FSC = if_else(is.na(FINANZ_STATO_FSC), 0, FINANZ_STATO_FSC),
@@ -624,9 +637,21 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
                              OC_STATO_PROCEDURALE == "Eseguito" ~ "Conclusi",
                              TRUE ~ "In corso"))
   
-  # DEV: allineare numerazione
-  appo2 <- appo4
+  # NEW: sovrascrive COE per eliminare max(costo, fin), tiene costo
+  appo5 <- appo4 %>% 
+    mutate(COE = case_when(OC_CODICE_PROGRAMMA == "2016PATTISICI" & COE>COSTO_AMM_FSC ~ COSTO_AMM_FSC,
+                           TRUE ~ COE))
   
+  chk <- appo3 %>% 
+    filter(OC_CODICE_PROGRAMMA == "2016PATTISICI" & COE>COSTO_AMM_FSC) %>% 
+    select(COD_LOCALE_PROGETTO, COE, costo_ammesso_MZ, COE_SUD)
+  
+  chk2 <- appo5 %>% 
+    semi_join(chk, by = "COD_LOCALE_PROGETTO") %>% 
+    select(COD_LOCALE_PROGETTO, COE, costo_ammesso_MZ, COE_SUD)
+  
+  # DEV: allineare numerazione
+  appo2 <- appo5
   
   # fix CIS Taranto in PRA Puglia
   appo3 <- fix_ciclo_cis_taranto_pra_puglia(progetti_psc = appo2)
