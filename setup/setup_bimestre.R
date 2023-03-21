@@ -150,6 +150,16 @@ setup_light(bimestre, fix = TRUE, path_snai = temp) # MEMO: fix per snai che int
 # setup_operazioni(bimestre, progetti, export=TRUE, debug=TRUE)
 setup_operazioni(bimestre, use_sito=TRUE, export=TRUE, debug=TRUE)
 
+# fix APQ Mari (sposto su 2000-2006)
+progetti <- read_csv2(file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), guess_max = 1000000)
+appo <- progetti %>%
+  mutate(x_CICLO = if_else(OC_CODICE_PROGRAMMA == "2007PI004MA007", "2000-2006", x_CICLO))
+write.csv2(appo, file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), row.names = FALSE)
+
+operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+appo <- operazioni %>%
+  mutate(x_CICLO = if_else(OC_CODICE_PROGRAMMA == "2007PI004MA007", "2000-2006", x_CICLO))
+write.csv2(appo, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), row.names = FALSE)
 
 # fix elimino progetti SISMA e PSCCAMPANIA
 # progetti <- read_csv2(file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), guess_max = 1000000)

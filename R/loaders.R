@@ -125,7 +125,7 @@ refactor_progetti <- function(perimetro) {
 refactor_ambito <- function(df) {
   
   levels_ambito <- c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
-                     "FEAD", "FAMI", "CTE", "ORD", "PAC")
+                     "FEAD", "FAMI", "CTE", "ENI", "ORD", "PAC")
   
   df <- df %>%
     mutate(x_AMBITO = factor(x_AMBITO, levels = levels_ambito))

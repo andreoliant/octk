@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.5.8"
+oc_ver <- "0.5.9"
 
 # rm(list=ls())
 library("devtools")
@@ -55,13 +55,13 @@ packageVersion("octk")
 # )
 
 oc_init(
-  bimestre = "20221101",
+  bimestre = "20221231",
   elab = "SETUP",
   focus = "setup",
   ver = "V.01",
   # user = "Antonio",
   data_path = "/media/aa/22F70AE20061C7C8/dati/oc",
-  db_ver = "20221031.00",
+  db_ver = "20221231.00",
   use_drive = TRUE,
   # drive_root = "/home/antonio/ExpanDrive/OC/Team Drives"
   drive_root = "/home/aa/oc_drive"
@@ -253,8 +253,8 @@ system(
 # HAND: fare commit prima di inserire tag
 
 system(
-  # paste0("git tag v", oc_ver)
-  paste0("git tag v", oc_ver, "_REV.01")
+  paste0("git tag v", oc_ver)
+  # paste0("git tag v", oc_ver, "_REV.01")
   )
 
 # library(gitcreds)
@@ -263,6 +263,7 @@ system(
 # VEDI NUOVA SOLUZIONE IN DRIVE SETUP
 
 usethis::git_sitrep()
+
 
 # HAND: push
 
