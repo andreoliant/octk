@@ -193,10 +193,11 @@ init_psc <- function(PSC=NULL, light=FALSE) {
 #' @param progetti_pub Dataset progetti esteso pubblicato
 #' @param versione_sgp Versione di riferimento dei dati provenienti da SGP
 #' @param chk_today Parametro da passare a get_stato_attuazione(), con formato "2021-02-28"
+#' @param forza_flag Vuoi forzare il flag viasulizzazione a 7 per i duplicati tecnici da migrazione?
 #' @return File "dati_psc_BIMESTRE.csv" in TEMP 
 #' @note ...
 prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, art44, 
-                                   matrix_1420, matrix_713, matrix_temi_settori, progetti=NULL, progetti_pub=NULL, versione_sgp, chk_today) {
+                                   matrix_1420, matrix_713, matrix_temi_settori, progetti=NULL, progetti_pub=NULL, versione_sgp, chk_today, forza_flag=FALSE) {
   
   # DEBUG:
   # progetti_pub <- progetti
@@ -529,7 +530,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
                 select(COD_LOCALE_PROGETTO, COSTO_REALIZZATO, 
                        FINANZ_STATO_FSC, OC_FINANZ_STATO_FSC_NETTO,
                        FINANZ_TOTALE_PUBBLICO, FINANZ_PRIVATO, FINANZ_DA_REPERIRE, ECONOMIE_TOTALI,
-                       OC_FINANZ_TOT_PUB_NETTO) %>% 
+                       OC_FINANZ_TOT_PUB_NETTO, DB) %>% 
                 mutate(across(where(is.numeric), ~replace_na(., replace = 0))),
               by = "COD_LOCALE_PROGETTO") %>% 
     mutate_if(is.numeric, replace_na, replace = 0) %>% 
@@ -752,7 +753,8 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
              OC_FLAG_VISUALIZZAZIONE,
              IMPORTO_AGGIUDICATO, 
              IMPORTO_AGGIUDICATO_NODATA, 
-             IMPORTO_AGGIUDICATO_BANDITO) %>% 
+             IMPORTO_AGGIUDICATO_BANDITO,
+             DB) %>% 
       bind_rows(progetti_sgp)
   } else {
     out <- appo11 %>%
@@ -779,13 +781,27 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
              PSC,
              ID_PSC,
              STATO,
-             OC_FLAG_VISUALIZZAZIONE) %>% 
+             OC_FLAG_VISUALIZZAZIONE,
+             DB) %>% 
       bind_rows(progetti_sgp)
   }
   
   # fix psc
   out <- fix_id_psc_15_digit(out, var1="ID_PSC")
   out <- fix_id_psc_ministeri(out, var1="PSC")
+  
+  # TODO:
+  # fix sezione
+  # out <- out %>% 
+  #   mutate(SEZIONE = case_when(
+  #                    SEZIONE == "SO" ~ "SO",
+  #                    SEZIONE == "SOCIS" ~ "SO",
+  #                    SEZIONE == "SS_1" ~ "SS_1",
+  #                    SEZIONE == "SS_2" ~ "SS_2",
+  #                    is.na(SEZIONE) & x_CICLO == "2000-2006" ~ "SO",
+  #                    is.na(SEZIONE) & x_CICLO == "2007-2013" ~ "SO",
+  #                    is.na(SEZIONE) & x_CICLO == "2014-2020" ~ "chk", # CHK: forzo sezione ordinaria?
+  #                    TRUE ~ "chk"))
   
   # DEBUG:
   out %>% filter(OC_FLAG_VISUALIZZAZIONE == 0) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
@@ -797,7 +813,29 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   #   summarise(COE = sum(COE))
   out %>% filter(OC_FLAG_VISUALIZZAZIONE == 0) %>% summarise(COE = sum(COE, na.rm = T))
   
-  
+  # forza flag 7 su duplicati tecnici da migrazione
+  if (forza_flag == TRUE) {
+    out <- out %>%  
+      mutate(OC_FLAG_VISUALIZZAZIONE = case_when(OC_CODICE_PROGRAMMA == "2016PATTIABR" ~ 7, # MEMO: patti quasi interamente migrati
+                                                 OC_CODICE_PROGRAMMA == "2016PATTIBASIL" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2018POFSCEMROM" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2016PATTILAZ" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2018POFSCBO" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2016PATTIFIR" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2016PATTIMES" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2016PATTINAP" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2016PATTIRC" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2016PATTIVEN" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "POSPORTFSC" ~ 7,
+                                                 # programmi 713
+                                                 OC_CODICE_PROGRAMMA == "2007LO002FA006" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2007FR002FA003" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2007MA002FA007" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2007LI002FA005" ~ 7, #solo COE = 0
+                                                 OC_CODICE_PROGRAMMA == "2007BO002FA009" ~ 7, #solo COE = 0
+                                                 TRUE ~ OC_FLAG_VISUALIZZAZIONE))
+  }
+
   write.csv2(out, file.path(PSC, "psc", paste0("dati_psc_", bimestre, "_", versione, ".csv")), row.names = FALSE)
   
 }
@@ -1662,7 +1700,10 @@ make_report_po_psc <- function(progetti_psc, programmazione=NULL, visualizzati=T
     select(ID_PSC, PSC, x_CICLO, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, RISORSE = FINANZ_TOTALE) %>% 
     group_by(ID_PSC, PSC, x_CICLO, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE) %>% 
     summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>% 
-    left_join(appo2 %>% 
+    # OLD:
+    # left_join(appo2 %>%
+    # NEW: gestisce match per cicli diversi da 06 e progetti migrati in SGP ma non ancora in BDU
+    full_join(appo2 %>%
                 select(ID_PSC, x_CICLO, OC_CODICE_PROGRAMMA, COE, COE_IMP, COE_CR, COE_PAG, N),
               by = c("ID_PSC", "x_CICLO", "OC_CODICE_PROGRAMMA")) %>% 
     mutate_if(is.numeric, list(~replace_na(., 0)))

@@ -4619,6 +4619,66 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
     rename(OC_COD_PROGRAMMA = oc_cod_programma)
   message("Operazioni raw caricate per 713")
   
+  # # SPECIAL (dati SGP-BDU di Fabio)
+  # # OLD: WRONG!
+  # # progetti_psc <- load_progetti_psc(bimestre = "20221231", versione = "03", fix_no_temi_no_coe = TRUE) %>% # contiene 713 e 1420 da BDU + 06 solo da BDU1420
+  # #   rename(OC_COD_PROGRAMMA = OC_CODICE_PROGRAMMA,
+  # #          cod_locale_progetto = COD_LOCALE_PROGETTO)
+  # # operazioni_713_raw <- operazioni_713_raw %>%
+  # #   anti_join(progetti_psc, by = c("cod_locale_progetto", "OC_COD_PROGRAMMA"))
+  # # DEV:
+  # # chk <- operazioni_713_raw %>%
+  # #   filter(OC_COD_FONTE == "FSC0713" | OC_COD_FONTE == "FSC1420") %>% 
+  # #   rename(oc_cod_programma = OC_COD_PROGRAMMA) %>% 
+  # #   semi_join(operazioni_1420_raw, by = c("cod_locale_progetto", "oc_cod_programma")) 
+  # chk <- operazioni_713_raw %>%
+  #   filter(OC_COD_FONTE == "FSC0713") %>%
+  #   semi_join(operazioni_1420_raw, by = "cod_locale_progetto") 
+  # chk %>% count(OC_COD_FONTE, OC_COD_PROGRAMMA, oc_descrizione_programma)
+  # # A tibble: 17 × 4
+  # # OC_COD_FONTE OC_COD_PROGRAMMA oc_descrizione_programma                                                         n
+  # # <chr>        <chr>            <chr>                                                                        <int>
+  # # 1 FSC0713      2007AB002FA001   PAR FSC ABRUZZO                                                                 26
+  # # 2 FSC0713      2007AB003FA001   PROGRAMMA REGIONALE DI ATTUAZIONE (PRA) FSC ABRUZZO                              3
+  # # 3 FSC0713      2007AN0021FA01   COMPLETAMENTO SALERNO-REGGIO CALABRIA                                            2
+  # # 4 FSC0713      2007BA001FA012   PROGRAMMA REGIONALE DI ATTUAZIONE (PRA) FSC BASILICATA                          20
+  # # 5 FSC0713      2007BO002FA009   PAR FSC PA BOLZANO                                                             353
+  # # 6 FSC0713      2007CA001FA009   PROGRAMMA REGIONALE DI ATTUAZIONE (PRA) FSC CAMPANIA                           455
+  # # 7 FSC0713      2007EM002FA002   PAR FSC EMILIA ROMAGNA                                                           5
+  # # 8 FSC0713      2007EM002FA003   PROGRAMMA ATTUATIVO SPECIALE FSC RICOSTRUZIONE PER SISMA 2012 EMILIA ROMAGNA     4
+  # # 9 FSC0713      2007IT001FAOS1   PROGRAMMA OBIETTIVI DI SERVIZIO REGIONE ABRUZZO                                 11
+  # # 10 FSC0713      2007IT001FAOS3   PROGRAMMA OBIETTIVI DI SERVIZIO REGIONE CAMPANIA                                40
+  # # 11 FSC0713      2007IT001FAOS8   PROGRAMMA OBIETTIVI DI SERVIZIO REGIONE SARDEGNA                              1276
+  # # 12 FSC0713      2007IT004FABC1   PROGRAMMA ATTUATIVO SPECIALE FSC SEDI MUSEALI DI RILIEVO NAZIONALE               1
+  # # 13 FSC0713      2007MO002FA009   PAR FSC MOLISE                                                                   1
+  # # 14 FSC0713      2007PU001FA010   PROGRAMMA REGIONALE DI ATTUAZIONE (PRA) FSC PUGLIA                              68
+  # # 15 FSC0713      2007SA002FA016   PROGRAMMA REGIONALE DI ATTUAZIONE (PRA) FSC SARDEGNA                           721
+  # # 16 FSC0713      2007TR002FA010   PAR FSC P.A. TRENTO                                                              1
+  # # 17 FSC0713      2007VE002FA015   PAR FSC VENETO                                                                   7
+  # chk <- operazioni_1420_raw %>%
+  #   filter(oc_cod_fonte == "FSC1420") %>%
+  #   semi_join(operazioni_713_raw, by = "cod_locale_progetto") 
+  # chk %>% count(oc_cod_fonte, oc_cod_programma, oc_descrizione_programma)
+  # # oc_cod_fonte oc_cod_programma oc_descrizione_programma     n
+  # # <chr>        <chr>            <chr>                    <int>
+  # # 1 FSC1420      PSCABRUZZO       PSC ABRUZZO                 40
+  # # 2 FSC1420      PSCBASILICATA    PSCS BASILICATA             20
+  # # 3 FSC1420      PSCBOLZANO       PSC PA BOLZANO             353
+  # # 4 FSC1420      PSCCAMPANIA      PSC CAMPANIA               596
+  # # 5 FSC1420      PSCCULTURA       PSC MINISTERO CULTURA        1
+  # # 6 FSC1420      PSCEMILROMAGNA   PSC EMILIA ROMAGNA           9
+  # # 7 FSC1420      PSCMOLISE        PSC MOLISE                   1
+  # # 8 FSC1420      PSCPUGLIA        PSC PUGLIA                  68
+  # # 9 FSC1420      PSCSARDEGNA      PSC SARDEGNA              1997
+  # # 10 FSC1420      PSCTRENTO        PSC PA TRENTO                1
+  # # 11 FSC1420      PSCVENETO        PSC VENETO                   7
+  # operazioni_713_raw <- operazioni_713_raw %>%
+  #   anti_join(operazioni_1420_raw, by = "cod_locale_progetto")
+  # # MEMO:
+  # # devo eliminare i progetti BDU713 non migrati (quindi non disattivati in BDU 713) che Fabio ha preso da SGP e messo in "oper_pucok_preesteso.sas7bdat"
+  # # altrimenti questi progetti 713 sarebbero duplicati su 1420
+  # # anche se operazionio faccio join su clp perché con migrazione cambia il po
+  
   
   # ----------------------------------------------------------------------------------- #
   # prep
@@ -4773,7 +4833,8 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
   appo <- operazioni_713_raw %>%
     # rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
     # filter(OC_CODICE_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005")) %>%
-    filter(OC_COD_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005")) %>%
+    # filter(OC_COD_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005")) %>%
+    filter(OC_COD_PROGRAMMA %in% c("2007IT005FAMG1", "2007IT001FA005", "2007SA002FA016")) %>%
     # left_join(progetti %>%
     #             select(COD_LOCALE_PROGETTO, OC_FLAG_PAC),
     #           by = "COD_LOCALE_PROGETTO") %>%
@@ -4863,6 +4924,10 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
     # clean
     select(names(operazioni_713_raw), x_AMBITO)
   
+  # fix codice programma
+  appo <- appo %>% 
+    mutate(OC_COD_PROGRAMMA = case_when(x_AMBITO == "PAC" & OC_COD_PROGRAMMA == "2007SA002FA016" ~ "TEMP_MIT_SAR",
+                                        TRUE ~ OC_COD_PROGRAMMA))
   
   # chk <- appo %>%
   #   select(OC_COD_PROGRAMMA, x_AMBITO, COD_LOCALE_PROGETTO, oc_costo_coesione, COE, 
@@ -4938,6 +5003,8 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
               by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
     mutate(x_CICLO = case_when(OC_COD_CICLO == 1 ~ "2007-2013",
                                OC_COD_CICLO == 2 ~ "2014-2020",
+                               OC_COD_CICLO == 3 ~ "2021-2027",
+                               OC_COD_CICLO == 9 ~ "2000-2006",
                                TRUE ~ "2014-2020")) # MEMO: fix per anomalie di pre-esteso
   operazioni_psc %>% count(X_CICLO, OC_COD_CICLO, x_CICLO)
   # operazioni_psc %>% filter(is.na(x_CICLO)) %>% count(OC_CODICE_PROGRAMMA)
@@ -4948,6 +5015,16 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
   # 3 PSCLAZIO                1
   # 4 PSCSVILECONOM         137
   # 5 PSCUNIVRICERCA          2
+  # operazioni_psc %>% filter(is.na(OC_COD_CICLO)) %>% count(OC_CODICE_PROGRAMMA)
+  # OC_CODICE_PROGRAMMA     n
+  # <chr>               <int>
+  # 1 PSCCAMPANIA           177
+  # 2 PSCEMILROMAGNA         53
+  # 3 PSCLAZIO                1
+  # 4 PSCMOLISE               1
+  # 5 PSCPUGLIA               6
+  # 6 PSCSVILECONOM         178
+  # 7 PSCUNIVRICERCA          2
 
   # operazioni_psc %>% filter(OC_CODICE_PROGRAMMA == "PSCLOMBARDIA") %>% count(X_CICLO)
 
@@ -4982,6 +5059,16 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
   # left_join(progetti %>%
   #             select(COD_LOCALE_PROGETTO, OC_FLAG_VISUALIZZAZIONE),
   #           by = "COD_LOCALE_PROGETTO")
+  
+  # chk ciclo
+  operazioni %>% count(x_CICLO)
+  operazioni %>% filter(is.na(x_CICLO)) %>% count(x_AMBITO)
+  
+  # fix ciclo
+  operazioni <- operazioni %>%
+    mutate(x_CICLO = case_when(OC_CODICE_PROGRAMMA == "TEMP_MIT_SAR" ~ "2007-2013",
+                               OC_CODICE_PROGRAMMA == "2007PI004MA007" ~ "2000-2006", 
+                               TRUE ~ x_CICLO))
   
   # chk compatibile con Fabio x Stefano
   # operazioni %>% distinct(COD_LOCALE_PROGETTO, x_CICLO, x_AMBITO) %>% count(x_CICLO, x_AMBITO)

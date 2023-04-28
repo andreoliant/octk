@@ -16,7 +16,8 @@ prep_dati_psc_bimestre(
   progetti = NULL,
   progetti_pub = NULL,
   versione_sgp,
-  chk_today
+  chk_today,
+  forza_flag = FALSE
 )
 }
 \arguments{
@@ -41,6 +42,8 @@ prep_dati_psc_bimestre(
 \item{versione_sgp}{Versione di riferimento dei dati provenienti da SGP}
 
 \item{chk_today}{Parametro da passare a get_stato_attuazione(), con formato "2021-02-28"}
+
+\item{forza_flag}{Vuoi forzare il flag viasulizzazione a 7 per i duplicati tecnici da migrazione?}
 }
 \value{
 File "dati_psc_BIMESTRE.csv" in TEMP

@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.5.9"
+oc_ver <- "0.6.0"
 
 # rm(list=ls())
 library("devtools")
@@ -55,7 +55,7 @@ packageVersion("octk")
 # )
 
 oc_init(
-  bimestre = "20221231",
+  bimestre = "20230101",
   elab = "SETUP",
   focus = "setup",
   ver = "V.01",
