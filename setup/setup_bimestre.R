@@ -139,56 +139,56 @@ devtools::load_all(path = ".")
 
 # progetti light
 # setup_light(bimestre, fix = TRUE)
-# temp <- paste0("ELAB/", bimestre, "/SNAI/snai/V.01/output/perimetro_snai.xlsx")
-temp <- paste0("ELAB/", "20221231", "/SNAI/snai/V.01/output/perimetro_snai.xlsx")
+temp <- paste0("ELAB/", bimestre, "/SNAI/snai/V.01/output/perimetro_snai.xlsx")
+# temp <- paste0("ELAB/", "20221231", "/SNAI/snai/V.01/output/perimetro_snai.xlsx")
 setup_light(bimestre, fix = TRUE, path_snai = temp) # MEMO: fix per snai che integra variabili che mancano in preesteso
 # setup_light(bimestre, fix = FALSE)
 
-# fix ciclo psc migrati
-fix_ciclo <- read_csv2(file.path(DATA, "PROGETTI_PREESTESO_CICLO.csv"))
-# DEV: qui ci sono tutti i progetti, ma c'è qualcosa a cui cambio il ciclo?
-
-progetti <- read_csv2(file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), guess_max = 1000000)
-appo <- progetti %>%
-  left_join(fix_ciclo %>% 
-              select(COD_LOCALE_PROGETTO, OC_COD_CICLO), 
-            by = "COD_LOCALE_PROGETTO") %>% 
-  mutate(x_CICLO = case_when(OC_COD_CICLO == 9 ~ "2000-2006",
-                             OC_COD_CICLO == 1 ~ "2007-2013",
-                             OC_COD_CICLO == 2 ~ "2014-2020",
-                             OC_COD_CICLO == 3 ~ "2021-2027",
-                             TRUE ~ x_CICLO))
-write.csv2(appo, file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), row.names = FALSE)
-
-temp <- load_progetti(bimestre = bimestre, visualizzati = FALSE, light = FALSE)
-# progetti_fix <- temp %>%
-#   select(-OC_COD_CICLO) %>% 
+# # fix ciclo psc migrati
+# fix_ciclo <- read_csv2(file.path(DATA, "PROGETTI_PREESTESO_CICLO.csv"))
+# # DEV: qui ci sono tutti i progetti, ma c'è qualcosa a cui cambio il ciclo?
+# 
+# progetti <- read_csv2(file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), guess_max = 1000000)
+# appo <- progetti %>%
 #   left_join(fix_ciclo %>% 
 #               select(COD_LOCALE_PROGETTO, OC_COD_CICLO), 
 #             by = "COD_LOCALE_PROGETTO") %>% 
 #   mutate(x_CICLO = case_when(OC_COD_CICLO == 9 ~ "2000-2006",
 #                              OC_COD_CICLO == 1 ~ "2007-2013",
 #                              OC_COD_CICLO == 2 ~ "2014-2020",
-#                              OC_COD_CICLO == 3 ~ "2021-2027"))
-progetti_fix <- temp %>%
-  select(-OC_COD_CICLO) %>% 
-  left_join(fix_ciclo %>% 
-              select(COD_LOCALE_PROGETTO, OC_COD_CICLO), 
-            by = "COD_LOCALE_PROGETTO") 
-# %>% 
-#   mutate(x_CICLO = case_when(OC_COD_CICLO == 9 ~ "2000-2006",
-#                              OC_COD_CICLO == 1 ~ "2007-2013",
-#                              OC_COD_CICLO == 2 ~ "2014-2020",
-#                              OC_COD_CICLO == 3 ~ "2021-2027"))
-
-progetti_fix %>% count(OC_COD_CICLO)
+#                              OC_COD_CICLO == 3 ~ "2021-2027",
+#                              TRUE ~ x_CICLO))
+# write.csv2(appo, file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), row.names = FALSE)
+# 
+# temp <- load_progetti(bimestre = bimestre, visualizzati = FALSE, light = FALSE)
+# # progetti_fix <- temp %>%
+# #   select(-OC_COD_CICLO) %>% 
+# #   left_join(fix_ciclo %>% 
+# #               select(COD_LOCALE_PROGETTO, OC_COD_CICLO), 
+# #             by = "COD_LOCALE_PROGETTO") %>% 
+# #   mutate(x_CICLO = case_when(OC_COD_CICLO == 9 ~ "2000-2006",
+# #                              OC_COD_CICLO == 1 ~ "2007-2013",
+# #                              OC_COD_CICLO == 2 ~ "2014-2020",
+# #                              OC_COD_CICLO == 3 ~ "2021-2027"))
+# progetti_fix <- temp %>%
+#   select(-OC_COD_CICLO) %>% 
+#   left_join(fix_ciclo %>% 
+#               select(COD_LOCALE_PROGETTO, OC_COD_CICLO), 
+#             by = "COD_LOCALE_PROGETTO") 
+# # %>% 
+# #   mutate(x_CICLO = case_when(OC_COD_CICLO == 9 ~ "2000-2006",
+# #                              OC_COD_CICLO == 1 ~ "2007-2013",
+# #                              OC_COD_CICLO == 2 ~ "2014-2020",
+# #                              OC_COD_CICLO == 3 ~ "2021-2027"))
+# 
+# progetti_fix %>% count(OC_COD_CICLO)
 
 # operazioni light
 # progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE, light = FALSE)
 # progetti <- fix_progetti(progetti)
 # setup_operazioni(bimestre, progetti, export=TRUE, debug=TRUE)
-# setup_operazioni(bimestre, use_sito=TRUE, export=TRUE, debug=TRUE)
-setup_operazioni(bimestre, progetti=progetti_fix, use_sito=TRUE, export=TRUE, debug=TRUE) # fix ciclo psc migrati
+setup_operazioni(bimestre, use_sito=TRUE, export=TRUE, debug=TRUE)
+# setup_operazioni(bimestre, progetti=progetti_fix, use_sito=TRUE, export=TRUE, debug=TRUE) # fix ciclo psc migrati
 
 # fix ciclo pac
 # operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
@@ -232,6 +232,7 @@ progetti %>% count(x_MACROAREA, OC_MACROAREA)
 operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
 operazioni %>% count(x_CICLO, x_AMBITO)
 operazioni %>% filter(is.na(x_AMBITO)) %>% count(x_CICLO, OC_CODICE_PROGRAMMA)
+operazioni %>% filter(is.na(x_CICLO)) %>% count(x_AMBITO, OC_CODICE_PROGRAMMA)
 
 # fix temporaneo per 2127 (va cambiato lato programmazione)
 # operazioni <- operazioni %>% 
