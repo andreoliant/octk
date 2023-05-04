@@ -612,7 +612,7 @@ fix_progetti <- function(progetti, path_snai=NULL) {
   #                                        # MEMO: forzo su FESR ma c'è anche FSE
   #                                        TRUE ~ FONDO_COMUNITARIO))
   
-  # fix temporaneo per YEI
+  # # fix temporaneo per YEI
   # progetti <- progetti %>%
   #   mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
   #                                        TRUE ~ FONDO_COMUNITARIO))
@@ -668,6 +668,12 @@ fix_progetti <- function(progetti, path_snai=NULL) {
   #                                              TRUE ~ OC_FLAG_VISUALIZZAZIONE))
   
   
+  # fix fondo comunitario
+  progetti <- progetti %>%
+    mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "F.E.S" ~ "FESR",
+                                         FONDO_COMUNITARIO == "F.S.E" ~ "FSE",
+                                         FONDO_COMUNITARIO == "Y.E.I"~ "YEI",
+                                         TRUE ~ FONDO_COMUNITARIO))
   
   # fix snai
   if (!(is.null(path_snai))) {

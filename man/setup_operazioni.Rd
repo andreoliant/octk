@@ -19,6 +19,8 @@ setup_operazioni(
 
 \item{progetti}{Dataset con un perimetro in formato "progetti".}
 
+\item{use_fix}{Vuoi applicare fix_progetti() prima di esecuzione? Non impatta su x_AMBITO!}
+
 \item{use_ecomix}{Vuoi calcolare il costo coesione al netto delle economie solo per i progetti conclusi?}
 
 \item{use_sito}{Vuoi usare il calcolo dellle risorse coesione fatto per il sito OC?}

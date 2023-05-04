@@ -136,6 +136,9 @@ progetti_all %>% fix_progetti() %>% filter(OC_CODICE_PROGRAMMA == "2014IT05M9OP0
 # 1 FSE                  256
 # 2 YEI               215724
 
+# chk fondo comunitario
+progetti_all %>% filter(OC_CODICE_PROGRAMMA == "2014IT16M2OP006") %>% count(FONDO_COMUNITARIO)
+
 # chk dupli
 progetti_all %>%
   fix_progetti(.) %>%
@@ -246,6 +249,19 @@ write.xlsx(temp, file.path(TEMP, paste0("chk_nuovi_progetti.xlsx")), row.names =
 
 temp <- chk2 %>% filter(abs(CP.chk) > 1000000)
 write.xlsx(temp, file.path(TEMP, paste0("chk_variazione_progetti.xlsx")), row.names = FALSE)
+
+chk3 <- progetti_all %>% 
+  fix_progetti(.) %>%
+  get_x_vars(.) %>%
+  filter(x_AMBITO == "FESR" | x_AMBITO == "FSE") %>% 
+  filter(x_CICLO == "2014-2020") %>% 
+  group_by(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_AMBITO, FONDO_COMUNITARIO) %>% 
+  summarise(N = n(),
+            FTP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE))
+
+# progetti_all %>% 
+#   filter(OC_CODICE_PROGRAMMA == "2014IT05M2OP002") %>% 
+#   count(FONDO_COMUNITARIO)
 
 
 # ----------------------------------------------------------------------------------- #

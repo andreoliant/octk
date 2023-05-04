@@ -7,6 +7,7 @@
 #'
 #' @param bimestre Bimestre di riferimento
 #' @param progetti Dataset con un perimetro in formato "progetti".
+#' @param use_fix Vuoi applicare fix_progetti() prima di esecuzione? Non impatta su x_AMBITO!
 #' @param use_ecomix Vuoi calcolare il costo coesione al netto delle economie solo per i progetti conclusi?
 #' @param use_sito Vuoi usare il calcolo dellle risorse coesione fatto per il sito OC?
 #' @return Il dataset operazioni con le variabili coesione calcolate: COE, COE_IMP e COE_PAG.
@@ -1522,6 +1523,11 @@ fix_operazioni <- function(df) {
                                       OC_CODICE_PROGRAMMA == "2019MATTMINA001" ~ "ORD",
                                       ue_descr_fondo == "" & oc_cod_fonte == "FS1420" &
                                         CODICE_TIPOLOGIA_PROGRAMMA == "ARI" ~ "NAZIONALE", # fix per 1MISEABIN-PSRA-89-153
+                                      # fix temporanei
+                                      oc_cod_fonte == "FS1420" & ue_descr_fondo == "Y.E.I.:::F.S.E." ~ "IOG",
+                                      oc_cod_fonte == "FS1420" & ue_descr_fondo == "F.S.E." ~ "FSE",
+                                      oc_cod_fonte == "FS1420" & ue_descr_fondo == "F.E.S.R." ~ "FESR",
+                                      oc_cod_fonte == "FS1420" & ue_descr_fondo == "F.E.A.S.R." ~ "FEASR",
                                       TRUE ~ ue_descr_fondo))
   
   # df <- df %>%
@@ -4769,6 +4775,8 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
                                   CODICE_TIPOLOGIA_PROGRAMMA == "CTE" ~ "CTE",
                                 oc_cod_fonte == "FS1420" & ue_descr_fondo == "NAZIONALE" &
                                   CODICE_TIPOLOGIA_PROGRAMMA == "ARI" ~ "SNAI",
+                                oc_cod_fonte == "FS1420" & ue_descr_fondo == "NAZIONALE" &
+                                  CODICE_TIPOLOGIA_PROGRAMMA == "INA" ~ "SNAI", # oc_cod_programma == "2020PCDPCINA001"
                                 oc_cod_fonte == "FS1420" ~ ue_descr_fondo,
                                 oc_cod_fonte == "FSC1420" ~ "FSC",
                                 oc_cod_fonte == "PAC1420" ~ "POC",

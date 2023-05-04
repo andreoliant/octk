@@ -183,11 +183,31 @@ setup_light(bimestre, fix = TRUE, path_snai = temp) # MEMO: fix per snai che int
 # 
 # progetti_fix %>% count(OC_COD_CICLO)
 
+# fix ciclo psc migrati (vive sempre perché x_CICLO viene da po_riclass)
+progetti <- read_csv2(file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), guess_max = 1000000)
+temp <- load_progetti(bimestre = bimestre, visualizzati = FALSE, light = FALSE)
+
+appo <- progetti %>%
+  left_join(temp %>%
+              select(COD_LOCALE_PROGETTO, OC_COD_CICLO),
+            by = "COD_LOCALE_PROGETTO") %>%
+  mutate(x_CICLO = case_when(x_AMBITO == "FSC" & OC_COD_CICLO == 9 ~ "2000-2006",
+                             x_AMBITO == "FSC" & OC_COD_CICLO == 1 ~ "2007-2013",
+                             x_AMBITO == "FSC" & OC_COD_CICLO == 2 ~ "2014-2020",
+                             x_AMBITO == "FSC" & OC_COD_CICLO == 3 ~ "2021-2027",
+                             TRUE ~ x_CICLO))
+
+appo %>% count(x_AMBITO, x_CICLO, OC_COD_CICLO)
+
+write.csv2(appo, file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), row.names = FALSE)
+
+
 # operazioni light
 # progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, debug = TRUE, light = FALSE)
 # progetti <- fix_progetti(progetti)
 # setup_operazioni(bimestre, progetti, export=TRUE, debug=TRUE)
-setup_operazioni(bimestre, use_sito=TRUE, export=TRUE, debug=TRUE)
+# setup_operazioni(bimestre, use_sito=TRUE, export=TRUE, debug=TRUE)
+setup_operazioni(bimestre, use_sito=TRUE, use_fix=TRUE, export=TRUE, debug=TRUE)
 # setup_operazioni(bimestre, progetti=progetti_fix, use_sito=TRUE, export=TRUE, debug=TRUE) # fix ciclo psc migrati
 
 # fix ciclo pac
