@@ -203,6 +203,7 @@ set_developer <- function(user) {
                                     "Antonio",
                                     "Antonio2",
                                     "Daniela",
+                                    "Daniela2",
                                     "Paolo",
                                     "AndreaT"),
                           path = c(file.path("G:","Drive condivisi"), # "G:/Drive condivisi"
@@ -213,6 +214,7 @@ set_developer <- function(user) {
                                    file.path("/home", "antonio", "ExpanDrive", "OC", "Shared Drives"),
                                    file.path("/home", "aa", "oc_drive"),
                                    file.path("G:","Shared drives"),
+                                   file.path("G:","Drive condivisi"),
                                    file.path("G:","Drive condivisi"),
                                    file.path("/Users", "andreataddei", "Google Drive", "Drive condivisi"))) 
   
