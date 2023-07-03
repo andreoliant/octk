@@ -313,7 +313,7 @@ make_po_riclass <- function(bimestre, progetti=NULL) {
     distinct(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
 
   # load from package
-  out <- oc::po_riclass %>%
+  out <- octk::po_riclass %>%
     bind_rows(programmi %>%
                 anti_join(po_riclass, by = "OC_CODICE_PROGRAMMA"))
 
@@ -620,6 +620,7 @@ fix_progetti <- function(progetti, path_snai=NULL) {
   # fix temporaneo per IOG>YEI
   progetti <- progetti %>%
     mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "IOG" ~ "YEI",
+                                         FONDO_COMUNITARIO == "FESR:" ~ "FESR",
                                          OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & is.na(FONDO_COMUNITARIO) ~ "YEI",
                                          OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & FONDO_COMUNITARIO == "IOG::" ~ "YEI",
                                          TRUE ~ FONDO_COMUNITARIO))

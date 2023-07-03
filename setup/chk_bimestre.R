@@ -180,7 +180,7 @@ devtools::load_all(path = ".")
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20221101"
+bimestre_old <- "20230228"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
 progetti_all_old <- load_progetti(bimestre = bimestre_old,
@@ -263,12 +263,15 @@ chk3 <- progetti_all %>%
 #   filter(OC_CODICE_PROGRAMMA == "2014IT05M2OP002") %>% 
 #   count(FONDO_COMUNITARIO)
 
+chk <- progetti_all %>% 
+  filter(FONDO_COMUNITARIO == "FESR:")
 
+  
 # ----------------------------------------------------------------------------------- #
 # verifica x_vars
 
 
-progetti_all %>%
+chk <- progetti_all %>%
   fix_progetti(.) %>%
   get_x_vars(.) %>%
   count(x_CICLO, X_CICLO, x_AMBITO, X_AMBITO)
@@ -279,10 +282,10 @@ progetti_all %>%
 #   filter(x_AMBITO == "FSC", X_AMBITO == "FESR")
 # MEMO: progetti migrati su PSC, vince x_AMBITO
 
-# chk <- progetti_all %>%
-#   fix_progetti(.) %>%
-#   get_x_vars(.) %>%
-#   filter(x_CICLO == "2021-2027", X_CICLO == "2014-2020")
+chk <- progetti_all %>%
+  fix_progetti(.) %>%
+  get_x_vars(.) %>%
+  filter(x_CICLO == "2021-2027", X_CICLO == "2014-2020")
 # MEMO: cis sisma, vince x_CICLO
 
 progetti_all %>%

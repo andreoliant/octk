@@ -285,6 +285,14 @@ chk %>%
 
 write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
 
+
+# fix
+operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+appo <- operazioni %>%
+  mutate(x_AMBITO = if_else(OC_CODICE_PROGRAMMA == "2014TC16M5CB013", "ENI", x_AMBITO))
+write.csv2(appo, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), row.names = FALSE)
+
+
 # MEMO:
 # una parte del problema è direttrici ferroviarie e giustizia civile
 

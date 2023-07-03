@@ -100,10 +100,11 @@ setup_operazioni <- function(bimestre, progetti=NULL, export=FALSE, use_fix=FALS
                            OC_DESCR_CATEGORIA_SPESA,
                            # OC_ARTICOLAZIONE_PROGRAMMA,
                            # OC_SUBARTICOLAZIONE_PROGRAMMA,
-                           OC_COD_ARTICOLAZ_PROGRAMMA,
-                           OC_DESCR_ARTICOLAZ_PROGRAMMA,
-                           OC_COD_SUBARTICOLAZ_PROGRAMMA,
-                           OC_DESCR_SUBARTICOLAZ_PROGRAMMA,
+                           # OLD: ora articolazioni vengono da operazioni.sas
+                           # OC_COD_ARTICOLAZ_PROGRAMMA,
+                           # OC_DESCR_ARTICOLAZ_PROGRAMMA,
+                           # OC_COD_SUBARTICOLAZ_PROGRAMMA,
+                           # OC_DESCR_SUBARTICOLAZ_PROGRAMMA,
                            COD_STRUMENTO,
                            DESCR_STRUMENTO,
                            DESCR_TIPO_STRUMENTO,
@@ -136,8 +137,18 @@ setup_operazioni <- function(bimestre, progetti=NULL, export=FALSE, use_fix=FALS
                            OC_CODFISC_BENEFICIARIO,
                            OC_DENOM_BENEFICIARIO,
                            OC_FLAG_VISUALIZZAZIONE),
-                  by = "COD_LOCALE_PROGETTO")
+                  by = "COD_LOCALE_PROGETTO") %>% 
+        # NEW
+        mutate(COD_SEZIONE = x_COD_LIVELLO_0, 
+               DES_SEZIONE = x_DES_LIVELLO_0, 
+               OC_COD_ARTICOLAZ_PROGRAMMA = x_COD_LIVELLO_1,
+               OC_DESCR_ARTICOLAZ_PROGRAMMA = x_DES_LIVELLO_1,
+               OC_COD_SUBARTICOLAZ_PROGRAMMA = x_COD_LIVELLO_2,
+               OC_DESCR_SUBARTICOLAZ_PROGRAMMA = x_DES_LIVELLO_2)
       
+      # x_COD_LIVELLO_0, x_DES_LIVELLO_0, 
+      # x_COD_LIVELLO_1, x_DES_LIVELLO_1, 
+      # x_COD_LIVELLO_2, x_DES_LIVELLO_2
       
       # export
       if (use_ecomix == TRUE) {
@@ -4784,13 +4795,70 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
                                 oc_cod_fonte == "FSC2127" ~ "FSC",
                                 oc_cod_fonte == "FSC0713" ~ "FSC", # parte di PSC migrata da 713
                                 oc_cod_fonte == "NAZORD" ~ "SNAI")) %>%
-    # variabili coesione
+    # articolazioni
+    mutate(x_COD_LIVELLO_0 = case_when(x_AMBITO == "FSC" & !is.na(psc_sezione) ~ psc_sezione,
+                                       TRUE ~ NA_character_),
+           x_DES_LIVELLO_0 = case_when(x_AMBITO == "FSC" & !is.na(psc_sezione) ~ psc_descr_sezione,
+                                       TRUE ~ NA_character_),
+           x_COD_LIVELLO_1 = case_when(x_AMBITO == "FESR" ~ ue_asse_prioritario,
+                                       x_AMBITO == "FSE" ~ ue_asse_prioritario,
+                                       x_AMBITO == "YEI" ~ ue_asse_prioritario,
+                                       x_AMBITO == "CTE" ~ ue_asse_prioritario,
+                                       x_AMBITO == "ENI" ~ ue_asse_prioritario,
+                                       x_AMBITO == "FSC" & !is.na(psc_sezione) ~ psc_area_tematica,
+                                       x_AMBITO == "FSC" & psc_sezione != "" ~ psc_area_tematica,
+                                       x_AMBITO == "FSC" ~ fsc_settore_strategico,
+                                       x_AMBITO == "POC" ~ pac_asse_tematico,
+                                       x_AMBITO == "SNAI" ~ pac_asse_tematico,
+                                       x_AMBITO == "FEASR" ~ cod_misura_feasr),
+           x_DES_LIVELLO_1 = case_when(x_AMBITO == "FESR" ~ ue_descr_asse_prioritario,
+                                       x_AMBITO == "FSE" ~ ue_descr_asse_prioritario,
+                                       x_AMBITO == "YEI" ~ ue_descr_asse_prioritario,
+                                       x_AMBITO == "CTE" ~ ue_descr_asse_prioritario,
+                                       x_AMBITO == "ENI" ~ ue_descr_asse_prioritario,
+                                       x_AMBITO == "FSC" & !is.na(psc_sezione) ~ psc_descr_area_tematica,
+                                       x_AMBITO == "FSC" & psc_sezione != "" ~ psc_descr_area_tematica,
+                                       x_AMBITO == "FSC" ~ fsc_descr_settore_strategico,
+                                       x_AMBITO == "POC" ~ pac_descr_asse_tematico,
+                                       x_AMBITO == "SNAI" ~ pac_descr_asse_tematico,
+                                       x_AMBITO == "FEASR" ~ descr_misura_feasr),
+           x_COD_LIVELLO_2 = case_when(x_AMBITO == "FESR" ~ ue_ob_specifico,
+                                       x_AMBITO == "FSE" ~ ue_ob_specifico,
+                                       x_AMBITO == "YEI" ~ ue_ob_specifico,
+                                       x_AMBITO == "CTE" ~ ue_ob_specifico,
+                                       x_AMBITO == "ENI" ~ ue_ob_specifico,
+                                       x_AMBITO == "FSC" & !is.na(psc_sezione) ~ psc_sett_interv,
+                                       x_AMBITO == "FSC" & psc_sezione != "" ~ psc_sett_interv,
+                                       x_AMBITO == "FSC" ~ fsc_asse_tematico,
+                                       x_AMBITO == "POC" ~ pac_lineazione,
+                                       x_AMBITO == "SNAI" ~ pac_lineazione,
+                                       x_AMBITO == "FEASR" ~ cod_submisura_feasr),
+           x_DES_LIVELLO_2 = case_when(x_AMBITO == "FESR" ~ ue_descr_ob_specifico,
+                                       x_AMBITO == "FSE" ~ ue_descr_ob_specifico,
+                                       x_AMBITO == "YEI" ~ ue_descr_ob_specifico,
+                                       x_AMBITO == "CTE" ~ ue_descr_ob_specifico,
+                                       x_AMBITO == "ENI" ~ ue_descr_ob_specifico,
+                                       x_AMBITO == "FSC" & !is.na(psc_sezione) ~ psc_descr_sett_interv,
+                                       x_AMBITO == "FSC" & psc_sezione != "" ~ psc_descr_sett_interv,
+                                       x_AMBITO == "FSC" ~ fsc_descr_asse_tematico,
+                                       x_AMBITO == "POC" ~ pac_descr_lineazione,
+                                       x_AMBITO == "SNAI" ~ pac_descr_lineazione,
+                                       x_AMBITO == "FEASR" ~ descr_submisura_feasr)) %>% 
+        # variabili coesione
     mutate(COS_AMM = oc_costo_coesione,
            IMP_AMM = oc_impegni_coesione,
            PAG_AMM = oc_tot_pagamenti_coesione)
   
+  
   # operazioni_1420 %>% count(x_AMBITO, oc_cod_fonte, ue_descr_fondo)
   # operazioni_1420 %>% filter(oc_cod_fonte == "FSC0713") %>% count(OC_CODICE_PROGRAMMA)
+  
+  chk <- operazioni_1420 %>% 
+    count(x_AMBITO, oc_descrizione_programma, 
+          x_COD_LIVELLO_0, x_DES_LIVELLO_0, 
+          x_COD_LIVELLO_1, x_DES_LIVELLO_1, 
+          x_COD_LIVELLO_2, x_DES_LIVELLO_2) %>% 
+    filter(is.na(x_COD_LIVELLO_1))
   
   # chk
   operazioni_1420 %>%
@@ -4806,7 +4874,10 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
            COE_PAG = PAG_AMM,
            costo_ammesso_MZ, costo_ammesso_CN, #MEMO: presenti solo per SIE
            imp_ammesso_MZ, imp_ammesso_CN, imp_trasf_ammesso_MZ, imp_trasf_ammesso_CN,
-           pag_ammesso_MZ, pag_ammesso_CN, pag_trasf_ammesso_MZ, pag_trasf_ammesso_CN)
+           pag_ammesso_MZ, pag_ammesso_CN, pag_trasf_ammesso_MZ, pag_trasf_ammesso_CN,
+           x_COD_LIVELLO_0, x_DES_LIVELLO_0, 
+           x_COD_LIVELLO_1, x_DES_LIVELLO_1, 
+           x_COD_LIVELLO_2, x_DES_LIVELLO_2)
   
   
   
@@ -4967,7 +5038,29 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
     # fix per ERDF e ESF su 713
     mutate(x_AMBITO = case_when(x_AMBITO == "ERDF" ~ "FESR",
                                 x_AMBITO == "ESF" ~ "FSE",
-                                TRUE ~ x_AMBITO)) %>%
+                                TRUE ~ x_AMBITO)) %>% 
+    # articolazioni
+    mutate(x_COD_LIVELLO_0 = NA_character_,
+           x_DES_LIVELLO_0 = NA_character_) %>% 
+    mutate(COD_LINEA = as.character(COD_LINEA),
+           COD_AZIONE = as.character(COD_AZIONE)) %>% 
+    mutate(x_COD_LIVELLO_1 = case_when(x_AMBITO == "FESR" ~ PO_CODICE_ASSE,
+                                       x_AMBITO == "FSE" ~ PO_CODICE_ASSE,
+                                       x_AMBITO == "FSC" ~ COD_LINEA,
+                                       x_AMBITO == "PAC" ~ COD_LINEA),
+           x_DES_LIVELLO_1 = case_when(x_AMBITO == "FESR" ~ PO_DENOMINAZIONE_ASSE,
+                                       x_AMBITO == "FSE" ~ PO_DENOMINAZIONE_ASSE,
+                                       x_AMBITO == "FSC" ~ descr_linea,
+                                       x_AMBITO == "PAC" ~ descr_linea),
+           x_COD_LIVELLO_2 = case_when(x_AMBITO == "FESR" ~ PO_COD_OBIETTIVO_OPERATIVO,
+                                       x_AMBITO == "FSE" ~ PO_COD_OBIETTIVO_OPERATIVO,
+                                       x_AMBITO == "FSC" ~ COD_AZIONE,
+                                       x_AMBITO == "PAC" ~ COD_AZIONE),
+           x_DES_LIVELLO_2 = case_when(x_AMBITO == "FESR" ~ PO_OBIETTIVO_OPERATIVO,
+                                       x_AMBITO == "FSE" ~ PO_OBIETTIVO_OPERATIVO,
+                                       x_AMBITO == "FSC" ~ descr_azione,
+                                       x_AMBITO == "PAC" ~ descr_azione)
+           ) %>%
     # map per ambito
     mutate(COS_AMM = oc_costo_coesione,
            IMP_AMM = oc_impegni_coesione,
@@ -4979,6 +5072,14 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
       count(x_AMBITO, oc_ambito)
   }
   
+  
+  chk <- operazioni_713 %>% 
+    count(x_AMBITO, oc_descrizione_programma, 
+          x_COD_LIVELLO_0, x_DES_LIVELLO_0, 
+          x_COD_LIVELLO_1, x_DES_LIVELLO_1, 
+          x_COD_LIVELLO_2, x_DES_LIVELLO_2) %>% 
+    filter(is.na(x_COD_LIVELLO_1))
+  
   # clean
   operazioni_713 <- operazioni_713 %>%
     select(COD_LOCALE_PROGETTO,
@@ -4986,7 +5087,10 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
            x_AMBITO,
            COE = COS_AMM,
            COE_IMP = IMP_AMM,
-           COE_PAG = PAG_AMM) %>% 
+           COE_PAG = PAG_AMM, 
+           x_COD_LIVELLO_0, x_DES_LIVELLO_0, 
+           x_COD_LIVELLO_1, x_DES_LIVELLO_1, 
+           x_COD_LIVELLO_2, x_DES_LIVELLO_2) %>% 
     mutate(costo_ammesso_MZ = 0, 
            costo_ammesso_CN = 0,
            imp_ammesso_MZ = 0, 
