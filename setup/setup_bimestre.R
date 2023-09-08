@@ -294,15 +294,15 @@ write.csv2(appo, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")),
 
 
 # fix fabio
-progetti <- read_csv2(file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), guess_max = 1000000)
-appo <- progetti %>%
-  mutate(OC_FLAG_VISUALIZZAZIONE = if_else(COD_LOCALE_PROGETTO == "6IGRUEI629_73366", 0, OC_FLAG_VISUALIZZAZIONE))
-write.csv2(appo, file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), row.names = FALSE)
-
-operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
-appo <- operazioni %>%
-  mutate(OC_FLAG_VISUALIZZAZIONE = if_else(COD_LOCALE_PROGETTO == "6IGRUEI629_73366", 0, OC_FLAG_VISUALIZZAZIONE))
-write.csv2(appo, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), row.names = FALSE)
+# progetti <- read_csv2(file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), guess_max = 1000000)
+# appo <- progetti %>%
+#   mutate(OC_FLAG_VISUALIZZAZIONE = if_else(COD_LOCALE_PROGETTO == "6IGRUEI629_73366", 0, OC_FLAG_VISUALIZZAZIONE))
+# write.csv2(appo, file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), row.names = FALSE)
+# 
+# operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+# appo <- operazioni %>%
+#   mutate(OC_FLAG_VISUALIZZAZIONE = if_else(COD_LOCALE_PROGETTO == "6IGRUEI629_73366", 0, OC_FLAG_VISUALIZZAZIONE))
+# write.csv2(appo, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), row.names = FALSE)
 
 
 
