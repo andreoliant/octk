@@ -425,18 +425,36 @@ init_programmazione_info <- function(use_en = FALSE, use_713 = FALSE, sum_po = F
     info_FEASR   <- read_xlsx(file.path(DB, "Info_DBCOE_FEASR1420.xlsx"))
     info_FEAMP   <- read_xlsx(file.path(DB, "Info_DBCOE_FEAMP1420.xlsx"))
     info_CTE     <- read_xlsx(file.path(DB, "Info_DBCOE_CTE1420.xlsx"))
+    info_SNAI     <- read_xlsx(file.path(DB, "Info_DBCOE_SNAI1420.xlsx"))
+    # NEW 2127
+    info_FSC_2127 <- read_xlsx(file.path(DB, "Info_DBCOE_FSC2127.xlsx"))
+    info_SIE_2127 <- read_xlsx(file.path(DB, "Info_DBCOE_SIE2127.xlsx"))
+    info_SNAI_2127 <- read_xlsx(file.path(DB, "Info_DBCOE_SNAI2127.xlsx"))
     
     info <- info_FSC0713 %>%
       bind_rows(info_FS0713) %>%
       bind_rows(info_PAC0713 %>% 
                   mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE))) %>%
-      bind_rows (info_FSC) %>%
-      mutate(VERSIONE = as.character(VERSIONE)) %>% #fix per NA
+      bind_rows(info_FSC) %>%
+      # mutate(VERSIONE = as.character(VERSIONE)) %>% #fix per NA
       bind_rows(info_SIE) %>%
       bind_rows(info_FEASR) %>% 
       bind_rows(info_CTE) %>%
       bind_rows(info_FEAMP) %>%
-      bind_rows(info_POC)
+      bind_rows(info_POC) %>% 
+      bind_rows(info_SNAI %>% 
+                  mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE))) %>% 
+      # NEW 2127
+      bind_rows(info_FSC_2127 %>% 
+                  mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE),
+                         DATA_DECISIONE = as.Date(DATA_DECISIONE))) %>% 
+      bind_rows(info_SIE_2127 %>% 
+                  mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE),
+                         DATA_DECISIONE = as.Date(DATA_DECISIONE))) %>% 
+      bind_rows(info_SNAI_2127 %>% 
+                  mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE),
+                         DATA_DECISIONE = as.Date(DATA_DECISIONE))) 
+      
     
   } else {
     info_FSC   <- read_xlsx(file.path(DB, "Info_DBCOE_FSC1420.xlsx"))
@@ -445,13 +463,31 @@ init_programmazione_info <- function(use_en = FALSE, use_713 = FALSE, sum_po = F
     info_FEASR <- read_xlsx(file.path(DB, "Info_DBCOE_FEASR1420.xlsx"))
     info_FEAMP <- read_xlsx(file.path(DB, "Info_DBCOE_FEAMP1420.xlsx"))
     info_CTE   <- read_xlsx(file.path(DB, "Info_DBCOE_CTE1420.xlsx"))
+    info_SNAI     <- read_xlsx(file.path(DB, "Info_DBCOE_SNAI1420.xlsx"))
+    # NEW 2127
+    info_FSC_2127 <- read_xlsx(file.path(DB, "Info_DBCOE_FSC2127.xlsx"))
+    info_SIE_2127 <- read_xlsx(file.path(DB, "Info_DBCOE_SIE2127.xlsx"))
+    info_SNAI_2127 <- read_xlsx(file.path(DB, "Info_DBCOE_SNAI2127.xlsx"))
     
     info <- info_FSC       %>%
       bind_rows(info_SIE)   %>%
       bind_rows(info_FEASR) %>% 
       bind_rows(info_CTE)   %>%
       bind_rows(info_FEAMP) %>%
-      bind_rows(info_POC)  
+      bind_rows(info_POC)%>% 
+      bind_rows(info_SNAI)%>% 
+      bind_rows(info_SNAI %>% 
+                  mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE))) %>% 
+      # NEW 2127
+      bind_rows(info_FSC_2127 %>% 
+                  mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE),
+                         DATA_DECISIONE = as.Date(DATA_DECISIONE))) %>% 
+      bind_rows(info_SIE_2127 %>% 
+                  mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE),
+                         DATA_DECISIONE = as.Date(DATA_DECISIONE))) %>% 
+      bind_rows(info_SNAI_2127 %>% 
+                  mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE),
+                         DATA_DECISIONE = as.Date(DATA_DECISIONE)))  
     
   }
   
@@ -1934,7 +1970,7 @@ make_opendata_decisioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
     if (is.null(progetti)) {
       progetti <- load_progetti(bimestre, visualizzati=TRUE, light=TRUE)
     }
-    programmi <- workflow_programmazione(use_info=FALSE, use_flt=TRUE, progetti)
+    programmi <- workflow_programmazione(use_info=FALSE, use_flt=TRUE, use_ant_siepoc=FALSE, progetti)
     # MEMO: use_info porta solo alcune variabili perché richiede sum_po = TRUE
   }
    
@@ -5051,6 +5087,103 @@ chk_variazione_risorse_programmi <- function(programmi_new=NULL, programmi_old=N
   }
   
   return(out)
+  
+}
+
+
+
+#' Update lista denominazione programmi in inglese
+#'
+#' Update lista denominazione programmi in inglese.
+#'
+#' @param db_new Versione corrente del DBCOE, nel format standard tipo 20221231.01
+#' @param db_old Versione precedente del DBCOE, nel format standard tipo 20221231.01
+#' @return Il file "label_programmi_en.xlsx" viene copiato dalla versione precedente a quella corrente e integrato con i nuovi programmi
+update_lista_programmi_en <- function(db_new, db_old) {
+  
+  # DEBUG:
+  # db_new="20230630.00"
+  # db_old="20230430.00"
+  
+  appo <- read_xlsx(file.path(dirname(DB), db_old, "label_programmi_en.xlsx")) %>% 
+    mutate(NUOVI = 0)
+  
+  temp <- init_programmazione_dati(use_713 = TRUE, use_flt = TRUE)
+  
+  # # primo giro (elimino programmi con flag != 1)
+  # appo2 <- appo %>% 
+  #   left_join(temp %>% 
+  #               distinct(OC_CODICE_PROGRAMMA, FLAG_MONITORAGGIO) %>% 
+  #               group_by(OC_CODICE_PROGRAMMA) %>% 
+  #               summarise(FLAG_MONITORAGGIO = paste(FLAG_MONITORAGGIO, collapse=":::")),
+  #             by = "OC_CODICE_PROGRAMMA")
+  # appo3 <- appo2 %>% 
+  #   filter(FLAG_MONITORAGGIO == 1) %>% 
+  #   select(-FLAG_MONITORAGGIO)
+  # write.xlsx(appo3, file.path(dirname(DB), db_old, "label_programmi_en.xlsx"))
+  
+  temp1 <- temp %>%
+    filter(FLAG_MONITORAGGIO == 1) %>% 
+    distinct(OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, x_CICLO, x_AMBITO) %>% 
+    anti_join(appo, by = "OC_CODICE_PROGRAMMA") %>% 
+    rename(LABEL_PROGRAMMA_IT = DESCRIZIONE_PROGRAMMA) %>% 
+    mutate(LABEL_PROGRAMMA_EN = NA_character_,
+           NOTE = NA_character_) %>% 
+    mutate(NUOVI = 1)
+  
+  appo1 <- appo %>% 
+    bind_rows(temp1)
+  dim(appo)[1]+dim(temp1)[1]==dim(appo1)[1]
+  
+  write.xlsx(appo1, file.path(dirname(DB), db_new, "label_programmi_en.xlsx"))
+  
+}
+
+
+#' Update lista siti web programmi
+#'
+#' Update lista siti web programmie.
+#'
+#' @param db_new Versione corrente del DBCOE, nel format standard tipo 20221231.01
+#' @param db_old Versione precedente del DBCOE, nel format standard tipo 20221231.01
+#' @return Il file "label_programmi_en.xlsx" viene copiato dalla versione precedente a quella corrente e integrato con i nuovi programmi
+update_lista_programmi_sitiweb <- function(db_new, db_old) {
+  
+  # DEBUG:
+  # db_new="20230630.00"
+  # db_old="20230430.00"
+  
+  appo <- read_xlsx(file.path(dirname(DB), db_old, "link_sito_programmi.xlsx")) %>% 
+    mutate(NUOVI = 0)
+  
+  temp <- init_programmazione_dati(use_713 = TRUE, use_flt = TRUE)
+  
+  # # primo giro (elimino programmi con flag != 1)
+  # appo2 <- appo %>%
+  #   left_join(temp %>%
+  #               distinct(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, FLAG_MONITORAGGIO) %>%
+  #               group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO) %>%
+  #               summarise(FLAG_MONITORAGGIO = paste(FLAG_MONITORAGGIO, collapse=":::")),
+  #             by = "OC_CODICE_PROGRAMMA")
+  # appo3 <- appo2 %>%
+  #   filter(FLAG_MONITORAGGIO == 1) %>%
+  #   select(-FLAG_MONITORAGGIO)
+  # write.xlsx(appo3, file.path(dirname(DB), db_old, "link_sito_programmi.xlsx"))
+  
+  temp1 <- temp %>%
+    filter(FLAG_MONITORAGGIO == 1) %>% 
+    distinct(OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, x_CICLO, x_AMBITO) %>% 
+    anti_join(appo, by = "OC_CODICE_PROGRAMMA") %>% 
+    rename(DENOM_PROGRAMMA = DESCRIZIONE_PROGRAMMA) %>% 
+    mutate(LINK_SITO = NA_character_,
+           NOTE = NA_character_) %>% 
+    mutate(NUOVI = 1)
+  
+  appo1 <- appo %>% 
+    bind_rows(temp1)
+  dim(appo)[1]+dim(temp1)[1]==dim(appo1)[1]
+  
+  write.xlsx(appo1, file.path(dirname(DB), db_new, "link_sito_programmi.xlsx"))
   
 }
 
