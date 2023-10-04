@@ -204,12 +204,14 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
 #' @param use_ciclo Voi caricare il ciclo?
 #' @param tipo_ciclo Vuoi usare CICLO_STRATEGIA (default in x_CICLO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_CICLO da DB)?
 #' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?
+#' @param use_ant_siepoc Vuoi correggere i dati SIE e POC 1420 con le anticipazioni? 
 #' @return L'intero database dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.
 init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use_flt=FALSE, 
                                      use_713=FALSE, 
                                      use_articolaz=FALSE, use_location=FALSE, use_ciclo=TRUE, tipo_ciclo="CICLO_STRATEGIA", 
                                      # use_en=FALSE, 
-                                     use_po_psc=FALSE)
+                                     use_po_psc=FALSE,
+                                     use_ant_siepoc=FALSE)
 {
   # use_temi = FALSE
   # use_sog= FALSE
@@ -307,6 +309,41 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
     programmi %>% count(MACROAREA)
     programmi <- ricodifica_macroaree(programmi)
     programmi %>% count(x_MACROAREA)
+  }
+  
+  
+  # NEW ANTICIPAZIONI
+  if (use_ant_siepoc == TRUE) {
+    if (file.exists(file.path(DB, "Anticipazioni_DBCOE_SIEPOC.xlsx"))) {
+      ant_siepoc <- read_xlsx(file.path(DB, "Anticipazioni_DBCOE_SIEPOC.xlsx")) 
+    } else {
+      message("errore, le anticipazioni non sono implementate")
+    }
+    
+    # DEV: valuta se serve
+    # if ("x_MACROAREA" %in% names(programmi)) {
+    #   ant_siepoc <- ant_siepoc %>% 
+    #     ricodifica_macroaree()
+    # }
+    
+    ant_siepoc <- ant_siepoc %>% 
+      mutate(x_CICLO = CICLO_PROGRAMMAZIONE,
+             x_AMBITO = AMBITO,
+             # x_PROGRAMMA,
+             # x_GRUPPO,
+             # RISORSE,
+             # RISORSE_UE
+             )
+    
+    # DEV: valuta se serve
+    ant_siepoc <- ant_siepoc %>%
+      select(names(programmi)) %>%
+      group_by(across(-"FINANZ_TOTALE")) %>%
+      summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    
+    programmi <- programmi %>% 
+      anti_join(ant_siepoc, by = c("OC_CODICE_PROGRAMMA", "x_AMBITO", "x_CICLO")) %>% 
+      bind_rows(ant_siepoc)
   }
   
   if (use_po_psc == TRUE){
@@ -724,12 +761,14 @@ init_programmazione_info <- function(use_en = FALSE, use_713 = FALSE, sum_po = F
 #'
 #' @param use_info Logico. Vuoi aggiungere le informazioni di supporto?
 #' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
+#' @param use_ant_siepoc Vuoi correggere i dati SIE e POC 1420 con le anticipazioni? 
 #' @param progetti Dataset progetti importato con load_progetti
 #' @return Il dataset dei programmi con risorse e evewntualmente infomrmazioni di supporto
-workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL) {
+workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, use_ant_siepoc=FALSE, progetti=NULL) {
   
   #load
-  interventi <- init_programmazione_dati(use_temi = FALSE, use_sog=TRUE, use_eu=TRUE, use_713 = TRUE, use_ciclo = TRUE, use_flt = TRUE) %>%
+  interventi <- init_programmazione_dati(use_temi = FALSE, use_sog=TRUE, use_eu=TRUE, use_713 = TRUE, 
+                                         use_ciclo = TRUE, use_flt = TRUE, use_ant_siepoc = use_ant_siepoc) %>%
     rename(x_PROGRAMMA = DESCRIZIONE_PROGRAMMA,
            x_GRUPPO = TIPOLOGIA_PROGRAMMA)
   
@@ -1271,15 +1310,17 @@ make_report_fonti_impieghi <- function(use_meuro=TRUE, export=TRUE) {
 #' 
 #' @param programmi Dati di base da workflow_programmazione().
 #' @param progetti Dataset di tipo 'progetti' (serve per denominazioni programmi da sito e non da DB)
+#' @param use_ant_siepoc Vuoi correggere i dati SIE e POC 1420 con le anticipazioni? 
 #' @param export Vuoi salvare il file?
 #' @return Lista dei programmi 2007-2013 e 2014-2020 applicando le convenzioni per la pubblicazione nella pagina "programmi" del sito.
-make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
+make_pagina_programmi <- function(programmi=NULL, progetti=NULL, use_ant_siepoc=FALSE, export=TRUE){
   
   if (is.null(programmi)) {
     if (is.null(progetti)) {
       progetti <- load_progetti(bimestre, visualizzati=TRUE, light=TRUE)
     }
-    programmi <- workflow_programmazione(use_info=TRUE, use_flt=TRUE, progetti)
+    programmi <- workflow_programmazione(use_info=TRUE, use_flt=TRUE, 
+                                         use_ant_siepoc = use_ant_siepoc, progetti)
   }
   
   info_en <- init_programmazione_info(use_en = TRUE, use_713 = TRUE, sum_po = TRUE, sum_po_last = TRUE, use_po_psc = FALSE) %>% # TRUE
@@ -1640,12 +1681,13 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
 #' 
 #' @param programmi Dati di base da workflow_programmazione().
 #' @param progetti Dataset di tipo 'progetti' (serve per denominazioni programmi da sito e non da DB)
+#' @param use_ant_siepoc Vuoi correggere i dati SIE e POC 1420 con le anticipazioni? 
 #' @param export Vuoi salvare il file csv in TEMP?
 #' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
 #' @return File opendata con le dotazioni per ambito e per i cicli 2007-2013 e 2014-2020. 
 #' @note Usa dati finanziari da "interventi" ma sovrascrivo le convenzioni da "workflow" presenti in "programmi" (interventi sono N:1 su programmi)
 #' @note ...
-make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, export=TRUE, export_xls=TRUE) {
+make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, use_ant_siepoc=FALSE, export=TRUE, export_xls=TRUE) {
   
   # TODO: inserire controllo su totali finanziari per ciclo e ambito
   
@@ -1653,7 +1695,8 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
     if (is.null(progetti)) {
       progetti <- load_progetti(bimestre, visualizzati=TRUE, light=TRUE)
     }
-    programmi <- workflow_programmazione(use_info=TRUE, use_flt=TRUE, progetti)
+    programmi <- workflow_programmazione(use_info=TRUE, use_flt=TRUE, 
+                                         use_ant_siepoc=use_ant_siepoc, progetti)
   }
 
   
@@ -1663,7 +1706,8 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
   #                                   use_flt = TRUE, use_ciclo = TRUE)
   
   interventi <- init_programmazione_dati(use_temi = FALSE, use_sog = TRUE, use_eu = TRUE, use_location = TRUE, 
-                                         use_flt = TRUE, use_ciclo = TRUE, use_713 = TRUE)
+                                         use_flt = TRUE, use_ciclo = TRUE, use_713 = TRUE, 
+                                         use_ant_siepoc=use_ant_siepoc)
   
   # fix per psc in programmi
   psc <- programmi %>% 
