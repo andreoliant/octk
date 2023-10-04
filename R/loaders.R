@@ -128,7 +128,7 @@ refactor_ambito <- function(df) {
   #                    "FEAD", "FAMI", "CTE", "ENI", "ORD", "PAC")
   
   # NEW 2127
-  levels_ambito <- c("FESR", "FSE", "FESR_REACT", "FSE_REACT", "POC", "FSC", "FEASR", "FEAMP", "YEI", "JTF", "SNAI",
+  levels_ambito <- c("FESR", "FESR_REACT", "FSE", "FSE_REACT", "POC", "FSC", "FEASR", "FEAMP", "YEI", "JTF", "SNAI",
                      "FEAD", "FAMI", "CTE", "ENI", "ORD", "PAC")
   
   df <- df %>%

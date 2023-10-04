@@ -1315,6 +1315,9 @@ make_report_fonti_impieghi <- function(use_meuro=TRUE, export=TRUE) {
 #' @return Lista dei programmi 2007-2013 e 2014-2020 applicando le convenzioni per la pubblicazione nella pagina "programmi" del sito.
 make_pagina_programmi <- function(programmi=NULL, progetti=NULL, use_ant_siepoc=FALSE, export=TRUE){
   
+  # DEBUG:
+  # use_ant_siepoc=FALSE
+  
   if (is.null(programmi)) {
     if (is.null(progetti)) {
       progetti <- load_progetti(bimestre, visualizzati=TRUE, light=TRUE)
@@ -1645,14 +1648,23 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, use_ant_siepoc=
   
   # split cicli
   out_1420 <- out %>% 
-    filter(LABEL_CICLO == "2014-2020")
+    filter(LABEL_CICLO == "2014-2020") %>% 
+    mutate(LABEL_AMBITO_IT = factor(LABEL_AMBITO_IT, levels = c("FESR", "FSE", "IOG", "CTE",
+                                                                "FSC", "POC", "SNAI-Servizi"))) %>% 
+    arrange(LABEL_AMBITO_IT)
   
   out_713 <- out %>% 
-    filter(LABEL_CICLO == "2007-2013")
+    filter(LABEL_CICLO == "2007-2013") %>% 
+    mutate(LABEL_AMBITO_IT = factor(LABEL_AMBITO_IT, levels = c("FESR", "FSE", "FSC", "PAC"))) %>% 
+    arrange(LABEL_AMBITO_IT)
   
   # NEW 2127
   out_2127 <- out %>% 
-    filter(LABEL_CICLO == "2021-2027")
+    filter(LABEL_CICLO == "2021-2027") %>% 
+    mutate(LABEL_AMBITO_IT = if_else(LABEL_AMBITO_IT == "FSE", "FSE+", LABEL_AMBITO_IT)) %>% 
+    mutate(LABEL_AMBITO_IT = factor(LABEL_AMBITO_IT, levels = c("FESR", "FSE+", "JTF", "CTE",
+                                                                "FSC", "SNAI-Servizi"))) %>% 
+    arrange(LABEL_AMBITO_IT)
   
   if (export == TRUE) {
     require(withr)
