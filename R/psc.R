@@ -913,8 +913,9 @@ prep_dati_sgp_bimestre <- function(bimestre, versione, filename, matrix_06, chk_
     appo <- read_xlsx(file.path(SGP, filename), guess_max = 25000)
   } else {
     # NEW:
-    appo <- read.csv(file.path(SGP, filename), sep = ";", dec = ".", stringsAsFactors = FALSE)
-    # OLD:
+    appo <- read.csv(file.path(SGP, filename), sep = "~", dec = ".", skip = 1, stringsAsFactors = FALSE)
+    # OLD: varie opzioni, sogei cambia sempre
+    # appo <- read.csv(file.path(SGP, filename), sep = ";", dec = ".", stringsAsFactors = FALSE)
     # appo <- read.csv(file.path(SGP, filename), sep = "~", dec = ".", skip = 1, stringsAsFactors = FALSE)
     # appo <- read.table(file.path(SGP, filename),
     #                    skip = 1,
