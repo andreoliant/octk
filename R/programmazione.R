@@ -19,8 +19,8 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   # DEV: decidere se fare importazione di tutto e poi selezionare variabili a valle....
   
   # DEBUG:
-  # ciclo <- "2014-2020"
-  # ambito <- "FSC" | "FESR" | "FSE" | "POC" / "PAC" per "0713"
+  # ciclo <- "2021-2027"
+  # ambito <- "FSE"
   
   # crea nome file da importare
   if (ciclo == "2014-2020") {
@@ -40,6 +40,19 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
     # filename <- paste0(temp, "_1420.xlsx")
     filename <- paste0("Dati_DBCOE_", temp, "1420.xlsx") # DBPROG_FSC1420.xlsx
     
+  } else if (ciclo == "2021-2027") {
+    # NEW 2127
+    temp <- case_when(ambito == "FESR" ~ "SIE",
+                      ambito == "FSE" ~ "SIE",
+                      ambito == "FEAMP" ~ "FEAMP",
+                      ambito == "JTF" ~ "SIE",
+                      # ambito == "CTE" ~ "CTE",
+                      # ambito == "POC" ~ "POC",
+                      ambito == "SNAI" ~ "SNAI", 
+                      ambito == "FSC" ~ "FSC",
+                      TRUE ~ ambito)
+    filename <- paste0("Dati_DBCOE_", temp, "2127.xlsx")
+
   } else {
     temp <- case_when(ambito == "FESR" ~ "SIE", #AF
                       ambito == "FSE" ~ "SIE", #AF
@@ -56,8 +69,16 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   # VERSIONE  CON UNICO FILE - DA SISTEMARE: appo1 <-  read_excel(file.path(DB, "prova2.xlsx"), sheet = filename, guess_max = 5000)
   
   # filtra ambiti da SIE
-  if (ambito == "FESR" | ambito == "FSE" | ambito == "YEI") {
+  # if (ambito == "FESR" | ambito == "FSE" | ambito == "YEI") {
+  #   appo <- appo %>%
+  #     filter(AMBITO == ambito)
+  # }
+  
+  # NEW 2127
+  if (ambito == "FESR" | ambito == "FSE" | ambito == "YEI"  | ambito == "JTF") {
     appo <- appo %>%
+      # MEMO: ricodifica da "FSE+" a "FSE" standard
+      mutate(AMBITO = if_else(AMBITO == "FSE+", "FSE", AMBITO)) %>%
       filter(AMBITO == ambito)
   }
   
@@ -184,7 +205,11 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
 #' @param tipo_ciclo Vuoi usare CICLO_STRATEGIA (default in x_CICLO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_CICLO da DB)?
 #' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?
 #' @return L'intero database dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.
-init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use_flt=FALSE, use_713=FALSE, use_articolaz=FALSE, use_location=FALSE, use_ciclo=TRUE, tipo_ciclo="CICLO_STRATEGIA", use_en=FALSE, use_po_psc=FALSE)
+init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use_flt=FALSE, 
+                                     use_713=FALSE, 
+                                     use_articolaz=FALSE, use_location=FALSE, use_ciclo=TRUE, tipo_ciclo="CICLO_STRATEGIA", 
+                                     # use_en=FALSE, 
+                                     use_po_psc=FALSE)
 {
   # use_temi = FALSE
   # use_sog= FALSE
@@ -194,6 +219,7 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
   # use_flt = FALSE
   # use_location = FALSE
   # use_articolaz = TRUE
+  
   po_fsc <- load_db("2014-2020", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt, use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz) #AF aggiunto use_locatione che prima mancava
   po_fesr <- load_db("2014-2020", "FESR", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
   po_fse <- load_db("2014-2020", "FSE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
@@ -204,32 +230,30 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
   po_cte <- load_db("2014-2020", "CTE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
   po_feasr <- load_db("2014-2020", "FEASR", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz) #AF mancava, aggiunto
   
+  # NEW 2127
+  po_fsc2127 <- load_db("2021-2027", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt, use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz) 
+  po_fesr2127 <- load_db("2021-2027", "FESR", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
+  po_fse2127 <- load_db("2021-2027", "FSE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
+  po_jtf2127 <- load_db("2021-2027", "JTF", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
+  po_snai2127 <- load_db("2021-2027", "SNAI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
+  po_fsc2127 <- load_db("2021-2027", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt, use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz) #AF aggiunto use_locatione che prima mancava
+
   programmi <- po_fsc %>%
-    # mutate(x_CICLO = "2014-2020",
-    #        x_AMBITO = "FSC") %>%
     bind_rows(po_poc) %>%
-    # mutate(x_CICLO = "2014-2020",
-    #        x_AMBITO = "POC")) %>%
     bind_rows(po_fesr) %>%
-    # mutate(x_CICLO = "2014-2020",
-    #        x_AMBITO = "FESR")) %>%
     bind_rows(po_fse) %>%
-    # mutate(x_CICLO = "2014-2020",
-    #        x_AMBITO = "FSE")) %>%
     bind_rows(po_yei) %>%
-    # mutate(x_CICLO = "2014-2020",
-    #        x_AMBITO = "YEI")) %>%
     bind_rows(po_feamp) %>%
-    # mutate(x_CICLO = "2014-2020",
-    #        x_AMBITO = "FEAMP")) %>%
     bind_rows(po_snai) %>%
-    # mutate(x_CICLO = "2014-2020",
-    #        x_AMBITO = "SNAI")) %>%
     bind_rows(po_cte) %>%
-    # mutate(x_CICLO = "2014-2020",
-    #        x_AMBITO = "CTE")) %>%
-    bind_rows(po_feasr) %>%   #AF mancava, ho aggiunto
-    
+    bind_rows(po_feasr) %>%
+    # NEW 2127
+    bind_rows(po_fsc2127) %>%
+    bind_rows(po_fesr2127) %>%
+    bind_rows(po_fse2127) %>%
+    bind_rows(po_jtf2127) %>%
+    bind_rows(po_snai2127) %>%
+    bind_rows(po_fsc2127) %>%
     as.data.frame(.)
   
   if (use_713 == TRUE) {
@@ -240,18 +264,10 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
     
     programmi <- programmi %>%
       bind_rows(po_fsc713) %>%
-      # mutate(x_CICLO = "2007-2013",
-      #        x_AMBITO = "FSC")) %>%
       bind_rows(po_pac713) %>%
-      # mutate(x_CICLO = "2007-2013",
-      #        x_AMBITO = "PAC")) %>%
       bind_rows(po_fesr713) %>%
-      # mutate(x_CICLO = "2007-2013",
-      #        x_AMBITO = "FESR")) %>%
-      bind_rows(po_fse713) # %>%
-    #             mutate(x_CICLO = "2007-2013",
-    #                    x_AMBITO = "FSE"))
-    
+      bind_rows(po_fse713)
+
     # patch per programmi su due ambiti o su due cicli nello stesso ambito (con gruppi diversi)
     # programmi <- programmi %>%
     #   mutate(OC_TIPOLOGIA_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "2007IT001FA005" ~ "NAZ-INF",
@@ -265,15 +281,16 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
     
   }
   
-  if (use_en == TRUE) {
-    programmi_en <- read_csv2(file.path(DB, "programmi_SIE_EN.csv")) %>%
-      select(-LABEL_PROGRAMMA_IT) 
-    
-    # label LABEL_PROGRAMMA_EN
-    left_join(programmi_en, by = "OC_CODICE_PROGRAMMA") %>%
-      mutate(LABEL_PROGRAMMA_IT = x_PROGRAMMA,
-             LABEL_PROGRAMMA_EN = if_else(is.na(LABEL_PROGRAMMA_EN), LABEL_PROGRAMMA_IT, LABEL_PROGRAMMA_EN))
-  }
+  # spostato in workflow pubblicazione
+  # if (use_en == TRUE) {
+  #   programmi_en <- read_csv2(file.path(DB, "programmi_SIE_EN.csv")) %>%
+  #     select(-LABEL_PROGRAMMA_IT) 
+  #   
+  #   # label LABEL_PROGRAMMA_EN
+  #   left_join(programmi_en, by = "OC_CODICE_PROGRAMMA") %>%
+  #     mutate(LABEL_PROGRAMMA_IT = x_PROGRAMMA,
+  #            LABEL_PROGRAMMA_EN = if_else(is.na(LABEL_PROGRAMMA_EN), LABEL_PROGRAMMA_IT, LABEL_PROGRAMMA_EN))
+  # }
 
   if (use_ciclo == TRUE) {
     if (tipo_ciclo == "CICLO_RISORSE") {
@@ -331,28 +348,18 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
     # sum(po_psc$FINANZ_TOTALE) # 81.878.600.134
     
     programmi <- programmi %>% 
-      filter(TIPOLOGIA_PROGRAMMA != "PSC") %>% 
+      # filter(TIPOLOGIA_PROGRAMMA != "PSC") %>% # MEMO: qui perdo anche i casi NA
+      filter(TIPOLOGIA_PROGRAMMA != "PSC" | is.na(TIPOLOGIA_PROGRAMMA)) %>% 
       # mutate(ID_PSC = NA_character_,
       #        PSC = NA_character_) %>% 
       # CHK: qui non devo eslcudere tutto, solo quello che è diverso da CSR (e COVID?)
       bind_rows(po_psc)
     # sum(programmi$FINANZ_TOTALE)
 
-    # chk <- memo %>%
-    #   filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
-    #   group_by(ID_PSC = OC_CODICE_PROGRAMMA) %>% 
-    #   summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = T)) %>% 
-    #   full_join(po_psc %>% 
-    #               group_by(ID_PSC) %>% 
-    #               summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = T)),
-    #             by = "ID_PSC") %>% 
-    #   mutate(CHK = FINANZ_TOTALE.x - FINANZ_TOTALE.y)
-    
   }
-  
-  
+
   return(programmi)
-  
+
 }
 
 
@@ -747,7 +754,9 @@ workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL)
     mutate(x_AMBITO = as.character(x_AMBITO)) %>%
     # mutate(x_AMBITO = case_when(OC_CODICE_PROGRAMMA == "2014IT05M9OP001" ~ "YEI",
     #                             TRUE ~ x_AMBITO)) %>%
-    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI", "CTE", "PAC")))
+    # mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI", "CTE", "PAC")))
+    refactor_ambito(.)
+  
   
   # applica FLAG_MONITORAGGIO
   if (use_flt == TRUE) {
@@ -767,10 +776,12 @@ workflow_programmazione <- function(use_info=FALSE, use_flt=TRUE, progetti=NULL)
   
   # summary (opzione 2: il programma pluri-fondo è duplicato nei due ambiti e il valore esposto è sempre il totale) 
   programmi <- interventi %>%
-    filter(x_GRUPPO != "PSC") %>% 
+    # filter(x_GRUPPO != "PSC") %>% # MEMO: qui perde casi 2127
+    filter(x_GRUPPO != "PSC" | is.na(x_GRUPPO)) %>% 
     distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_AMBITO, x_CICLO, PUB) %>%
     left_join(interventi %>%
-                filter(x_GRUPPO != "PSC") %>% 
+                # filter(x_GRUPPO != "PSC") %>% 
+                filter(x_GRUPPO != "PSC" | is.na(x_GRUPPO)) %>% 
                 group_by(OC_CODICE_PROGRAMMA) %>%
                 summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE),
                           RISORSE_UE = sum(FINANZ_UE, na.rm = TRUE)),
@@ -1086,6 +1097,12 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
 #' @return Un file csv con apertura per ciclo e macroarea.
 make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_eu=FALSE, use_po_psc=FALSE, force_yei=FALSE, tipo_ciclo="CICLO_STRATEGIA", export=FALSE) {
   
+  # DEBUG:
+  # use_po_psc=TRUE
+  # use_flt=TRUE
+  # use_eu=TRUE
+  # tipo_ciclo="CICLO_STRATEGIA"
+  
   programmi <- init_programmazione_dati(use_temi = FALSE, use_713 = TRUE, use_location = TRUE, use_ciclo = TRUE, use_eu=use_eu, 
                                         use_flt=use_flt, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) 
   
@@ -1162,9 +1179,7 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_
   
   out_2 <- out %>% 
     refactor_ciclo() %>% 
-    # refactor_ambito() %>% # NEW: integra react nel facctor
-    mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR","FESR_REACT", "FSE", "FSE_REACT", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
-                                                  "FEAD", "FAMI", "CTE", "ORD", "PAC"))) %>%
+    refactor_ambito() %>% 
     refactor_macroarea() %>% 
     pivot_wider(id_cols = c("x_CICLO", "x_AMBITO"), names_from = "x_MACROAREA", 
                 values_from = c("RISORSE", "RISORSE_UE"), values_fill = 0) %>% 
@@ -1594,6 +1609,10 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
   out_713 <- out %>% 
     filter(LABEL_CICLO == "2007-2013")
   
+  # NEW 2127
+  out_2127 <- out %>% 
+    filter(LABEL_CICLO == "2021-2027")
+  
   if (export == TRUE) {
     require(withr)
     withr::with_options(
@@ -1603,6 +1622,11 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, export=TRUE){
     withr::with_options(
       c(scipen = 10), 
       write.csv2(out_713, file.path(OUTPUT, "programmi_0713.csv"), row.names = FALSE, na = "")
+    )
+    # NEW 2127
+    withr::with_options(
+      c(scipen = 10), 
+      write.csv2(out_2127, file.path(OUTPUT, "programmi_2127.csv"), row.names = FALSE, na = "")
     )
   }
   
@@ -1652,7 +1676,8 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
                 mutate(x_CICLO = "2000-2006"))
   
   programmi <- programmi %>% 
-    filter(x_GRUPPO != "PSC") %>% 
+    # filter(x_GRUPPO != "PSC") %>% 
+    filter(x_GRUPPO != "PSC" | is.na(x_GRUPPO)) %>% 
     bind_rows(psc)
   
   
@@ -1763,9 +1788,15 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
     #   LABEL_CICLO = c("2014-2020", "2014-2020", "2014-2020", "2007-2013"),
     # )
     
+    # looper <- tibble(
+    #   LABEL_AMBITO = c("SIE", "POC", "FSC", "FSC", "FS", "PAC"),
+    #   LABEL_CICLO = c("2014-2020", "2014-2020", "2014-2020", "2007-2013", "2007-2013", "2007-2013"),
+    # )
+    
+    # NEW 2127
     looper <- tibble(
-      LABEL_AMBITO = c("SIE", "POC", "FSC", "FSC", "FS", "PAC"),
-      LABEL_CICLO = c("2014-2020", "2014-2020", "2014-2020", "2007-2013", "2007-2013", "2007-2013"),
+      LABEL_AMBITO = c("SIE", "FSC", "SIE", "POC", "FSC", "FSC", "FS", "PAC"),
+      LABEL_CICLO = c("2021-2027", "2021-2027", "2014-2020", "2014-2020", "2014-2020", "2007-2013", "2007-2013", "2007-2013"),
     )
     
     # # A tibble: 9 x 2
@@ -1784,7 +1815,9 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
     
     # fix vari
     out_2 <- out %>%
-      mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "SNAI-SERVIZI", "CTE", "PAC"))) %>% 
+      # mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "SNAI-SERVIZI", "CTE", "PAC"))) %>% 
+      # NEW 2127
+      mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "JTF", "SNAI-SERVIZI", "CTE", "PAC"))) %>% 
       # appo per spostare psc
       mutate(LABEL_CICLO_2 = case_when(OC_TIPOLOGIA_PROGRAMMA == "PSC" ~ "2014-2020",
                                        TRUE ~ LABEL_CICLO)) %>% 
@@ -1800,8 +1833,12 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
       
       # filter
       if (x_ambito == "SIE" | x_ambito == "FS") {
+        # out_3 <- out_2 %>%  
+        #   filter(LABEL_AMBITO == "FSE" | LABEL_AMBITO == "FESR" | LABEL_AMBITO == "IOG", LABEL_CICLO_2 == x_ciclo)%>% 
+        #   select(-LABEL_CICLO_2)
+        # NEW 2127
         out_3 <- out_2 %>%  
-          filter(LABEL_AMBITO == "FSE" | LABEL_AMBITO == "FESR" | LABEL_AMBITO == "IOG", LABEL_CICLO_2 == x_ciclo)%>% 
+          filter(LABEL_AMBITO == "FSE" | LABEL_AMBITO == "FESR" | LABEL_AMBITO == "IOG" | LABEL_AMBITO == "JTF", LABEL_CICLO_2 == x_ciclo)%>% 
           select(-LABEL_CICLO_2)
         
       } else {
@@ -1979,16 +2016,25 @@ make_opendata_decisioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
     #          LABEL_CICLO = factor(LABEL_CICLO, levels = c("2014-2020", "2007-2013", "2000-2006"))) %>%
     #   distinct(LABEL_CICLO, LABEL_AMBITO)
     
+    # looper <- tibble(
+    #   LABEL_AMBITO = c("SIE", "POC", "FSC", "FSC", "FS", "PAC"),
+    #   LABEL_CICLO = c("2014-2020", "2014-2020", "2014-2020", "2007-2013", "2007-2013", "2007-2013"),
+    # )
+    
+    # NEW 2127
     looper <- tibble(
-      LABEL_AMBITO = c("SIE", "POC", "FSC", "FSC", "FS", "PAC"),
-      LABEL_CICLO = c("2014-2020", "2014-2020", "2014-2020", "2007-2013", "2007-2013", "2007-2013"),
+      LABEL_AMBITO = c("SIE", "FSC", "SIE", "POC", "FSC", "FSC", "FS", "PAC"),
+      LABEL_CICLO = c("2021-2027", "2021-2027", "2014-2020", "2014-2020", "2014-2020", "2007-2013", "2007-2013", "2007-2013"),
     )
     
     # TODO: aggrego FESR e FSE in SIE solo per 1420, forse va fatto anche per 713 oppure nemmeno per 1420?
     
     # clean
     out_2 <- out %>%
-      mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "SNAI-Servizi", "CTE", "PAC")))
+      # mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "SNAI-Servizi", "CTE", "PAC")))
+      # NEW 2127
+      mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "JTF", "SNAI-Servizi", "CTE", "PAC")))
+    
     
     # loop
     for (i in seq_along(rownames(looper))) {
@@ -1998,8 +2044,11 @@ make_opendata_decisioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
       
       # filter
       if (x_ambito == "SIE" | x_ambito == "FS") {
+        # out_3 <- out_2 %>%  
+        #   filter(LABEL_AMBITO == "FSE" | LABEL_AMBITO == "FESR" | LABEL_AMBITO == "IOG", LABEL_CICLO == x_ciclo)
+        # NEW 2127
         out_3 <- out_2 %>%  
-          filter(LABEL_AMBITO == "FSE" | LABEL_AMBITO == "FESR" | LABEL_AMBITO == "IOG", LABEL_CICLO == x_ciclo)
+          filter(LABEL_AMBITO == "FSE" | LABEL_AMBITO == "FESR" | LABEL_AMBITO == "IOG" | LABEL_AMBITO == "JTF", LABEL_CICLO == x_ciclo)
         
       } else {
         out_3 <- out_2 %>%  

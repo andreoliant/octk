@@ -124,7 +124,11 @@ refactor_progetti <- function(perimetro) {
 #' @return Il dataset integrato.
 refactor_ambito <- function(df) {
   
-  levels_ambito <- c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
+  # levels_ambito <- c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
+  #                    "FEAD", "FAMI", "CTE", "ENI", "ORD", "PAC")
+  
+  # NEW 2127
+  levels_ambito <- c("FESR", "FSE", "FESR_REACT", "FSE_REACT", "POC", "FSC", "FEASR", "FEAMP", "YEI", "JTF", "SNAI",
                      "FEAD", "FAMI", "CTE", "ENI", "ORD", "PAC")
   
   df <- df %>%
