@@ -5273,13 +5273,26 @@ update_lista_programmi_en <- function(db_old, progetti=NULL) {
     rename(LABEL_PROGRAMMA_IT = DESCRIZIONE_PROGRAMMA) %>% 
     mutate(LABEL_PROGRAMMA_EN = NA_character_,
            NOTE = NA_character_) %>% 
-    mutate(NUOVI = 1)
+    mutate(NUOVI = 1) %>% 
+    mutate(toupper(LABEL_PROGRAMMA_IT))
   
   appo1 <- appo %>% 
     bind_rows(temp1)
   dim(appo)[1]+dim(temp1)[1]==dim(appo1)[1]
   
-  write.xlsx(appo1, file.path(dirname(DB), db_new, "label_programmi_en.xlsx"))
+  # label da progetti pubblicati per allineamento a sito
+  label_programmi <- progetti %>%
+    distinct(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA) %>% 
+    separate_rows(OC_DESCRIZIONE_PROGRAMMA, OC_CODICE_PROGRAMMA, sep = ":::")%>%
+    distinct(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
+  
+  # rewrite x_PROGRAMMA su label sito
+  appo2 <- appo1 %>%
+    left_join(label_programmi) %>%
+    mutate(LABEL_PROGRAMMA_IT = if_else(is.na(OC_DESCRIZIONE_PROGRAMMA), LABEL_PROGRAMMA_IT, OC_DESCRIZIONE_PROGRAMMA)) %>%
+    select(-OC_DESCRIZIONE_PROGRAMMA)
+
+  write.xlsx(appo2, file.path(DB, "label_programmi_en.xlsx"))
   
 }
 
@@ -5288,17 +5301,23 @@ update_lista_programmi_en <- function(db_old, progetti=NULL) {
 #'
 #' Update lista siti web programmie.
 #'
-#' @param db_new Versione corrente del DBCOE, nel format standard tipo 20221231.01
 #' @param db_old Versione precedente del DBCOE, nel format standard tipo 20221231.01
+#' @param progetti Dataset progetti importato con load_progetti
 #' @return Il file "label_programmi_en.xlsx" viene copiato dalla versione precedente a quella corrente e integrato con i nuovi programmi
-update_lista_programmi_sitiweb <- function(db_new, db_old) {
+update_lista_programmi_sitiweb <- function(db_old, progetti=NULL) {
   
   # DEBUG:
   # db_new="20230630.00"
   # db_old="20230430.00"
   
+  if (is.null(progetti)) {
+    progetti <- load_progetti(bimestre, visualizzati=TRUE, light=TRUE)
+  }
+  
   appo <- read_xlsx(file.path(dirname(DB), db_old, "link_sito_programmi.xlsx")) %>% 
-    mutate(NUOVI = 0)
+    mutate(NUOVI = 0) # %>%
+    # filter(!(x_AMBITO %in% c("FEAMP", "FEASR")))
+    # mutate(toupper(DENOM_PROGRAMMA)) # DEV: primo giro
   
   temp <- init_programmazione_dati(use_713 = TRUE, use_flt = TRUE)
   
@@ -5321,13 +5340,20 @@ update_lista_programmi_sitiweb <- function(db_new, db_old) {
     rename(DENOM_PROGRAMMA = DESCRIZIONE_PROGRAMMA) %>% 
     mutate(LINK_SITO = NA_character_,
            NOTE = NA_character_) %>% 
-    mutate(NUOVI = 1)
+    mutate(NUOVI = 1) %>% 
+    mutate(toupper(DENOM_PROGRAMMA))
   
   appo1 <- appo %>% 
     bind_rows(temp1)
   dim(appo)[1]+dim(temp1)[1]==dim(appo1)[1]
   
-  write.xlsx(appo1, file.path(dirname(DB), db_new, "link_sito_programmi.xlsx"))
+  # rewrite x_PROGRAMMA su label sito
+  appo2 <- appo1 %>%
+    left_join(label_programmi) %>%
+    mutate(DENOM_PROGRAMMA = if_else(is.na(OC_DESCRIZIONE_PROGRAMMA), DENOM_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)) %>%
+    select(-OC_DESCRIZIONE_PROGRAMMA)
+  
+  write.xlsx(appo2, file.path(DB, "link_sito_programmi.xlsx"))
   
 }
 
