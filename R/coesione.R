@@ -4140,6 +4140,8 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
                 COE_PAG = sum(COE_PAG, na.rm = TRUE))
   }
   
+  
+  
   # report
   out <- spalla %>%
     full_join(appo %>%
@@ -4159,17 +4161,37 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
     refactor_ambito(.) %>%
     refactor_ciclo(.) %>%
     # patch per x_PROGRAMMA e x_GRUPPO assenti in DB ma presenti in po_riclass
-    left_join(po_riclass %>%
+    # left_join(po_riclass %>%
+    #             refactor_ambito(.) %>%
+    #             refactor_ciclo(.) %>%
+    #             select(OC_CODICE_PROGRAMMA, x_PROGRAMMA_2 = x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO_2 = x_GRUPPO),
+    #           by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO")) %>%
+    # as_tibble(.) %>%
+    left_join(spalla %>% 
+                ungroup() %>% 
                 refactor_ambito(.) %>%
                 refactor_ciclo(.) %>%
-                select(OC_CODICE_PROGRAMMA, x_PROGRAMMA_2 = x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO_2 = x_GRUPPO),
-              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO")) %>%
+                distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA_2 = x_PROGRAMMA, x_AMBITO, x_GRUPPO_2 = x_GRUPPO),
+              by = c("OC_CODICE_PROGRAMMA", "x_AMBITO")) %>% # MEMO: senza x_CICLO funziona anche per PSC pluriciclo
     as_tibble(.) %>%
     mutate(x_PROGRAMMA = if_else(is.na(x_PROGRAMMA), x_PROGRAMMA_2, x_PROGRAMMA),
            x_GRUPPO = if_else(is.na(x_GRUPPO), x_GRUPPO_2, x_GRUPPO)) %>%
     select(-x_PROGRAMMA_2, -x_GRUPPO_2) %>%
     refactor_ambito(.) %>%
-    refactor_ciclo(.)
+    refactor_ciclo(.) %>% 
+    left_join(po_riclass %>% 
+                refactor_ambito(.) %>%
+                refactor_ciclo(.) %>%
+                distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA_2 = x_PROGRAMMA, x_AMBITO, x_GRUPPO_2 = x_GRUPPO),
+              by = c("OC_CODICE_PROGRAMMA", "x_AMBITO")) %>% # MEMO: priorità a DBCOE sopra, ma restano casi fuori da gestire con po_riclass
+    as_tibble(.) %>%
+    mutate(x_PROGRAMMA = if_else(is.na(x_PROGRAMMA), x_PROGRAMMA_2, x_PROGRAMMA),
+           x_GRUPPO = if_else(is.na(x_GRUPPO), x_GRUPPO_2, x_GRUPPO)) %>%
+    select(-x_PROGRAMMA_2, -x_GRUPPO_2) %>%
+    refactor_ambito(.) %>%
+    refactor_ciclo(.) %>% 
+    mutate(x_PROGRAMMA = if_else(OC_CODICE_PROGRAMMA == "2007IT001FA005" & x_AMBITO == "FSC", "DIRETTRICI FERROVIARIE", x_PROGRAMMA),
+           x_GRUPPO = if_else(OC_CODICE_PROGRAMMA == "2007IT001FA005" & x_AMBITO == "FSC", "PRA_NAZ", x_GRUPPO))
   
   if (show_cp == TRUE) {
     if (usa_meuro == TRUE) {
@@ -4449,20 +4471,32 @@ make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NU
     mutate_if(is.numeric, funs(replace(., is.na(.), 0))) %>%
     refactor_ambito(.) %>%
     refactor_ciclo(.) %>%
-    refactor_macroarea() %>%
-    # patch per x_PROGRAMMA e x_GRUPPO assenti in DB ma presenti in po_riclass
-    # TODO: questo non funziona
-    left_join(po_riclass %>%
+    refactor_macroarea()%>%
+    left_join(spalla %>% 
+                ungroup() %>% 
                 refactor_ambito(.) %>%
                 refactor_ciclo(.) %>%
-                select(OC_CODICE_PROGRAMMA, x_PROGRAMMA_2 = x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO_2 = x_GRUPPO),
-              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO")) %>%
+                distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA_2 = x_PROGRAMMA, x_AMBITO, x_GRUPPO_2 = x_GRUPPO),
+              by = c("OC_CODICE_PROGRAMMA", "x_AMBITO")) %>% # MEMO: senza x_CICLO funziona anche per PSC pluriciclo
     as_tibble(.) %>%
     mutate(x_PROGRAMMA = if_else(is.na(x_PROGRAMMA), x_PROGRAMMA_2, x_PROGRAMMA),
            x_GRUPPO = if_else(is.na(x_GRUPPO), x_GRUPPO_2, x_GRUPPO)) %>%
     select(-x_PROGRAMMA_2, -x_GRUPPO_2) %>%
     refactor_ambito(.) %>%
-    refactor_ciclo(.)
+    refactor_ciclo(.) %>% 
+    left_join(po_riclass %>% 
+                refactor_ambito(.) %>%
+                refactor_ciclo(.) %>%
+                distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA_2 = x_PROGRAMMA, x_AMBITO, x_GRUPPO_2 = x_GRUPPO),
+              by = c("OC_CODICE_PROGRAMMA", "x_AMBITO")) %>% # MEMO: priorità a DBCOE sopra, ma restano casi fuori da gestire con po_riclass
+    as_tibble(.) %>%
+    mutate(x_PROGRAMMA = if_else(is.na(x_PROGRAMMA), x_PROGRAMMA_2, x_PROGRAMMA),
+           x_GRUPPO = if_else(is.na(x_GRUPPO), x_GRUPPO_2, x_GRUPPO)) %>%
+    select(-x_PROGRAMMA_2, -x_GRUPPO_2) %>%
+    refactor_ambito(.) %>%
+    refactor_ciclo(.) %>% 
+    mutate(x_PROGRAMMA = if_else(OC_CODICE_PROGRAMMA == "2007IT001FA005" & x_AMBITO == "FSC", "DIRETTRICI FERROVIARIE", x_PROGRAMMA),
+           x_GRUPPO = if_else(OC_CODICE_PROGRAMMA == "2007IT001FA005" & x_AMBITO == "FSC", "PRA_NAZ", x_GRUPPO))
   
   
   if (show_cp == TRUE) {
