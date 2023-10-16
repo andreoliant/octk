@@ -238,8 +238,9 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
   po_fse2127 <- load_db("2021-2027", "FSE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
   po_jtf2127 <- load_db("2021-2027", "JTF", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
   po_snai2127 <- load_db("2021-2027", "SNAI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
-  po_fsc2127 <- load_db("2021-2027", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt, use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz) #AF aggiunto use_locatione che prima mancava
-
+  po_fsc2127 <- load_db("2021-2027", "FSC", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt, use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
+  po_cte2127 <- load_db("2021-2027", "CTE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt, use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
+  
   programmi <- po_fsc %>%
     bind_rows(po_poc) %>%
     bind_rows(po_fesr) %>%
@@ -256,6 +257,7 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
     bind_rows(po_jtf2127) %>%
     bind_rows(po_snai2127) %>%
     bind_rows(po_fsc2127) %>%
+    bind_rows(po_cte2127) %>%
     as.data.frame(.)
   
   if (use_713 == TRUE) {
@@ -430,6 +432,7 @@ init_programmazione_info <- function(use_en = FALSE, use_713 = FALSE, sum_po = F
     info_FSC_2127 <- read_xlsx(file.path(DB, "Info_DBCOE_FSC2127.xlsx"))
     info_SIE_2127 <- read_xlsx(file.path(DB, "Info_DBCOE_SIE2127.xlsx"))
     info_SNAI_2127 <- read_xlsx(file.path(DB, "Info_DBCOE_SNAI2127.xlsx"))
+    info_CTE_2127 <- read_xlsx(file.path(DB, "Info_DBCOE_CTE2127.xlsx"))
     
     info <- info_FSC0713 %>%
       bind_rows(info_FS0713) %>%
@@ -452,6 +455,9 @@ init_programmazione_info <- function(use_en = FALSE, use_713 = FALSE, sum_po = F
                   mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE),
                          DATA_DECISIONE = as.Date(DATA_DECISIONE))) %>% 
       bind_rows(info_SNAI_2127 %>% 
+                  mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE),
+                         DATA_DECISIONE = as.Date(DATA_DECISIONE))) %>% 
+      bind_rows(info_CTE_2127 %>% 
                   mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE),
                          DATA_DECISIONE = as.Date(DATA_DECISIONE))) 
       
@@ -1706,11 +1712,11 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, use_ant_siepoc=
     # mutate_if(is.character, list(~gsub("à", "a'", .))) %>% 
     # mutate_if(is.character, list(~replace_na(., ""))) 
   
-  out4 <- out3 %>% 
+  out4 <- out3 # %>% 
     # fix programmi anomali PAC
-    filter(!(LABEL_AMBITO_IT == "PAC" & OC_CODICE_PROGRAMMA == "2007SA002FA016")) %>% 
-    filter(!(LABEL_AMBITO_IT == "PAC" & OC_CODICE_PROGRAMMA == "2007IT001FA005")) %>% 
-    filter(!(LABEL_AMBITO_IT == "PAC" & OC_CODICE_PROGRAMMA == "2007IT005FAMG1")) # %>% 
+    # filter(!(LABEL_AMBITO_IT == "PAC" & OC_CODICE_PROGRAMMA == "2007SA002FA016")) %>% 
+    # filter(!(LABEL_AMBITO_IT == "PAC" & OC_CODICE_PROGRAMMA == "2007IT001FA005")) %>% 
+    # filter(!(LABEL_AMBITO_IT == "PAC" & OC_CODICE_PROGRAMMA == "2007IT005FAMG1")) # %>% 
     # # fix programmi anomali FSC 713
     # filter(OC_CODICE_PROGRAMMA != "TEMP_0713_006",
     #        OC_CODICE_PROGRAMMA != "TEMP_0713_999",
@@ -2152,6 +2158,7 @@ make_opendata_decisioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
     #                                 x_AMBITO == "SNAI" ~ "SNAI-Servizi",
     #                                 TRUE ~ x_AMBITO)) %>% 
     # DEV: riportato in workflow
+    ungroup() %>% 
     select(OC_CODICE_PROGRAMMA,
            LABEL_PROGRAMMA,
            LABEL_AMBITO,
@@ -5346,6 +5353,12 @@ update_lista_programmi_sitiweb <- function(db_old, progetti=NULL) {
   appo1 <- appo %>% 
     bind_rows(temp1)
   dim(appo)[1]+dim(temp1)[1]==dim(appo1)[1]
+  
+  # label da progetti pubblicati per allineamento a sito
+  label_programmi <- progetti %>%
+    distinct(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA) %>% 
+    separate_rows(OC_DESCRIZIONE_PROGRAMMA, OC_CODICE_PROGRAMMA, sep = ":::")%>%
+    distinct(OC_CODICE_PROGRAMMA, OC_DESCRIZIONE_PROGRAMMA)
   
   # rewrite x_PROGRAMMA su label sito
   appo2 <- appo1 %>%
