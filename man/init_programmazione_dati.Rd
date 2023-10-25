@@ -14,8 +14,9 @@ init_programmazione_dati(
   use_location = FALSE,
   use_ciclo = TRUE,
   tipo_ciclo = "CICLO_STRATEGIA",
-  use_en = FALSE,
-  use_po_psc = FALSE
+  use_po_psc = FALSE,
+  use_fix_siepoc = FALSE,
+  stime_fix_siepoc = FALSE
 )
 }
 \arguments{
@@ -32,6 +33,10 @@ init_programmazione_dati(
 \item{tipo_ciclo}{Vuoi usare CICLO_STRATEGIA (default in x_CICLO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_CICLO da DB)?}
 
 \item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?}
+
+\item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
+
+\item{stime_fix_siepoc}{Per correggere i dati SIE e POC 1420 con le anticipazioni vuoi usare anche le stime?}
 }
 \value{
 L'intero database dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.

@@ -7,6 +7,8 @@
 make_opendata_dotazioni(
   programmi = NULL,
   progetti = NULL,
+  use_fix_siepoc = TRUE,
+  stime_fix_siepoc = FALSE,
   export = TRUE,
   export_xls = TRUE
 )
@@ -15,6 +17,10 @@ make_opendata_dotazioni(
 \item{programmi}{Dati di base da workflow_programmazione().}
 
 \item{progetti}{Dataset di tipo 'progetti' (serve per denominazioni programmi da sito e non da DB)}
+
+\item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
+
+\item{stime_fix_siepoc}{Per correggere i dati SIE e POC 1420 con le anticipazioni vuoi usare anche le stime?}
 
 \item{export}{Vuoi salvare il file csv in TEMP?}
 
@@ -27,7 +33,5 @@ File opendata con le dotazioni per ambito e per i cicli 2007-2013 e 2014-2020.
 Crea il file opendata con le dotazioni dei programmi da pubblicare sul sito di OC
 }
 \note{
-Usa dati finanziari da "interventi" ma sovrascrivo le convenzioni da "workflow" presenti in "programmi" (interventi sono N:1 su programmi)
-
 ...
 }

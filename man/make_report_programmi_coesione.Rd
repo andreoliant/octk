@@ -12,6 +12,7 @@ make_report_programmi_coesione(
   use_eu = FALSE,
   use_flt = FALSE,
   use_po_psc = FALSE,
+  use_ant_siepoc = FALSE,
   cut_no_risorse = FALSE,
   tipo_ciclo = "CICLO_STRATEGIA",
   focus = "report",
@@ -35,6 +36,8 @@ make_report_programmi_coesione(
 \item{use_flt}{Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?}
 
 \item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?}
+
+\item{use_ant_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
 
 \item{cut_no_risorse}{Vuoi eliminare i programmi monitorati senza risorse lato DB?}
 

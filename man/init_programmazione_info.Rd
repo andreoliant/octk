@@ -9,7 +9,8 @@ init_programmazione_info(
   use_713 = FALSE,
   sum_po = FALSE,
   sum_po_last = FALSE,
-  use_po_psc = FALSE
+  use_po_psc = FALSE,
+  use_fix_siepoc = FALSE
 )
 }
 \arguments{
@@ -18,6 +19,8 @@ init_programmazione_info(
 \item{sum_po_last}{Vuoi dati aggregati come summary per programma, con solo l'ultima decisione?}
 
 \item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?}
+
+\item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
 
 \item{usa_en}{Vuoi caricare le traduzioni in inglese?}
 

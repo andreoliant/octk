@@ -4,12 +4,22 @@
 \alias{make_pagina_programmi}
 \title{Lista programmi per pagina dedicata}
 \usage{
-make_pagina_programmi(programmi = NULL, progetti = NULL, export = TRUE)
+make_pagina_programmi(
+  programmi = NULL,
+  progetti = NULL,
+  use_fix_siepoc = TRUE,
+  stime_fix_siepoc = FALSE,
+  export = TRUE
+)
 }
 \arguments{
 \item{programmi}{Dati di base da workflow_programmazione().}
 
 \item{progetti}{Dataset di tipo 'progetti' (serve per denominazioni programmi da sito e non da DB)}
+
+\item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
+
+\item{stime_fix_siepoc}{Per correggere i dati SIE e POC 1420 con le anticipazioni vuoi usare anche le stime?}
 
 \item{export}{Vuoi salvare il file?}
 }

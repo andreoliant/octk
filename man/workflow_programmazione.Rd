@@ -2,14 +2,24 @@
 % Please edit documentation in R/programmazione.R
 \name{workflow_programmazione}
 \alias{workflow_programmazione}
-\title{Workflow per utilizzo dataset della programmazione.}
+\title{Workflow di preparazione della programmazione per la pubblicazione.}
 \usage{
-workflow_programmazione(use_info = FALSE, use_flt = TRUE, progetti = NULL)
+workflow_programmazione(
+  use_flt = TRUE,
+  use_fix_siepoc = FALSE,
+  stime_fix_siepoc = FALSE,
+  use_location = FALSE,
+  progetti = NULL
+)
 }
 \arguments{
-\item{use_info}{Logico. Vuoi aggiungere le informazioni di supporto?}
-
 \item{use_flt}{Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?}
+
+\item{use_fix_siepoc}{Logico. Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
+
+\item{stime_fix_siepoc}{Per correggere i dati SIE e POC 1420 con le anticipazioni vuoi usare anche le stime?}
+
+\item{use_location}{Logico. Vuoi mostreare le macroaree territoriali? Serve per opendata su dotazioni.}
 
 \item{progetti}{Dataset progetti importato con load_progetti}
 }
@@ -17,5 +27,5 @@ workflow_programmazione(use_info = FALSE, use_flt = TRUE, progetti = NULL)
 Il dataset dei programmi con risorse e evewntualmente infomrmazioni di supporto
 }
 \description{
-Workflow per utilizzo dataset della programmazione.
+Applica convenzioni per pubblicazione su OpenCoesione, che non possono essere direttamente riportate nel DBCOE.
 }
