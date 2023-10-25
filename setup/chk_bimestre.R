@@ -158,6 +158,7 @@ devtools::load_all(path = ".")
 # controllo su DBCOE
 
 # TODO: inserire di nuovo use_po_psc = TRUE (ma serve prima sviluppo) altrimenti ci sono troppi programmi (es. PRA)
+# DB <- file.path(dirname(DB), "20230630.00")
 
 programmi <- init_programmazione_dati(use_713 = TRUE, use_po_psc = FALSE) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA) %>%
@@ -180,7 +181,7 @@ devtools::load_all(path = ".")
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20230430"
+bimestre_old <- "20230630"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
 progetti_all_old <- load_progetti(bimestre = bimestre_old,

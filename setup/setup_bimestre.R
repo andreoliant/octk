@@ -282,7 +282,11 @@ chk %>%
 # 3 2014TC16M5CB013     CTE        ENI           20
 # 4 2020PCDPCINA001     FSC        SNAI        4116 -> 5173
 # MEMO: nuovi programmi fuori da perimetro COE >>> ora non ci sono più!
-
+# 3 2014TC16M5CB013     ENI        FESR           7
+# NEW:
+# 1 2007IT001FA005      PAC        FSC            9
+# 2 2007IT005FAMG1      FSC        PAC            4
+# 3 2014TC16M5CB013     ENI        FESR           7
 write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
 
 

@@ -28,7 +28,6 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 41;2012;Infrastrutture strategiche regionali;0;
 94;2017;Assegnazione per norma;0;
 26;2016;Patto per lo Sviluppo;0;
-93;2017;Piano stralcio;0;
 55;2016;Piano operativo;0;
 1;2016;Piano Operativo Agricoltura Tab.3;0;
 79;2012;Quota Ordinaria;0;
@@ -46,6 +45,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 20;2004;Quota E.2 Risorse Regioni Mezzogiorno Interventi Aree Urbane;0;
 6;2012;Infrastrutture strategiche nazionali;0;
 17;2003;Altre destinazioni;0;
+32;2015;Piano stralcio;0;
 35;2005;Quota D.5 - Regioni Mezzogiorno;0;
 27;2015;Infrastrutture strategiche regionali;0;
 95;2015;Infrastrutture strategiche regionali;0;
@@ -53,7 +53,6 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 1;2016;Piano stralcio;0;
 74;2017;Assegnazione per norma;0;
 72;2015;Assegnazione per norma;0;
-32;2015;Piano stralcio;0;
 166;2007;Quota Ordinaria Nazionale;0;
 37;2012;ISMEA Agevolazioni nuova imprenditorialitÃÂ  agricola;0;
 35;2005;Quota D.2 - Aree urbane - Regioni Mezzogiorno;0;
@@ -88,6 +87,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 79;2012;Obiettivi di servizio risorse MIUR;0;
 78;2011;Quota Ordinaria;0;
 181;2006;Risorse premiali per il prog. monit. (Cipe 17/03 - p. 1.2.4a);0;
+15;2019;Patto per lo Sviluppo;0;
 88;2012;Infrastrutture strategiche regionali;0;
 88;2012;Quota Ordinaria;0;
 87;2012;Quota Ordinaria;0;
@@ -109,6 +109,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 12;2018;Piano operativo;0;
 70;1998;Assegnazione delle risorse a carico delle aree depresse;0;
 132;1998;Assegnazione delle risorse a carico delle aree depresse;0;
+93;2017;Piano stralcio;0;
 17;2003;Quota F.3 - Regioni Centro Nord;0;
 19;2004;Quota F.3 Programma accelerazione Regioni Centro-Nord;0;
 75;2017;Piano operativo;0;
@@ -146,6 +147,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 106;2017;Fondo Sviluppo Coesione 2007/2013;0;
 38;2012;Infrastrutture strategiche nazionali;0;
 38;2012;Quota Ordinaria;0;
+85;2021;Rimodulazione risorse CIS Taranto;0;
 31;2022;CIS Brindisi - Lecce - Costa Adriatica;0;
 33;2022;CIS Roma;0;
 29;2022;CIS Vesuvio-Pompei-Napoli;0;
@@ -169,7 +171,6 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 20;2004;Quota E.4.1 Riserva infrastrutture complementari contratti localizz.;0;
 11;2009;Infrastrutture strategiche regionali;0;
 76;2017;Piano operativo;0;
-15;2019;Patto per lo Sviluppo;0;
 10;2018;Piano operativo;0;
 3;2016;Piano stralcio;0;
 100;2017;Piano operativo;0;
@@ -204,6 +205,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 98;2015;Piano stralcio;0;
 20;2004;Quota C.3b Completamenti Terremoto Umbria(Sisma 1997);0;
 84;2000;Quota Terremoto;0;
+19;2004;Quota F.3.1 CIPE Trasimeno;0;
 34;2005;Quota 2.2 - Accantonamento per interv. infrast. regioni centro-nord;0;
 76;2015;Assegnazione per norma;0;
 73;2017;Piano operativo;0;
@@ -263,6 +265,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 47;2014;Piano stralcio;0;
 17;2021;Piano Sviluppo e Coesione 2000-2020;0;
 12;2021;Piano Sviluppo e Coesione 2000-2020;0;
+7;2022;Assegnazione per norma;0;
 28;2019;Piano operativo;0;
 49;2014;Quota D.1.b - Amministrazioni Centrali;0;
 16;2021;Piano Sviluppo e Coesione 2000-2020;0;
