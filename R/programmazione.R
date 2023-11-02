@@ -353,11 +353,22 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
              # RISORSE_UE
              )
     
-    # DEV: valuta se serve
-    ant_siepoc <- ant_siepoc %>%
-      select(names(programmi)) %>%
-      group_by(across(-"FINANZ_TOTALE")) %>%
-      summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    if (use_eu == TRUE) {
+      ant_siepoc <- ant_siepoc %>%
+        select(names(programmi)) %>%
+        # group_by(across(-"FINANZ_TOTALE")) %>%
+        group_by(across(c(-FINANZ_TOTALE, -FINANZ_UE, -FINANZ_ALTRO))) %>%
+        # summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+        summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE),
+                  FINANZ_UE = sum(FINANZ_UE, na.rm = TRUE),
+                  FINANZ_ALTRO = sum(FINANZ_ALTRO, na.rm = TRUE))
+    } else {
+      
+      ant_siepoc <- ant_siepoc %>%
+        select(names(programmi)) %>%
+        group_by(across(c(-FINANZ_TOTALE))) %>%
+        summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    }
     
     programmi <- programmi %>% 
       anti_join(ant_siepoc, by = c("OC_CODICE_PROGRAMMA", "x_AMBITO", "x_CICLO")) %>% 
@@ -1313,6 +1324,7 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_
   # DEBUG:
   # use_po_psc=TRUE
   # use_fix_siepoc=TRUE
+  # stime_fix_siepoc=FALSE
   # use_flt=TRUE
   # use_eu=TRUE
   # tipo_ciclo="CICLO_STRATEGIA"
@@ -1618,11 +1630,15 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, use_fix_siepoc=
            #                           TRUE ~ x_GRUPPO),
            LABEL_TIPO_EN = case_when(x_GRUPPO == "PON" ~ "NOP",
                                      x_GRUPPO == "POR" ~ "ROP",
+                                     x_GRUPPO == "PN" ~ "NP",
+                                     x_GRUPPO == "PR" ~ "RP",
                                      x_GRUPPO == "PATTI" ~ "DEVELOPMENT PACT",
                                      x_GRUPPO == "PIANI STRALCIO" ~ "EXCERPT PLAN",
                                      x_GRUPPO == "PIANI OPERATIVI" ~ "NATIONAL PLAN",
                                      x_GRUPPO == "POC REGIONALI" ~ "REGIONAL COP",
                                      x_GRUPPO == "POC NAZIONALI" ~ "NATIONAL COP",
+                                     x_GRUPPO == "Transfrontaliero" ~ "Transnational",
+                                     x_GRUPPO == "Transnazionale" ~ "Crossborder",
                                      x_AMBITO == "JTF" ~ "JTF",
                                      x_AMBITO == "IOG" ~ "YEI",
                                      x_AMBITO == "ALTRO" & grepl("SNAI", x_GRUPPO) ~ "IANS-SERVICES",
