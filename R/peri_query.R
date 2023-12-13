@@ -18,6 +18,8 @@ setup_query <- function() {
   write.csv2(ra, file.path(INPUT, "ra.csv"), row.names = FALSE)
   write.csv2(patt, file.path(INPUT, "patt.csv"), row.names = FALSE)
   write.csv2(keyword, file.path(INPUT, "keyword.csv"), row.names = FALSE)
+  write.csv2(aree_temi_psc, file.path(INPUT, "aree_temi_psc.csv"), row.names = FALSE)
+  
 
   write.csv2(stoplist, file.path(INPUT, "stoplist.csv"), row.names = FALSE)
   write.csv2(safelist, file.path(INPUT, "safelist.csv"), row.names = FALSE)
@@ -52,6 +54,9 @@ setup_query_xls <- function() {
   addWorksheet(wb, "comuni")
   addWorksheet(wb, "flag_beniconf")
   addWorksheet(wb, "keyword")
+  addWorksheet(wb, "aree_temi_psc")
+  
+  
   
 
   # write
@@ -72,6 +77,8 @@ setup_query_xls <- function() {
   writeData(wb, sheet = "comuni", x = octk::comuni, startCol = 1, startRow = 1, colNames = TRUE)
   writeData(wb, sheet = "flag_beniconf", x = octk::flag_beniconf, startCol = 1, startRow = 1, colNames = TRUE)
   writeData(wb, sheet = "keyword", x = octk::keyword , startCol = 1, startRow = 1, colNames = TRUE)
+  writeData(wb, sheet = "aree_temi_psc", x = octk::aree_temi_psc, startCol = 1, startRow = 1, colNames = TRUE)
+  
 
   # salva
   saveWorkbook(wb, file = temp_file, overwrite = FALSE)
@@ -522,6 +529,72 @@ query_atp <- function(progetti) {
   return(peri_atp)
 
 }
+
+
+#' Ricerca progetti per tema prioritario FSC
+#'
+#' Ricerca progetti per area e tema prioritario FSC (ATP) a partire da input in "aree_temi_fsc.csv".
+#' Al momento comprende tutte le delibere (non solo quelle FSC).
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_ATP.
+query_atsi_psc <- function(progetti) {
+  
+  # load ambito FSC
+  
+    operazioni <- read_sas(file.path(DATA, "oper_pucok_preesteso.sas7bdat")) %>%
+      rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>% 
+      #        COD_SETTORE_STRATEGICO_FSC = fsc_settore_strategico,
+      #        DESCR_SETTORE_STRATEGICO_FSC = fsc_descr_settore_strategico,
+      #        COD_ASSE_TEMATICO_FSC = fsc_asse_tematico,
+      #        DESCR_ASSE_TEMATICO_FSC = fsc_descr_asse_tematico) %>%
+      distinct(COD_LOCALE_PROGETTO,
+               psc_area_tematica,
+               psc_descr_area_tematica,
+               psc_sett_interv,
+               psc_descr_sett_interv) %>%
+      # # fix per matera
+      # mutate(psc_area_tematica = case_when(psc_area_tematica == "4.a" ~ "4",
+      #                                               COD_SETTORE_STRATEGICO_FSC == "4.b" ~ "4",
+      #                                               TRUE ~ COD_SETTORE_STRATEGICO_FSC)) %>%
+      mutate(psc_sett_interv = case_when(psc_area_tematica == "05" & psc_sett_interv == "1" ~ "01",
+                                               TRUE ~ psc_sett_interv))
+  
+  
+  # load matrix
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "aree_temi_psc")
+  } else {
+    appo <- read_csv2(file.path(INPUT, "aree_temi_psc")) 
+  }
+  matrix_atp <- appo  %>%
+    rename(QUERY_ATSI_PSC = QUERY) %>%
+    mutate(psc_area_tematica = as.character(psc_area_tematica),
+           psc_sett_interv = as.character(psc_sett_interv))
+  
+  # merge
+  peri_atsi <- progetti %>%
+    select(COD_LOCALE_PROGETTO) %>%
+    inner_join(operazioni %>%
+                 filter(psc_area_tematica != "") %>%
+                 select(COD_LOCALE_PROGETTO, psc_area_tematica, psc_sett_interv) %>%
+                 separate_rows(psc_sett_interv, sep = ":::") %>%
+                 inner_join(matrix_atp %>%
+                              filter(QUERY_ATSI_PSC != 0),
+                            by = c("psc_area_tematica", "psc_sett_interv")),
+               by = "COD_LOCALE_PROGETTO") %>%
+    distinct(COD_LOCALE_PROGETTO, QUERY_ATSI_PSC)
+  # MEMO: uso inner_join per tenere QUERY_ATP
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_atsi <- peri_atsi %>% 
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_ATSI_PSC = min(QUERY_ATSI_PSC))
+  
+  return(peri_atsi)
+  
+}
+
 
 
 #' Ricerca progetti per tipologia CUP

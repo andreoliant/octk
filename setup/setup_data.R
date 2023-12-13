@@ -61,6 +61,11 @@ usethis::use_data(ra, overwrite = TRUE)
 aree_temi_fsc <- read_csv2(file.path(getwd(), "setup", "data-raw", "aree_temi_fsc.csv"))
 usethis::use_data(aree_temi_fsc, overwrite = TRUE)
 
+# aree_temi_psc
+aree_temi_psc <- read_csv2(file.path(getwd(), "setup", "data-raw", "aree_temi_psc.csv"))
+usethis::use_data(aree_temi_psc, overwrite = TRUE)
+
+
 # strum_att
 strum_att <- read_csv2(file.path(getwd(), "setup", "data-raw", "strum_att.csv"))
 usethis::use_data(strum_att, overwrite = TRUE)
