@@ -531,13 +531,12 @@ query_atp <- function(progetti) {
 }
 
 
-#' Ricerca progetti per tema prioritario FSC
-#'
-#' Ricerca progetti per area e tema prioritario FSC (ATP) a partire da input in "aree_temi_fsc.csv".
-#' Al momento comprende tutte le delibere (non solo quelle FSC).
+#' Ricerca progetti per aree tematiche e settori di intervento PSC
+#' 
+#' Ricerca progetti per aree tematiche e settori di intervento PSC (ATSI) a partire da input in "aree_temi_psc.csv".
 #'
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
-#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_ATP.
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_ATSI_PSC.
 query_atsi_psc <- function(progetti) {
   
   # load ambito FSC

@@ -4328,6 +4328,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
 #' @return Un file csv con apertura per programma e fase procedurale.
 make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NULL, usa_meuro=FALSE, use_713=FALSE, use_eu=FALSE,
                                                      use_flt=FALSE, use_po_psc=FALSE,
+                                                     use_fix_siepoc=FALSE,
                                                      show_cp=FALSE, cut_no_risorse=FALSE,
                                                      tipo_ciclo="CICLO_STRATEGIA",
                                                      focus="report", export=FALSE, export_xls=FALSE, progetti=NULL, po_riclass=NULL) {
@@ -4339,7 +4340,8 @@ make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NU
   # tipo_ciclo <- "CICLO_STRATEGIA"
   # perimetro <- operazioni
   
-  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_eu=TRUE, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE, use_po_psc=use_po_psc) %>%
+  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_eu=TRUE, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE, 
+                                        use_po_psc=use_po_psc, use_fix_siepoc=use_fix_siepoc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   

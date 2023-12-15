@@ -12,6 +12,7 @@ make_report_programmi_macroaree_coesione(
   use_eu = FALSE,
   use_flt = FALSE,
   use_po_psc = FALSE,
+  use_fix_siepoc = FALSE,
   show_cp = FALSE,
   cut_no_risorse = FALSE,
   tipo_ciclo = "CICLO_STRATEGIA",

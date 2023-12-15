@@ -639,9 +639,10 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
                              TRUE ~ "In corso"))
   
   # NEW: sovrascrive COE per eliminare max(costo, fin), tiene costo
-  appo5 <- appo4 %>% 
-    mutate(COE = case_when(OC_CODICE_PROGRAMMA == "2016PATTISICI" & COE>COSTO_AMM_FSC ~ COSTO_AMM_FSC,
-                           TRUE ~ COE))
+  # appo5 <- appo4 %>% 
+  #   mutate(COE = case_when(OC_CODICE_PROGRAMMA == "2016PATTISICI" & COE>COSTO_AMM_FSC ~ COSTO_AMM_FSC,
+  #                          TRUE ~ COE))
+  appo5 <- appo4 # MEMO: risolta nei dati da fabio
   
   chk <- appo3 %>% 
     filter(OC_CODICE_PROGRAMMA == "2016PATTISICI" & COE>COSTO_AMM_FSC) %>% 
@@ -723,8 +724,21 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
                 select(COD_LOCALE_PROGETTO, IMPORTO_AGGIUDICATO, 
                 IMPORTO_AGGIUDICATO_NODATA, IMPORTO_AGGIUDICATO_BANDITO))
   
+  # fix sezione
+  appo12 <- appo11 %>% 
+    mutate(SEZIONE = case_when(SEZIONE == "SO" ~ "SO",
+                                SEZIONE == "SO:::" ~ "SO",
+                                SEZIONE == "SOCIS" ~ "SO",
+                                SEZIONE == "SS_1" ~ "SS_1",
+                                SEZIONE == "SS_2" ~ "SS_2",
+                                SEZIONE == "SS_2:" ~ "SS_2",
+                                is.na(SEZIONE) ~ "SO",
+                                SEZIONE == "" ~ "SO",
+                                TRUE ~ "CHK"))
+  appo12 %>% count(SEZIONE)
+
   if ("psc_area_tematica" %in% names(temp_operazioni)) {
-    out <- appo11 %>%
+    out <- appo12 %>%
       mutate(OC_STATO_PROCEDURALE = OC_STATO_PROCEDURALE_NEW) %>% # MEMO: valore di default, serve per report
       select(COD_LOCALE_PROGETTO, 
              CUP, 
@@ -757,7 +771,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
              DB) %>% 
       bind_rows(progetti_sgp)
   } else {
-    out <- appo11 %>%
+    out <- appo12 %>%
       mutate(OC_STATO_PROCEDURALE = OC_STATO_PROCEDURALE_NEW) %>% # MEMO: valore di default, serve per report
       select(COD_LOCALE_PROGETTO, 
              CUP, 
