@@ -268,12 +268,24 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
                psc_descr_area_tematica,
                psc_sett_interv,
                psc_descr_sett_interv) %>% 
+      # fix manuali (due aree per un settore)
+      mutate(psc_area_tematica = case_when(COD_LOCALE_PROGETTO == "1MISECMFZ18ALB-17" & psc_area_tematica == "08:::05" & psc_sett_interv == "01" ~ "08",
+                                           COD_LOCALE_PROGETTO == "1MISECMSM2-ACAM-01bis" & psc_area_tematica == "07:::02" & psc_sett_interv == "01" ~ "07",
+                                           COD_LOCALE_PROGETTO == "1MISEABRSE13-29" & psc_area_tematica == "11:::06" & psc_sett_interv == "01" ~ "11",
+                                           COD_LOCALE_PROGETTO == "1MISEABRSE011-52" & psc_area_tematica == "11:::06" & psc_sett_interv == "01" ~ "11",
+                                           COD_LOCALE_PROGETTO == "1MISEABRSE011-50" & psc_area_tematica == "11:::06" & psc_sett_interv == "01" ~ "11",
+                                           COD_LOCALE_PROGETTO == "1MISEABRSE011-49" & psc_area_tematica == "11:::06" & psc_sett_interv == "01" ~ "11",
+                                           TRUE ~ psc_area_tematica)) %>% 
+      # NEW: fix per temi doppi
+      separate_rows(c("psc_area_tematica", "psc_sett_interv"), sep = ":::") %>% 
       # fix per psc monitorati
       mutate(COD_AREA_TEMATICA = psc_area_tematica, 
              COD_SETTORE_INTERVENTO = case_when(is.na(psc_sett_interv) ~ NA_character_,
                                                 psc_sett_interv == ""~ NA_character_,
                                                 TRUE ~ paste0(psc_area_tematica, ".", psc_sett_interv))) %>% 
-      # fix 
+      left_join(matrix_temi_settori %>% 
+                  select(COD_SETTORE_INTERVENTO, DESCR_AREA_TEMATICA, DESCR_SETTORE_INTERVENTO), 
+                by = "COD_SETTORE_INTERVENTO") %>% 
       mutate(COD_SETTORE_STRATEGICO_FSC = case_when(COD_SETTORE_STRATEGICO_FSC == "4.a" ~ "4", # matera
                                                     COD_SETTORE_STRATEGICO_FSC == "4.b" ~ "4", # matera
                                                     TRUE ~ COD_SETTORE_STRATEGICO_FSC),
@@ -281,7 +293,38 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
                                                COD_ASSE_TEMATICO_FSC == "2:::3:::5" ~ "2", # mattm
                                                COD_ASSE_TEMATICO_FSC == "1:::2:::3:" ~ "2", # mattm
                                                COD_ASSE_TEMATICO_FSC == "1:::2" ~ "2", # mise
-                                               TRUE ~ COD_ASSE_TEMATICO_FSC)) 
+                                               TRUE ~ COD_ASSE_TEMATICO_FSC)) %>% 
+      # NEW: riprende da fix sopra
+      group_by(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, COD_SETTORE_STRATEGICO_FSC, COD_ASSE_TEMATICO_FSC,
+      psc_macroarea, psc_descr_macroarea, psc_sezione, psc_descr_sezione) %>% 
+      summarise(psc_area_tematica = paste0(psc_area_tematica, collapse = ":::"),
+                psc_descr_area_tematica = paste0(psc_descr_area_tematica, collapse = ":::"),
+                psc_sett_interv = paste0(psc_sett_interv, collapse = ":::"),
+                psc_descr_sett_interv = paste0(psc_descr_sett_interv, collapse = ":::"),
+                COD_AREA_TEMATICA = paste0(COD_AREA_TEMATICA, collapse = ":::"),
+                COD_SETTORE_INTERVENTO = paste0(COD_SETTORE_INTERVENTO, collapse = ":::"),
+                DESCR_AREA_TEMATICA = paste0(DESCR_AREA_TEMATICA, collapse = ":::"),
+                DESCR_SETTORE_INTERVENTO = paste0(DESCR_SETTORE_INTERVENTO, collapse = ":::"),
+                COSTO_AMM_FSC = unique(COSTO_AMM_FSC, na.rm = TRUE)) %>% 
+      ungroup() %>% 
+      # fix per casi da programmi diversi da PSC
+      mutate(COD_SETTORE_INTERVENTO = case_when(is.na(COD_SETTORE_INTERVENTO) ~ NA_character_,
+                                                COD_SETTORE_INTERVENTO == "" ~ NA_character_,
+                                                COD_SETTORE_INTERVENTO == "NA" ~ NA_character_,
+                                                TRUE ~ COD_SETTORE_INTERVENTO)) %>% 
+      mutate(DESCR_SETTORE_INTERVENTO = case_when(is.na(DESCR_SETTORE_INTERVENTO) ~ NA_character_,
+                                                  DESCR_SETTORE_INTERVENTO == "" ~ NA_character_,
+                                                  DESCR_SETTORE_INTERVENTO == "NA" ~ NA_character_,
+                                                  TRUE ~ DESCR_SETTORE_INTERVENTO)) %>% 
+      mutate(COD_AREA_TEMATICA = case_when(is.na(COD_AREA_TEMATICA) ~ NA_character_,
+                                           COD_AREA_TEMATICA == "" ~ NA_character_,
+                                           COD_AREA_TEMATICA == "NA" ~ NA_character_,
+                                           TRUE ~ COD_AREA_TEMATICA)) %>% 
+      mutate(DESCR_AREA_TEMATICA = case_when(is.na(DESCR_AREA_TEMATICA) ~ NA_character_,
+                                             DESCR_AREA_TEMATICA == "" ~ NA_character_,
+                                             DESCR_AREA_TEMATICA == "NA" ~ NA_character_,
+                                             TRUE ~ DESCR_AREA_TEMATICA))
+      
   } else {
     operazioni_1420 <- temp_operazioni %>%
       rename(COD_LOCALE_PROGETTO = cod_locale_progetto,
@@ -311,6 +354,10 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
 
   # chk <- operazioni_1420 %>% 
   #   filter(OC_CODICE_PROGRAMMA == "PSCFRIULI")
+  
+  # operazioni_1420 %>% 
+  #   filter(grepl(":::", psc_sett_interv)) %>% 
+  #   count(OC_CODICE_PROGRAMMA, psc_sezione, psc_area_tematica, psc_sett_interv, COD_AREA_TEMATICA, COD_SETTORE_INTERVENTO)
   
   temp <- read_sas(file.path(DATA, "oper_fltok_preesteso.sas7bdat")) 
   
@@ -380,26 +427,31 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
     #           by = "COD_LOCALE_PROGETTO") %>% 
     left_join(art44 %>% 
                 select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, COD_TEMA_NEW, DESCR_TEMA_NEW, 
-                       COD_OPOS_NEW, DESCR_OPOS_NEW),
+                       COD_SETTORE_INTERVENTO = COD_OPOS_NEW, DESCR_OPOS_NEW),
               by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
-    mutate(#COD_AREA_TEMATICA = COD_TEMA_NEW,
-      #DESCR_AREA_TEMATICA = DESCR_TEMA_NEW,
-      COD_SETTORE_INTERVENTO = COD_OPOS_NEW,
-      # DESCR_SETTORE_INTERVENTO = DESCR_OPOS_NEW
-    ) %>% 
-    # NEW:
+    # mutate(#COD_AREA_TEMATICA = COD_TEMA_NEW,
+    #   #DESCR_AREA_TEMATICA = DESCR_TEMA_NEW,
+    #   COD_SETTORE_INTERVENTO = COD_OPOS_NEW,
+    #   # DESCR_SETTORE_INTERVENTO = DESCR_OPOS_NEW
+    # ) %>% 
     # rettifica temi da primo cds
     left_join(interventi_cds,
               by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
     mutate(COD_SETTORE_INTERVENTO = if_else(is.na(COD_SETTORE_INTERVENTO.y), COD_SETTORE_INTERVENTO.x, COD_SETTORE_INTERVENTO.y)) %>% 
     select(-COD_SETTORE_INTERVENTO.x, -COD_SETTORE_INTERVENTO.y) %>% 
-    # integra temi mancanti per 1420
-    left_join(operazioni_1420 %>% 
-                select(-COD_SETTORE_INTERVENTO), # MEMO: questo va tolto qui perché il fix viene fatto dopo
-              by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
+    # OLD
+    # # integra temi mancanti per 1420
+    # left_join(operazioni_1420 %>% 
+    #             select(-COD_SETTORE_INTERVENTO), # MEMO: questo va tolto qui perché il fix viene fatto dopo
+    #           by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
+    # NEW: sovrascrive dati da BDU
+    left_join(operazioni_1420, by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>%
+    mutate(COD_SETTORE_INTERVENTO = if_else(is.na(COD_SETTORE_INTERVENTO.y), COD_SETTORE_INTERVENTO.x, COD_SETTORE_INTERVENTO.y)) %>% 
+    select(-COD_SETTORE_INTERVENTO.x, -COD_SETTORE_INTERVENTO.y) %>% 
     left_join(matrix_1420 %>% 
                 select(COD_SETTORE_STRATEGICO_FSC, COD_ASSE_TEMATICO_FSC, COD_SETTORE_INTERVENTO),
               by = c("COD_SETTORE_STRATEGICO_FSC", "COD_ASSE_TEMATICO_FSC")) %>% 
+    # integra per casi residui
     # TODO: qui va fix per ferrovie vs strade
     mutate(COD_SETTORE_INTERVENTO = if_else(is.na(COD_SETTORE_INTERVENTO.x), COD_SETTORE_INTERVENTO.y, COD_SETTORE_INTERVENTO.x)) %>% 
     select(-COD_SETTORE_INTERVENTO.x, -COD_SETTORE_INTERVENTO.y) %>% 
@@ -416,25 +468,50 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   
   # sovrascrive temi per psc già monitorati e scarta sezioni speciali
   if ("psc_area_tematica" %in% names(temp_operazioni)) {
+    # OLD:
+    # appo1 <- appo %>% 
+    #   left_join(operazioni_1420 %>% 
+    #               select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, COD_AREA_TEMATICA, COD_SETTORE_INTERVENTO),
+    #             by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
+    #   mutate(COD_SETTORE_INTERVENTO = case_when(COD_AREA_TEMATICA.y == "" ~ COD_SETTORE_INTERVENTO.x, 
+    #                                             is.na(COD_AREA_TEMATICA.y) ~ COD_SETTORE_INTERVENTO.x, 
+    #                                             TRUE ~ COD_SETTORE_INTERVENTO.y)) %>% 
+    #   # CHK: chk <- appo1 %>% select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, COD_SETTORE_INTERVENTO, COD_SETTORE_INTERVENTO.x, COD_SETTORE_INTERVENTO.y, COD_AREA_TEMATICA.x, COD_AREA_TEMATICA.y)
+    #   # CHK: chk2 <- chk %>% count( COD_SETTORE_INTERVENTO, COD_SETTORE_INTERVENTO.x, COD_SETTORE_INTERVENTO.y, COD_AREA_TEMATICA.x, COD_AREA_TEMATICA.y)
+    #   select(-COD_SETTORE_INTERVENTO.x, -COD_SETTORE_INTERVENTO.y)  %>% 
+    #   # sovrascrive tema per tutti
+    #   left_join(matrix_temi_settori, 
+    #             by = "COD_SETTORE_INTERVENTO") %>% 
+    #   mutate(AREA_TEMATICA = paste0(COD_AREA_TEMATICA, "-", DESCR_AREA_TEMATICA),
+    #          SETTORE_INTERVENTO = paste0(COD_SETTORE_INTERVENTO, "-", DESCR_SETTORE_INTERVENTO)) %>% 
+    #   # scarta sezioni speciali
+    #   # filter(psc_sezione != "SS_1" & psc_sezione != "SS_2" | is.na(psc_sezione))
+    #   mutate(SEZIONE = psc_sezione)
+    # NEW:
     appo1 <- appo %>% 
-      left_join(operazioni_1420 %>% 
-                  select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, COD_AREA_TEMATICA, COD_SETTORE_INTERVENTO),
-                by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA")) %>% 
-      mutate(COD_SETTORE_INTERVENTO = case_when(COD_AREA_TEMATICA.y == "" ~ COD_SETTORE_INTERVENTO.x, 
-                                                is.na(COD_AREA_TEMATICA.y) ~ COD_SETTORE_INTERVENTO.x, 
-                                                TRUE ~ COD_SETTORE_INTERVENTO.y)) %>% 
-      # CHK: chk <- appo1 %>% select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, COD_SETTORE_INTERVENTO, COD_SETTORE_INTERVENTO.x, COD_SETTORE_INTERVENTO.y, COD_AREA_TEMATICA.x, COD_AREA_TEMATICA.y)
-      # CHK: chk2 <- chk %>% count( COD_SETTORE_INTERVENTO, COD_SETTORE_INTERVENTO.x, COD_SETTORE_INTERVENTO.y, COD_AREA_TEMATICA.x, COD_AREA_TEMATICA.y)
-      select(-COD_SETTORE_INTERVENTO.x, -COD_SETTORE_INTERVENTO.y)  %>% 
+      # fix
+      mutate(DESCR_AREA_TEMATICA = case_when(COD_AREA_TEMATICA == "07:::07" ~ "TRASPORTI E MOBILITÀ",
+                                             COD_AREA_TEMATICA == "06:::06" ~ "CULTURA",
+                                             TRUE ~ DESCR_AREA_TEMATICA)) %>% 
+      mutate(COD_AREA_TEMATICA = case_when(COD_AREA_TEMATICA == "07:::07" ~ "07",
+                                           COD_AREA_TEMATICA == "06:::06" ~ "06",
+                                           TRUE ~ COD_AREA_TEMATICA)) %>% 
       # sovrascrive tema per tutti
-      left_join(matrix_temi_settori, 
+      left_join(matrix_temi_settori %>% 
+                  select(COD_AREA_TEMATICA, COD_SETTORE_INTERVENTO, DESCR_AREA_TEMATICA, DESCR_SETTORE_INTERVENTO), 
                 by = "COD_SETTORE_INTERVENTO") %>% 
+      mutate(COD_AREA_TEMATICA = if_else(is.na(COD_AREA_TEMATICA.x), COD_AREA_TEMATICA.y, COD_AREA_TEMATICA.x)) %>% 
+      select(-COD_AREA_TEMATICA.x, -COD_AREA_TEMATICA.y) %>%
+      mutate(DESCR_AREA_TEMATICA = if_else(is.na(DESCR_AREA_TEMATICA.x), DESCR_AREA_TEMATICA.y, DESCR_AREA_TEMATICA.x)) %>% 
+      select(-DESCR_AREA_TEMATICA.x, -DESCR_AREA_TEMATICA.y) %>% 
+      mutate(DESCR_SETTORE_INTERVENTO = if_else(is.na(DESCR_SETTORE_INTERVENTO.x), DESCR_SETTORE_INTERVENTO.y, DESCR_SETTORE_INTERVENTO.x)) %>% 
+      select(-DESCR_SETTORE_INTERVENTO.x, -DESCR_SETTORE_INTERVENTO.y)%>% 
       mutate(AREA_TEMATICA = paste0(COD_AREA_TEMATICA, "-", DESCR_AREA_TEMATICA),
              SETTORE_INTERVENTO = paste0(COD_SETTORE_INTERVENTO, "-", DESCR_SETTORE_INTERVENTO)) %>% 
       # scarta sezioni speciali
       # filter(psc_sezione != "SS_1" & psc_sezione != "SS_2" | is.na(psc_sezione))
       mutate(SEZIONE = psc_sezione)
-      
+
   } else {
     # MEMO: questo vale per bimestri prima di giugno 2022
     appo1 <- appo %>% 
@@ -727,14 +804,23 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   # fix sezione
   appo12 <- appo11 %>% 
     mutate(SEZIONE = case_when(SEZIONE == "SO" ~ "SO",
-                                SEZIONE == "SO:::" ~ "SO",
-                                SEZIONE == "SOCIS" ~ "SO",
-                                SEZIONE == "SS_1" ~ "SS_1",
-                                SEZIONE == "SS_2" ~ "SS_2",
-                                SEZIONE == "SS_2:" ~ "SS_2",
-                                is.na(SEZIONE) ~ "SO",
-                                SEZIONE == "" ~ "SO",
-                                TRUE ~ "CHK"))
+                               SEZIONE == "SO:::" ~ "SO",
+                               SEZIONE == "SO:::SOCIS_RC" ~ "SO",
+                               SEZIONE == "SOCIS" ~ "SO",
+                               SEZIONE == "SOCIS_CO" ~ "SO",
+                               SEZIONE == "SOCIS_NA" ~ "SO",
+                               SEZIONE == "SOCIS_PAL" ~ "SO",
+                               SEZIONE == "SOCIS_RC" ~ "SO",
+                               SEZIONE == "SOCIS_SA" ~ "SO",
+                               SEZIONE == "SOCIS_VENT" ~ "SO",
+                               SEZIONE == "SOCISTA" ~ "SO",
+                               SEZIONE == "SS_1" ~ "SS_1",
+                               SEZIONE == "SS_2" ~ "SS_2",
+                               SEZIONE == "SS_2:" ~ "SS_2",
+                               is.na(SEZIONE) ~ "SO",
+                               SEZIONE == "" ~ "SO",
+                               TRUE ~ "CHK"))
+
   appo12 %>% count(SEZIONE)
 
   if ("psc_area_tematica" %in% names(temp_operazioni)) {
@@ -847,6 +933,18 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
                                                  OC_CODICE_PROGRAMMA == "2007MA002FA007" ~ 7,
                                                  OC_CODICE_PROGRAMMA == "2007LI002FA005" ~ 7, #solo COE = 0
                                                  OC_CODICE_PROGRAMMA == "2007BO002FA009" ~ 7, #solo COE = 0
+                                                 # altri
+                                                 OC_CODICE_PROGRAMMA == "2007LO002FA006" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2007FR002FA003" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2007MA002FA007" ~ 7,
+                                                 OC_CODICE_PROGRAMMA == "2007LI002FA005" ~ 7, #solo COE = 0
+                                                 # NEW da confronto con liste OGV
+                                                 ID_PSC == "PSC_VALLE_D_AOS" & OC_CODICE_PROGRAMMA == "2007VA002FA014" & OC_FLAG_VISUALIZZAZIONE == 1 ~ 7,
+                                                 ID_PSC == "PSC_UMBRIA" & OC_CODICE_PROGRAMMA == "2007UM002FA013" & OC_FLAG_VISUALIZZAZIONE == 1 ~ 7,
+                                                 # ID_PSC == "PSC_PIEMONTE" & OC_CODICE_PROGRAMMA == "2018REGPIEMFSC" ~ 7, # ospedale verbano -> da disattivare, non è duplo
+                                                 ID_PSC == "PSC_PIEMONTE" & OC_CODICE_PROGRAMMA == "2007UM002FA013" ~ 7,
+                                                 ID_PSC == "PSC_PIEMONTE" & OC_CODICE_PROGRAMMA == "PSCPIEMONTE" & OC_FLAG_VISUALIZZAZIONE == 1 ~ 7,
+                                                 ID_PSC == "PSC_PA_BOLZANO" & OC_CODICE_PROGRAMMA == "2007BO002FA009" ~ 7,
                                                  TRUE ~ OC_FLAG_VISUALIZZAZIONE))
   }
 

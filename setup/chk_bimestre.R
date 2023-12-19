@@ -181,7 +181,7 @@ devtools::load_all(path = ".")
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20230630"
+bimestre_old <- "20230831"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
 progetti_all_old <- load_progetti(bimestre = bimestre_old,
@@ -202,6 +202,7 @@ chk <- progetti_all_old %>%
   get_x_vars(.) %>%
   group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
   summarise(N = n(),
+            COE = sum(OC_COSTO_COESIONE, na.rm = TRUE),
             CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE)) %>%
   full_join(progetti_all %>%
               # mutate(FONDO_COMUNITARIO = case_when(FONDO_COMUNITARIO == "Y.E.I"~ "YEI", # MEMO: patch per 20190630
@@ -210,12 +211,15 @@ chk <- progetti_all_old %>%
               get_x_vars(.) %>%
               group_by(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO) %>%
               summarise(N = n(),
+                        COE = sum(OC_COSTO_COESIONE, na.rm = TRUE),
                         CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE)),
             by = c("OC_FLAG_VISUALIZZAZIONE", "x_CICLO", "x_AMBITO"), suffix = c(".old", ".new")) %>%
   mutate(N.chk = N.new - N.old,
+         COE.chk = COE.new - COE.old,
          CP.chk = CP.new - CP.old) %>%
   select(OC_FLAG_VISUALIZZAZIONE, x_CICLO, x_AMBITO,
          N.old, N.new, N.chk,
+         COE.old, COE.new, COE.chk,
          CP.old, CP.new, CP.chk)
 
 # write.csv2(chk, file.path(TEMP, paste0("chk_delta_noviz_", bimestre, ".csv")), row.names = FALSE)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/peri_query.R
 \name{query_atsi_psc}
 \alias{query_atsi_psc}
-\title{Ricerca progetti per tema prioritario FSC}
+\title{Ricerca progetti per aree tematiche e settori di intervento PSC}
 \usage{
 query_atsi_psc(progetti)
 }
@@ -10,9 +10,8 @@ query_atsi_psc(progetti)
 \item{progetti}{Dataset "progetti_esteso_<BIMESTRE>.csv".}
 }
 \value{
-Un dataframe con COD_LOCALE_PROGETTO, QUERY_ATP.
+Un dataframe con COD_LOCALE_PROGETTO, QUERY_ATSI_PSC.
 }
 \description{
-Ricerca progetti per area e tema prioritario FSC (ATP) a partire da input in "aree_temi_fsc.csv".
-Al momento comprende tutte le delibere (non solo quelle FSC).
+Ricerca progetti per aree tematiche e settori di intervento PSC (ATSI) a partire da input in "aree_temi_psc.csv".
 }
