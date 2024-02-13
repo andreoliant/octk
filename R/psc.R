@@ -492,10 +492,34 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
       # fix
       mutate(DESCR_AREA_TEMATICA = case_when(COD_AREA_TEMATICA == "07:::07" ~ "TRASPORTI E MOBILITÀ",
                                              COD_AREA_TEMATICA == "06:::06" ~ "CULTURA",
+                                             COD_AREA_TEMATICA == "05:::10" ~ "AMBIENTE E RISORSE NATURALI",
+                                             COD_AREA_TEMATICA == "06:::12" ~ "CULTURA",
+                                             COD_AREA_TEMATICA == "12:::06" ~ "CULTURA",
                                              TRUE ~ DESCR_AREA_TEMATICA)) %>% 
       mutate(COD_AREA_TEMATICA = case_when(COD_AREA_TEMATICA == "07:::07" ~ "07",
                                            COD_AREA_TEMATICA == "06:::06" ~ "06",
+                                           COD_AREA_TEMATICA == "05:::10" ~ "05",
+                                           COD_AREA_TEMATICA == "06:::12" ~ "06",
+                                           COD_AREA_TEMATICA == "12:::06" ~ "06",
                                            TRUE ~ COD_AREA_TEMATICA)) %>% 
+      
+      # fix
+      mutate(DESCR_SETTORE_INTERVENTO = case_when(COD_SETTORE_INTERVENTO == "07.01:::07.02" ~ "TRASPORTO FERROVIARIO",
+                                                  COD_SETTORE_INTERVENTO == "05.02:::10.03" ~ "RISORSE IDRICHE",
+                                                  COD_SETTORE_INTERVENTO == "06.01:::06.02" ~ "PATRIMONIO E PAESAGGIO",
+                                                  COD_SETTORE_INTERVENTO == "06.01:::12.02" ~ "PATRIMONIO E PAESAGGIO",
+                                                  COD_SETTORE_INTERVENTO == "12.02:::06.01" ~ "PATRIMONIO E PAESAGGIO",
+                                                  TRUE ~ DESCR_SETTORE_INTERVENTO)) %>% 
+      mutate(COD_SETTORE_INTERVENTO = case_when(COD_SETTORE_INTERVENTO == "07.01:::07.02" ~ "07.02",
+                                                COD_SETTORE_INTERVENTO == "05.02:::10.03" ~ "05.02",
+                                                COD_SETTORE_INTERVENTO == "06.01:::06.02" ~ "06.01",
+                                                COD_SETTORE_INTERVENTO == "06.01:::12.02" ~ "06.01",
+                                                COD_SETTORE_INTERVENTO == "12.02:::06.01" ~ "06.01",
+                                                TRUE ~ COD_SETTORE_INTERVENTO)) %>% 
+      
+
+    
+      
       # sovrascrive tema per tutti
       left_join(matrix_temi_settori %>% 
                   select(COD_AREA_TEMATICA, COD_SETTORE_INTERVENTO, DESCR_AREA_TEMATICA, DESCR_SETTORE_INTERVENTO), 
@@ -536,15 +560,9 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   
   
   # chk classi
-  # chk <- appo %>% count(AREA_TEMATICA, SETTORE_INTERVENTO)
-  # appo %>% count(AREA_TEMATICA) #134 progetti con NA in patto sicilia e pugli
-  # 
-  # chk <- appo %>% filter(AREA_TEMATICA == "NA-NA")
-  # chk2 <- appo %>%
-  #   semi_join(chk, by = "COD_LOCALE_PROGETTO") %>% 
-  #   select(COD_LOCALE_PROGETTO, x_PROGRAMMA, x_CICLO, COD_SETTORE_STRATEGICO_FSC, COD_ASSE_TEMATICO_FSC, QSN_CODICE_OBIETTIVO_SPECIFICO)
-  # 
-  # write_csv2(chk2, file.path(TEMP, "chk_classi_missing.csv"))
+  # chk <- appo1 %>% count(AREA_TEMATICA, SETTORE_INTERVENTO) %>% filter(grepl(":::", SETTORE_INTERVENTO))
+  # chk2 <- appo1 %>% filter(SETTORE_INTERVENTO == "07.01:::07.02-TRASPORTO STRADALE:::TRASPORTO FERROVIARIO")
+  # chk3 <- appo1 %>% count(COD_SETTORE_INTERVENTO, DESCR_SETTORE_INTERVENTO)
   
   # fix classi
   appo2 <- appo1 %>% 
@@ -563,6 +581,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
 
   # debug classi
   print(appo2 %>% count(AREA_TEMATICA))
+  message("Se ci sono casi con ::: vanno corretti nel codice... Sorry!")
   chk <- appo2 %>% filter(AREA_TEMATICA == "NA-NA")
   write_csv2(chk, file.path(TEMP, paste0("chk_classi_missing_", bimestre_oc, ".csv")))
   

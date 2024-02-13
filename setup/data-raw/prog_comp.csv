@@ -1443,7 +1443,9 @@ PC01077SAIAB2017001;Strategia aree interne ABRUZZO - BASSO SANGRO - TRIGNO;SAI;S
 PC00105CAL_17;Catanzaro 79023;PSIA;PROGETTO SOSTEGNO PER L'INCLUSIONE ATTIVA;CISCALABRIA;2014-2020;FSC;CIS CALABRIA;0;
 PC00110CAL_23;Crotone 101010;PSIA;PROGETTO SOSTEGNO PER L'INCLUSIONE ATTIVA;CISCALABRIA;2014-2020;FSC;CIS CALABRIA;0;
 PC01541ARGE18-2128-1F/33;BELLEZZA E BENESSERE - ATTIVITA' B1;OMI;Operazioni multi-intervento;CISCALABRIA;2014-2020;FSC;CIS CALABRIA;0;
+PC00493PUG_41;"Ambito territoriale di Taranto; Taranto 73027";PSIA;PROGETTO SOSTEGNO PER L'INCLUSIONE ATTIVA;COMMTARANTOFSC;2014-2020;FSC;CIS AREA DI TARANTO;0;
 PC00160CAM_39;"N27; Castellammare di Stabia 63024";PSIA;PROGETTO SOSTEGNO PER L'INCLUSIONE ATTIVA;CISVESPOMNAPOLI;2014-2020;FSC;CIS VESUVIO;0;
+PC04203CMB13MASTERPLAN_ASI;"PROGETTO COMPLESSO DI INFRASTRUTTURE VIARIE: AMPLIAMENTO DELLA ZONA ASI E POTENZIAMENTO DELLE INFRASTRUTTURE A SERVIZIO DELLE IMPRESE; REALIZZAZIONE DELLE INFRASTRUTTURE PRIMARIE A SERVIZIO DELL'AGGLOMERATO ASI PER FAVORIRE L'INSEDIAMENTO DI NUOVE IMPRESE IN ZONA INDUSTRIALE ASI BARI";OMI;Operazioni multi-intervento;PSCCITMETBARI;2014-2020;FSC;PSC BARI;0;
 CB018;2007CB163PO035 Rifiuti;5;progetto interregionale;2007IT005FAMAC;2007-2013;FSC;COMPENSAZIONI AMBIENTALI CAMPANIA;0;
 PC00049ABR_05;"Teramo; Comune di Teramo 67041";PSIA;PROGETTO SOSTEGNO PER L'INCLUSIONE ATTIVA;CISAREESISMA;2021-2027;FSC;CIS AREE SISMA;0;
 RC019;DM17732 -  Laboratorio di genomica per l'innovazione e la valorizzazione della filiera pomodoro;6;Progetto cointestato;2007IT161PO006;2007-2013;FESR;PON RICERCA;0;
@@ -1577,7 +1579,6 @@ RC214;MS01_00032 - SIS-TEMA Sistema Integrato e Sicuro Terra Mare;6;Progetto coi
 RC215;MS01_00038 - HI-QUAD - Sviluppo di un innovativo quadriciclo ibrido, ecocompatibile e ad alto rendimento, per lo spostamento rapido di persone e cose nei centri urbani;6;Progetto cointestato;2012MISE1PAC22;2007-2013;PAC;PAC MISE IMPRESE, DOMANDA PUBBLICA E PROMOZIONE;0;
 PC01550SAIUM2019001;Strategia Aree Interne UMBRIA - Nord-Est Umbria;SAI;Strategia Aree Interne;2018AREAINTUMB;2014-2020;SNAI;SNAI UMBRIA;0;
 30;Riqualificazione energetica ed ambientale degli edifici e delle strutture pubbliche;7;Piano Azione Coesione;2007SI002FAPA1;2007-2013;FSC;PAS COMUNE DI PALERMO;0;
-BASB1;2.1 Gestione dei rifiuti urbani;8;Patti per lo sviluppo;2007SI002FAPA1;2007-2013;FSC;PAS COMUNE DI PALERMO;0;
 CB018;2007CB163PO035 Rifiuti;5;progetto interregionale;2007SI002FAPA1;2007-2013;FSC;PAS COMUNE DI PALERMO;0;
 37;Attrazione culturale;7;Piano Azione Coesione;2012MIBACPAC21;2007-2013;PAC;PAC MIBACT;0;
 38;Attrazione culturale - Assistenza tecnica;7;Piano Azione Coesione;2012MIBACPAC21;2007-2013;PAC;PAC MIBACT;0;
@@ -1992,15 +1993,12 @@ SI55;PISU di Enna;1;progetto integrato;2007IT161PO011;2007-2013;FESR;POR CONV FE
 SI24;PIST: Territorio Snodo Palermo Ustica Villabate;1;progetto integrato;2007IT161PO011;2007-2013;FESR;POR CONV FESR SICILIA;0;
 PC0409520152023021025-FEASR;PACCHETTO GIOVANI - SOTTOMISURE  6.1. E  4.1 - LUOGOSANTO (OT);PIA;PACCHETTI DI MISURA;FSCCOMUNI;2007-2013;FSC;RISORSE FSC ASSEGNATE AI COMUNI;0;
 PC01353BUL;Grande Progetto Banda Ultra Larga;BUL;Sviluppo delle reti a banda ultralarga;PSCEMILROMAGNA;2014-2020;FSC;PSC EMILIA-ROMAGNA;0;
-PC04244SAIEM2020001;Strategia Aree Interne EMILIA ROMAGNA - Appennino Piacentino Parmense;SAI;Strategia Aree Interne;2014IT16RFOP008:::PSCEMILROMAGNA;2014-2020;FSC;PSC EMILIA-ROMAGNA;0;
-PC01551SAIEM2019001;Strategia aree interne EMILIA ROMAGNA - Appennino Emiliano;SAI;Strategia Aree Interne;2014IT16RFOP008:::PSCEMILROMAGNA;2014-2020;FSC;PSC EMILIA-ROMAGNA;0;
-PC04247SAIEM2020001;Strategia Aree Interne EMILIA ROMAGNA - Basso Ferrarese;SAI;Strategia Aree Interne;2014IT16RFOP008:::PSCEMILROMAGNA;2014-2020;FSC;PSC EMILIA-ROMAGNA;0;
-PC04416SAIEM2020002;Strategia Aree Interne EMILIA ROMAGNA - Alta Valmarecchia;SAI;Strategia Aree Interne;2014IT16RFOP008:::PSCEMILROMAGNA;2014-2020;FSC;PSC EMILIA-ROMAGNA;0;
+PC04244SAIEM2020001;Strategia Aree Interne EMILIA ROMAGNA - Appennino Piacentino Parmense;SAI;Strategia Aree Interne;PSCEMILROMAGNA;2014-2020;FSC;PSC EMILIA-ROMAGNA;0;
+PC01551SAIEM2019001;Strategia aree interne EMILIA ROMAGNA - Appennino Emiliano;SAI;Strategia Aree Interne;PSCEMILROMAGNA;2014-2020;FSC;PSC EMILIA-ROMAGNA;0;
+PC04247SAIEM2020001;Strategia Aree Interne EMILIA ROMAGNA - Basso Ferrarese;SAI;Strategia Aree Interne;PSCEMILROMAGNA;2014-2020;FSC;PSC EMILIA-ROMAGNA;0;
 PC04416SAIEM2020002;Strategia Aree Interne EMILIA ROMAGNA - Alta Valmarecchia;SAI;Strategia Aree Interne;PSCEMILROMAGNA;2014-2020;FSC;PSC EMILIA-ROMAGNA;0;
 PC04247SAIEM2020001;Strategia Aree Interne EMILIA ROMAGNA - Basso Ferrarese;SAI;Strategia Aree Interne;2014IT05SFOP003;2014-2020;FSE;POR EMILIA-ROMAGNA FSE;0;
 PC04244SAIEM2020001;Strategia Aree Interne EMILIA ROMAGNA - Appennino Piacentino Parmense;SAI;Strategia Aree Interne;2014IT05SFOP003;2014-2020;FSE;POR EMILIA-ROMAGNA FSE;0;
-PC04247SAIEM2020001;Strategia Aree Interne EMILIA ROMAGNA - Basso Ferrarese;SAI;Strategia Aree Interne;PSCEMILROMAGNA;2014-2020;FSC;PSC EMILIA-ROMAGNA;0;
-PC01551SAIEM2019001;Strategia aree interne EMILIA ROMAGNA - Appennino Emiliano;SAI;Strategia Aree Interne;PSCEMILROMAGNA;2014-2020;FSC;PSC EMILIA-ROMAGNA;0;
 PC04416SAIEM2020002;Strategia Aree Interne EMILIA ROMAGNA - Alta Valmarecchia;SAI;Strategia Aree Interne;2014IT05SFOP003;2014-2020;FSE;POR EMILIA-ROMAGNA FSE;0;
 PC04416SAIEM2020002;Strategia Aree Interne EMILIA ROMAGNA - Alta Valmarecchia;SAI;Strategia Aree Interne;2014IT06RDRP003;2014-2020;FEASR;PSR EMILIA-ROMAGNA;0;
 PC04244SAIEM2020001;Strategia Aree Interne EMILIA ROMAGNA - Appennino Piacentino Parmense;SAI;Strategia Aree Interne;2014IT06RDRP003;2014-2020;FEASR;PSR EMILIA-ROMAGNA;0;
@@ -2196,7 +2194,6 @@ PC04418SAIMO2020001;Strategia Aree Interne MOLISE - FORTORE;SAI;Strategia Aree I
 PC04572SAIMO2021001;Strategia Aree Interne MOLISE - Alto Medio Sannio;SAI;Strategia Aree Interne;2019AREAINTMOL;2014-2020;SNAI;SNAI MOLISE;0;
 PC04625MO2021001;Strategia aree interne MOLISE - Mainarde;SAI;Strategia Aree Interne;2019AREAINTMOL;2014-2020;SNAI;SNAI MOLISE;0;
 PC04675SAITO2021001;Strategie aree interne TOSCANA - Valdarno, Valdisieve, Mugello e Val Bisenzio;SAI;Strategia Aree Interne;2018AREAINTTOSC;2014-2020;SNAI;SNAI TOSCANA;0;
-PC04601ARIEFP2023/17;OPERATORE DELLA RISTORAZIONE (preparazione pasti - servizio di sala e bar) - GE MET - IEFP TRIENNALE 2020-2023;OMI;Operazioni multi-intervento;2018AREAINTTOSC;2014-2020;SNAI;SNAI TOSCANA;0;
 PC015082018AREAINTTOSC;"Strategia Aree Interne Regione Toscana - ""Linea Casentino Valtiberina""";SAI;Strategia Aree Interne;2018AREAINTTOSC;2014-2020;SNAI;SNAI TOSCANA;0;
 PC04242SAITO2020001;Strategia Aree Interne TOSCANA - Garfagnana, Lunigiana, Mediavalle del Serchio, Appennino Pistoiese;SAI;Strategia Aree Interne;2018AREAINTTOSC;2014-2020;SNAI;SNAI TOSCANA;0;
 PC04675SAITO2021001;Strategie aree interne TOSCANA - Valdarno, Valdisieve, Mugello e Val Bisenzio;SAI;Strategia Aree Interne;2014IT06RDRP010;2014-2020;FEASR;PSR TOSCANA;0;
@@ -2209,6 +2206,7 @@ PC01603SAIPU2019001;Strategia aree interne Puglia - Monti Dauni;SAI;Strategia Ar
 PC01353BUL;Grande Progetto Banda Ultra Larga;BUL;Sviluppo delle reti a banda ultralarga;2014IT16RFOP021;2014-2020;FESR;POR VENETO FESR;0;
 PC01600SAIVE2018001;Strategia Aree Interne VENETO - Unione Montana Spettabile Reggenza dei Sette Comuni;SAI;Strategia Aree Interne;2014IT16RFOP021;2014-2020;FESR;POR VENETO FESR;0;
 PC04239SAIVE2020001;Strategia aree interne VENETO - Unione Montana Comelico;SAI;Strategia Aree Interne;2014IT16RFOP021;2014-2020;FESR;POR VENETO FESR;0;
+PC01353BUL;Grande Progetto Banda Ultra Larga;BUL;Sviluppo delle reti a banda ultralarga;PSCVENETO;2014-2020;FSC;PSC VENETO;0;
 PC00009ITI SASSARI;Azioni innovative in materia di sviluppo urbano sostenibile, che sperimentano in quartieri disagiati progetti di riqualificazione sociale con un approccio che coniuga interventi infrastrutturali sul FESR e interventi a sostegno della fornitura di servizi sociali, sperimentazione di modelli organizzativi e gestionali innovativi propri del FSE. Intervento integrato di rigenerazione urbana della parte bassa del centro storico di Sassari nei rioni di San Donato e SantÂ¿Apollinare e aree adiacenti;ITI;INVESTIMENTO INTEGRATO TERRITORIALE;2014IT05SFOP021;2014-2020;FSE;POR SARDEGNA FSE;0;
 PC00008ITI OLBIA;Azioni innovative in materia di sviluppo urbano sostenibile, che sperimentano in quartieri disagiati progetti di riqualificazione sociale con un approccio che coniuga interventi infrastrutturali a valere sul FESR e interventi a sostegno della fornitura di servizi sociali, sperimentazione di modelli organizzativi e gestionali innovativi propri del FSE. EÂ¿ un intervento integrato di rigenerazione urbana nel quartiere di Poltu Quadu a sud dei banchinamenti dellÂ¿Isola Bianca denominata Ansa Sud;ITI;INVESTIMENTO INTEGRATO TERRITORIALE;2014IT05SFOP021;2014-2020;FSE;POR SARDEGNA FSE;0;
 PC01079SAICA2017001;Strategia Aree Interne CAMPANIA - ALTA IRPINIA;SAI;Strategia Aree Interne;2017AREAINTCAMP;2014-2020;SNAI;SNAI CAMPANIA;0;

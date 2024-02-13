@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.6.6"
+oc_ver <- "0.6.7"
 
 # rm(list=ls())
 library("devtools")
@@ -55,13 +55,13 @@ packageVersion("octk")
 # )
 
 oc_init(
-  bimestre = "20231031",
+  bimestre = "20231231",
   elab = "SETUP",
   focus = "setup",
   ver = "V.01",
   # user = "Antonio",
   data_path = "/media/aa/22F70AE20061C7C8/dati/oc",
-  db_ver = "20231031.00",
+  db_ver = "20231231.00",
   use_drive = TRUE,
   # drive_root = "/home/antonio/ExpanDrive/OC/Team Drives"
   drive_root = "/home/aa/oc_drive"
@@ -151,7 +151,6 @@ install.packages(temp, repos = NULL, type="source")
 # devtools::build(path = "/Users/aa/coding/oc", binary = TRUE)
 # MEMO: build to binary "oc_0.1.0.tgz"
 # WARNING: it is platform specific!
-
 
 # CHK:
 # ** byte-compile and prepare package for lazy loading
