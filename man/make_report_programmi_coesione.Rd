@@ -13,6 +13,7 @@ make_report_programmi_coesione(
   use_flt = FALSE,
   use_po_psc = FALSE,
   use_fix_siepoc = FALSE,
+  stime_fix_siepoc = FALSE,
   cut_no_risorse = FALSE,
   tipo_ciclo = "CICLO_STRATEGIA",
   focus = "report",
@@ -38,6 +39,8 @@ make_report_programmi_coesione(
 \item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?}
 
 \item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
+
+\item{stime_fix_siepoc}{Per correggere i dati SIE e POC 1420 con le anticipazioni vuoi usare anche le stime?}
 
 \item{cut_no_risorse}{Vuoi eliminare i programmi monitorati senza risorse lato DB?}
 

@@ -338,7 +338,8 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
     
     if (stime_fix_siepoc == TRUE) {
       ant_siepoc <- ant_siepoc %>%
-        filter(FLAG_FONTE_FORMALE == "SI" | FLAG_FONTE_FORMALE == "NO")
+        # filter(FLAG_FONTE_FORMALE == "SI" | FLAG_FONTE_FORMALE == "NO")
+        filter(FLAG_FONTE_FORMALE == "NO")
     } else {
       ant_siepoc <- ant_siepoc %>%
         filter(FLAG_FONTE_FORMALE == "SI")

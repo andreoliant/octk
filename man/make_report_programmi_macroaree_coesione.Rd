@@ -13,6 +13,7 @@ make_report_programmi_macroaree_coesione(
   use_flt = FALSE,
   use_po_psc = FALSE,
   use_fix_siepoc = FALSE,
+  stime_fix_siepoc = FALSE,
   show_cp = FALSE,
   cut_no_risorse = FALSE,
   tipo_ciclo = "CICLO_STRATEGIA",
@@ -37,6 +38,10 @@ make_report_programmi_macroaree_coesione(
 \item{use_flt}{Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?}
 
 \item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?}
+
+\item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
+
+\item{stime_fix_siepoc}{Per correggere i dati SIE e POC 1420 con le anticipazioni vuoi usare anche le stime?}
 
 \item{show_cp}{Logico. Vuoi calcolare anche il costo pubblico (CP)?}
 
