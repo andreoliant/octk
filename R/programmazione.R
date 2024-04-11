@@ -511,7 +511,7 @@ init_programmazione_info <- function(use_en = FALSE, use_713 = FALSE, sum_po = F
       bind_rows(info_CTE)   %>%
       bind_rows(info_FEAMP) %>%
       bind_rows(info_POC)%>% 
-      bind_rows(info_SNAI)%>% 
+      # bind_rows(info_SNAI)%>%
       bind_rows(info_SNAI %>% 
                   mutate(NUMERO_DECISIONE = as.character(NUMERO_DECISIONE))) %>% 
       # NEW 2127
