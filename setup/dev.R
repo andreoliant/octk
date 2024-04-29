@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.6.8"
+oc_ver <- "0.6.9"
 
 # rm(list=ls())
 library("devtools")
@@ -55,13 +55,13 @@ packageVersion("octk")
 # )
 
 oc_init(
-  bimestre = "20231231",
+  bimestre = "20240229",
   elab = "SETUP",
   focus = "setup",
   ver = "V.01",
   # user = "Antonio",
   data_path = "/media/aa/22F70AE20061C7C8/dati/oc",
-  db_ver = "20231231.00",
+  db_ver = "20240229.00",
   use_drive = TRUE,
   # drive_root = "/home/antonio/ExpanDrive/OC/Team Drives"
   drive_root = "/home/aa/oc_drive"
@@ -177,17 +177,26 @@ system(
 )
 
 # drive
-system(
-  paste0(# "DEV_BKP='/home/antonio/coding/octk/bkp/_src/_NIGHTLY/';",
-         "DEV_BKP='/home/aa/coding/octk/bkp/_src/_NIGHTLY/';",
-         # "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/_src/_NIGHTLY/';",
-         # "GOOGLE='/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/_src/_NIGHTLY/';",
-         "GOOGLE='/home/aa/oc_drive/TOOLS/OCTK/_src/_NIGHTLY/';",
-         'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"'
-  )
-)
+# system(
+#   paste0(# "DEV_BKP='/home/antonio/coding/octk/bkp/_src/_NIGHTLY/';",
+#          "DEV_BKP='/home/aa/coding/octk/bkp/_src/_NIGHTLY/';",
+#          # "GOOGLE='/home/antonio/ExpanDrive/OC/Team Drives/TOOLS/OCTK/_src/_NIGHTLY/';",
+#          # "GOOGLE='/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/_src/_NIGHTLY/';",
+#          "GOOGLE='/home/aa/oc_drive/TOOLS/OCTK/_src/_NIGHTLY/';",
+#          'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"'
+#   )
+# )
 
 # TODO: da sostituire con cp perché impiega troppo
+
+system(
+  paste0(
+    "DEV_BKP='/home/aa/coding/octk/bkp/_src/_NIGHTLY/.';",
+    "GOOGLE='/home/aa/oc_drive/TOOLS/OCTK/_src/_NIGHTLY/';",
+    'cp -r "$DEV_BKP" "$GOOGLE";'
+    # 'rsync -rca --progress --delete "$DEV_BKP" "$GOOGLE"'
+  )
+)
 
 # MEMO:
 # devtools::load_all(path = "/home/antonio/ExpanDrive/OC/Shared Drives/TOOLS/OCTK/_src/_NIGHTLY")

@@ -249,6 +249,7 @@ progetti %>%
   group_by(x_CICLO) %>% 
   summarise(sum(OC_FINANZ_TOT_PUB_NETTO, na.rm=TRUE))
 progetti %>% count(x_MACROAREA, OC_MACROAREA)
+
 operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
 operazioni %>% count(x_CICLO, x_AMBITO)
 operazioni %>% filter(is.na(x_AMBITO)) %>% count(x_CICLO, OC_CODICE_PROGRAMMA)
@@ -290,11 +291,11 @@ chk %>%
 write_csv2(chk, file.path(TEMP, "chk_mismatch_progetti_operazioni.csv"))
 
 
-# fix
-operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
-appo <- operazioni %>%
-  mutate(x_AMBITO = if_else(OC_CODICE_PROGRAMMA == "2014TC16M5CB013", "ENI", x_AMBITO))
-write.csv2(appo, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), row.names = FALSE)
+# # fix
+# operazioni <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+# appo <- operazioni %>%
+#   mutate(x_AMBITO = if_else(OC_CODICE_PROGRAMMA == "2014TC16M5CB013", "ENI", x_AMBITO))
+# write.csv2(appo, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), row.names = FALSE)
 
 
 # fix fabio
