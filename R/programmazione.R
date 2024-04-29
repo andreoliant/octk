@@ -19,8 +19,8 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
   # DEV: decidere se fare importazione di tutto e poi selezionare variabili a valle....
   
   # DEBUG:
-  # ciclo <- "2021-2027"
-  # ambito <- "FSE"
+  # ciclo <- "2014-2020"
+  # ambito <- "FESR"
   
   # crea nome file da importare
   if (ciclo == "2014-2020") {
@@ -824,7 +824,8 @@ init_programmazione_info <- function(use_en = FALSE, use_713 = FALSE, sum_po = F
   # NEW: integra fix per pagina programmi
   if (use_fix_siepoc == TRUE) {
     if (file.exists(file.path(DB, "Correzioni_DBCOE_SIEPOC.xlsx"))) {
-      ant_siepoc <- read_xlsx(file.path(DB, "Correzioni_DBCOE_SIEPOC.xlsx")) 
+      ant_siepoc <- read_xlsx(file.path(DB, "Correzioni_DBCOE_SIEPOC.xlsx")) %>% 
+        filter(FLAG_FONTE_FORMALE == "SI")
       
       info_last <- info_last %>% 
         left_join(ant_siepoc %>% 
@@ -1336,7 +1337,7 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_
   
   # NEW: split REACT-EU per allineamento a struttura tavole
   programmi <- programmi %>% 
-    mutate (x_AMBITO=case_when(x_AMBITO=="FESR" & CAT_REGIONE=="REACT"~ "FESR_REACT",
+    mutate(x_AMBITO=case_when(x_AMBITO=="FESR" & CAT_REGIONE=="REACT"~ "FESR_REACT",
                                x_AMBITO=="FSE" & CAT_REGIONE=="REACT"~"FSE_REACT",
                                TRUE~x_AMBITO))
   
