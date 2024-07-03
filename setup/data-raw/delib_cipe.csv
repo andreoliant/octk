@@ -26,6 +26,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 8;2012;Infrastrutture strategiche regionali;0;
 79;2012;Obiettivi di servizio risorse regionali;0;
 41;2012;Infrastrutture strategiche regionali;0;
+14;2021;Piano Sviluppo e Coesione 2000-2020;0;
 94;2017;Assegnazione per norma;0;
 26;2016;Patto per lo Sviluppo;0;
 55;2016;Piano operativo;0;
@@ -43,9 +44,9 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 166;2007;Quota Ordinaria;0;
 41;2012;Quota Ordinaria;0;
 20;2004;Quota E.2 Risorse Regioni Mezzogiorno Interventi Aree Urbane;0;
+32;2015;Piano stralcio;0;
 6;2012;Infrastrutture strategiche nazionali;0;
 17;2003;Altre destinazioni;0;
-32;2015;Piano stralcio;0;
 35;2005;Quota D.5 - Regioni Mezzogiorno;0;
 27;2015;Infrastrutture strategiche regionali;0;
 95;2015;Infrastrutture strategiche regionali;0;
@@ -68,6 +69,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 79;2011;Quota Ordinaria;0;
 16;2003;Assegnazione delle risorse a carico delle aree depresse;0;
 49;2017;Assegnazione per norma;0;
+21;2021;Piano Sviluppo e Coesione 2000-2020;0;
 78;2012;ÃÂ¿Fondo per lo sviluppo e la coesione. Riprogrammazione delle risorse regionali residue 2007-2013 (Mezzogiorno);0;
 56;2016;Quota Ordinaria;0;
 20;2004;Quota Ordinaria;0;
@@ -79,6 +81,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 138;2000;Quota Ordinaria;0;
 106;1999;Studi di FattibilitÃ ;0;
 142;1999;Quota Ordinaria;0;
+78;2011;Quota Ordinaria;0;
 52;1999;Completamenti;0;
 3;2006;Quota Ordinaria;0;
 17;2003;Quota E.1 - Ricerca e Societa' dell'Informazione Mezzogiorno;0;
@@ -87,7 +90,6 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 21;2014;Quota Ordinaria;0;
 35;2005;Quota D.1.b - Amministrazioni Centrali;0;
 79;2012;Obiettivi di servizio risorse MIUR;0;
-78;2011;Quota Ordinaria;0;
 181;2006;Risorse premiali per il prog. monit. (Cipe 17/03 - p. 1.2.4a);0;
 15;2019;Patto per lo Sviluppo;0;
 88;2012;Infrastrutture strategiche regionali;0;
@@ -103,6 +105,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 28;2016;Fondo per lo sviluppo e la coesione. Assegnazione risorse residue 2007-2013;0;
 49;2014;Amministrazioni Centrali;0;
 17;2003;Quota C - Progetto Monitoraggio;0;
+8;2012;Quota Ordinaria;0;
 28;2015;riassegnazione risorse FSC 2007-13 alle regioni nell'ambito della programmazione 2014-2020;0;
 16;2018;Piano operativo;0;
 2;2017;Assegnazione per norma;0;
@@ -130,11 +133,11 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 29;2015;Rimodulazione risorse assegnate con delibera Cipe 88/2012 ÃÂ¿Ricerca e Sviluppo e Contratti di sviluppo;0;
 92;2012;Quota Ordinaria;0;
 99999;2011;Interventi di compensazione ambientale - Regione Campania- quota a gestione regionale;0;
-8;2012;Quota Ordinaria;0;
 156;2012;Quota Ordinaria;0;
 17;2003;Quota D.1.b - Amministrazioni Centrali;0;
 138;2000;Quota ricerca, formazione e politiche del lavoro;0;
 114;2015;Quota Ordinaria;0;
+19;2004;Quota F.2.1 Accelerazione programma infrastrutture strategiche;0;
 103;2009;Quota Ordinaria;0;
 20;2004;Quota B.2  progetti di qualitÃ ;0;
 156;2012;Infrastrutture strategiche regionali;0;
@@ -197,6 +200,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 35;2005;Quota F.2.2.b - Terremoto Umbria del 1997;0;
 107;2017;Progetti Strategici Speciali;0;
 69;2009;Apertura nel Mediterraneo dell'area di libero scambio;0;
+69;2014;Infrastrutture strategiche regionali;0;
 95;2017;Patto per lo Sviluppo;0;
 71;2019;Assegnazione per norma;0;
 7;2012;Quota Ordinaria;0;
@@ -221,6 +225,7 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 26;2003;Fondi MAP per patti territoriali;0;
 20;2004;Quota E.4 Risorse Regioni Mezzogiorno;0;
 17;2003;Quota F.2.3 - Eventi vulcanici 2002 - Area Etnea;0;
+84;2021;Piano Sviluppo e Coesione 2000-2020;0;
 17;2003;Quota B (punto 1.1);0;
 156;2005;Quota Ordinaria;0;
 156;2005;Quota ordinaria;0;
@@ -238,7 +243,6 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 39;2015;Assegnazione per norma;0;
 26;2021;Piano Sviluppo e Coesione 2000-2020;0;
 25;2015;riassegnazione risorse FSC 2007-13 alle regioni nell'ambito della programmazione 2014-2020;0;
-21;2021;Piano Sviluppo e Coesione 2000-2020;0;
 19;2018;Assegnazione per norma;0;
 80;2017;Progetti Strategici Speciali;0;
 36;2020;Assegnazione per norma;0;
@@ -252,7 +256,6 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 8;2021;Piano Sviluppo e Coesione 2000-2020;0;
 36;2012;Assegnazione per norma;0;
 52;2016;Piano operativo;0;
-14;2021;Piano Sviluppo e Coesione 2000-2020;0;
 18;2018;Quota Ordinaria;0;
 2;2022;CIS - Terra dei Fuochi;0;
 5;2017;Assegnazione per norma;0;
@@ -266,13 +269,14 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 102;2015;Assegnazione per norma;0;
 5;2015;Assegnazione per norma;0;
 47;2014;Piano stralcio;0;
+7;2022;Assegnazione per norma;0;
 35;2022;Piano Sviluppo e Coesione 2021-2027;0;
 17;2021;Piano Sviluppo e Coesione 2000-2020;0;
 12;2021;Piano Sviluppo e Coesione 2000-2020;0;
 105;2010;Fondo Infrastrutture;0;
 61;2020;Piano operativo;0;
+17;2023;Piano Sviluppo e Coesione 2021-2027;0;
 11;2021;Piano Sviluppo e Coesione 2000-2020;0;
-7;2022;Assegnazione per norma;0;
 28;2019;Piano operativo;0;
 49;2014;Quota D.1.b - Amministrazioni Centrali;0;
 16;2021;Piano Sviluppo e Coesione 2000-2020;0;
@@ -287,4 +291,4 @@ NUMERO_DEL_CIPE;ANNO_DEL_CIPE;DESCRIZIONE_QUOTA;QUERY;NOTE
 15;2021;Piano Sviluppo e Coesione 2000-2020;0;
 13;2021;Piano Sviluppo e Coesione 2000-2020;0;
 9;2015;Progetti Strategici Speciali;0;
-84;2021;Piano Sviluppo e Coesione 2000-2020;0;
+65;2015;Piano stralcio;0;

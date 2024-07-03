@@ -140,11 +140,14 @@ progetti_all %>% fix_progetti() %>% filter(OC_CODICE_PROGRAMMA == "2014IT05M9OP0
 progetti_all %>% filter(OC_CODICE_PROGRAMMA == "2014IT16M2OP006") %>% count(FONDO_COMUNITARIO)
 
 # chk dupli
-progetti_all %>%
+chk <- progetti_all %>%
   fix_progetti(.) %>%
   get_x_vars(.) %>%
   count(COD_LOCALE_PROGETTO) %>%
   filter(n > 1)
+
+chk2 <- progetti_all %>% semi_join(chk, by = "COD_LOCALE_PROGETTO")
+write.xlsx(chk2, file.path(TEMP, "progetti_clp_duplo.xlsx"))
 
 # HAND: integra po_riclass.csv (e DB in caso di codifiche assenti)
 # HAND: integra fix_progetti() per gestire anomalie
@@ -172,6 +175,10 @@ chk <- progetti_all %>%
 # HAND: integra po_riclass.csv (e DB in caso di codifiche assenti)
 # HAND: integra fix_progetti() per gestire anomalie
 
+# chk
+progetti_all %>% filter(OC_CODICE_PROGRAMMA == "2012MTRA1FSC002") %>% count(OC_FLAG_VISUALIZZAZIONE, OC_DESCR_CICLO)
+
+
 # reload
 source(file.path(getwd(), "setup", "setup_data.R"))
 devtools::load_all(path = ".")
@@ -181,7 +188,7 @@ devtools::load_all(path = ".")
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20231231"
+bimestre_old <- "20240229"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
 progetti_all_old <- load_progetti(bimestre = bimestre_old,
