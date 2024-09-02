@@ -146,7 +146,10 @@ chk <- progetti_all %>%
   count(COD_LOCALE_PROGETTO) %>%
   filter(n > 1)
 
-chk2 <- progetti_all %>% semi_join(chk, by = "COD_LOCALE_PROGETTO")
+chk2 <- progetti_all %>%
+  get_x_vars(.) %>% 
+  semi_join(chk, 
+            by = "COD_LOCALE_PROGETTO")
 write.xlsx(chk2, file.path(TEMP, "progetti_clp_duplo.xlsx"))
 
 # HAND: integra po_riclass.csv (e DB in caso di codifiche assenti)
@@ -188,7 +191,7 @@ devtools::load_all(path = ".")
 # chk non visualizzati e delta da bimestre precedente
 
 # loads
-bimestre_old <- "20240229"
+bimestre_old <- "20240430"
 # OLD: data_path_old <- file.path(dirname(dirname(dirname(DATA))), bimestre_old, "DASAS", "DATAMART")
 data_path_old <- file.path(dirname(DATA), bimestre_old)
 progetti_all_old <- load_progetti(bimestre = bimestre_old,
