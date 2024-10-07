@@ -733,35 +733,16 @@ query_comuni <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "comuni")
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), 
+                      sheet = "comuni", 
+                      col_types = c("numeric", "text", "numeric", 
+                                    "text", "text", "text", "numeric", "text", "text", "text"))
   } else {
     appo <- read_csv2(file.path(INPUT, "comuni.csv"))
   }
   
   matrix <- appo  %>%
     rename(QUERY_COMUNI = QUERY)
-  
-  # progetti con COD_COMUNE anomalo (NA o 4 char al posto di 9) che vengono scartati
-  # A tibble: 17 x 3
-  # COD_LOCALE_PROGETTO    COD_COMUNE   chk
-  # <chr>                  <chr>      <int>
-  # 1 13TOA19_2016_CSP004    0090           4
-  # 2 1MISE12IR029/G4        NA            NA
-  # 3 1MISE16IR646/G1        NA            NA
-  # 4 2LIFESR-2-2.1.1-002/01 0070           4
-  # 5 4MISEAbiMISECConM      0130           4
-  # 6 4MISEBaiMISECConM      0170           4
-  # 7 4MISEBasPNPONConM      0170           4
-  # 8 4MISECliPNPONConM      0180           4
-  # 9 4MISECmiPNPONConM      0150           4
-  # 10 4MISEEriMISECConM      0080           4
-  # 11 4MISEFviMISECConM      0060           4
-  # 12 4MISELbiMISECConM      0030           4
-  # 13 4MISEPmiMISECConM      0010           4
-  # 14 4MISEPuiPNPONConM      0160           4
-  # 15 4MISESiiPNPONConM      0190           4
-  # 16 4MISEVeiMISECConM      0050           4
-  # 17 7VE10046146            0050           4
   
   # merge
   peri_comuni <- progetti %>%
@@ -774,13 +755,16 @@ query_comuni <- function(progetti) {
     inner_join(matrix %>%
                  filter(QUERY_COMUNI != 0),
                by = "COD_COMUNE") %>%
-    select(COD_LOCALE_PROGETTO, QUERY_COMUNI)
+    # select(COD_LOCALE_PROGETTO, QUERY_COMUNI, AMBITO, AMBITO_SUB)
+    distinct(COD_LOCALE_PROGETTO, QUERY_COMUNI, AMBITO, AMBITO_SUB)
   # MEMO: uso inner_join per tenere QUERY_COMUNI
   
   # fix per duplicati da ":::" che quadruplicano in make_classi
-  peri_comuni <- peri_comuni %>% 
+  peri_comuni <- peri_comuni %>%
     group_by(COD_LOCALE_PROGETTO) %>%
-    summarise(QUERY_COMUNI = min(QUERY_COMUNI))
+    summarise(QUERY_COMUNI = min(QUERY_COMUNI),
+              AMBITO = paste0(AMBITO, collapse = ":::"),
+              AMBITO_SUB = paste0(AMBITO_SUB, collapse = ":::"))
   
   return(peri_comuni)
   
