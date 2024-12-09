@@ -117,3 +117,10 @@ usethis::use_data(keyword, overwrite = TRUE)
 # forma_giuridica_soggetti
 forma_giuridica_soggetti <- read_csv2(file.path(getwd(), "setup", "data-raw", "forma_giuridica_soggetti.csv"), col_types = "ccccl")
 usethis::use_data(forma_giuridica_soggetti, overwrite = TRUE)
+
+
+# info_psc
+info_psc <- read_csv2(file.path(getwd(), "setup", "data-raw", "info_psc.csv"), col_types = "ccccc")
+usethis::use_data(info_psc, overwrite = TRUE)
+
+
