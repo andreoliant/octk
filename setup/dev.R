@@ -2,7 +2,7 @@
 # development platform
 
 # versione
-oc_ver <- "0.7.2"
+oc_ver <- "0.7.3"
 # HAND: 
 # verificare ultimo invio in mail
 # poi da modificare nel file DESCRIPTION
@@ -58,13 +58,13 @@ packageVersion("octk")
 # )
 
 oc_init(
-  bimestre = "20240831",
+  bimestre = "20241031",
   elab = "SETUP",
   focus = "setup",
   ver = "V.01",
   # user = "Antonio",
   data_path = "/media/aa/22F70AE20061C7C8/dati/oc",
-  db_ver = "20240831.00",
+  db_ver = "20241031.00",
   use_drive = TRUE,
   # drive_root = "/home/antonio/ExpanDrive/OC/Team Drives"
   drive_root = "/home/aa/oc_drive"
