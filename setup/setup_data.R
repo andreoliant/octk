@@ -123,4 +123,9 @@ usethis::use_data(forma_giuridica_soggetti, overwrite = TRUE)
 info_psc <- read_csv2(file.path(getwd(), "setup", "data-raw", "info_psc.csv"), col_types = "ccccc")
 usethis::use_data(info_psc, overwrite = TRUE)
 
+# info_psc_matrix_temi
+info_psc_matrix_temi <- read_csv2(file.path(getwd(), "setup", "data-raw", "info_psc_matrix_temi.csv"), col_types = "ccccc")
+usethis::use_data(info_psc_matrix_temi, overwrite = TRUE)
+
+
 

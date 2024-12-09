@@ -1,4 +1,7 @@
-# Script per la gestione dei PSC
+# Funzioni per la gestione dei PSC (versione fino a 20240831 con migrazione in corso)
+
+# DEV:
+# questa versione resta viva per elaborazioni retrospettive
 
 #' Inizializza PSC
 #'
