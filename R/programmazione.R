@@ -203,15 +203,17 @@ load_db <- function(ciclo, ambito, simplify_loc=FALSE, use_temi=FALSE, use_sog=F
 #' @param use_713 Vuoi caricare anche il DB per il 2007-2013?
 #' @param use_ciclo Voi caricare il ciclo?
 #' @param tipo_ciclo Vuoi usare CICLO_STRATEGIA (default in x_CICLO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_CICLO da DB)?
-#' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?
-#' @param use_fix_siepoc Vuoi correggere i dati SIE e POC 1420 con le anticipazioni? 
-#' @param stime_fix_siepoc Per correggere i dati SIE e POC 1420 con le anticipazioni vuoi usare anche le stime? 
+#' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC? [FUNZIONALITA' DEPRECATA]
+#' @param use_cicli_psc Vuoi usare i dati di programmazione per cicli dei PSC?
+#' @param use_fix_siepoc Vuoi correggere i dati SIE e POC 1420 con le anticipazioni di decisioni in base alle delibere sui POC? 
+#' @param stime_fix_siepoc Vuoi correggere i dati SIE e POC 1420 con le stime di chiusura dei programmi? 
 #' @return L'intero database dei programmazione, suddiviso in 'po_fesr', 'po_fse', 'po_fsc' e 'po_poc'.
 init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE, use_flt=FALSE, 
                                      use_713=FALSE, 
                                      use_articolaz=FALSE, use_location=FALSE, use_ciclo=TRUE, tipo_ciclo="CICLO_STRATEGIA", 
                                      # use_en=FALSE, 
                                      use_po_psc=FALSE,
+                                     use_cicli_psc=FALSE,
                                      use_fix_siepoc=FALSE,
                                      stime_fix_siepoc=FALSE)
 {
@@ -242,7 +244,6 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
   po_jtf2127 <- load_db("2021-2027", "JTF", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
   po_snai2127 <- load_db("2021-2027", "SNAI", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt,  use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
   po_cte2127 <- load_db("2021-2027", "CTE", simplify_loc = TRUE, use_temi = use_temi, use_sog = use_sog, use_ue = use_eu, use_flt = use_flt, use_location = use_location, use_ciclo = use_ciclo, use_articolaz = use_articolaz)
-  
   
   if (use_temi == TRUE) {
     po_fsc2127 <- po_fsc2127 %>% 
@@ -329,21 +330,22 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
       message("errore, le anticipazioni non sono implementate")
     }
     
-    # DEV: 
+    # swtich correzioni vs stime
+    if (stime_fix_siepoc == TRUE) {
+      ant_siepoc <- read_xlsx(file.path(DB, "Stime_DBCOE_SIEPOC.xlsx")) 
+    } else {
+      ant_siepoc <- ant_siepoc %>%
+        filter(FLAG_FONTE_FORMALE == "SI")
+    }
+    
+    # fix label macroarea 
     if ("x_MACROAREA" %in% names(programmi)) {
       ant_siepoc <- ant_siepoc %>%
         rename(x_MACROAREA = MACROAREA) %>% 
         ricodifica_macroaree()
     }
     
-    if (stime_fix_siepoc == TRUE) {
-      ant_siepoc <- ant_siepoc %>%
-        # filter(FLAG_FONTE_FORMALE == "SI" | FLAG_FONTE_FORMALE == "NO")
-        filter(FLAG_FONTE_FORMALE == "NO")
-    } else {
-      ant_siepoc <- ant_siepoc %>%
-        filter(FLAG_FONTE_FORMALE == "SI")
-    }
+    
 
     ant_siepoc <- ant_siepoc %>% 
       mutate(x_CICLO = CICLO_PROGRAMMAZIONE,
@@ -424,7 +426,111 @@ init_programmazione_dati <- function(use_temi=FALSE, use_sog=FALSE, use_eu=FALSE
     # sum(programmi$FINANZ_TOTALE)
 
   }
+  
+  if (use_cicli_psc == TRUE){
+    # sovrascrive dati da file dati DBCOE per PSC con dati per cicli da file interventi PSC
 
+    programmazione <- load_db_psc(use_flt=TRUE)
+    
+    # converte macroaree in formato long
+    programmazione2 <- programmazione %>% 
+      group_by(ID_PSC, AMBITO, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA,
+               CICLO_PROGRAMMAZIONE, TIPO_AR, SEZIONE, FLAG_MONITORAGGIO) %>% 
+      summarise(RISORSE_SUD = sum(RISORSE_SUD, na.rm = TRUE),
+                RISORSE_CN = sum(RISORSE_CN, na.rm = TRUE)) %>% 
+      pivot_longer(cols = c("RISORSE_SUD", "RISORSE_CN"), 
+                   names_to = "MACROAREA", values_to = "RISORSE") %>% 
+      mutate(MACROAREA = case_when(MACROAREA == "RISORSE_SUD" ~ "Mezzogiorno",
+                                   MACROAREA == "RISORSE_CN" ~ "Centro-Nord",
+                                     TRUE ~ "CHK")) %>% 
+      # elimina righe vuote
+      filter(!(RISORSE == 0)) 
+    
+    # chk
+    sum(programmazione$RISORSE_CN, na.rm = TRUE) + sum(programmazione$RISORSE_SUD, na.rm = TRUE) - sum(programmazione2$RISORSE, na.rm = TRUE)
+    
+    cicli_psc <- programmazione2 %>% 
+      # integra variabili mancanti da standard
+      mutate(COD_LIVELLO_1 = SEZIONE,
+             DESCR_LIVELLO_1 = SEZIONE,
+             SEZIONE = "ORD+CIS",
+             TIPOLOGIA_PROGRAMMA = "PSC",
+             x_AMBITO = AMBITO,
+             x_MACROAREA = MACROAREA,
+             AMMINISTRAZIONE = NA_character_,
+             DEN_REGIONE = NA_character_,
+             FINANZ_UE = 0, 
+             FINANZ_ALTRO = 0, 
+             CAT_REGIONE = NA_character_, 
+             x_CICLO = CICLO_PROGRAMMAZIONE,
+             CICLO_RISORSE = CICLO_PROGRAMMAZIONE, 
+             ) %>% 
+      # adatta nomi a file dati dbcoe
+      rename(FINANZ_TOTALE = RISORSE, 
+             TIPOLOGIA_AMMINISTRAZIONE = TIPO_AR) %>%
+      ungroup(.) %>% 
+      select(c(names(programmi), "ID_PSC")) %>%
+      group_by(across(-"FINANZ_TOTALE")) %>% 
+      summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+
+    # programmi2 <- programmi %>% 
+    #   filter(!(TIPOLOGIA_PROGRAMMA == "PSC" & COD_LIVELLO_1 %in% c("SEZ_ORD", "SEZ_CIS")) | is.na(TIPOLOGIA_PROGRAMMA)) %>% 
+    #   bind_rows(cicli_psc)
+    
+    sezspec <- load_db("2014-2020", "FSC", simplify_loc = TRUE, use_temi = use_temi, 
+                       use_sog = use_sog, use_ue = use_eu, use_flt = use_flt, 
+                       use_location = TRUE, use_ciclo = use_ciclo, 
+                       use_articolaz = TRUE) %>% 
+      # MEMO: qui forza valori di use_location e use_articolaz a TRUE perché servono le variabili
+      filter(TIPOLOGIA_PROGRAMMA == "PSC" & 
+               COD_LIVELLO_1 %in% c("SEZ_SPEC_1_COVID", "SEZ_SPEC_2_FS")) %>% 
+      # fix per nome programma che duplica righe
+      select(-DESCRIZIONE_PROGRAMMA) %>% 
+      # recupera variabili mancanti
+      ricodifica_macroaree(.) %>% 
+      mutate(SEZIONE = COD_LIVELLO_1) %>% 
+      left_join(octk::info_psc %>% 
+                  select(OC_CODICE_PROGRAMMA, ID_PSC, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE=TIPO_AR),
+                by = "OC_CODICE_PROGRAMMA") %>% 
+      ungroup(.) %>% 
+      select(c(names(programmi), "ID_PSC")) %>%
+      group_by(across(-"FINANZ_TOTALE")) %>% 
+      summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    
+    programmi2 <- programmi %>% 
+      filter(TIPOLOGIA_PROGRAMMA != "PSC" | is.na(TIPOLOGIA_PROGRAMMA)) %>% 
+      # recupera sezioni speciali
+      bind_rows(sezspec) %>% 
+      # integra nuova sezione ordinaria
+      bind_rows(bind_rows(cicli_psc))
+    
+    # programmi %>% 
+    #   filter(TIPOLOGIA_PROGRAMMA == "PSC" & 
+    #            COD_LIVELLO_1 %in% c("SEZ_SPEC_1_COVID", "SEZ_SPEC_2_FS")) %>% 
+    #   summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    # 
+    # programmi %>% 
+    #   filter(TIPOLOGIA_PROGRAMMA == "PSC" & 
+    #            COD_LIVELLO_1 %in% c("SEZ_CIS", "SEZ_ORD")) %>% 
+    #   summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    # 
+    # programmi %>% 
+    #   filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
+    #   summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    # 
+    # cicli_psc %>%
+    #   ungroup() %>% 
+    #   summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+    
+    # chk
+    sum(programmi$FINANZ_TOTALE, na.rm = TRUE) - sum(programmi2$FINANZ_TOTALE, na.rm = TRUE)
+    
+    programmi <- programmi2 %>% 
+      group_by(across(-"FINANZ_TOTALE")) %>% 
+      summarise(FINANZ_TOTALE = sum(FINANZ_TOTALE, na.rm = TRUE))
+
+  }
+  
   return(programmi)
 
 }

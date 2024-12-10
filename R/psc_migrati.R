@@ -3,6 +3,7 @@
 # DEV:
 # per distinguere le funzioni da versioni ante migrazioni ora hanno suffisso "_psc_migrati"
 
+
 #' Carica dati di base per PSC
 #'
 #' Carica dati di base per PSC
@@ -103,7 +104,7 @@ prep_dati_psc_migrati_bimestre <- function(bimestre, versione_psc, operazioni, p
   
   
   # chk sezione
-  chk <- operazioni_psc %>% 
+  chk <- appo1 %>% 
     select(COD_LOCALE_PROGETTO, 
            ID_PSC,
            x_COD_LIVELLO_0,
@@ -953,4 +954,36 @@ setup_macroaree_psc_migrati <- function(progetti_psc, operazioni, export=FALSE) 
   }
   
   return(out)
+}
+
+
+#' Verifica coerenza tra file dati FSC e file interventi PSC
+#'
+#' Verifica coerenza tra file dati FSC e file interventi PSC
+#'
+#' @param bimestre Bimestre di riferimento
+#' @param versione_psc Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)
+#' @return Dataframe
+chk_dati_dbcoe_psc_migrati <- function() {
+  
+  programmazione <- load_db_psc(use_flt=TRUE) 
+  
+  po_fsc <- load_db("2014-2020", "FSC", simplify_loc = TRUE, use_articolaz = TRUE) %>% 
+    filter(TIPOLOGIA_PROGRAMMA == "PSC" & 
+             COD_LIVELLO_1 %in% c("SEZ_CIS", "SEZ_ORD"))
+  
+  chk <- programmazione %>% 
+    group_by(OC_CODICE_PROGRAMMA) %>% 
+    summarise(RISORSE = sum(RISORSE, na.rm = TRUE)) %>% 
+    full_join(po_fsc %>% 
+                group_by(OC_CODICE_PROGRAMMA) %>% 
+                summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE)),
+              by = "OC_CODICE_PROGRAMMA", suffix = c(".int", ".dati")) %>% 
+    mutate(CHK = RISORSE.int - RISORSE.dati)
+  
+  if (export == TRUE) {
+    write.xlsx(chk, file.path(TEMP, "chk_psc_dati_vs_interventi.xlsx"))
+  }
+  
+  return(chk)
 }

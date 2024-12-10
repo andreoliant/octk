@@ -3987,7 +3987,8 @@ fix_macroaree_progetti_sie <- function(bimestre, progetti, operazioni, export=FA
 #' @param use_713 Vuoi caricare anche i dati di programmaizone per il 2007-2013?
 #' @param use_eu Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)
 #' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
-#' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?
+#' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC? [FUNZIONALITA' DEPRECATA]
+#' @param use_cicli_psc Vuoi usare i dati di programmazione per cicli dei PSC?
 #' @param use_fix_siepoc Vuoi correggere i dati SIE e POC 1420 con le anticipazioni? 
 #' @param stime_fix_siepoc Per correggere i dati SIE e POC 1420 con le anticipazioni vuoi usare anche le stime? 
 #' @param cut_no_risorse Vuoi eliminare i programmi monitorati senza risorse lato DB?
@@ -4000,6 +4001,7 @@ fix_macroaree_progetti_sie <- function(bimestre, progetti, operazioni, export=FA
 #' @return Un file csv con apertura per programma e fase procedurale.
 make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=FALSE, use_713=FALSE, use_eu=FALSE, use_flt=FALSE, 
                                            use_po_psc=FALSE,
+                                           use_cicli_psc=FALSE,
                                            use_fix_siepoc=FALSE, stime_fix_siepoc=FALSE,
                                            cut_no_risorse=FALSE,
                                            tipo_ciclo="CICLO_STRATEGIA",
@@ -4010,14 +4012,17 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
   # use_713 <- TRUE
   # use_flt <- TRUE
   # tipo_ciclo <- "CICLO_STRATEGIA"
-  # use_po_psc <- TRUE
+  # use_po_psc <- FALSE
+  # use_cicli_psc <- TRUE
+  # use_fix_siepoc <- FALSE
+  # stime_fix_siepoc <- FALSE
   
   # OLD:
   # programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) %>%
   #   rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
   #          x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_eu=TRUE, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, 
-                                        use_po_psc=use_po_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) %>%
+                                        use_po_psc=use_po_psc, use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   message("programmi caricato")
@@ -4318,7 +4323,8 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
 #' @param use_713 Vuoi caricare anche i dati di programmaizone per il 2007-2013?
 #' @param use_eu Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)
 #' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
-#' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?
+#' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC? [FUNZIONALITA' DEPRECATA]
+#' @param use_cicli_psc Vuoi usare i dati di programmazione per cicli dei PSC?
 #' @param use_fix_siepoc Vuoi correggere i dati SIE e POC 1420 con le anticipazioni? 
 #' @param stime_fix_siepoc Per correggere i dati SIE e POC 1420 con le anticipazioni vuoi usare anche le stime? 
 #' @param cut_no_risorse Vuoi eliminare i programmi monitorati senza risorse lato DB?
@@ -4330,7 +4336,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
 #' @param  po_riclass dataset di tipo "po_riclass" da utilizzare (altrimenti usa default nel package)
 #' @return Un file csv con apertura per programma e fase procedurale.
 make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NULL, usa_meuro=FALSE, use_713=FALSE, use_eu=FALSE,
-                                                     use_flt=FALSE, use_po_psc=FALSE,
+                                                     use_flt=FALSE, use_po_psc=FALSE, use_cicli_psc=FALSE,
                                                      use_fix_siepoc=FALSE, stime_fix_siepoc=FALSE,
                                                      show_cp=FALSE, cut_no_risorse=FALSE,
                                                      tipo_ciclo="CICLO_STRATEGIA",
@@ -4344,7 +4350,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NU
   # perimetro <- operazioni
   
   programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_eu=TRUE, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE, 
-                                        use_po_psc=use_po_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) %>%
+                                        use_po_psc=use_po_psc, use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   

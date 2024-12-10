@@ -12,6 +12,7 @@ make_report_programmi_coesione(
   use_eu = FALSE,
   use_flt = FALSE,
   use_po_psc = FALSE,
+  use_cicli_psc = FALSE,
   use_fix_siepoc = FALSE,
   stime_fix_siepoc = FALSE,
   cut_no_risorse = FALSE,
@@ -36,7 +37,9 @@ make_report_programmi_coesione(
 
 \item{use_flt}{Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?}
 
-\item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?}
+\item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC? [FUNZIONALITA' DEPRECATA]}
+
+\item{use_cicli_psc}{Vuoi usare i dati di programmazione per cicli dei PSC?}
 
 \item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
 
