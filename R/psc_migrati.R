@@ -987,3 +987,126 @@ chk_dati_dbcoe_psc_migrati <- function() {
   
   return(chk)
 }
+
+
+#' Integra CLP da attuazione in DB interventi programmati nei PSC
+#'
+#' Integra CLP da attuazione in DB interventi programmati nei PSC.
+#' Integra CLP per match su CLP al netto di codice SIL e poi per CUP univoci.
+#' Sostituisce CUP vuoti con CUP da attuazione.
+#'
+#' @param progetti_psc Dataset da load_progetti_psc_migrati()
+#' @param interventi_psc Dataset da DBCOE per programmazione interventi PSC
+#' @param debug Vuoi esportare in TEMP le variazioni dei CLP?
+#' @param export Vuoi esportare nel file interventi del DBCOE?
+#' @return Dataframe
+update_clp_interventi_psc <- function(progetti_psc, interventi_psc, debug=TRUE, export=FALSE) {
+  
+  # DEBUG:
+  # debug=TRUE
+  
+  # join by clp
+  
+  clean_clp <- function(x, sil) {
+    for (l in sil$sil) {
+      # DEBUG:
+      # x <- "1MISE10067"
+      # l <- "1MISE"
+      r_l <- paste0("^", l)
+      # print(r_l)
+      x <- str_replace_all(x, r_l, "")
+    }
+    return(x)
+  }
+  
+  appo_int <- interventi_psc %>% 
+    anti_join(progetti_psc, by = "COD_LOCALE_PROGETTO") %>% 
+    mutate(COD_LOCALE_PROGETTO_OGV = COD_LOCALE_PROGETTO,
+           CUP_OGV = CUP) %>% 
+    mutate(TEMP_CLP = clean_clp(COD_LOCALE_PROGETTO, octk::sil))
+  
+  appo_pro <- progetti_psc %>% 
+    anti_join(interventi_psc, by = "COD_LOCALE_PROGETTO") %>% 
+    mutate(TEMP_CLP = clean_clp(COD_LOCALE_PROGETTO, octk::sil)) %>% 
+    select(TEMP_CLP, ID_PSC, COD_LOCALE_PROGETTO, CUP)
+  
+  appo <- appo_int %>% 
+    inner_join(appo_pro, 
+               by = c("TEMP_CLP", "ID_PSC")) 
+  
+  if (debug == TRUE) {
+    chk <- appo %>%
+      select(TEMP_CLP, ID_PSC, COD_LOCALE_PROGETTO.x, COD_LOCALE_PROGETTO.y, CUP.x, CUP.y)
+    write.xlsx(chk, file.path(TEMP, "chk_match_interventi_by_clp.xlsx"))
+    message("Correzioni da match su CLP senza codice SIL per ", dim(chk)[1], " interventi")
+  }
+  
+  appo1 <- appo %>% 
+    mutate(CUP = if_else(is.na(CUP.x), CUP.y, CUP.x), #MEMO: integra solo CUP vuoti lato programmazione, non modifica CUP diversi con attuazione (che si controllano in data quality)
+           COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.y) 
+  
+  interventi_psc_2 <- appo1 %>% 
+    select(-TEMP_CLP, -COD_LOCALE_PROGETTO.x, -COD_LOCALE_PROGETTO.y, -CUP.x, -CUP.y) %>% 
+    bind_rows(interventi_psc %>% 
+                anti_join(appo1 %>% 
+                            select(COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.x), # MEMO: il join va fatto sul codice originale!
+                          by = "COD_LOCALE_PROGETTO") %>% 
+                mutate(COD_LOCALE_PROGETTO_OGV = COD_LOCALE_PROGETTO)) %>% 
+    select(names(interventi_psc))
+  
+  dim(interventi_psc_2)[1] == dim(interventi_psc)[1]    
+  
+  
+  # join by cup 
+  n_cup_int <- interventi_psc_2 %>% 
+    filter(!is.na(CUP)) %>% 
+    filter(CUP != "no") %>% 
+    filter(CUP != "-") %>% 
+    filter(nchar(CUP) == 15) %>% 
+    count(CUP) %>% 
+    filter(n == 1)
+  
+  n_cup_pro <- progetti_psc %>% 
+    count(CUP) %>% 
+    filter(n == 1)
+  
+  appo_int_2 <- interventi_psc_2 %>% 
+    semi_join(n_cup_int, by = "CUP")
+  
+  appo_pro_2 <- progetti_psc %>% 
+    semi_join(n_cup_pro, by = "CUP") %>% 
+    anti_join(interventi_psc_2, by = "COD_LOCALE_PROGETTO") %>% 
+    select(ID_PSC, CUP, COD_LOCALE_PROGETTO)
+  
+  appo2 <- appo_int_2 %>% 
+    inner_join(appo_pro_2, 
+               by = c("CUP", "ID_PSC")) 
+  
+  if (debug == TRUE) {
+    chk1 <- appo2 %>%
+      select(ID_PSC, CUP, COD_LOCALE_PROGETTO.x, COD_LOCALE_PROGETTO.y)
+    write.xlsx(chk1, file.path(TEMP, "chk_match_interventi_by_cup.xlsx"))
+    message("Correzioni da match su CUP per ", dim(chk1)[1], " interventi")
+  }
+  
+  appo3 <- appo2 %>% 
+    mutate(COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.y) 
+  
+  interventi_psc_3 <- appo3 %>% 
+    select(-COD_LOCALE_PROGETTO.x, -COD_LOCALE_PROGETTO.y) %>% 
+    bind_rows(interventi_psc_2 %>% 
+                anti_join(appo3 %>% 
+                            select(COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.x), # MEMO: il join va fatto sul codice originale!
+                          by = "COD_LOCALE_PROGETTO") %>% 
+                mutate(COD_LOCALE_PROGETTO_OGV = COD_LOCALE_PROGETTO)) %>% 
+    select(names(interventi_psc))
+  
+  dim(interventi_psc_3)[1] == dim(interventi_psc_2)[1] 
+  
+  if (export == TRUE) {
+    write.xlsx(interventi_psc_3, file.path(DB, "Interventi_DBCOE_PSC.xlsx"))
+  }
+  
+  return(interventi_psc_3)
+}
+

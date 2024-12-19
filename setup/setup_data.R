@@ -128,4 +128,8 @@ info_psc_matrix_temi <- read_csv2(file.path(getwd(), "setup", "data-raw", "info_
 usethis::use_data(info_psc_matrix_temi, overwrite = TRUE)
 
 
+# sil
+sil <- read_csv2(file.path(getwd(), "setup", "data-raw", "sil.csv"), col_types = "c")
+usethis::use_data(sil, overwrite = TRUE)
+
 
