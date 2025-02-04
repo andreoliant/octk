@@ -996,7 +996,7 @@ chk_dati_dbcoe_psc_migrati <- function() {
 #' Sostituisce CUP vuoti con CUP da attuazione.
 #'
 #' @param progetti_psc Dataset da load_progetti_psc_migrati()
-#' @param interventi_psc Dataset da DBCOE per programmazione interventi PSC
+#' @param interventi_psc Dataset da DBCOE per programmazione interventi PSC (ATTENZIONE: use_flt=FALSE altrimenti si perdono righe)
 #' @param debug Vuoi esportare in TEMP le variazioni dei CLP?
 #' @param export Vuoi esportare nel file interventi del DBCOE?
 #' @return Dataframe
@@ -1108,5 +1108,810 @@ update_clp_interventi_psc <- function(progetti_psc, interventi_psc, debug=TRUE, 
   }
   
   return(interventi_psc_3)
+}
+
+
+
+#' Analisi qualità dati PSC
+#'
+#' Analisi qualità dati PSC
+#'
+#' @param progetti_psc Dataset da load_progetti_psc_migrati()
+#' @param interventi_psc Dataset da DBCOE per programmazione interventi PSC
+#' @param progetti Dataset progetti da load_progetti(visualizzati = FALSE, light = TRUE)
+#' @param export Vuoi esportare il file in OUTPUT?
+#' @return Dataframe
+analisi_data_quality_psc <- function(progetti_psc, interventi_psc, progetti, export=FALSE) {
+  
+  
+  '%!in%' <- function(x,y)!('%in%'(x,y))
+  
+  PSC <- file.path(DRIVE, "DATI", "PSC")
+  
+  # ---- programmazione ----
+  
+  interventi_psc_2 <- interventi_psc %>% 
+    rename(CICLO = CICLO_PROGRAMMAZIONE,
+           PROGRAMMA = DESCRIZIONE_PROGRAMMA)
+  
+  
+  # ---- attuazione ----
+  
+  progetti_psc_2 <- progetti_psc %>% 
+    filter(SEZIONE %in% c("ORD", "CIS")) %>% 
+    left_join(progetti %>% 
+                select(COD_LOCALE_PROGETTO, IMPEGNI, CUP_DESCR_NATURA),
+              by = "COD_LOCALE_PROGETTO") %>% 
+    rename(TITOLO_PROGETTO = OC_TITOLO_PROGETTO,
+           CICLO = x_CICLO,
+           PROGRAMMA = x_PROGRAMMA)
+  
+  
+  # ---- join ----
+  
+  appo <- progetti_psc_2 %>% 
+    full_join(interventi_psc_2, 
+              by = c("COD_LOCALE_PROGETTO", "ID_PSC")) %>% 
+    mutate(
+      CUP = if_else(is.na(CUP.y), CUP.x, CUP.y),
+      TITOLO_PROGETTO = if_else(is.na(TITOLO_PROGETTO.y), TITOLO_PROGETTO.x, TITOLO_PROGETTO.y),
+      # CICLO = if_else(is.na(CICLO.y), CICLO.x, CICLO.y),
+      PROGRAMMA = if_else(is.na(PROGRAMMA.y), PROGRAMMA.x, PROGRAMMA.y),
+      OC_CODICE_PROGRAMMA = if_else(is.na(OC_CODICE_PROGRAMMA.y), OC_CODICE_PROGRAMMA.x, OC_CODICE_PROGRAMMA.y),
+      SEZIONE = if_else(is.na(SEZIONE.y), SEZIONE.x, SEZIONE.y),
+      # AREA_TEMATICA = if_else(is.na(AREA_TEMATICA.y), AREA_TEMATICA.x, AREA_TEMATICA.y),
+      # SETTORE_INTERVENTO = if_else(is.na(SETTORE_INTERVENTO.y), SETTORE_INTERVENTO.x, SETTORE_INTERVENTO.y)
+      AREA_TEMATICA = AREA_TEMATICA.y,
+      AREA_TEMATICA_MONIT = AREA_TEMATICA.x,
+      SETTORE_INTERVENTO = SETTORE_INTERVENTO.y,
+      SETTORE_INTERVENTO_MONIT = SETTORE_INTERVENTO.x) %>% 
+    rename() %>% 
+    # TODO: scegliere i casi da mostrare nel dossier e commentare per lasciare differenze in chiaro
+    # fix varibili vuote ma di cui va occupata posizione
+    mutate(MACROAREA = "ND",
+           RISORSE_COE = RISORSE,
+           RISORSE_ECO = 0) %>% 
+    select(ID,
+           COD_LOCALE_PROGETTO,
+           CUP,
+           TITOLO_PROGETTO,
+           CICLO_ATTUAZIONE = CICLO.x, 
+           CICLO_PROGRAMMAZIONE = CICLO.y,
+           ID_PSC,
+           PROGRAMMA,
+           OC_CODICE_PROGRAMMA,
+           MACROAREA,
+           SEZIONE,
+           AREA_TEMATICA,
+           SETTORE_INTERVENTO,
+           AREA_TEMATICA_MONIT,
+           SETTORE_INTERVENTO_MONIT,
+           CUP_DESCR_NATURA,
+           CASI_OGV,
+           RISORSE,
+           RISORSE_COE,
+           RISORSE_ECO,
+           COE,
+           COE_IMP,
+           COE_CR,
+           COE_PAG,
+           COE_ECO,
+           CP,
+           CPP,
+           IMPEGNI,
+           OC_STATO_PROCEDURALE,
+           OC_FLAG_VISUALIZZAZIONE,
+           DB) %>% 
+    # fix flag
+    mutate(OC_FLAG_VISUALIZZAZIONE = if_else(is.na(OC_FLAG_VISUALIZZAZIONE), 0, OC_FLAG_VISUALIZZAZIONE)) %>% 
+    # variabili per analisi match
+    mutate(CHK_LISTE = case_when(is.na(CASI_OGV) ~ "no psc",
+                                 CASI_OGV == "economie programmazione" ~ "economie",
+                                 CASI_OGV == "solo economie" ~ "economie",
+                                 is.na(COE) ~ "no monit",
+                                 TRUE ~ "match")) %>% 
+    mutate(DELTA = RISORSE - COE) %>%
+    # mutate(DELTA = RISORSE_COE - COE) %>% 
+    mutate(CHK_RISORSE = case_when(# DELTA > 0 ~ "da monitorare",
+                                   # DELTA == 0 ~ "invariati",
+                                   # DELTA < 0 ~ "overbooking",
+                                   DELTA > 1 ~ "da monitorare", #MEMO: introduco tolleranza di un euro
+                                   DELTA >= -1 & DELTA < 1 ~ "invariati",
+                                   DELTA < -1 ~ "overbooking",
+                                   # is.na(RISORSE_COE) ~ "overbooking",
+                                   is.na(RISORSE) ~ "overbooking",
+                                   is.na(COE) ~ "da monitorare",
+                                   TRUE ~ "chk")) %>% 
+    mutate(COE_FIX = case_when(CHK_LISTE == "no monit" ~ RISORSE,
+                               CHK_LISTE == "economie" ~ RISORSE,
+                               CHK_LISTE == "match" ~ RISORSE,
+                               TRUE ~ COE)) %>% # variabile ibrida per controlli
+    mutate(OGV = case_when(CASI_OGV == "dichiarazione ogv da acquisire" ~ "OGV",
+                           CASI_OGV == "economie programmazione" ~ "OGV",
+                           CASI_OGV == "esoneri" ~ "OGV",
+                           CASI_OGV == "ogv conseguita dic22" ~ "OGV",
+                           CASI_OGV == "ogv conseguita giu22" ~ "OGV",
+                           CASI_OGV == "ogv conseguita per dichiarazioni" ~ "OGV",
+                           CASI_OGV == "ogv conseguita su salvaguardia 200M" ~ "OGV",
+                           CASI_OGV == "ogv conseguita su salvaguardia 25M" ~ "OGV",
+                           CASI_OGV == "ogv non conseguita" ~ "NO OGV",
+                           CASI_OGV == "ogv non conseguita con art. 53" ~ "NO OGV",
+                           CASI_OGV == "ogv non conseguita per verifica desk" ~ "NO OGV",
+                           CASI_OGV == "ogv non conseguita su salvaguardia 200M" ~ "NO OGV",
+                           CASI_OGV == "ogv non conseguita su salvaguardia 25M" ~ "NO OGV",
+                           CASI_OGV == "salvaguardia CIS" ~ "OGV",
+                           CASI_OGV == "salvaguardia COMM" ~ "OGV",
+                           CASI_OGV == "salvaguardia pnrr" ~ "OGV",
+                           TRUE ~ "ND"))
+  
+  analisi <- appo %>%
+    mutate(VERIFICA_PROCEDURALE = case_when(OC_STATO_PROCEDURALE == "In esecuzione" ~ "IN ESECUZIONE",
+                                            OC_STATO_PROCEDURALE == "Eseguito" ~ "IN ESECUZIONE",
+                                            is.na(OC_STATO_PROCEDURALE) ~ "NON DEFINIBILE",
+                                            TRUE ~ "NON IN ESECUZIONE")) %>% 
+    mutate(IMPEGNI = ifelse(is.na(IMPEGNI), 0, IMPEGNI))%>%
+    mutate(VERIFICA_IMPEGNI = case_when (is.na(CP) ~ "NON DEFINIBILE",
+                                         # IMPEGNI/CP < 0.6 ~ "IMPEGNI INFERIORI AL 60%",
+                                         COE_IMP/COE < 0.6 ~ "IMPEGNI INFERIORI AL 60%",
+                                         TRUE ~ "IMPEGNI OK"))%>%
+    mutate(CHK_CICLO = case_when(CICLO_PROGRAMMAZIONE == CICLO_ATTUAZIONE ~ "CICLO CORRETTO",
+                                 CICLO_PROGRAMMAZIONE != CICLO_ATTUAZIONE ~ "CICLO NON COERENTE",
+                                 is.na(CICLO_PROGRAMMAZIONE) ~ "PROGETTO NON NEL PSC",
+                                 is.na(CICLO_ATTUAZIONE) ~ "PROGETTO NON MONITORATO")) %>%
+    mutate(CHK_LISTE_2 = case_when(CHK_LISTE == "match" & CHK_RISORSE %in% c("da monitorare", "overbooking") ~ "psc ma variati",
+                                   CHK_LISTE == "match" & CHK_RISORSE %in% c("invariati") ~ "psc ok",
+                                   TRUE ~ CHK_LISTE)) %>% 
+    mutate(CHK_TEMI = case_when(AREA_TEMATICA == AREA_TEMATICA_MONIT ~ "tema ok",
+                                is.na(AREA_TEMATICA) ~ "PROGETTO NON NEL PSC",
+                                is.na(AREA_TEMATICA_MONIT) ~ "PROGETTO NON MONITORATO",
+                                TRUE ~ "tema no")) %>% 
+    mutate(CHK_SETTORI = case_when(SETTORE_INTERVENTO == SETTORE_INTERVENTO_MONIT ~ "settore ok",
+                                   is.na(SETTORE_INTERVENTO) ~ "PROGETTO NON NEL PSC",
+                                   is.na(SETTORE_INTERVENTO_MONIT) ~ "PROGETTO NON MONITORATO",
+                                   TRUE ~ "settore no"))
+  
+  
+  # ---- chk clp dupli ----
+  
+  check_dupli <- analisi%>%
+    filter(!is.na(COD_LOCALE_PROGETTO))%>%
+    filter(COD_LOCALE_PROGETTO %!in% c("ND", "Residuo_Ducato Estense", "XXX12", "XXX3_3", "XXX5", "XXX8"))%>%
+    group_by(COD_LOCALE_PROGETTO, ID_PSC)%>%
+    summarise(N= sum(n()))%>%
+    filter(N>1)
+  
+  if ((dim(check_dupli)[1]==0) == FALSE){
+    print("ATTENZIONE!!!! SONO PRESENTI PROGETTI DUPLICATI")
+  } else {
+    print("OK! NESSUN PROGETTO DUPLICATO")
+  }
+  
+  if (export == TRUE) {
+    metadati <- read_xlsx(file.path(INPUT, "metadati_psc.xlsx"))
+    
+    wb <- createWorkbook()
+    addWorksheet(wb, sheetName="dati")
+    addWorksheet(wb, sheetName="metadati")
+    
+    writeData(wb, sheet = "dati", x = appo, colNames = TRUE)
+    writeData(wb, sheet = "metadati", x = metadati, colNames = TRUE)
+    saveWorkbook(wb, file = file.path(OUTPUT, paste0("interventi_data_quality_psc_", bimestre, ".xlsx")), overwrite = TRUE)  
+  }
+  
+  return(analisi)
+}
+
+
+#' Dossier qualità dati PSC
+#'
+#' Dossier qualità dati PSC
+#'
+#' @param analisi Dataset di analisi qualità dati da analisi_data_quality_psc()
+#' @return Nessuno, salva file in Drive
+dossier_data_quality_psc <- function(analisi) {
+  
+  '%!in%' <- function(x,y)!('%in%'(x,y))
+  
+  PSC <- file.path(DRIVE, "DATI", "PSC")
+  
+  # ---- liste dossier ----
+  
+  #aggiungere in analisi programmazione altri campi di interesse (Verifica CUP, ritardi, salvaguardie)
+  
+  
+  #Progetti non presenti nel monitoraggio
+  no_monit <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(CHK_LISTE_2 == "no monit") %>%
+    filter(RISORSE > 0) %>%
+    select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX, -CHK_LISTE_2, -OGV)
+  
+  
+  #Progetti da eliminare dal monitoraggio (al netto di NO OGV)
+  no_lista <- analisi %>%
+    filter(OGV == "ND") %>% #MEMO: questi progetti sono privi di CASI_OGV per definizione 
+    filter(CHK_LISTE_2 =="no psc") %>%
+    select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX, -CHK_LISTE_2, -OGV)
+  
+  #Progetti da eliminare dal monitoraggio perché NO OGV
+  no_ogv <- analisi %>%
+    filter(OGV == "NO OGV") %>% 
+    # filter(CHK_LISTE_2 =="no psc") %>%
+    select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX, -CHK_LISTE_2, -OGV)
+
+  #Progetti con COE diverso
+  CHK_coe <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(CHK_LISTE_2 =="psc ma variati")%>%
+    filter(RISORSE > 0) %>%
+    filter(DELTA != 0) %>%
+    select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX, -CHK_LISTE_2, -OGV)
+  
+  
+  # Progetti con IMPEGNI Inferiori al 60%
+  CHK_impegni <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(VERIFICA_IMPEGNI =="IMPEGNI INFERIORI AL 60%") %>%
+    filter(CASI_OGV %in% c("ogv conseguita per dichiarazioni", 
+                           "ogv conseguita dic22",
+                           "ogv conseguita giu22",
+                           "ogv conseguita su salvaguardia 25M", 
+                           "ogv conseguita su salvaguardia 200M")) %>%
+    filter(CUP_DESCR_NATURA %in% c("ACQUISTO DI BENI", 
+                                   "ACQUISTO O REALIZZAZIONE DI SERVIZI", 
+                                   "REALIZZAZIONE DI LAVORI PUBBLICI (OPERE ED IMPIANTISTICA)")) %>%
+    filter(RISORSE > 0) %>%
+    select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX, -CHK_LISTE_2, -OGV)
+  
+  # Progetti con PROCEDURALE non eseguito
+  CHK_iter <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(VERIFICA_PROCEDURALE =="NON IN ESECUZIONE") %>%
+    filter(CASI_OGV %in% c("ogv conseguita per dichiarazioni", 
+                           "ogv conseguita dic22",
+                           "ogv conseguita giu22",
+                           "ogv conseguita su salvaguardia 25M", 
+                           "ogv conseguita su salvaguardia 200M")) %>%
+    filter(CUP_DESCR_NATURA %in% c("ACQUISTO DI BENI", 
+                                   "ACQUISTO O REALIZZAZIONE DI SERVIZI", 
+                                   "REALIZZAZIONE DI LAVORI PUBBLICI (OPERE ED IMPIANTISTICA)")) %>%
+    filter(CHK_LISTE_2 !="no monit") %>%
+    filter(RISORSE > 0) %>%
+    select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX, -CHK_LISTE_2, -OGV)
+  
+  #Progetti da migrare
+  # da_migrare <- analisi %>%
+  #   filter(OGV == "OGV") %>% 
+  #   mutate(da_migrare = case_when(DB !="PUC" ~ "da migrare",
+  #                                 DB =="PUC" & !grepl("^PSC", OC_CODICE_PROGRAMMA) ~ "da migrare",
+  #                                 TRUE ~ "ok"))%>%
+  #   mutate(PROGRAMMA = ifelse(DB =="SGP" & grepl("^PSC", OC_CODICE_PROGRAMMA), paste0(PROGRAMMA, " (da validare)"), PROGRAMMA))%>%
+  #   filter(da_migrare =="da migrare")%>%
+  #   filter(RISORSE > 0) %>%
+  #   select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX , -da_migrare, -CHK_LISTE_2, -OGV)
+  
+  #Progetti con ciclo non coerente
+  CHK_ciclo <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(CHK_LISTE_2 !="no monit") %>%
+    filter(CHK_CICLO =="CICLO NON COERENTE")%>%
+    filter(RISORSE > 0) %>%
+    select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX, -CHK_LISTE_2, -OGV)
+  
+  #Progetti con tema non coerente
+  CHK_tema <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(CHK_LISTE_2 !="no monit") %>%
+    filter(CHK_TEMI =="tema no")%>%
+    filter(RISORSE > 0) %>%
+    select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX, -CHK_LISTE_2, -OGV)
+  
+  #Progetti con settore non coerente
+  CHK_settore <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(CHK_LISTE_2 !="no monit") %>%
+    filter(CHK_SETTORI =="settore no")%>%
+    filter(RISORSE > 0) %>%
+    select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX, -CHK_LISTE_2, -OGV)
+  
+  # ---- export dossier ----
+  # stili
+  # style_number <<- createStyle(numFmt = "#,##0.0", border = c("top", "bottom", "left", "right"), fontColour = "#000000")
+  # style_number3 <<- createStyle(numFmt = "#,##0", halign = "center", border = c("top", "bottom", "left", "right"), fontColour = "#000000")
+  # style_number4 <<- createStyle(numFmt = "#,##0", halign = "center", fontColour = "#000000")
+  # style_date <<- createStyle(numFmt = "DATE", border = c("top", "bottom", "left", "right"))
+  # style_date2 <<- createStyle(numFmt = "DATE")
+  # style_centered <<- createStyle(halign = "center", border = c("top", "bottom", "left", "right"))
+  # style_centered2 <<- createStyle(halign = "center")
+  # style_border <<- createStyle(border = c("top", "bottom", "left", "right"))
+  # style_bold_centered <<- createStyle(textDecoration = "bold", halign = "center", border = c("top", "bottom", "left", "right"))
+  # style_bold_number <<- createStyle(textDecoration = "bold", numFmt = "#,##0.00", border = c("top", "bottom", "left", "right"))
+  # style_bold <<- createStyle(textDecoration = "bold", border = c("top", "bottom", "left", "right"))
+  # style_number2 <<- createStyle(numFmt = "#,##0.00", halign = "right", fontColour = "#000000")
+  # style_none <<- createStyle(border = NULL)
+  # style_white <<- createStyle(border = NULL, fontColour = "#FFFFFF")
+  # style_percentage <<- createStyle(numFmt = "PERCENTAGE", border = c("top", "bottom", "left", "right"), fontColour = "#000000")
+  # 
+  
+  psc_all <- analisi%>%
+    distinct(ID_PSC) 
+  psc <- analisi%>%
+    distinct(ID_PSC) %>% .$ID_PSC
+  
+  
+  for (i in psc) {
+    print(i)
+    
+    # DEBUG:
+    # i <- "PSC_MARCHE"  
+    
+    data_riferimento <- data.frame(bimestre)%>%
+      mutate(anno = substr(bimestre, start = 1, stop= 4))%>%
+      mutate(mese = substr(bimestre, start = 5, stop= 6))%>%
+      mutate(giorno = substr(bimestre, start = 7, stop= 8))%>%
+      mutate(data = paste0(giorno, "/", mese, "/", anno))%>%
+      mutate(as.Date(data))%>%
+      select(data)
+    
+    lista <- analisi %>%
+      filter(OGV == "OGV") %>%
+      filter(ID_PSC == i) %>%
+      select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX, -OGV)
+    
+    
+    no_monit_psc <- no_monit %>%
+      filter(ID_PSC == i)
+    
+    no_lista_psc <- no_lista %>%
+      filter(ID_PSC == i)
+    
+    no_ogv_psc <- no_ogv %>%
+      filter(ID_PSC == i)
+    
+    CHK_impegni_psc <- CHK_impegni %>%
+      filter(ID_PSC == i)
+    
+    CHK_coe_psc <- CHK_coe %>%
+      filter(ID_PSC == i)
+    
+    CHK_iter_psc <- CHK_iter %>%
+      filter(ID_PSC == i)
+    
+    # da_migrare_psc <- da_migrare %>%
+    #   filter(ID_PSC == i)
+    
+    CHK_ciclo_psc <- CHK_ciclo %>%
+      filter(ID_PSC == i)
+    
+    CHK_tema_psc <- CHK_tema %>%
+      filter(ID_PSC == i)
+    
+    CHK_settore_psc <- CHK_settore %>%
+      filter(ID_PSC == i)
+    
+    nessun_dato <- "NESSUN DATO"
+    
+    # filename per export
+    temp_file <- paste0("Dossier ",i, "_verifica_monitoraggio dati al ", bimestre, ".xlsx")
+    
+    # load
+    wb <- loadWorkbook(file.path(INPUT, "template_quality.xlsx"))
+    
+    # scrive dati
+    writeData(wb, sheet = "Copertina", x = i, startCol = 10, startRow = 25, colNames = FALSE)
+    writeData(wb, sheet = "Copertina", x = data_riferimento, startCol = 10, startRow = 26, colNames = FALSE)
+    addStyle(wb, sheet = "Copertina", style_date2, rows = 26:26, cols = 10 , gridExpand = TRUE, stack = TRUE)
+    
+    writeData(wb, sheet = "lista_dati", x = lista, startCol = 1, startRow = 2, colNames = FALSE)
+    addStyle(wb, sheet = "lista_dati", style_border, rows = 1:nrow(lista)+1, cols = 1:39 , gridExpand = TRUE, stack = TRUE)
+    addStyle(wb, sheet = "lista_dati", style_number, rows = 1:nrow(lista)+1, cols = 17:27 , gridExpand = TRUE, stack = TRUE)
+    addStyle(wb, sheet = "lista_dati", style_number, rows = 1:nrow(lista)+1, cols = 31:31 , gridExpand = TRUE, stack = TRUE)
+    setColWidths(wb, "lista_dati", cols = 1:39, widths = 15)
+    
+    if ((dim(no_monit_psc)[1]==0) == FALSE)
+    { 
+      writeData(wb, sheet = "progetti_no_monit", x = no_monit_psc, startCol = 1, startRow = 2, colNames = FALSE)
+      addStyle(wb, sheet = "progetti_no_monit", style_border, rows = 1:nrow(no_monit_psc)+1, cols = 1:38 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_no_monit", style_number, rows = 1:nrow(no_monit_psc)+1, cols = 17:27 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_no_monit", style_number, rows = 1:nrow(no_monit_psc)+1, cols = 31:31 , gridExpand = TRUE, stack = TRUE)
+      setColWidths(wb, "progetti_no_monit", cols = 1:38, widths = 15)
+    } else 
+    { 
+      writeData(wb, sheet = "progetti_no_monit", x = nessun_dato, startCol = 1, startRow = 2, colNames = FALSE)
+    }
+    
+    if ( (dim(no_lista_psc)[1]==0) == FALSE)
+    { 
+      writeData(wb, sheet = "progetti_no_psc", x = no_lista_psc, startCol = 1, startRow = 2, colNames = FALSE)
+      addStyle(wb, sheet = "progetti_no_psc", style_border, rows = 1:nrow(no_lista_psc)+1, cols = 1:38 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_no_psc", style_number, rows = 1:nrow(no_lista_psc)+1, cols = 17:27 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_no_psc", style_number, rows = 1:nrow(no_lista_psc)+1, cols = 31:31 , gridExpand = TRUE, stack = TRUE)
+      setColWidths(wb, "progetti_no_psc", cols = 1:38, widths = 15)
+    } else 
+    { 
+      writeData(wb, sheet = "progetti_no_psc", x = nessun_dato, startCol = 1, startRow = 2, colNames = FALSE)
+    }
+    
+    if ( (dim(no_ogv_psc)[1]==0) == FALSE)
+    { 
+      writeData(wb, sheet = "progetti_no_ogv", x = no_ogv_psc, startCol = 1, startRow = 2, colNames = FALSE)
+      addStyle(wb, sheet = "progetti_no_ogv", style_border, rows = 1:nrow(no_ogv_psc)+1, cols = 1:38 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_no_ogv", style_number, rows = 1:nrow(no_ogv_psc)+1, cols = 17:27 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_no_ogv", style_number, rows = 1:nrow(no_ogv_psc)+1, cols = 31:31 , gridExpand = TRUE, stack = TRUE)
+      setColWidths(wb, "progetti_no_ogv", cols = 1:38, widths = 15)
+    } else 
+    { 
+      writeData(wb, sheet = "progetti_no_ogv", x = nessun_dato, startCol = 1, startRow = 2, colNames = FALSE)
+    }
+    
+    if ( (dim(CHK_coe_psc)[1]==0) == FALSE)
+    { 
+      writeData(wb, sheet = "progetti_variazione_costo", x = CHK_coe_psc, startCol = 1, startRow = 2, colNames = FALSE)
+      addStyle(wb, sheet = "progetti_variazione_costo", style_border, rows = 1:nrow(CHK_coe_psc)+1, cols = 1:38 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_variazione_costo", style_number, rows = 1:nrow(CHK_coe_psc)+1, cols = 17:27 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_variazione_costo", style_number, rows = 1:nrow(CHK_coe_psc)+1, cols = 31:31 , gridExpand = TRUE, stack = TRUE)
+      setColWidths(wb, "progetti_variazione_costo", cols = 1:38, widths = 15)
+    } else 
+    { 
+      writeData(wb, sheet = "progetti_variazione_costo", x = nessun_dato, startCol = 1, startRow = 2, colNames = FALSE)
+    }
+    
+    if ( (dim(CHK_impegni_psc)[1]==0) == FALSE)
+    { 
+      writeData(wb, sheet = "progetti_anomalie_impegni", x = CHK_impegni_psc, startCol = 1, startRow = 2, colNames = FALSE)
+      addStyle(wb, sheet = "progetti_anomalie_impegni", style_border, rows = 1:nrow(CHK_impegni_psc)+1, cols = 1:38 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_anomalie_impegni", style_number, rows = 1:nrow(CHK_impegni_psc)+1, cols = 17:27 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_anomalie_impegni", style_number, rows = 1:nrow(CHK_impegni_psc)+1, cols = 31:31 , gridExpand = TRUE, stack = TRUE)
+      setColWidths(wb, "progetti_anomalie_impegni", cols = 1:38, widths = 15)
+    } else 
+    { 
+      writeData(wb, sheet = "progetti_anomalie_impegni", x = nessun_dato, startCol = 1, startRow = 2, colNames = FALSE)
+    }
+    
+    if ( (dim(CHK_iter_psc)[1]==0) == FALSE)
+    { 
+      writeData(wb, sheet = "progetti_anomalie_procedurale", x = CHK_iter_psc, startCol = 1, startRow = 2, colNames = FALSE)
+      addStyle(wb, sheet = "progetti_anomalie_procedurale", style_border, rows = 1:nrow(CHK_iter_psc)+1, cols = 1:38 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_anomalie_procedurale", style_number, rows = 1:nrow(CHK_iter_psc)+1, cols = 17:27 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_anomalie_procedurale", style_number, rows = 1:nrow(CHK_iter_psc)+1, cols = 31:31 , gridExpand = TRUE, stack = TRUE)
+      setColWidths(wb, "progetti_anomalie_procedurale", cols = 1:38, widths = 15)
+    } else 
+    { 
+      writeData(wb, sheet = "progetti_anomalie_procedurale", x = nessun_dato, startCol = 1, startRow = 2, colNames = FALSE)
+    }
+    
+    # if ( (dim(da_migrare_psc)[1]==0) == FALSE)
+    # { 
+    #   writeData(wb, sheet = "progetti_da_migrare", x = da_migrare_psc, startCol = 1, startRow = 2, colNames = FALSE)
+    #   addStyle(wb, sheet = "progetti_da_migrare", style_border, rows = 1:nrow(da_migrare_psc)+1, cols = 1:38 , gridExpand = TRUE, stack = TRUE)
+    #   addStyle(wb, sheet = "progetti_da_migrare", style_number, rows = 1:nrow(da_migrare_psc)+1, cols = 17:27 , gridExpand = TRUE, stack = TRUE)
+    #   addStyle(wb, sheet = "progetti_da_migrare", style_number, rows = 1:nrow(da_migrare_psc)+1, cols = 31:31 , gridExpand = TRUE, stack = TRUE)
+    #   setColWidths(wb, "progetti_da_migrare", cols = 1:38, widths = 15)
+    # } else 
+    # { 
+    #   writeData(wb, sheet = "progetti_da_migrare", x = nessun_dato, startCol = 1, startRow = 2, colNames = FALSE)
+    # }
+    
+    
+    if ( (dim(CHK_ciclo_psc)[1]==0) == FALSE)
+    { 
+      writeData(wb, sheet = "progetti_anomalie_ciclo", x = CHK_ciclo_psc, startCol = 1, startRow = 2, colNames = FALSE)
+      addStyle(wb, sheet = "progetti_anomalie_ciclo", style_border, rows = 1:nrow(CHK_ciclo_psc)+1, cols = 1:38 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_anomalie_ciclo", style_number, rows = 1:nrow(CHK_ciclo_psc)+1, cols = 17:27 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_anomalie_ciclo", style_number, rows = 1:nrow(CHK_ciclo_psc)+1, cols = 31:31 , gridExpand = TRUE, stack = TRUE)
+      setColWidths(wb, "progetti_anomalie_ciclo", cols = 1:38, widths = 15)
+    } else 
+    { 
+      writeData(wb, sheet = "progetti_anomalie_ciclo", x = nessun_dato, startCol = 1, startRow = 2, colNames = FALSE)
+    }
+    
+    if ( (dim(CHK_tema_psc)[1]==0) == FALSE)
+    { 
+      writeData(wb, sheet = "progetti_anomalie_tema", x = CHK_tema_psc, startCol = 1, startRow = 2, colNames = FALSE)
+      addStyle(wb, sheet = "progetti_anomalie_tema", style_border, rows = 1:nrow(CHK_tema_psc)+1, cols = 1:38 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_anomalie_tema", style_number, rows = 1:nrow(CHK_tema_psc)+1, cols = 17:27 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_anomalie_tema", style_number, rows = 1:nrow(CHK_tema_psc)+1, cols = 31:31 , gridExpand = TRUE, stack = TRUE)
+      setColWidths(wb, "progetti_anomalie_tema", cols = 1:38, widths = 15)
+    } else 
+    { 
+      writeData(wb, sheet = "progetti_anomalie_tema", x = nessun_dato, startCol = 1, startRow = 2, colNames = FALSE)
+    }
+    
+    if ( (dim(CHK_settore_psc)[1]==0) == FALSE)
+    { 
+      writeData(wb, sheet = "progetti_anomalie_settore", x = CHK_settore_psc, startCol = 1, startRow = 2, colNames = FALSE)
+      addStyle(wb, sheet = "progetti_anomalie_settore", style_border, rows = 1:nrow(CHK_settore_psc)+1, cols = 1:38 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_anomalie_settore", style_number, rows = 1:nrow(CHK_settore_psc)+1, cols = 17:27 , gridExpand = TRUE, stack = TRUE)
+      addStyle(wb, sheet = "progetti_anomalie_settore", style_number, rows = 1:nrow(CHK_settore_psc)+1, cols = 31:31 , gridExpand = TRUE, stack = TRUE)
+      setColWidths(wb, "progetti_anomalie_settore", cols = 1:38, widths = 15)
+    } else 
+    { 
+      writeData(wb, sheet = "progetti_anomalie_settore", x = nessun_dato, startCol = 1, startRow = 2, colNames = FALSE)
+    }
+    
+    # salva
+    saveWorkbook(wb, file = file.path(OUTPUT, "Dossier", temp_file), overwrite = TRUE)
+  }
+}
+
+
+#' Report qualità dati PSC
+#'
+#' Report qualità dati PSC
+#'
+#' @param analisi Dataset di analisi qualità dati da analisi_data_quality_psc()
+#' @param progetti_psc Dataset da load_progetti_psc_migrati()
+#' @param export Vuoi esportare il file in OUTPUT?
+#' @return Dataframe
+report_data_quality_psc <- function(analisi, progetti_psc, export=TRUE) {
+  
+  # TODO: 
+  # rivedere metadati
+  
+  # carica metadati
+  metadati <- read_xlsx(file.path(INPUT, "metadati_quality.xlsx"))
+  
+  
+  # ---- liste report ----
+  
+  # Tutti gli interventi
+  lista <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(RISORSE > 0) %>% 
+    filter(CASI_OGV != "economie programmazione") %>% 
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+    mutate(KPI = "TOTALE")
+  
+  # Base con risorse di riferimento
+  risorse <- lista %>%
+    select(ID_PSC, RISORSE)
+  
+  # Economie
+  economie <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(RISORSE > 0) %>% 
+    filter(CASI_OGV == "economie programmazione") %>% 
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+    mutate(KPI = "ECONOMIE")
+  
+  # No OGV da disattivare
+  no_ogv <- analisi %>%
+    filter(OGV == "NO OGV") %>% 
+    filter(RISORSE > 0) %>% 
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+    mutate(KPI = "NO OGV")
+  
+  # Interventi presenti nel monitoraggio
+  monit_ok <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(CHK_LISTE_2 == "psc ok") %>%
+    filter(RISORSE > 0) %>% 
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+    mutate(KPI = "MONIT OK")
+  
+  # Interventi non presenti nel monitoraggio
+  no_monit <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(CHK_LISTE_2 == "no monit") %>%
+    filter(RISORSE > 0) %>% 
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+    mutate(KPI = "NO MONIT")
+  
+  # Progetti da eliminare dal monitoraggio (altri casi)
+  no_lista <- analisi %>%
+    filter(OGV == "ND") %>% 
+    filter(CHK_LISTE_2 =="no psc") %>% #MEMO: i due filtri corrispondono
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(COE, na.rm=TRUE)) %>% 
+    mutate(KPI = "NO PSC")
+  
+  # Interventi con COE diverso
+  CHK_coe <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(CHK_LISTE_2 =="psc ma variati") %>%
+    filter(RISORSE > 0) %>% 
+    filter(DELTA != 0) %>% 
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(DELTA, na.rm=TRUE)) %>% 
+    mutate(KPI = "DELTA COE")
+  
+  # Progetti con IMPEGNI Inferiori al 60%
+  CHK_impegni <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(VERIFICA_IMPEGNI =="IMPEGNI INFERIORI AL 60%") %>%
+    filter(CASI_OGV %in% c("ogv conseguita per dichiarazioni", 
+                           "ogv conseguita dic22",
+                           "ogv conseguita giu22",
+                           "ogv conseguita su salvaguardia 25M", 
+                           "ogv conseguita su salvaguardia 200M")) %>%
+    filter(CUP_DESCR_NATURA %in% c("ACQUISTO DI BENI", 
+                                   "ACQUISTO O REALIZZAZIONE DI SERVIZI", 
+                                   "REALIZZAZIONE DI LAVORI PUBBLICI (OPERE ED IMPIANTISTICA)")) %>%
+    filter(CHK_LISTE_2 !="no monit") %>%
+    filter(RISORSE > 0) %>% 
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+    mutate(KPI = "NO IMPEGNI")
+  
+  # Progetti con PROCEDURALE non almeno in esecuzione
+  CHK_iter <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(VERIFICA_PROCEDURALE =="NON IN ESECUZIONE") %>%
+    filter(CASI_OGV %in% c("ogv conseguita per dichiarazioni", 
+                           "ogv conseguita dic22",
+                           "ogv conseguita giu22",
+                           "ogv conseguita su salvaguardia 25M", 
+                           "ogv conseguita su salvaguardia 200M")) %>%
+    filter(CUP_DESCR_NATURA %in% c("ACQUISTO DI BENI", 
+                                   "ACQUISTO O REALIZZAZIONE DI SERVIZI", 
+                                   "REALIZZAZIONE DI LAVORI PUBBLICI (OPERE ED IMPIANTISTICA)"))%>%
+    filter(CHK_LISTE_2 != "no monit") %>%
+    filter(RISORSE > 0) %>% 
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+    mutate(KPI = "NO ITER")
+  
+  # Progetti con ciclo non coerente
+  CHK_ciclo <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(CHK_LISTE_2 !="no monit") %>%
+    filter(CHK_CICLO == "CICLO NON COERENTE") %>% 
+    filter(RISORSE > 0) %>% 
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+    mutate(KPI = "NO CICLO")
+  
+  # Progetti con tema non coerente
+  CHK_tema <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(CHK_LISTE_2 !="no monit") %>%
+    filter(CHK_TEMI == "tema no") %>% 
+    filter(RISORSE > 0) %>% 
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+    mutate(KPI = "NO TEMA")
+  
+  # Progetti con settore non coerente
+  CHK_settore <- analisi %>%
+    filter(OGV == "OGV") %>% 
+    filter(CHK_LISTE_2 !="no monit") %>%
+    filter(CHK_SETTORI == "settore no") %>% 
+    filter(RISORSE > 0) %>% 
+    group_by(ID_PSC) %>% 
+    summarise(N = n(), 
+              RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+    mutate(KPI = "NO SETTORE")
+  
+  
+  # unione delle liste
+  temp <- lista %>%
+    bind_rows(economie) %>%
+    bind_rows(no_ogv) %>%
+    bind_rows(monit_ok) %>% 
+    bind_rows(no_monit) %>% 
+    bind_rows(no_lista) %>% 
+    bind_rows(CHK_coe) %>% 
+    bind_rows(CHK_impegni) %>% 
+    bind_rows(CHK_iter) %>% 
+    bind_rows(CHK_ciclo) %>% 
+    bind_rows(CHK_tema) %>% 
+    bind_rows(CHK_settore) %>% 
+    rename(RISORSE_MONIT = RISORSE)
+  
+  # integra risorse e calcola peso
+  appo <- risorse %>% 
+    left_join(temp, by = "ID_PSC") %>% 
+    mutate(PESO = round(RISORSE_MONIT / RISORSE, 2))
+  
+  # integra descrizione kpi
+  appo1 <- appo %>% 
+    mutate(KPI_DESCR = case_when(KPI == "TOTALE" ~ "Tutti gli interventi programmati",
+                                 KPI == "ECONOMIE" ~ "Economie di programmazione",
+                                 KPI == "NO OGV" ~ "Interventi privi di OGV in programmazione per memoria",
+                                 KPI == "MONIT OK" ~ "Interventi programmati e monitorati con importo identico",
+                                 KPI == "NO MONIT" ~ "Interventi programmati non monitorati",
+                                 KPI == "NO PSC" ~ "Progetti monitorati non previsti tra interventi programmati",
+                                 KPI == "DELTA COE" ~ "Interventi programmati monitorati con importo diverso",
+                                 KPI == "NO IMPEGNI" ~ "Interventi programmati monitorati con impegni non coerenti con OGV",
+                                 KPI == "NO ITER" ~ "Interventi programmati monitorati con iter procedurale non coerente con OGV",
+                                 KPI == "NO CICLO" ~ "Interventi programmati monitorati con ciclo diverso",
+                                 KPI == "NO TEMA" ~ "Interventi programmati monitorati con tema diverso",
+                                 KPI == "NO SETTORE" ~ "Interventi programmati monitorati con settore diverso",
+                                 TRUE ~ "CHK")) 
+  
+  # editing
+  report <- appo1 %>% 
+    left_join(octk::info_psc %>% 
+                select(ID_PSC, TIPO_AR),
+              by = "ID_PSC") %>% 
+    select(ID_PSC, TIPO_AR, KPI, KPI_DESCR, N, RISORSE, RISORSE_MONIT, PESO)
+  
+  if (export == TRUE) {
+    # OLD:
+    # write.xlsx(report, file.path(OUTPUT, "report_data_quality_psc.xlsx"))
+    
+    wb <- createWorkbook()
+    addWorksheet(wb, sheetName="report")
+    addWorksheet(wb, sheetName="metadati")
+    
+    writeData(wb, sheet = "report", x = report, colNames = TRUE)
+    writeData(wb, sheet = "metadati", x = metadati, colNames = TRUE)
+    saveWorkbook(wb, file = file.path(OUTPUT, paste0("report_data_quality_psc_", bimestre, ".xlsx")), overwrite = TRUE)
+  }
+  return(report)
+}
+
+
+
+#' Ranking qualità dati PSC
+#'
+#' Ranking qualità dati PSC
+#'
+#' @param report Report di analisi qualità dati da report_data_quality_psc()
+#' @param export Vuoi esportare il file in OUTPUT?
+#' @return Dataframe
+ranking_data_quality_psc <- function(report, export=TRUE) {
+  
+  # TODO: 
+  # rivedere metadati
+  
+  # carica metadati
+  metadati <- read_xlsx(file.path(INPUT, "metadati_quality.xlsx"))
+  
+  temp <- report %>% 
+    pivot_wider(id_cols = c("ID_PSC", "TIPO_AR"), names_from = "KPI", values_from = "PESO", values_fill = 0)
+  
+  appo0 <- report %>% 
+    filter(KPI == "TOTALE") %>% 
+    select(ID_PSC, RISORSE) %>% 
+    left_join(temp, by = "ID_PSC")
+  
+  # fix colonne mancanti
+  if (!("NO PSC" %in% names(appo0))) {
+    appo0 <- appo0 %>% 
+      mutate(`NO PSC` = 0)
+  }
+  
+  appo1 <- appo0 %>% 
+    mutate(x_match = `MONIT OK`,
+           x_nolista = 1-`NO PSC`, 
+           x_imp = 1-`NO IMPEGNI`,
+           x_iter = 1-`NO ITER`,
+           x_ciclo = 1-`NO CICLO`,
+           x_tema = 1-`NO TEMA`) %>% 
+    mutate(quality_index = 0.70*x_match + 0.20*x_nolista + 0.025*x_imp + 0.025*x_iter + 0.025*x_ciclo + 0.025*x_tema) %>%
+    select(ID_PSC, TIPO_AR, RISORSE, x_match, x_nolista, x_imp, x_iter, x_ciclo, x_tema, quality_index) %>% 
+    arrange(desc(quality_index))
+  
+  ranking <- appo1
+  
+  # export
+  if (export == TRUE) {
+    wb <- createWorkbook()
+    addWorksheet(wb, sheetName="report")
+    addWorksheet(wb, sheetName="metadati")
+    
+    writeData(wb, sheet = "report", x = ranking, colNames = TRUE)
+    writeData(wb, sheet = "metadati", x = metadati, colNames = TRUE)
+    saveWorkbook(wb, file = file.path(OUTPUT, paste0("ranking_data_quality_psc_", bimestre, ".xlsx")), overwrite = TRUE)
+  }
+  
+  return(ranking)
 }
 

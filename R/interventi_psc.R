@@ -6,6 +6,7 @@
 #' Carica la lista di interventi delle sezioni ordinarie di PSC dal DBCOE in base alla variabile DB da oc_init().
 #'
 #' @param use_flt Vuoi caricare solo gli interventi monitorabili (con FLAG_MONITORAGGIO == 1)?
+#' @details I progetti privi di OGV rientrano tra gli interventi monitorabili se la delibera di definanziamento non è ancora intervenuta a fronte di istruttoria OGV chiusa.
 #' @return Dataframe
 load_db_psc <- function(use_flt=FALSE) {
   interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_PSC.xlsx"), 

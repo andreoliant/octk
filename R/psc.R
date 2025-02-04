@@ -1755,7 +1755,7 @@ load_progetti_psc <- function(bimestre, versione, fix_no_temi_no_coe=FALSE) {
 #' @param progetti_psc Dataset da load_progetti_psc()
 #' @param programmazione Dati di programmazione DBCOE di tipo "fsc_matrice_po_psc.xlsx"
 #' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
-#' @param  usa_meuro Logico. Vuoi dati in Meuro?
+#' @param usa_meuro Logico. Vuoi dati in Meuro?
 #' @param export Vuoi salvare il file csv in TEMP?
 #' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
 #' @return Report di confronto programmazione attuazione per PSC e PO d'origine. Le risorse delle sezioni speciali, nuove o da riprogrammazione, sono in righe separate.
