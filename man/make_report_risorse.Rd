@@ -10,6 +10,7 @@ make_report_risorse(
   use_flt = FALSE,
   use_eu = FALSE,
   use_po_psc = FALSE,
+  use_cicli_psc = FALSE,
   use_fix_siepoc = TRUE,
   stime_fix_siepoc = FALSE,
   force_yei = FALSE,
@@ -26,7 +27,9 @@ make_report_risorse(
 
 \item{use_eu}{Logico. vuoi vedere risorse UE ove previste?}
 
-\item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?}
+\item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC? [FUNZIONALITA' DEPRECATA]}
+
+\item{use_cicli_psc}{Vuoi usare i dati di programmazione per cicli dei PSC?}
 
 \item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
 
