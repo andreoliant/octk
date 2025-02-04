@@ -1420,13 +1420,14 @@ load_db_interventi <- function(tipo, simplify_loc=FALSE, use_temi=FALSE, use_sog
 #' @param use_meuro Vuoi i dati in Meuro? Di default sono in euro.
 #' @param use_flt Logico. Vuoi utilizzare solo i programmi che rientrano nel perimetro coesione monitorabile?
 #' @param use_eu Logico. vuoi vedere risorse UE ove previste?
-#' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?
+#' @param use_po_psc Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC? [FUNZIONALITA' DEPRECATA]
+#' @param use_cicli_psc Vuoi usare i dati di programmazione per cicli dei PSC?
 #' @param use_fix_siepoc Vuoi correggere i dati SIE e POC 1420 con le anticipazioni? 
 #' @param stime_fix_siepoc Per correggere i dati SIE e POC 1420 con le anticipazioni vuoi usare anche le stime? 
 #' @param force_yei Logico. Vuoi forzare FSE in YEI?
 #' @param export vuoi salvare il file?
 #' @return Un file csv con apertura per ciclo e macroarea.
-make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_eu=FALSE, use_po_psc=FALSE, 
+make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_eu=FALSE, use_po_psc=FALSE, use_cicli_psc=FALSE,
                                 use_fix_siepoc=TRUE, stime_fix_siepoc=FALSE, force_yei=FALSE, tipo_ciclo="CICLO_STRATEGIA", export=FALSE) {
   
   # DEBUG:
@@ -1438,7 +1439,7 @@ make_report_risorse <- function(ciclo=NULL, use_meuro=FALSE, use_flt=FALSE, use_
   # tipo_ciclo="CICLO_STRATEGIA"
   
   programmi <- init_programmazione_dati(use_temi = FALSE, use_713 = TRUE, use_location = TRUE, use_ciclo = TRUE, use_eu=use_eu, 
-                                        use_flt=use_flt, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc, 
+                                        use_flt=use_flt, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc, use_cicli_psc=use_cicli_psc,
                                         use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) 
   
   # NEW: split REACT-EU per allineamento a struttura tavole
