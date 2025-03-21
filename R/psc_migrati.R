@@ -1063,11 +1063,13 @@ update_clp_interventi_psc <- function(progetti_psc, interventi_psc, debug=TRUE, 
     filter(CUP != "no") %>% 
     filter(CUP != "-") %>% 
     filter(nchar(CUP) == 15) %>% 
-    count(CUP) %>% 
+    # count(CUP) %>%
+    count(CUP, ID_PSC) %>%
     filter(n == 1)
   
   n_cup_pro <- progetti_psc %>% 
-    count(CUP) %>% 
+    # count(CUP) %>%
+    count(CUP, ID_PSC) %>%
     filter(n == 1)
   
   appo_int_2 <- interventi_psc_2 %>% 
@@ -1087,6 +1089,39 @@ update_clp_interventi_psc <- function(progetti_psc, interventi_psc, debug=TRUE, 
       select(ID_PSC, CUP, COD_LOCALE_PROGETTO.x, COD_LOCALE_PROGETTO.y)
     write.xlsx(chk1, file.path(TEMP, "chk_match_interventi_by_cup.xlsx"))
     message("Correzioni da match su CUP per ", dim(chk1)[1], " interventi")
+    
+    # chk su cup duplicati
+    n_cup_int_dupli <- interventi_psc_2 %>% 
+      filter(!is.na(CUP)) %>% 
+      filter(CUP != "no") %>% 
+      filter(CUP != "-") %>% 
+      filter(nchar(CUP) == 15) %>% 
+      count(CUP) %>%
+      filter(n > 1)
+    
+    n_cup_pro_dupli <- progetti_psc %>% 
+      count(CUP) %>%
+      filter(n > 1)
+    
+    appo_int_2_dupli <- interventi_psc_2 %>% 
+      semi_join(n_cup_int_dupli, by = "CUP")
+    
+    appo_pro_2_dupli <- progetti_psc %>% 
+      semi_join(n_cup_pro_dupli, by = "CUP") %>% 
+      anti_join(interventi_psc_2, by = "COD_LOCALE_PROGETTO") %>% 
+      select(ID_PSC, CUP, COD_LOCALE_PROGETTO, TITOLO_PROGETTO=OC_TITOLO_PROGETTO)
+    
+    appo2_dupli <- appo_int_2_dupli %>% 
+      inner_join(appo_pro_2_dupli, 
+                 by = c("CUP", "ID_PSC")) 
+    
+    chk2 <- appo2_dupli %>%
+      select(ID_PSC, CUP, COD_LOCALE_PROGETTO.x, TITOLO_PROGETTO.x, COD_LOCALE_PROGETTO.y, TITOLO_PROGETTO.y)
+    
+    
+    write.xlsx(chk2, file.path(TEMP, "chk_match_interventi_by_cup_duplicati.xlsx"))
+    message("Duplicati da match su CUP per ", dim(chk2)[1], " intervenit/progetti. Analizza il file chk_match_interventi_by_cup_duplicati.xlsx e correggi a mano nel DBCOE")
+    
   }
   
   appo3 <- appo2 %>% 
@@ -1681,10 +1716,12 @@ report_data_quality_psc <- function(analisi, progetti_psc, export=TRUE) {
   # No OGV da disattivare
   no_ogv <- analisi %>%
     filter(OGV == "NO OGV") %>% 
-    filter(RISORSE > 0) %>% 
+    # filter(RISORSE > 0) %>% 
+    filter(COE > 0) %>% 
     group_by(ID_PSC) %>% 
     summarise(N = n(), 
-              RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+              # RISORSE = sum(RISORSE, na.rm=TRUE)) %>% 
+              RISORSE = sum(COE, na.rm=TRUE)) %>% 
     mutate(KPI = "NO OGV")
   
   # Interventi presenti nel monitoraggio
