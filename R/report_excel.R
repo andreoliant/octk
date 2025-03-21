@@ -13,7 +13,8 @@ library(openxlsx)
 #'
 #' @note  Non prevede parametri editabili, sono stili standard per OC
 #' @return Stile compatibile con addStyle() in openxlsx
-style_border <- createStyle(border = c("top", "bottom", "left", "right"), fontColour = "#000000")
+# style_border <- createStyle(border = c("top", "bottom", "left", "right"), fontColour = "#000000")
+style_border <- createStyle(border = c("top", "bottom", "left", "right"))
 
 #' Stile per celle con numeri con due decimali
 #'
@@ -57,7 +58,7 @@ style_date <- createStyle(numFmt = "DATE", border = c("top", "bottom", "left", "
 #'
 #' @note  Non prevede parametri editabili, sono stili standard per OC
 #' @return Stile compatibile con addStyle() in openxlsx
-style_date2 <<- createStyle(numFmt = "DATE")
+style_date2 <- createStyle(numFmt = "DATE")
 
 
 # format automatico per righe e colonne
