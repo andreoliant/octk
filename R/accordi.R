@@ -54,7 +54,7 @@ workflow_accordi_monitoraggio <- function(interventi, template) {
 crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
   
   # DEBUG:
-  # regione <- "MOLISE"
+  # regione <- "MARCHE"
   # template <- "template_monitoraggio_accordi.xlsx"
   wb <- loadWorkbook(file.path(INPUT, template))
   
@@ -62,44 +62,58 @@ crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
   
   appo1 <- interventi %>% 
     filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
-    filter(AMBITO == "FSC") %>% 
+    # filter(AMBITO == "FSC") %>% 
+    filter(SEZIONE %in% c("Ordinaria", "Stralcio 2 (delibera CIPESS n. 57/2024)", "Complementare")) %>% 
     filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
     filter(TIPOLOGIA == "Intervento") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR) %>% 
     select(ID, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, 
            AREA_TEMATICA, SETTORE_INTERVENTO, 
            CUP, TITOLO_PROGETTO,
-           FINANZ_TOT, FINANZ_FSC)
+           FINANZ_TOT, FINANZ_COE)
   
   appo2 <- interventi %>% 
     filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
-    filter(AMBITO == "FSC") %>% 
+    # filter(AMBITO == "FSC") %>% 
+    filter(SEZIONE %in% c("Ordinaria", "Stralcio 2 (delibera CIPESS n. 57/2024)", "Complementare")) %>% 
     filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
     filter(TIPOLOGIA == "Linea") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR) %>% 
     select(ID, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, 
            AREA_TEMATICA, SETTORE_INTERVENTO, 
            TITOLO_PROGETTO,
-           FINANZ_TOT, FINANZ_FSC)
+           FINANZ_TOT, FINANZ_COE)
 
   writeData(wb, sheet = "progetti", x = appo1, startCol = 1, startRow = 3, colNames = FALSE)
   
   start_row <- 3
   n_max <- dim(appo1)[1] + start_row -1
   
-  addStyle(wb, sheet = "progetti", style_border, rows = seq(start_row, n_max), cols = c(1:8, 11, 22), gridExpand = TRUE, stack = TRUE)
-  addStyle(wb, sheet = "progetti", style_number2, rows = seq(start_row, n_max), cols = c(9:10, 12:15), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "progetti", style_border, rows = 2, cols = c(1:22), gridExpand = TRUE, stack = TRUE)
+  
+  addStyle(wb, sheet = "progetti", style_border, rows = seq(start_row, n_max), cols = c(1:8, 22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "progetti", style_number2, rows = seq(start_row, n_max), cols = c(9:15), gridExpand = TRUE, stack = TRUE)
   addStyle(wb, sheet = "progetti", style_date, rows = seq(start_row, n_max), cols = c(16:21), gridExpand = TRUE, stack = TRUE)
   
-  setColWidths(wb, sheet = "progetti", cols = c(1:8, 11, 22), widths = 24)
-  setColWidths(wb, sheet = "progetti", cols = c(9:10, 12:15), widths = 16)
+  setColWidths(wb, sheet = "progetti", cols = c(1:8, 22), widths = 24)
+  setColWidths(wb, sheet = "progetti", cols = c(9:15), widths = 16)
   setColWidths(wb, sheet = "progetti", cols = c(16:21), widths = 12)
   
   ungroupColumns(wb, "progetti", cols = 1:22)
   
-  
   writeData(wb, sheet = "linee", x = appo2, startCol = 1, startRow = 3, colNames = FALSE)
   
   start_row <- 3
-  n_max <- dim(appo2)[1] + start_row -1
+  
+  if (dim(appo2)[1]>0) {
+    n_max <- dim(appo2)[1] + start_row -1
+  } else {
+    n_max <- start_row + 1
+  }
+
+  addStyle(wb, sheet = "linee", style_border, rows = 2, cols = c(1:9), gridExpand = TRUE, stack = TRUE)
   
   addStyle(wb, sheet = "linee", style_border, rows = seq(start_row, n_max), cols = c(1:7), gridExpand = TRUE, stack = TRUE)
   addStyle(wb, sheet = "linee", style_number2, rows = seq(start_row, n_max), cols = c(8:9), gridExpand = TRUE, stack = TRUE)

@@ -3874,3 +3874,82 @@ setup_macroaree_psc <- function(progetti_psc, operazioni, export=FALSE) {
   
   return(out)
 }
+
+#' Correzione per codici PSC superiori a 15 digit
+#'
+#' Correzione per codici PSC superiori a 15 digit
+#'  
+#' @param df Dataframe
+#' @param var1 Nome variabile da modificare (OC_CODICE_PROGRAMMA oppure ID_PSC)
+#' @return Dataframe con valori modificati
+fix_id_psc_15_digit <- function(df, var1="ID_PSC") {
+  
+  # fix_id_psc_15_digit(df, var1="ID_PSC")
+  # fix_id_psc_15_digit(df, var1="OC_CODICE_PROGRAMMA")
+  
+  if (var1 == "OC_CODICE_PROGRAMMA") {
+    df <- df %>% 
+      mutate(OC_CODICE_PROGRAMMA = 
+               case_when(OC_CODICE_PROGRAMMA == "PSC_EMILIA-ROMAGNA" ~ "PSC_EMILIA-ROMA",
+                         OC_CODICE_PROGRAMMA == "PSC_FRIULI-VENEZIA_GIULIA" ~ "PSC_FRIULI-VENE",
+                         OC_CODICE_PROGRAMMA == "PSC_VALLE_D_AOSTA" ~ "PSC_VALLE_D_AOS",
+                         OC_CODICE_PROGRAMMA == "PSC_REGGIO_CALABRIA" ~ "PSC_REGGIO_CALA",
+                         TRUE ~ OC_CODICE_PROGRAMMA))
+  } else {
+    df <- df %>% 
+      mutate(ID_PSC = 
+               case_when(ID_PSC == "PSC_EMILIA-ROMAGNA" ~ "PSC_EMILIA-ROMA",
+                         ID_PSC == "PSC_FRIULI-VENEZIA_GIULIA" ~ "PSC_FRIULI-VENE",
+                         ID_PSC == "PSC_VALLE_D_AOSTA" ~ "PSC_VALLE_D_AOS",
+                         ID_PSC == "PSC_REGGIO_CALABRIA" ~ "PSC_REGGIO_CALA",
+                         TRUE ~ ID_PSC))
+  }
+  return(df)
+}
+
+
+
+#' Correzione per denominazioni PSC ministeri
+#'
+#' Correzione per denominazioni PSC ministeri
+#'  
+#' @param df Dataframe con variabili 
+#' @param var1 Nome variabile da modificare (PSC oppure DESCRIZIONE_PROGRAMMA)
+#' @return Dataframe con valori modificati per la variabile PSC oppure DESCRIZIONE_PROGRAMMA in funzione dei valori diu ID_PSC oppure OC_CODICE_PROGRAMMA
+fix_id_psc_ministeri <- function(df, var1="PSC") {
+  
+  # fix_id_psc_ministeri(df, "DESCRIZIONE_PROGRAMMA")
+  
+  if (var1 == "DESCRIZIONE_PROGRAMMA") {
+    df <- df %>% 
+      mutate(DESCRIZIONE_PROGRAMMA = case_when(OC_CODICE_PROGRAMMA == "PSC_MIT" ~ "PSC MINISTERO INFRASTRUTTURE E MOBILITA' SOSTENIBILE",
+                                               OC_CODICE_PROGRAMMA == "PSC_MATTM" ~ "PSC MINISTERO TRANSIZIONE ECOLOGICA",
+                                               OC_CODICE_PROGRAMMA == "PSC_MI" ~ "PSC MINISTERO ISTRUZIONE",
+                                               # OC_CODICE_PROGRAMMA == "PSC_MIBACT" ~ "PSC MINISTERO CULTURA E TURISMO",
+                                               OC_CODICE_PROGRAMMA == "PSC_MIC" ~ "PSC MINISTERO CULTURA",
+                                               OC_CODICE_PROGRAMMA == "PSC_MITUR" ~ "PSC MINISTERO TURISMO",
+                                               OC_CODICE_PROGRAMMA == "PSC_MISE" ~ "PSC MINISTERO SVILUPPO ECONOMICO",
+                                               OC_CODICE_PROGRAMMA == "PSC_MUR" ~ "PSC MINISTERO UNIVERSITA' RICERCA SCIENTIFICA",
+                                               OC_CODICE_PROGRAMMA == "PSC_MIPAAF" ~ "PSC MINISTERO POLITICHE AGRICOLO ALIMENTARI FORESTALI",
+                                               OC_CODICE_PROGRAMMA == "PSC_SALUTE" ~ "PSC MINISTERO SALUTE",
+                                               OC_CODICE_PROGRAMMA == "PSC_PCM-SPORT" ~ "PSC PRESIDENZA CONSIGLIO MINISTRI DIPARTIMENTO SPORT",
+                                               TRUE ~ DESCRIZIONE_PROGRAMMA))
+  } else {
+    df <- df %>% 
+      mutate(PSC = case_when(ID_PSC == "PSC_MIT" ~ "PSC MINISTERO INFRASTRUTTURE E MOBILITA' SOSTENIBILE",
+                             ID_PSC == "PSC_MATTM" ~ "PSC MINISTERO TRANSIZIONE ECOLOGICA",
+                             ID_PSC == "PSC_MI" ~ "PSC MINISTERO ISTRUZIONE",
+                             # ID_PSC == "PSC_MIBACT" ~ "PSC MINISTERO CULTURA E TURISMO",
+                             ID_PSC == "PSC_MIC" ~ "PSC MINISTERO CULTURA",
+                             ID_PSC == "PSC_MITUR" ~ "PSC MINISTERO TURISMO",
+                             ID_PSC == "PSC_MISE" ~ "PSC MINISTERO SVILUPPO ECONOMICO",
+                             ID_PSC == "PSC_MUR" ~ "PSC MINISTERO UNIVERSITA' RICERCA SCIENTIFICA",
+                             ID_PSC == "PSC_MIPAAF" ~ "PSC MINISTERO POLITICHE AGRICOLO ALIMENTARI FORESTALI",
+                             ID_PSC == "PSC_SALUTE" ~ "PSC MINISTERO SALUTE",
+                             ID_PSC == "PSC_PCM-SPORT" ~ "PSC PRESIDENZA CONSIGLIO MINISTRI DIPARTIMENTO SPORT",
+                             TRUE ~ PSC))
+  }
+  
+  return(df)
+}
+
