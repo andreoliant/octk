@@ -3023,9 +3023,9 @@ OLD_make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_si
   
   if (export_xls == TRUE) {
     if (use_cp2 == TRUE) {
-      write.xlsx(out, file.path(OUTPUT, paste0(focus, "_programmi_macroaree_cp2.xlsx")), row.names = FALSE)
+      write.xlsx(out, file.path(OUTPUT, paste0(focus, "_programmi_macroaree_cp2.xlsx")), rowNames = FALSE)
     } else {
-      write.xlsx(out, file.path(OUTPUT, paste0(focus, "_programmi_macroaree.xlsx")), row.names = FALSE)
+      write.xlsx(out, file.path(OUTPUT, paste0(focus, "_programmi_macroaree.xlsx")), rowNames = FALSE)
     }
   }
   
@@ -4021,8 +4021,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
   # programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_po_psc=use_po_psc) %>%
   #   rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
   #          x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
-  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_eu=TRUE, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, 
-                                        use_po_psc=use_po_psc, use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) %>%
+  programmi <- init_programmazione_dati(DB=DB, use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   message("programmi caricato")
@@ -4349,8 +4348,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NU
   # tipo_ciclo <- "CICLO_STRATEGIA"
   # perimetro <- operazioni
   
-  programmi <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_eu=TRUE, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE, 
-                                        use_po_psc=use_po_psc, use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) %>%
+  programmi <- init_programmazione_dati(DB=DB, use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
   
@@ -4435,7 +4433,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NU
     # po_riclass <- octk::po_riclass
     # MEMO: questa soluzione porta a deniminazioni divergenti per lo stesso codice po
     
-    po_riclass <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=FALSE, use_po_psc=use_po_psc) %>%
+    po_riclass <- init_programmazione_dati(DB=DB, use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) %>%
       rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
              x_PROGRAMMA = DESCRIZIONE_PROGRAMMA) %>%
       distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO)
@@ -4607,7 +4605,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NU
     #   filter(RISORSE > 0)
     messagge("Con cut_no_risorse=TRUE si escudono casi con RISORSE 0 ma progetti monitorati su ambito nazionale, Sei sicuro?")
     
-    appo <- init_programmazione_dati(use_temi=FALSE, use_713=use_713, use_flt=use_flt, use_ciclo=TRUE, tipo_ciclo=tipo_ciclo, use_location=TRUE) %>%
+    appo <- init_programmazione_dati(DB=DB, use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepocE) %>%
       rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
              x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
     
@@ -4633,9 +4631,9 @@ make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NU
   
   if (export_xls == TRUE) {
     if (show_cp == TRUE) {
-      write.xlsx(out, file.path(OUTPUT, paste0(focus, "_programmi_macroaree_cp2.xlsx")), row.names = FALSE)
+      write.xlsx(out, file.path(OUTPUT, paste0(focus, "_programmi_macroaree_cp2.xlsx")), rowNames = FALSE)
     } else {
-      write.xlsx(out, file.path(OUTPUT, paste0(focus, "_programmi_macroaree.xlsx")), row.names = FALSE)
+      write.xlsx(out, file.path(OUTPUT, paste0(focus, "_programmi_macroaree.xlsx")), rowNames = FALSE)
     }
   }
   
