@@ -8,7 +8,7 @@
 #' @param use_flt Vuoi caricare solo gli interventi monitorabili (con FLAG_MONITORAGGIO == 1)?
 #' @details I progetti privi di OGV rientrano tra gli interventi monitorabili se la delibera di definanziamento non è ancora intervenuta a fronte di istruttoria OGV chiusa.
 #' @return Dataframe
-load_db_psc <- function(use_flt=FALSE) {
+load_db_psc <- function(DB, use_flt=FALSE) {
   interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_PSC.xlsx"), 
                           col_types = c("text", "text", "text", "text", "text", "text",
                                         "text", "text", "text", "text", "text", "text", "text",
