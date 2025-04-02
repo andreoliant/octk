@@ -5,36 +5,13 @@
 \title{Inizializza il database della programmazione}
 \usage{
 init_programmazione_dati(
-  use_temi = FALSE,
-  use_sog = FALSE,
-  use_eu = FALSE,
-  use_flt = FALSE,
-  use_713 = FALSE,
-  use_articolaz = FALSE,
-  use_location = FALSE,
-  use_ciclo = TRUE,
-  tipo_ciclo = "CICLO_STRATEGIA",
-  use_po_psc = FALSE,
+  DB,
   use_cicli_psc = FALSE,
   use_fix_siepoc = FALSE,
   stime_fix_siepoc = FALSE
 )
 }
 \arguments{
-\item{use_temi}{Vuoi caricare il DB con correzione dei temi prioritari?}
-
-\item{use_sog}{Vuoi caricare il DB con il soggetto programmatore?}
-
-\item{use_eu}{Vuoi caricare il dataset SIE del DB con le risorse UE e la categoria di regione? (solo per SIE)}
-
-\item{use_713}{Vuoi caricare anche il DB per il 2007-2013?}
-
-\item{use_ciclo}{Voi caricare il ciclo?}
-
-\item{tipo_ciclo}{Vuoi usare CICLO_STRATEGIA (default in x_CICLO nel DB) o CICCLO_RISORSE in senso contabile (sovrascrive x_CICLO da DB)?}
-
-\item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC? [FUNZIONALITA' DEPRECATA]}
-
 \item{use_cicli_psc}{Vuoi usare i dati di programmazione per cicli dei PSC?}
 
 \item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni di decisioni in base alle delibere sui POC?}

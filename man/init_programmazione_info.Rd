@@ -4,27 +4,7 @@
 \alias{init_programmazione_info}
 \title{Inizializza informazioni aggiuntive del database della programmazione}
 \usage{
-init_programmazione_info(
-  use_en = FALSE,
-  use_713 = FALSE,
-  sum_po = FALSE,
-  sum_po_last = FALSE,
-  use_po_psc = FALSE,
-  use_fix_siepoc = FALSE
-)
-}
-\arguments{
-\item{sum_po}{Vuoi dati aggregati come summary per programma, con decisioni collassati?}
-
-\item{sum_po_last}{Vuoi dati aggregati come summary per programma, con solo l'ultima decisione?}
-
-\item{use_po_psc}{Vuoi usare i dati di programmazione per PO ante art. 44 e non per PSC?}
-
-\item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
-
-\item{usa_en}{Vuoi caricare le traduzioni in inglese?}
-
-\item{usa_713}{Vuoi caricare anche il DB per il 2007-2013?}
+init_programmazione_info()
 }
 \value{
 Tutti i dati di supporto.

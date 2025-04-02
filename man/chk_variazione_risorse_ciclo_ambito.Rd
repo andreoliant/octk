@@ -2,7 +2,7 @@
 % Please edit documentation in R/programmazione.R
 \name{chk_variazione_risorse_ciclo_ambito}
 \alias{chk_variazione_risorse_ciclo_ambito}
-\title{Verifica variazione risorse per ciclo e ambito}
+\title{Verifica variazione risorse per ciclo e ambito nei report per la pubblicazione}
 \usage{
 chk_variazione_risorse_ciclo_ambito(
   risorse_new = NULL,
@@ -27,5 +27,5 @@ chk_variazione_risorse_ciclo_ambito(
 Un dataframe per ciclo e ambito.
 }
 \description{
-Verifica variazione risorse per ciclo e ambito. Confronta due dataframe risultanti da make_report_risorse() o i file csv da questa esportati.
+Verifica variazione risorse per ciclo e ambito nei report per la pubblicazione. Confronta due dataframe risultanti da make_report_risorse() o i file csv da questa esportati.
 }

@@ -7,7 +7,7 @@
 make_pagina_programmi(
   programmi = NULL,
   progetti = NULL,
-  use_fix_siepoc = TRUE,
+  use_fix_siepoc = FALSE,
   stime_fix_siepoc = FALSE,
   export = TRUE
 )
@@ -15,7 +15,7 @@ make_pagina_programmi(
 \arguments{
 \item{programmi}{Dati di base da workflow_programmazione().}
 
-\item{progetti}{Dataset di tipo 'progetti' (serve per denominazioni programmi da sito e non da DB)}
+\item{progetti}{Dataset di tipo 'operazioni' (serve per verificare i programmi pubblicati)}
 
 \item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni?}
 

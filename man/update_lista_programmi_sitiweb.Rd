@@ -4,12 +4,10 @@
 \alias{update_lista_programmi_sitiweb}
 \title{Update lista siti web programmi}
 \usage{
-update_lista_programmi_sitiweb(db_old, progetti = NULL)
+update_lista_programmi_sitiweb(db_old)
 }
 \arguments{
 \item{db_old}{Versione precedente del DBCOE, nel format standard tipo 20221231.01}
-
-\item{progetti}{Dataset progetti importato con load_progetti}
 }
 \value{
 Il file "label_programmi_en.xlsx" viene copiato dalla versione precedente a quella corrente e integrato con i nuovi programmi

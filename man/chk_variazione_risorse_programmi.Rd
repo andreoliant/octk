@@ -2,7 +2,7 @@
 % Please edit documentation in R/programmazione.R
 \name{chk_variazione_risorse_programmi}
 \alias{chk_variazione_risorse_programmi}
-\title{Verifica variazione risorse per programma}
+\title{Verifica variazione risorse per programma nei report per la pubblicazione}
 \usage{
 chk_variazione_risorse_programmi(
   programmi_new = NULL,
@@ -30,5 +30,5 @@ chk_variazione_risorse_programmi(
 Un dataframe per programma, ciclo e ambito.
 }
 \description{
-Verifica variazione risorse per programma. Confronta due dataframe risultanti da make_pagina_programmi() o i file csv da questa esportati.
+Verifica variazione risorse per programma nei report per la pubblicazione. Confronta due dataframe risultanti da make_pagina_programmi() o i file csv da questa esportati.
 }

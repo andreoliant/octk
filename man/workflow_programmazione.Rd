@@ -9,7 +9,7 @@ workflow_programmazione(
   use_fix_siepoc = FALSE,
   stime_fix_siepoc = FALSE,
   use_location = FALSE,
-  progetti = NULL
+  progetti
 )
 }
 \arguments{
