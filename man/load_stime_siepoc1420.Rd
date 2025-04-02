@@ -7,7 +7,7 @@
 load_stime_siepoc1420(DB)
 }
 \arguments{
-\item{DB}{Percorso al database programmazione.}
+\item{DB}{Percorso al database generato con oc_init() o sovrascritto.}
 }
 \value{
 Il dataset "stime".

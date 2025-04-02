@@ -7,6 +7,8 @@
 load_db_dati(DB, ciclo, ambito)
 }
 \arguments{
+\item{DB}{Percorso al database generato con oc_init() o sovrascritto.}
+
 \item{ciclo}{Ciclo di programmazione.}
 
 \item{ambito}{Ambito di programmazione.}

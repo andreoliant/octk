@@ -12,6 +12,8 @@ init_programmazione_dati(
 )
 }
 \arguments{
+\item{DB}{Percorso al database generato con oc_init() o sovrascritto.}
+
 \item{use_cicli_psc}{Vuoi usare i dati di programmazione per cicli dei PSC?}
 
 \item{use_fix_siepoc}{Vuoi correggere i dati SIE e POC 1420 con le anticipazioni di decisioni in base alle delibere sui POC?}

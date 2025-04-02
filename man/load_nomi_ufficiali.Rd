@@ -7,7 +7,7 @@
 load_nomi_ufficiali(DB)
 }
 \arguments{
-\item{DB}{Percorso al database programmazione.}
+\item{DB}{Percorso al database generato con oc_init() o sovrascritto.}
 }
 \value{
 Il dataset con i nomi ufficiali.
