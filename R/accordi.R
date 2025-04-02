@@ -1,40 +1,83 @@
 # funzioni del blocco "accordi"
 
-
+#' Carica dati interventi accordi per assegnazioni ordinarie
+#'
+#' Carica dati interventi accordi per assegnazioni ordinarie
+#'
+#' @return Dataframe
 load_db_accordi_ordinarie <- function() {
   interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_ordinarie.xlsx"))
   return(interventi)
 }
 
+#' Carica dati interventi accordi per anticipazioni
+#'
+#' Carica dati interventi accordi per anticipazioni
+#'
+#' @return Dataframe
 load_db_accordi_anticipazioni <- function() {
   interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_anticipazioni.xlsx"))
   return(interventi)
 }
 
+#' Carica dati interventi accordi per assegnazioni complementari FdR
+#'
+#' Carica dati interventi accordi per assegnazioni complementari FdR
+#'
+#' @return Dataframe
 load_db_accordi_complementari <- function() {
   interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_complementari.xlsx"))
   return(interventi)
 }
 
+#' Carica dati interventi accordi per completamenti Campania
+#'
+#' Carica dati interventi accordi per completamenti Campania
+#'
+#' @return Dataframe
 load_db_accordi_completamenti <- function() {
   interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_completamenti.xlsx"))
   return(interventi)
 }
 
+#' Carica dati interventi accordi per cofinanziamenti PR
+#'
+#' Carica dati interventi accordi per cofinanziamenti PR
+#'
+#' @return Dataframe
+load_db_accordi_cofinanziamenti <- function() {
+  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_cofinanziamenti_por.xlsx"))
+  return(interventi)
+}
+
+#' Carica dati interventi accordi 
+#'
+#' Carica dati interventi accordi per tutte le assegnazioni
+#'
+#' @return Dataframe
 load_db_accordi <- function() {
  appo1 <- load_db_accordi_ordinarie()
  appo2 <- load_db_accordi_anticipazioni()
  appo3 <- load_db_accordi_complementari()
  appo4 <- load_db_accordi_completamenti()
+ appo5 <- load_db_accordi_cofinanziamenti()
   
   interventi <- appo1 %>% 
     bind_rows(appo2) %>% 
     bind_rows(appo3) %>% 
-    bind_rows(appo4)
+    bind_rows(appo4) %>% 
+    bind_rows(appo5)
   
   return(interventi)
 }
 
+#' Workflow per template monitoraggio extra-sistema accordi
+#' 
+#' Workflow per template monitoraggio extra-sistema accordi
+#'
+#' @param interventi Elenco interventi da load_db_accordi()
+#' @param template Nome del file xlsx in input
+#' @return File in output nella cartella "monitoraggio"
 workflow_accordi_monitoraggio <- function(interventi, template) {
   
   # DEBUG:
@@ -44,6 +87,8 @@ workflow_accordi_monitoraggio <- function(interventi, template) {
     distinct(AMMINISTRAZIONE_TITOLARE) %>% 
     .$AMMINISTRAZIONE_TITOLARE
   
+  dir.create(file.path(OUTPUT, "monitoraggio"))
+  
   for (regione in regioni) {
     print(regione)
     crea_report_accordi_monitoraggio(regione, interventi, template) 
@@ -51,6 +96,14 @@ workflow_accordi_monitoraggio <- function(interventi, template) {
   
 }
 
+#' Crea template monitoraggio extra-sistema accordi per una regione
+#' 
+#' Crea template monitoraggio extra-sistema accordi per una regione
+#'
+#' @param regione valore per selezionare AMMINISTRAZIONE_TITOLARE
+#' @param interventi Elenco interventi da load_db_accordi()
+#' @param template Nome del file xlsx in input
+#' @return File in output nella cartella "monitoraggio"
 crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
   
   # DEBUG:
