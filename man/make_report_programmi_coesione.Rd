@@ -21,7 +21,8 @@ make_report_programmi_coesione(
   export = FALSE,
   export_xls = FALSE,
   progetti = NULL,
-  po_riclass = NULL
+  po_riclass = NULL,
+  DB
 )
 }
 \arguments{

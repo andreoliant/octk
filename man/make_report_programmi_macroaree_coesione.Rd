@@ -22,7 +22,8 @@ make_report_programmi_macroaree_coesione(
   export = FALSE,
   export_xls = FALSE,
   progetti = NULL,
-  po_riclass = NULL
+  po_riclass = NULL,
+  DB
 )
 }
 \arguments{

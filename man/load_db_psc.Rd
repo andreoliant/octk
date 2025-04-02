@@ -4,7 +4,7 @@
 \alias{load_db_psc}
 \title{Carica lista interventi PSC}
 \usage{
-load_db_psc(use_flt = FALSE)
+load_db_psc(DB, use_flt = FALSE)
 }
 \arguments{
 \item{use_flt}{Vuoi caricare solo gli interventi monitorabili (con FLAG_MONITORAGGIO == 1)?}

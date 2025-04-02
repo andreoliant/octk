@@ -4005,7 +4005,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
                                            use_fix_siepoc=FALSE, stime_fix_siepoc=FALSE,
                                            cut_no_risorse=FALSE,
                                            tipo_ciclo="CICLO_STRATEGIA",
-                                           focus="report", export=FALSE, export_xls=FALSE, progetti=NULL, po_riclass=NULL) {
+                                           focus="report", export=FALSE, export_xls=FALSE, progetti=NULL, po_riclass=NULL, DB) {
   
   # perimetro <- operazioni
   # DEBUG: 
@@ -4339,7 +4339,7 @@ make_report_programmi_macroaree_coesione <- function(perimetro, perimetro_sie=NU
                                                      use_fix_siepoc=FALSE, stime_fix_siepoc=FALSE,
                                                      show_cp=FALSE, cut_no_risorse=FALSE,
                                                      tipo_ciclo="CICLO_STRATEGIA",
-                                                     focus="report", export=FALSE, export_xls=FALSE, progetti=NULL, po_riclass=NULL) {
+                                                     focus="report", export=FALSE, export_xls=FALSE, progetti=NULL, po_riclass=NULL, DB) {
   
   # DEBUG: 
   # use_713 <- TRUE

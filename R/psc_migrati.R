@@ -316,7 +316,7 @@ make_report_temi_psc_migrati <- function(progetti_psc, programmazione=NULL, visu
   
   # NEW:
   if (is.null(programmazione)) {
-    programmazione <- load_db_psc(use_flt=TRUE) %>% 
+    programmazione <- load_db_psc(DB, use_flt=TRUE) %>% 
       rename(TIPOLOGIA_AMMINISTRAZIONE = TIPO_AR,
              x_CICLO = CICLO_PROGRAMMAZIONE) %>% 
       mutate(x_CICLO = "2014-2020",
@@ -479,7 +479,7 @@ make_report_sezioni_psc_migrati <- function(progetti_psc, programmazione=NULL, v
                             "PSCVENETO", "PSCCIMETVENEZIA"))
   
   if (is.null(programmazione)) {
-    programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, use_articolaz = TRUE) %>% 
+    programmazione <- init_programmazione_dati(DB=DB) %>% 
       filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
       rename(SEZIONE = DESCR_LIVELLO_1) %>% 
       filter(SEZIONE == "SEZ_SPEC_1_COVID" | SEZIONE == "SEZ_SPEC_2_FS") %>% 
@@ -630,7 +630,7 @@ make_report_cicli_psc_migrati <- function(progetti_psc, programmazione=NULL, vis
   
   # NEW:
   if (is.null(programmazione)) {
-    programmazione <- load_db_psc(use_flt=TRUE) %>% 
+    programmazione <- load_db_psc(DB, use_flt=TRUE) %>% 
       rename(TIPOLOGIA_AMMINISTRAZIONE = TIPO_AR,
              x_CICLO = CICLO_PROGRAMMAZIONE)
   }
@@ -717,7 +717,7 @@ make_report_cicli_psc_migrati <- function(progetti_psc, programmazione=NULL, vis
 #' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
 #' @return Report di confronto programmazione attuazione per PSC e PO in essi confluiti.
 #' @note ...
-make_report_temi_macroaree_psc_migrati <- function(progetti_psc, operazioni=NULL, programmazione=NULL, visualizzati=TRUE, usa_meuro=FALSE, show_cp=FALSE, export=FALSE, export_xls=FALSE) {
+make_report_temi_macroaree_psc_migrati <- function(progetti_psc, operazioni=NULL, programmazione=NULL, visualizzati=TRUE, usa_meuro=FALSE, show_cp=FALSE, export=FALSE, export_xls=FALSE, DB) {
   
   # Isola sezione ordinaria
   progetti_psc <- progetti_psc %>% 
@@ -744,7 +744,7 @@ make_report_temi_macroaree_psc_migrati <- function(progetti_psc, operazioni=NULL
   progetti_psc <- appo
   
   if (is.null(programmazione)) {
-    programmazione <- load_db_psc(use_flt=TRUE) %>% 
+    programmazione <- load_db_psc(DB, use_flt=TRUE) %>% 
       filter(SEZIONE != "SEZ_SPEC_1_COVID", SEZIONE != "SEZ_SPEC_2_FS") %>%
       mutate(SEZIONE = "ORD+CIS") %>% 
       mutate(x_CICLO = "2014-2020") %>% 
@@ -805,13 +805,24 @@ make_report_temi_macroaree_psc_migrati <- function(progetti_psc, operazioni=NULL
               by = "ID_PSC") %>% 
     mutate(DESCRIZIONE_PROGRAMMA = if_else(is.na(DESCRIZIONE_PROGRAMMA.x),  DESCRIZIONE_PROGRAMMA.y, DESCRIZIONE_PROGRAMMA.x),
            TIPOLOGIA_AMMINISTRAZIONE= if_else(is.na(TIPOLOGIA_AMMINISTRAZIONE.x),  TIPOLOGIA_AMMINISTRAZIONE.y, TIPOLOGIA_AMMINISTRAZIONE.x)) %>% 
-    select(-DESCRIZIONE_PROGRAMMA.y, -DESCRIZIONE_PROGRAMMA.x, -TIPOLOGIA_AMMINISTRAZIONE.y, -TIPOLOGIA_AMMINISTRAZIONE.x) %>% 
-    # clean
-    select(ID_PSC, TIPOLOGIA_AMMINISTRAZIONE, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, x_CICLO, SEZIONE,
-           AREA_TEMATICA, SETTORE_INTERVENTO,
-           RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N) %>% 
-    arrange(TIPOLOGIA_AMMINISTRAZIONE, ID_PSC, x_CICLO)
+    select(-DESCRIZIONE_PROGRAMMA.y, -DESCRIZIONE_PROGRAMMA.x, -TIPOLOGIA_AMMINISTRAZIONE.y, -TIPOLOGIA_AMMINISTRAZIONE.x) 
   
+  if (show_cp == TRUE) {
+    report <- report %>% 
+      # clean
+      select(ID_PSC, TIPOLOGIA_AMMINISTRAZIONE, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, x_CICLO, SEZIONE,
+             AREA_TEMATICA, SETTORE_INTERVENTO, x_MACROAREA,
+             RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N, CP) %>% 
+      arrange(TIPOLOGIA_AMMINISTRAZIONE, ID_PSC, x_CICLO) 
+  } else {
+    report <- report %>% 
+      # clean
+      select(ID_PSC, TIPOLOGIA_AMMINISTRAZIONE, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, x_CICLO, SEZIONE,
+             AREA_TEMATICA, SETTORE_INTERVENTO, x_MACROAREA,
+             RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N) %>% 
+      arrange(TIPOLOGIA_AMMINISTRAZIONE, ID_PSC, x_CICLO) 
+  }
+
   if (usa_meuro == TRUE) {
     if (show_cp == TRUE) {
       report <- report %>% mutate(across(c(RISORSE, COE, COE_IMP, COE_CR, COE_PAG, CP), ~./1e6))
@@ -966,7 +977,7 @@ setup_macroaree_psc_migrati <- function(progetti_psc, operazioni, export=FALSE) 
 #' @return Dataframe
 chk_dati_dbcoe_psc_migrati <- function() {
   
-  programmazione <- load_db_psc(use_flt=TRUE) 
+  programmazione <- load_db_psc(DB, use_flt=TRUE) 
   
   po_fsc <- load_db("2014-2020", "FSC", simplify_loc = TRUE, use_articolaz = TRUE) %>% 
     filter(TIPOLOGIA_PROGRAMMA == "PSC" & 

@@ -12,7 +12,8 @@ make_report_temi_macroaree_psc_migrati(
   usa_meuro = FALSE,
   show_cp = FALSE,
   export = FALSE,
-  export_xls = FALSE
+  export_xls = FALSE,
+  DB
 )
 }
 \arguments{

@@ -2217,7 +2217,7 @@ make_report_temi_macroaree_psc <- function(progetti_psc, operazioni=NULL, progra
   
   # NEW:
   if (is.null(programmazione)) {
-    programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, 
+    programmazione <- init_programmazione_dati_old(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, 
                                                use_articolaz = TRUE, use_location = TRUE) %>% 
       filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
       rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1)  %>% 
