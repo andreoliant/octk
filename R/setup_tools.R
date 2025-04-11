@@ -6,7 +6,62 @@
 
 
 # ----------------------------------------------------------------------------------- #
-# chk progetti
+# setup bimestre
+
+
+#' Copia i dati di OC da GoogleDrive
+#'
+#' Copia i dati di OC da GoogleDrive.
+#'
+#' @param bimestre Versione dei dati di attuazione da utilizzare. Stringa in formato "20180630" come da standard per le date in OC.
+#' @param data_path Percorso allla fonte dati (senza folder del bimestre).
+#' @return I file di "progetti_preesteso" sono copiati nel folder DATA.
+oc_init_data <- function(bimestre, data_path=NULL) {
+  
+  # finanziamenti_preesteso.sas7bdat
+  # indicatori_pucok.sas7bdat
+  # operazioni_pucok.sas7bdat
+  # PROGETTI_PREESTESO.csv
+  # PROGETTI_PREESTESO.zip
+  
+  ROOT <- "/Volumes/GoogleDrive/Drive condivisi"
+  
+  # wizard dati attuazione
+  if (is.null(data_path)) {
+    appo <- readline("Quale path per la fonte dati? ")
+    data_path <- gsub("\\\"", "", appo)
+  }
+  
+  DATA <- file.path(data_path, bimestre)
+  
+  file.copy(from = file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART", "PROGETTI_PREESTESO.zip"),
+            to = file.path(DATA, "PROGETTI_PREESTESO.zip"))
+  unzip(zipfile = file.path(DATA, "PROGETTI_PREESTESO.zip"),
+        exdir = file.path(DATA))
+  
+  file.copy(from = file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART", "finanziamenti_preesteso.sas7bdat"),
+            to = file.path(DATA, "finanziamenti_preesteso.sas7bdat"))
+  
+  file.copy(from = file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART", "indicatori_pucok.sas7bdat"),
+            to = file.path(DATA, "indicatori_pucok.sas7bdat"))
+  
+  file.copy(from = file.path(ROOT, "DATI", bimestre, "DASAS", "DATAMART", "operazioni_pucok.sas7bdat"),
+            to = file.path(DATA, "operazioni_pucok.sas7bdat"))
+  
+}
+
+
+
+#' Copia i dati di OC da GoogleDrive
+#'
+#' Copia i dati di OC da GoogleDrive.
+#'
+#' @param bimestre Versione dei dati di attuazione da utilizzare. Stringa in formato "20180630" come da standard per le date in OC.
+#' @param data_path Percorso allla fonte dati (senza folder del bimestre).
+#' @return I file di "progetti_preesteso" sono copiati nel folder DATA.
+workflow_chk_bimestre <- function() {
+  
+}
 
 # TODO: creare diagnostico generale
 
