@@ -7,18 +7,20 @@
 #'
 #' @param bimestre Bimestre di riferimento
 #' @param progetti Dataset con un perimetro in formato "progetti".
+#' @param operazioni_713 File di tipo operazioni da flusso sas/dataiku.
+#' @param operazioni_1420 File di tipo operazioni da flusso sas/dataiku.
 #' @param use_fix Vuoi applicare fix_progetti() prima di esecuzione? Non impatta su x_AMBITO!
 #' @param use_ecomix Vuoi calcolare il costo coesione al netto delle economie solo per i progetti conclusi?
 #' @param use_sito Vuoi usare il calcolo dellle risorse coesione fatto per il sito OC?
 #' @return Il dataset operazioni con le variabili coesione calcolate: COE, COE_IMP e COE_PAG.
 #' @note La modalità **debug** esporta diversi csv in TEMP La modalità **export** esporta operazioni_light.csv in DATA.
-setup_operazioni <- function(bimestre, progetti=NULL, export=FALSE, use_fix=FALSE, use_ecomix=FALSE, use_sito=FALSE, debug=FALSE) {
+setup_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1420, export=FALSE, use_fix=FALSE, use_ecomix=FALSE, use_sito=FALSE, debug=FALSE) {
   if (exists("DATA", envir = .GlobalEnv)) {
     
-    if (is.null(progetti)) {
-      progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, light = FALSE)
-      message("Dataset progetti caricato")
-    }
+    # if (is.null(progetti)) {
+    #   progetti <- load_progetti(bimestre = bimestre, visualizzati = FALSE, light = FALSE)
+    #   message("Dataset progetti caricato")
+    # }
     # MEMO: da qui veniva l'esclusione dei non visualizzati da operazioni? no perché sotto c'è left_join
     
     if (use_fix == TRUE) {
@@ -33,7 +35,10 @@ setup_operazioni <- function(bimestre, progetti=NULL, export=FALSE, use_fix=FALS
       
     } else if (use_sito == TRUE) {
       # operazioni <- workflow_operazioni_sito(bimestre, progetti, debug=debug)
-      operazioni <- workflow_operazioni_migrazione(bimestre, progetti, debug=debug) #MEMO: versione post migrazione PSC
+      # operazioni <- workflow_operazioni_migrazione(bimestre, progetti, debug=debug) #MEMO: versione post migrazione PSC
+      # operazioni <- workflow_operazioni_migrazione(bimestre, progetti, operazioni_713, operazioni_1420, debug=debug)
+      operazioni <- workflow_operazioni_dataiku(bimestre, progetti, operazioni_713, operazioni_1420, debug=debug)
+
     } else {
       operazioni <- workflow_operazioni(bimestre, progetti, debug=debug)
     }
@@ -204,10 +209,10 @@ workflow_operazioni <- function(bimestre, progetti, debug=FALSE) {
   
   operazioni_1420_raw <- read_sas(file.path(DATA, "oper_pucok_preesteso.sas7bdat"))
   message("Operazioni raw caricate per 1420")
-  
+
   operazioni_713_raw <- read_sas(file.path(DATA, "oper_fltok_preesteso.sas7bdat"))
   message("Operazioni raw caricate per 713")
-  
+
   
   # ----------------------------------------------------------------------------------- #
   # prep
@@ -948,9 +953,96 @@ prep_perimetro_bimestre_coesione <- function(bimestre, usa_meuro=TRUE) {
 #' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
 load_operazioni <- function(bimestre, visualizzati=TRUE) {
   
+  col_types <- cols(
+    COD_LOCALE_PROGETTO = col_character(),
+    OC_CODICE_PROGRAMMA = col_character(),
+    x_AMBITO = col_character(),
+    COE = col_double(),
+    COE_IMP = col_double(),
+    COE_PAG = col_double(),
+    costo_ammesso_MZ = col_double(),
+    costo_ammesso_CN = col_double(),
+    imp_ammesso_MZ = col_double(),
+    imp_ammesso_CN = col_double(),
+    imp_trasf_ammesso_MZ = col_double(),
+    imp_trasf_ammesso_CN = col_double(),
+    pag_ammesso_MZ = col_double(),
+    pag_ammesso_CN = col_double(),
+    pag_trasf_ammesso_MZ = col_double(),
+    pag_trasf_ammesso_CN = col_double(),
+    x_COD_LIVELLO_0 = col_character(),
+    x_DES_LIVELLO_0 = col_character(),
+    x_COD_LIVELLO_1 = col_character(),
+    x_DES_LIVELLO_1 = col_character(),
+    x_COD_LIVELLO_2 = col_character(),
+    x_DES_LIVELLO_2 = col_character(),
+    x_GRUPPO = col_character(),
+    x_PROGRAMMA = col_character(),
+    x_REGNAZ = col_character(),
+    x_CICLO = col_character(),
+    OC_MACROAREA = col_character(),
+    x_MACROAREA = col_character(),
+    COD_REGIONE = col_character(),
+    DEN_REGIONE = col_character(),
+    COD_PROVINCIA = col_character(),
+    x_REGIONE = col_character(),
+    CP = col_double(),
+    IMP = col_double(),
+    PAG = col_double(),
+    COE_SUD = col_double(),
+    COE_CN = col_double(),
+    COE_IMP_SUD = col_double(),
+    COE_IMP_CN = col_double(),
+    COE_PAG_SUD = col_double(),
+    COE_PAG_CN = col_double(),
+    CUP = col_character(),
+    OC_TITOLO_PROGETTO = col_character(),
+    OC_SINTESI_PROGETTO = col_character(),
+    OC_COD_TEMA_SINTETICO = col_character(),
+    FONDO_COMUNITARIO = col_character(),
+    OC_DESCRIZIONE_PROGRAMMA = col_character(),
+    COD_RISULTATO_ATTESO = col_character(),
+    DESCR_RISULTATO_ATTESO = col_character(),
+    OC_COD_CATEGORIA_SPESA = col_character(),
+    OC_DESCR_CATEGORIA_SPESA = col_character(),
+    COD_STRUMENTO = col_character(),
+    DESCR_STRUMENTO = col_character(),
+    DESCR_TIPO_STRUMENTO = col_character(),
+    COD_PROGETTO_COMPLESSO = col_character(),
+    DESCRIZIONE_PROGETTO_COMPLESSO = col_character(),
+    COD_TIPO_COMPLESSITA = col_character(),
+    DESCR_TIPO_COMPLESSITA = col_character(),
+    CUP_COD_NATURA = col_character(),
+    CUP_DESCR_NATURA = col_character(),
+    CUP_COD_TIPOLOGIA = col_character(),
+    CUP_DESCR_TIPOLOGIA = col_character(),
+    CUP_COD_SETTORE = col_character(),
+    CUP_DESCR_SETTORE = col_character(),
+    CUP_COD_SOTTOSETTORE = col_character(),
+    CUP_DESCR_SOTTOSETTORE = col_character(),
+    CUP_COD_CATEGORIA = col_character(),
+    CUP_DESCR_CATEGORIA = col_character(),
+    OC_STATO_PROGETTO = col_character(),
+    OC_STATO_PROCEDURALE = col_character(),
+    OC_COD_FASE_CORRENTE = col_character(),
+    OC_DESCR_FASE_CORRENTE = col_character(),
+    COD_PROCED_ATTIVAZIONE = col_character(),
+    DESCR_PROCED_ATTIVAZIONE = col_character(),
+    OC_CODFISC_BENEFICIARIO = col_character(),
+    OC_DENOM_BENEFICIARIO = col_character(),
+    OC_FLAG_VISUALIZZAZIONE = col_integer(),
+    COD_SEZIONE = col_character(),
+    DES_SEZIONE = col_character(),
+    OC_COD_ARTICOLAZ_PROGRAMMA = col_character(),
+    OC_DESCR_ARTICOLAZ_PROGRAMMA = col_character(),
+    OC_COD_SUBARTICOLAZ_PROGRAMMA = col_character(),
+    OC_DESCR_SUBARTICOLAZ_PROGRAMMA = col_character()
+  )
+  
   # loads
   # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = TRUE, refactor = TRUE)
-  perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+  # perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+  perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), col_types = col_types)
   
   # fix per dissesto
   # TODO: da spostare a monte nel workflow di operazioni
@@ -4678,11 +4770,10 @@ workflow_operazioni_migrazione <- function(bimestre, progetti, debug=FALSE) {
   
   operazioni_1420_raw <- read_sas(file.path(DATA, "oper_pucok_preesteso.sas7bdat"))
   message("Operazioni raw caricate per 1420")
-  
-  operazioni_713_raw <- read_sas(file.path(DATA, "oper_fltok_preesteso.sas7bdat")) %>%
-    rename(OC_COD_PROGRAMMA = oc_cod_programma)
+
+  operazioni_713_raw <- read_sas(file.path(DATA, "oper_fltok_preesteso.sas7bdat"))
   message("Operazioni raw caricate per 713")
-  
+
   # # SPECIAL (dati SGP-BDU di Fabio)
   # # OLD: WRONG!
   # # progetti_psc <- load_progetti_psc(bimestre = "20221231", versione = "03", fix_no_temi_no_coe = TRUE) %>% # contiene 713 e 1420 da BDU + 06 solo da BDU1420
