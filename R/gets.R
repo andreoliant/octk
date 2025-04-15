@@ -92,12 +92,12 @@ get_dimensione_fin <- function(df, debug_mode=FALSE) {
 get_regione_simply <- function(df, progetti, real_reg=TRUE) {
   # MEMO: deve avere struttura di progetti
 
-  if (missing(progetti)) {
-    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
-    # if (!exists("progetti", envir = .GlobalEnv)) {
-    #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
-    # }
-  }
+  # if (is.null(progetti)) {
+  #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  #   # if (!exists("progetti", envir = .GlobalEnv)) {
+  #   #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  #   # }
+  # }
 
   # NEW BLOCK
   if (!any(names(df) == "COD_REGIONE")) {

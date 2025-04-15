@@ -21,9 +21,11 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
     # switch di filename per progetti_light
     if (light == TRUE) {
       temp <- paste0("progetti_light_", bimestre, ".csv")
+
     } else {
       if (as.numeric(bimestre) <= 20181231) {
         temp <- paste0("progetti_esteso_", bimestre, ".csv")
+
       } else {
         temp <- "PROGETTI_PREESTESO.csv"
       }
@@ -53,13 +55,10 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
     } else {
       # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000)
       progetti <- read_csv2(file.path(DATA, temp), guess_max = 1800000)
+      # progetti <- read_csv2(file.path(DATA, temp), col_types = col_types)
+      
       # MEMO: qui prende anche non visualizzati
     }
-
-    # Warning: 143229 parsing failures.
-    # no trailing characters
-    # number of columns of result is not a multiple of vector length
-    # MEMO: risolto incrementando guess_max
 
     # analisi tipologia colonne
     # sapply(names(progetti), function(x) {print(paste0(x, " = ", class(progetti[[x]])))})
@@ -83,6 +82,7 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
     return(progetti)
   # }
 }
+
 
 
 

@@ -353,6 +353,7 @@ load_db_info <- function(DB, ciclo, ambito) {
            FLAG_PRIMA_DECISIONE = toupper(FLAG_PRIMA_DECISIONE),
            FLAG_VAR_RIS_ULTIMA = toupper(FLAG_VAR_RIS_ULTIMA),
            NOTE_DECISIONE = as.character(NOTE_DECISIONE),
+           VERSIONE = as.character(VERSIONE),
            NOTE = as.character(NOTE))
   
   return(appo)
@@ -1712,7 +1713,7 @@ workflow_programmazione <- function(use_flt=TRUE, use_fix_siepoc=FALSE, stime_fi
                                 x_AMBITO == "POC" & x_GRUPPO == "POC Nazionale Completamenti" ~ "COMPLETAMENTI",
                                 x_AMBITO == "POC" & x_GRUPPO == "POC Regionale" ~ "REGIONALI",
                                 x_AMBITO == "POC" & x_GRUPPO == "POC Regionale Completamenti" ~ "COMPLETAMENTI",
-                                x_AMBITO == "FSC" & x_GRUPPO != "PSC" ~ "VARI",
+                                x_AMBITO == "FSC" & x_GRUPPO != "PSC" & x_GRUPPO != "ACCORDI" ~ "VARI",
                                 x_AMBITO == "PAC" & x_GRUPPO == "PAC Nazionale" ~ "NAZIONALI",
                                 x_AMBITO == "PAC" & x_GRUPPO == "PAC Regionale" ~ "REGIONALI",
                                 TRUE ~ x_GRUPPO))
@@ -2519,7 +2520,9 @@ make_opendata_decisioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
   appo1 <- programmi %>%
     mutate(LABEL_PROGRAMMA = x_PROGRAMMA,
            LABEL_AMBITO = x_AMBITO) %>% 
-    left_join(info, by = "OC_CODICE_PROGRAMMA")
+    left_join(info %>% 
+                select(-x_AMBITO, -x_CICLO), 
+              by = "OC_CODICE_PROGRAMMA")
   # MEMO: uso convenzioni da "workflow" in "programmi" e aggiungo dati per singole delibere (che sono N:1 su programmi)
   
   # inglese
