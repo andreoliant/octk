@@ -294,9 +294,9 @@ get_macroarea_oc <- function(df, progetti, debug_mode=FALSE) {
   # df <- progetti
 
   if (!any(names(df) == "OC_MACROAREA")) {
-    if (missing(progetti)) {
-      progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
-    }
+    # if (missing(progetti)) {
+    #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+    # }
     df <- df %>%
       left_join(progetti %>%
                   select(COD_LOCALE_PROGETTO, OC_MACROAREA),
@@ -480,9 +480,9 @@ get_catreg_UE <- function(df, progetti=NULL, real_reg=TRUE, debug_mode=FALSE) {
   # load progetti
   # source("loader.R")
 
-  if (is.null(progetti)) {
-    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
-  }
+  # if (is.null(progetti)) {
+  #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  # }
 
   # NEW BLOCK
   if (!any(names(df) == "COD_REGIONE")) {
@@ -607,6 +607,9 @@ get_catreg_UE <- function(df, progetti=NULL, real_reg=TRUE, debug_mode=FALSE) {
 get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
   # MEMO: nuova versione con "x_AMBITO"
   # DEV: definire "bimestre" nella funzione!
+  
+  # DEBUG:
+  # df <- progetti
 
   temp <- names(df)
 
@@ -619,9 +622,9 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
   # recupera fondo comunitario da progetti (se assente in df)
   if (!(any(names(df) == "FONDO_COMUNITARIO"))) {
 
-    if (is.null(progetti)) {
-      progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
-    }
+    # if (is.null(progetti)) {
+    #   progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
+    # }
 
     df <- df %>%
       left_join(progetti %>%
@@ -630,7 +633,6 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
   }
 
   df <- df %>%
-
     mutate(x_AMBITO = case_when(x_AMBITO == "FESR-FSE" ~ FONDO_COMUNITARIO, # MEMO: split per programmi pluri-fondo
                                 x_AMBITO == "YEI-FSE" ~ FONDO_COMUNITARIO,
                                 x_AMBITO == "FSC-POC" ~ "FSC",  # MEMO: forzo su FSC
@@ -650,6 +652,21 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
   #   filter(n > 1)
 
   # TODO: inserire elaboraizone diretta anche su "MISTI"?
+  
+  if (!(any(names(df) == "OC_COD_CICLO"))) {
+    df <- df %>%
+      left_join(progetti %>%
+                  select(COD_LOCALE_PROGETTO, OC_COD_CICLO),
+                by = "COD_LOCALE_PROGETTO")
+  }
+  
+  # fix ciclo psc (che da po_riclass viene schiacciato su 1420)
+  df <- df %>%
+    mutate(x_CICLO = case_when(x_AMBITO == "FSC" & x_GRUPPO == "PSC" & OC_COD_CICLO == 9 ~ "2000-2006",
+                               x_AMBITO == "FSC" & x_GRUPPO == "PSC" & OC_COD_CICLO == 1 ~ "2007-2013",
+                               x_AMBITO == "FSC" & x_GRUPPO == "PSC" & OC_COD_CICLO == 2 ~ "2014-2020",
+                               x_AMBITO == "FSC" & x_GRUPPO == "PSC" & OC_COD_CICLO == 3 ~ "2021-2027",
+                               TRUE ~ x_CICLO))
 
   # riordina vars
   df <- df %>%
@@ -675,12 +692,12 @@ get_real_reg <- function(df, progetti, debug_mode=FALSE) {
   # MEMO: richiede e sovrascrive COD_REGIONE
   # MEMO: richiede x_REGNAZ
 
-  if (missing(progetti)) {
-    progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
-    # if (!exists("progetti", envir = .GlobalEnv)) {
-    #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
-    # }
-  }
+  # if (missing(progetti)) {
+  #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  #   # if (!exists("progetti", envir = .GlobalEnv)) {
+  #   #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
+  #   # }
+  # }
 
   # NEW BLOCK
   if (!any(names(df) == "COD_REGIONE")) {
