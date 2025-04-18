@@ -367,7 +367,7 @@ query_cipe <- function(progetti) {
     delibere <- read_csv2(file.path(DATA, temp), guess_max = 5000)
     # MEMO: versione per retrocompatibilità
   } else {
-    delibere <- read_sas(file.path(DATA, "finanziamenti_preesteso.sas7bdat")) %>%
+    delibere <- read_csv2(file.path(DATA, "finanziamenti_preesteso.csv")) %>%
       rename(NUMERO_DEL_CIPE = numero_del_cipe,
              ANNO_DEL_CIPE = anno_del_cipe,
              IMPORTO = importo)
@@ -478,7 +478,7 @@ query_atp <- function(progetti) {
                COD_ASSE_TEMATICO_FSC, DESCR_ASSE_TEMATICO_FSC)
 
   } else {
-    operazioni <- read_sas(file.path(DATA, "oper_pucok_preesteso.sas7bdat")) %>%
+    operazioni <- read_csv2(file.path(DATA, "oper_pucok_preesteso.csv")) %>%
       rename(COD_LOCALE_PROGETTO = cod_locale_progetto,
              COD_SETTORE_STRATEGICO_FSC = fsc_settore_strategico,
              DESCR_SETTORE_STRATEGICO_FSC = fsc_descr_settore_strategico,
@@ -541,7 +541,7 @@ query_atsi_psc <- function(progetti) {
   
   # load ambito FSC
   
-    operazioni <- read_sas(file.path(DATA, "oper_pucok_preesteso.sas7bdat")) %>%
+    operazioni <- read_csv2(file.path(DATA, "oper_pucok_preesteso.csv")) %>%
       rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>% 
       #        COD_SETTORE_STRATEGICO_FSC = fsc_settore_strategico,
       #        DESCR_SETTORE_STRATEGICO_FSC = fsc_descr_settore_strategico,
