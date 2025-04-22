@@ -492,8 +492,8 @@ query_atp <- function(progetti) {
                                                     COD_SETTORE_STRATEGICO_FSC == "4.b" ~ "4",
                                                     TRUE ~ COD_SETTORE_STRATEGICO_FSC)) %>%
       # fix per porto di pozzuoli
-      mutate(COD_ASSE_TEMATICO_FSC = case_when(COD_ASSE_TEMATICO_FSC == "01" ~ 1,
-                                               TRUE ~ COD_ASSE_TEMATICO_FSC))
+      mutate(COD_ASSE_TEMATICO_FSC = as.character(case_when(COD_ASSE_TEMATICO_FSC == "01" ~ 1,
+                                                            TRUE ~ COD_ASSE_TEMATICO_FSC)))
   }
 
 
