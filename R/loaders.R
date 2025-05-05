@@ -50,7 +50,7 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
       # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1200000) %>%
       #   filter(OC_FLAG_VISUALIZZAZIONE == 0)
       progetti <- read_csv2(file.path(DATA, temp), guess_max = 1800000) %>%
-        filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9) # include progetti FEASR per SNAI
+        filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9 | OC_FLAG_VISUALIZZAZIONE == 10) # include progetti FEASR per SNAI e i progetti visualizzati ma accorpati codice 10
       # CHK: progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 9) %>% count(X_AMBITO)
     } else {
       # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000)

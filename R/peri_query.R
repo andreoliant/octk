@@ -1458,3 +1458,33 @@ update_input_with_delta <- function(OLD) {
 
 
 
+#' Assestare lista finale perimetro
+#'
+#' Assestare lista finale perimetro per consentire il caricamento con CUP aggregati
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @param perimetro definire il dataset del perimetro finale che contiene solo i CLP
+#' @param export settare a TRUE per scaricare CSV finale in OUTPUT
+#' @return Un dataframe con COD_LOCALE_PROGETTO.
+
+clp_perimetro <- function(progetti, perimetro, export=FALSE) {
+  
+    # query
+    clp_duplicati <- load_progetti(bimestre, visualizzati = FALSE, light = FALSE)%>%
+      select(COD_LOCALE_PROGETTO, OC_PROGETTO_AGGREGATO)
+
+    
+    # individuo i CLP finali
+    pseudo <- perimetro %>%
+      select(COD_LOCALE_PROGETTO)%>%
+      left_join(clp_duplicati, by = c("COD_LOCALE_PROGETTO"))%>%
+                  mutate(CLP_PERIMETRO = ifelse(is.na(OC_PROGETTO_AGGREGATO), COD_LOCALE_PROGETTO, OC_PROGETTO_AGGREGATO))%>%
+                  distinct(CLP_PERIMETRO)
+    
+    if (export == TRUE) {
+      write.csv2(pseudo,
+                 file.path(OUTPUT, "perimetro_finale.csv"),
+                 na = "", row.names = FALSE)
+    }
+    return(pseudo)
+}
