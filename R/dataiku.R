@@ -982,7 +982,7 @@ load_progetti_dataiku <- function(bimestre, data_path=NULL, visualizzati=TRUE, d
     # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1800000) %>%
     #   filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9) # include progetti FEASR per SNAI
     progetti <- read_csv2(file.path(DATA, temp), col_types = col_types) %>%
-      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9) # include progetti FEASR per SNAI
+      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9 | OC_FLAG_VISUALIZZAZIONE == 10) # include progetti FEASR per SNAI
     # CHK: progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 9) %>% count(X_AMBITO)
   } else {
     # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000)

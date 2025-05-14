@@ -1934,7 +1934,7 @@ load_macroaree <- function(bimestre, visualizzati=TRUE, DATA) {
   # visualizzati
   if (visualizzati == TRUE) {
     perimetro <- perimetro %>%
-      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9) # include progetti FEASR per SNAI
+      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9 | OC_FLAG_VISUALIZZAZIONE == 10) # include progetti FEASR per SNAI
   }
   
   # simply
@@ -1993,7 +1993,7 @@ load_operazioni_macroaree <- function(bimestre, visualizzati=TRUE, DATA) {
   # viz
   if (visualizzati == TRUE) {
     perimetro <- perimetro %>%
-      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9) # include progetti FEASR per SNAI
+      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9 | OC_FLAG_VISUALIZZAZIONE == 10) # include progetti FEASR per SNAI
   }
   
   # simply
