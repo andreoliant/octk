@@ -16,6 +16,16 @@ library(openxlsx)
 # style_border <- createStyle(border = c("top", "bottom", "left", "right"), fontColour = "#000000")
 style_border <- createStyle(border = c("top", "bottom", "left", "right"))
 
+#' Stile per celle con bordo
+#'
+#' Stile per celle con bordo da applicare con openxlsx
+#'
+#' @note  Non prevede parametri editabili, sono stili standard per OC
+#' @return Stile compatibile con addStyle() in openxlsx
+# style_border <- createStyle(border = c("top", "bottom", "left", "right"), fontColour = "#000000")
+style_border_blue <- createStyle(border = c("top", "bottom", "left", "right"), borderColour = "#FFFFFF")
+
+
 #' Stile per celle con numeri con due decimali
 #'
 #' Stile per celle con numeri con due decimali da applicare con openxlsx

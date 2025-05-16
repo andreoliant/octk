@@ -6,7 +6,7 @@
 #'
 #' @return Dataframe
 load_db_accordi_ordinarie <- function() {
-  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_ordinarie.xlsx"))
+  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_ordinarie.xlsx"), guess_max=100000)
   return(interventi)
 }
 
@@ -120,7 +120,8 @@ crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
     filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
     filter(TIPOLOGIA == "Intervento") %>% 
     mutate_if(is.numeric, replace_na, replace=0) %>% 
-    mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR) %>% 
+    # mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR) %>% 
+    mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR + FINANZ_REG) %>% #NEW: modifica introdotta per FdR Puglia con risorse regionali
     select(ID, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, 
            AREA_TEMATICA, SETTORE_INTERVENTO, 
            CUP, TITOLO_PROGETTO,
@@ -133,7 +134,8 @@ crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
     filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
     filter(TIPOLOGIA == "Linea") %>% 
     mutate_if(is.numeric, replace_na, replace=0) %>% 
-    mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR) %>% 
+    # mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR) %>% 
+    mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR + FINANZ_REG) %>% #NEW: modifica introdotta per FdR Puglia con risorse regionali
     select(ID, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, 
            AREA_TEMATICA, SETTORE_INTERVENTO, 
            TITOLO_PROGETTO,
@@ -181,3 +183,900 @@ crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
   
 }
 
+#' Workflow per template pubblicazione accordi
+#' 
+#' Workflow per template pubblicazione accordi
+#'
+#' @param interventi Elenco interventi da load_db_accordi()
+#' @return File in output nella cartella "pubblicazione"
+workflow_accordi_pubblicazione <- function(interventi) {
+  
+  # DEBUG:
+  # template <- "template_pubblicazione_accordi.xlsx"
+  
+  regioni <- interventi %>% 
+    distinct(AMMINISTRAZIONE_TITOLARE) %>% 
+    .$AMMINISTRAZIONE_TITOLARE
+  
+  dir.create(file.path(OUTPUT, "pubblicazione"))
+  
+  for (regione in regioni) {
+    print(regione)
+    
+    if (regione %in% c("MARCHE", "PUGLIA", "SARDEGNA")) {
+      crea_accordi_pubblicazione_base(regione, interventi)
+    } else if (regione == "CAMPANIA") {
+      crea_accordi_pubblicazione_campania(regione, interventi)
+    } else {
+      crea_accordi_pubblicazione_nofdr(regione, interventi)
+    }
+  }
+}
+
+#' Crea template pubblicazione accordi per una regione (base)
+#' 
+#' Crea template pubblicazione accordi per una regione - Versione base con FdR
+#'
+#' @param regione valore per selezionare AMMINISTRAZIONE_TITOLARE
+#' @param interventi Elenco interventi da load_db_accordi()
+#' @return File in output nella cartella "pubblicazione"
+crea_accordi_pubblicazione_base <- function(regione, interventi) {
+  
+  # DEBUG:
+  # regione <- "MARCHE"
+  
+  template <- "template_pubblicazione_accordi_base.xlsx"
+  wb <- loadWorkbook(file.path(INPUT, template))
+  
+  titolo <- tibble(TITOLO = c(paste0("Accordo per la Coesione Governo - Regione ", regione)))
+  
+  start_row <- 6
+  
+  # setup_stili()
+  
+  temi <- tibble(AREA_TEMATICA = c("01-RICERCA E INNOVAZIONE",
+                                   "02-DIGITALIZZAZIONE",
+                                   "03-COMPETITIVITÀ IMPRESE",
+                                   "04-ENERGIA",
+                                   "05-AMBIENTE E RISORSE NATURALI",
+                                   "06-CULTURA",
+                                   "07-TRASPORTI E MOBILITÀ",
+                                   "08-RIQUALIFICAZIONE URBANA",
+                                   "09-LAVORO E OCCUPABILITÀ",
+                                   "10-SOCIALE E SALUTE",
+                                   "11-ISTRUZIONE E FORMAZIONE",
+                                   "12-CAPACITÀ AMMINISTRATIVA"))
+  
+  art3_fsc <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Ordinaria")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Anticipazioni")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+    
+  art3_fdr <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Complementare")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_FDR = sum(FINANZ_FDR, na.rm = TRUE),
+                          FINANZ_REG = sum(FINANZ_REG, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+  
+  art3_cofin <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Ordinaria", "Complementare")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_ALTRO_PSC = sum(FINANZ_ALTRO_PSC, na.rm = TRUE),
+                          FINANZ_ALTRO_POC = sum(FINANZ_ALTRO_POC, na.rm = TRUE),
+                          FINANZ_ALTRO_UE = sum(FINANZ_ALTRO_UE, na.rm = TRUE),
+                          FINANZ_ALTRO_PNRR = sum(FINANZ_ALTRO_PNRR, na.rm = TRUE),
+                          FINANZ_ALTRO_LOC = sum(FINANZ_ALTRO_LOC, na.rm = TRUE),
+                          FINANZ_ALTRO_NAZ = sum(FINANZ_ALTRO_NAZ, na.rm = TRUE),
+                          FINANZ_ALTRO_PRIV = sum(FINANZ_ALTRO_PRIV, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+  
+  art3_n <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(N = n()),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+  
+  art3_cofin_pr <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Cofinanziamento PR")) %>% 
+    summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE))
+  
+  writeData(wb, sheet = "ART3", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  
+  writeData(wb, sheet = "ART3", x = art3_fsc, startCol = 2, startRow = 6, colNames = FALSE)
+  writeData(wb, sheet = "ART3", x = art3_fdr, startCol = 5, startRow = 6, colNames = FALSE)
+  writeData(wb, sheet = "ART3", x = art3_cofin, startCol = 7, startRow = 6, colNames = FALSE)
+  writeData(wb, sheet = "ART3", x = art3_n, startCol = 16, startRow = 6, colNames = FALSE)
+  
+  writeData(wb, sheet = "ART3", x = art3_cofin_pr, startCol = 2, startRow = 19, colNames = FALSE)
+  
+  addStyle(wb, sheet = "ART3", style_border_blue, rows = c(4), cols = c(1:16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_border_blue, rows = c(5), cols = c(1:16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_border, rows = c(6:18), cols = c(1, 16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_number2, rows = c(6:18), cols = c(2:15), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_border, rows = c(19:20), cols = c(1), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_number2, rows = c(19:20), cols = c(2:4), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "ART3", cols = 1:16)
+  
+  
+  a1 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Ordinaria")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_TOT, FINANZ_FSC, FINANZ_FDR, FINANZ_REG, FINANZ_ALTRO,
+           FINANZ_ALTRO_PSC, FINANZ_ALTRO_POC, FINANZ_ALTRO_UE, FINANZ_ALTRO_PNRR, FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV, NOTE_COFIN,
+           PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE, PROGET_FIN_PRE, ESEC_INI_PRE, ESEC_FIN_PRE,
+           INC_DT_APERTURA_AV, INC_DT_CHIUSURA_AV, INC_DT_ATTIV_MIS,
+           NOTE)
+  
+  writeData(wb, sheet = "A1", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "A1", x = a1, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(a1)[1] + start_row -1
+  addStyle(wb, sheet = "A1", style_border_blue, rows = c(4), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_border, rows = c(5), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_border, rows = seq(start_row, n_max), cols = c(1:7, 20, 30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_number2, rows = seq(start_row, n_max), cols = c(8:19), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_date, rows = seq(start_row, n_max), cols = c(21:29), gridExpand = TRUE, stack = TRUE)
+
+  ungroupColumns(wb, "A1", cols = 1:30)
+  
+  
+  a2 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Anticipazioni")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_TOT, FINANZ_FSC,
+           NOTE)
+  
+  writeData(wb, sheet = "A2", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "A2", x = a2, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(a2)[1] + start_row -1
+  addStyle(wb, sheet = "A2", style_border_blue, rows = c(4), cols = c(1:10), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A2", style_border, rows = c(5), cols = c(1:10), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A2", style_border, rows = seq(start_row, n_max), cols = c(1:7, 10), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A2", style_number2, rows = seq(start_row, n_max), cols = c(8:9), gridExpand = TRUE, stack = TRUE)
+
+  ungroupColumns(wb, "A2", cols = 1:10)
+  
+
+  a3 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Complementare")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_TOT, FINANZ_FSC, FINANZ_FDR, FINANZ_REG, FINANZ_ALTRO,
+           FINANZ_ALTRO_PSC, FINANZ_ALTRO_POC, FINANZ_ALTRO_UE, FINANZ_ALTRO_PNRR, FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV, NOTE_COFIN,
+           PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE, PROGET_FIN_PRE, ESEC_INI_PRE, ESEC_FIN_PRE,
+           INC_DT_APERTURA_AV, INC_DT_CHIUSURA_AV, INC_DT_ATTIV_MIS,
+           NOTE)
+  
+  writeData(wb, sheet = "A3", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "A3", x = a3, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(a3)[1] + start_row -1
+  addStyle(wb, sheet = "A3", style_border_blue, rows = c(4), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A3", style_border, rows = c(5), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A3", style_border, rows = seq(start_row, n_max), cols = c(1:7, 20, 30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A3", style_number2, rows = seq(start_row, n_max), cols = c(8:19), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A3", style_date, rows = seq(start_row, n_max), cols = c(21:29), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "A3", cols = 1:30)
+  
+  
+  b1 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Ordinaria")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    group_by(SEZIONE) %>% 
+    summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE),
+              SPESA_2023 = sum(SPESA_2023, na.rm = TRUE),
+              SPESA_2024 = sum(SPESA_2024, na.rm = TRUE),
+              SPESA_2025 = sum(SPESA_2025, na.rm = TRUE),
+              SPESA_2026 = sum(SPESA_2026, na.rm = TRUE),
+              SPESA_2027 = sum(SPESA_2027, na.rm = TRUE),
+              SPESA_2028 = sum(SPESA_2028, na.rm = TRUE),
+              SPESA_2029 = sum(SPESA_2029, na.rm = TRUE),
+              SPESA_2030 = sum(SPESA_2030, na.rm = TRUE),
+              SPESA_2031 = sum(SPESA_2031, na.rm = TRUE),
+              SPESA_2032 = sum(SPESA_2032, na.rm = TRUE),
+              SPESA_2033 = sum(SPESA_2033, na.rm = TRUE),
+              SPESA_2034 = sum(SPESA_2034, na.rm = TRUE),
+              SPESA_2035 = sum(SPESA_2035, na.rm = TRUE))
+  
+  writeData(wb, sheet = "B1", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "B1", x = b1, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(b1)[1] + start_row -1
+  addStyle(wb, sheet = "B1", style_border_blue, rows = c(4), cols = c(1:16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B1", style_border, rows = c(5), cols = c(1:16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B1", style_border, rows = seq(start_row, n_max), cols = c(1, 16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B1", style_number2, rows = seq(start_row, n_max), cols = c(2:15), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "B1", cols = 1:16)
+  
+  
+  b2 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Ordinaria")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_FSC,
+           SPESA_2023, SPESA_2024, SPESA_2025, SPESA_2026, SPESA_2027, SPESA_2028, SPESA_2029, 
+           SPESA_2030, SPESA_2031, SPESA_2032, SPESA_2033, SPESA_2034, SPESA_2035)
+  
+  writeData(wb, sheet = "B2", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "B2", x = b2, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(b2)[1] + start_row -1
+  addStyle(wb, sheet = "B2", style_border_blue, rows = c(4), cols = c(1:22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B2", style_border, rows = c(5), cols = c(1:22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B2", style_border, rows = seq(start_row, n_max), cols = c(1:7, 22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B2", style_number2, rows = seq(start_row, n_max), cols = c(8:21), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "B2", cols = 1:22)
+  
+  
+  b3 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Complementare")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_FDR, FINANZ_REG,
+           SPESA_2023, SPESA_2024, SPESA_2025, SPESA_2026, SPESA_2027, SPESA_2028, SPESA_2029, 
+           SPESA_2030, SPESA_2031, SPESA_2032, SPESA_2033, SPESA_2034, SPESA_2035)
+  
+  writeData(wb, sheet = "B3", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "B3", x = b3, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(b3)[1] + start_row -1
+  addStyle(wb, sheet = "B3", style_border_blue, rows = c(4), cols = c(1:23), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B3", style_border, rows = c(5), cols = c(1:23), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B3", style_border, rows = seq(start_row, n_max), cols = c(1:7, 23), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B3", style_number2, rows = seq(start_row, n_max), cols = c(8:22), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "B3", cols = 1:23)
+  
+  temp_file <- paste0("Allegati_Accordo_Coesione_Regione_", regione, ".xlsx")
+  saveWorkbook(wb, file = file.path(OUTPUT, "pubblicazione", temp_file), overwrite = TRUE)
+  
+}
+
+
+#' Crea template pubblicazione accordi per una regione (no FdR)
+#' 
+#' Crea template pubblicazione accordi per una regione - Versione senza FdR
+#'
+#' @param regione valore per selezionare AMMINISTRAZIONE_TITOLARE
+#' @param interventi Elenco interventi da load_db_accordi()
+#' @return File in output nella cartella "pubblicazione"
+crea_accordi_pubblicazione_nofdr <- function(regione, interventi) {
+  
+  # DEBUG:
+  # regione <- "MARCHE"
+  
+  template <- "template_pubblicazione_accordi_nofdr.xlsx"
+  wb <- loadWorkbook(file.path(INPUT, template))
+  
+  titolo <- tibble(TITOLO = c(paste0("Accordo per la Coesione Governo - Regione ", regione)))
+  
+  start_row <- 6
+  
+  # setup_stili()
+  
+  temi <- tibble(AREA_TEMATICA = c("01-RICERCA E INNOVAZIONE",
+                                   "02-DIGITALIZZAZIONE",
+                                   "03-COMPETITIVITÀ IMPRESE",
+                                   "04-ENERGIA",
+                                   "05-AMBIENTE E RISORSE NATURALI",
+                                   "06-CULTURA",
+                                   "07-TRASPORTI E MOBILITÀ",
+                                   "08-RIQUALIFICAZIONE URBANA",
+                                   "09-LAVORO E OCCUPABILITÀ",
+                                   "10-SOCIALE E SALUTE",
+                                   "11-ISTRUZIONE E FORMAZIONE",
+                                   "12-CAPACITÀ AMMINISTRATIVA"))
+  
+  art3_fsc <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Ordinaria")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Anticipazioni")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+  
+  art3_fdr <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Complementare")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_FDR = sum(FINANZ_FDR, na.rm = TRUE),
+                          FINANZ_REG = sum(FINANZ_REG, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+  
+  art3_cofin <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Ordinaria", "Complementare")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_ALTRO_PSC = sum(FINANZ_ALTRO_PSC, na.rm = TRUE),
+                          FINANZ_ALTRO_POC = sum(FINANZ_ALTRO_POC, na.rm = TRUE),
+                          FINANZ_ALTRO_UE = sum(FINANZ_ALTRO_UE, na.rm = TRUE),
+                          FINANZ_ALTRO_PNRR = sum(FINANZ_ALTRO_PNRR, na.rm = TRUE),
+                          FINANZ_ALTRO_LOC = sum(FINANZ_ALTRO_LOC, na.rm = TRUE),
+                          FINANZ_ALTRO_NAZ = sum(FINANZ_ALTRO_NAZ, na.rm = TRUE),
+                          FINANZ_ALTRO_PRIV = sum(FINANZ_ALTRO_PRIV, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+  
+  art3_n <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(N = n()),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+  
+  art3_cofin_pr <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Cofinanziamento PR")) %>% 
+    summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE))
+  
+  writeData(wb, sheet = "ART3", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  
+  writeData(wb, sheet = "ART3", x = art3_fsc, startCol = 2, startRow = 6, colNames = FALSE)
+  writeData(wb, sheet = "ART3", x = art3_fdr, startCol = 5, startRow = 6, colNames = FALSE)
+  writeData(wb, sheet = "ART3", x = art3_cofin, startCol = 7, startRow = 6, colNames = FALSE)
+  writeData(wb, sheet = "ART3", x = art3_n, startCol = 16, startRow = 6, colNames = FALSE)
+  
+  writeData(wb, sheet = "ART3", x = art3_cofin_pr, startCol = 2, startRow = 19, colNames = FALSE)
+  
+  addStyle(wb, sheet = "ART3", style_border_blue, rows = c(4), cols = c(1:16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_border_blue, rows = c(5), cols = c(1:16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_border, rows = c(6:18), cols = c(1, 16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_number2, rows = c(6:18), cols = c(2:15), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_border, rows = c(19:20), cols = c(1), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_number2, rows = c(19:20), cols = c(2:4), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "ART3", cols = 1:16)
+  
+  
+  a1 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Ordinaria")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_TOT, FINANZ_FSC, FINANZ_FDR, FINANZ_REG, FINANZ_ALTRO,
+           FINANZ_ALTRO_PSC, FINANZ_ALTRO_POC, FINANZ_ALTRO_UE, FINANZ_ALTRO_PNRR, FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV, NOTE_COFIN,
+           PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE, PROGET_FIN_PRE, ESEC_INI_PRE, ESEC_FIN_PRE,
+           INC_DT_APERTURA_AV, INC_DT_CHIUSURA_AV, INC_DT_ATTIV_MIS,
+           NOTE)
+  
+  writeData(wb, sheet = "A1", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "A1", x = a1, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(a1)[1] + start_row -1
+  addStyle(wb, sheet = "A1", style_border_blue, rows = c(4), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_border, rows = c(5), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_border, rows = seq(start_row, n_max), cols = c(1:7, 20, 30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_number2, rows = seq(start_row, n_max), cols = c(8:19), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_date, rows = seq(start_row, n_max), cols = c(21:29), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "A1", cols = 1:30)
+  
+  
+  a2 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Anticipazioni")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_TOT, FINANZ_FSC,
+           NOTE)
+  
+  writeData(wb, sheet = "A2", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "A2", x = a2, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(a2)[1] + start_row -1
+  addStyle(wb, sheet = "A2", style_border_blue, rows = c(4), cols = c(1:10), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A2", style_border, rows = c(5), cols = c(1:10), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A2", style_border, rows = seq(start_row, n_max), cols = c(1:7, 10), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A2", style_number2, rows = seq(start_row, n_max), cols = c(8:9), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "A2", cols = 1:10)
+
+  
+  b1 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Ordinaria")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    group_by(SEZIONE) %>% 
+    summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE),
+              SPESA_2023 = sum(SPESA_2023, na.rm = TRUE),
+              SPESA_2024 = sum(SPESA_2024, na.rm = TRUE),
+              SPESA_2025 = sum(SPESA_2025, na.rm = TRUE),
+              SPESA_2026 = sum(SPESA_2026, na.rm = TRUE),
+              SPESA_2027 = sum(SPESA_2027, na.rm = TRUE),
+              SPESA_2028 = sum(SPESA_2028, na.rm = TRUE),
+              SPESA_2029 = sum(SPESA_2029, na.rm = TRUE),
+              SPESA_2030 = sum(SPESA_2030, na.rm = TRUE),
+              SPESA_2031 = sum(SPESA_2031, na.rm = TRUE),
+              SPESA_2032 = sum(SPESA_2032, na.rm = TRUE),
+              SPESA_2033 = sum(SPESA_2033, na.rm = TRUE),
+              SPESA_2034 = sum(SPESA_2034, na.rm = TRUE),
+              SPESA_2035 = sum(SPESA_2035, na.rm = TRUE))
+  
+  writeData(wb, sheet = "B1", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "B1", x = b1, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(b1)[1] + start_row -1
+  addStyle(wb, sheet = "B1", style_border_blue, rows = c(4), cols = c(1:16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B1", style_border, rows = c(5), cols = c(1:16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B1", style_border, rows = seq(start_row, n_max), cols = c(1, 16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B1", style_number2, rows = seq(start_row, n_max), cols = c(2:15), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "B1", cols = 1:16)
+  
+  
+  b2 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Ordinaria")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_FSC,
+           SPESA_2023, SPESA_2024, SPESA_2025, SPESA_2026, SPESA_2027, SPESA_2028, SPESA_2029, 
+           SPESA_2030, SPESA_2031, SPESA_2032, SPESA_2033, SPESA_2034, SPESA_2035)
+  
+  writeData(wb, sheet = "B2", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "B2", x = b2, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(b2)[1] + start_row -1
+  addStyle(wb, sheet = "B2", style_border_blue, rows = c(4), cols = c(1:22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B2", style_border, rows = c(5), cols = c(1:22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B2", style_border, rows = seq(start_row, n_max), cols = c(1:7, 22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B2", style_number2, rows = seq(start_row, n_max), cols = c(8:21), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "B2", cols = 1:22)
+  
+  temp_file <- paste0("Allegati_Accordo_Coesione_Regione_", regione, ".xlsx")
+  saveWorkbook(wb, file = file.path(OUTPUT, "pubblicazione", temp_file), overwrite = TRUE)
+  
+}
+
+
+
+#' Crea template pubblicazione accordi per regione Campania
+#' 
+#' Crea template pubblicazione accordi per una regione - Versione speciale per Campania
+#'
+#' @param regione valore per selezionare AMMINISTRAZIONE_TITOLARE
+#' @param interventi Elenco interventi da load_db_accordi()
+#' @return File in output nella cartella "pubblicazione"
+crea_accordi_pubblicazione_campania <- function(regione, interventi) {
+  
+  # DEBUG:
+  # regione <- "MARCHE"
+  
+  template <- "template_pubblicazione_accordi_campania.xlsx"
+  wb <- loadWorkbook(file.path(INPUT, template))
+  
+  titolo <- tibble(TITOLO = c(paste0("Accordo per la Coesione Governo - Regione ", regione)))
+  
+  start_row <- 6
+  
+  # setup_stili()
+  
+  temi <- tibble(AREA_TEMATICA = c("01-RICERCA E INNOVAZIONE",
+                                   "02-DIGITALIZZAZIONE",
+                                   "03-COMPETITIVITÀ IMPRESE",
+                                   "04-ENERGIA",
+                                   "05-AMBIENTE E RISORSE NATURALI",
+                                   "06-CULTURA",
+                                   "07-TRASPORTI E MOBILITÀ",
+                                   "08-RIQUALIFICAZIONE URBANA",
+                                   "09-LAVORO E OCCUPABILITÀ",
+                                   "10-SOCIALE E SALUTE",
+                                   "11-ISTRUZIONE E FORMAZIONE",
+                                   "12-CAPACITÀ AMMINISTRATIVA"))
+  
+  art3_fsc <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Ordinaria")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Stralcio 2 (delibera CIPESS n. 57/2024)")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Anticipazioni")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+
+  art3_fdr <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Complementare")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_FDR = sum(FINANZ_FDR, na.rm = TRUE),
+                          FINANZ_REG = sum(FINANZ_REG, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+  
+  art3_cofin <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Ordinaria")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(FINANZ_ALTRO_PSC = sum(FINANZ_ALTRO_PSC, na.rm = TRUE),
+                          FINANZ_ALTRO_POC = sum(FINANZ_ALTRO_POC, na.rm = TRUE),
+                          FINANZ_ALTRO_UE = sum(FINANZ_ALTRO_UE, na.rm = TRUE),
+                          FINANZ_ALTRO_PNRR = sum(FINANZ_ALTRO_PNRR, na.rm = TRUE),
+                          FINANZ_ALTRO_LOC = sum(FINANZ_ALTRO_LOC, na.rm = TRUE),
+                          FINANZ_ALTRO_NAZ = sum(FINANZ_ALTRO_NAZ, na.rm = TRUE),
+                          FINANZ_ALTRO_PRIV = sum(FINANZ_ALTRO_PRIV, na.rm = TRUE)),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+  
+  art3_n <- temi  %>% 
+    left_join(interventi %>% 
+                filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+                filter(SEZIONE %in% c("Ordinaria", "Complementare", "Anticipazioni",
+                                      "Stralcio 2 (delibera CIPESS n. 57/2024)")) %>% 
+                group_by(AREA_TEMATICA) %>% 
+                summarise(N = n()),
+              by = "AREA_TEMATICA") %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(-AREA_TEMATICA)
+  
+  
+  art3_cofin_pr <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Cofinanziamento PR")) %>% 
+    summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE))
+  
+  art3_bagnoli <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Stralcio 3 (delibera CIPESS n. 55/2024)")) %>% 
+    summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE))
+  
+  art3_completamenti <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Completamenti (delibera CIPESS n. 42/2024)")) %>% 
+    summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE))
+  
+  
+  writeData(wb, sheet = "ART3", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  
+  writeData(wb, sheet = "ART3", x = art3_fsc, startCol = 2, startRow = 6, colNames = FALSE)
+  writeData(wb, sheet = "ART3", x = art3_fdr, startCol = 6, startRow = 6, colNames = FALSE)
+  writeData(wb, sheet = "ART3", x = art3_cofin, startCol = 8, startRow = 6, colNames = FALSE)
+  writeData(wb, sheet = "ART3", x = art3_n, startCol = 17, startRow = 6, colNames = FALSE)
+  
+  writeData(wb, sheet = "ART3", x = art3_bagnoli, startCol = 5, startRow = 19, colNames = FALSE)
+  writeData(wb, sheet = "ART3", x = art3_completamenti, startCol = 5, startRow = 20, colNames = FALSE)
+  writeData(wb, sheet = "ART3", x = art3_cofin_pr, startCol = 2, startRow = 21, colNames = FALSE)
+  
+  addStyle(wb, sheet = "ART3", style_border_blue, rows = c(4), cols = c(1:17), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_border_blue, rows = c(5), cols = c(1:17), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_border, rows = c(6:18), cols = c(1, 17), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_number2, rows = c(6:18), cols = c(2:16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_border, rows = c(19:22), cols = c(1), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "ART3", style_number2, rows = c(19:22), cols = c(2:5), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "ART3", cols = 1:17)
+  
+  
+  a1 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Ordinaria")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_TOT, FINANZ_FSC, FINANZ_FDR, FINANZ_REG, FINANZ_ALTRO,
+           FINANZ_ALTRO_PSC, FINANZ_ALTRO_POC, FINANZ_ALTRO_UE, FINANZ_ALTRO_PNRR, FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV, NOTE_COFIN,
+           PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE, PROGET_FIN_PRE, ESEC_INI_PRE, ESEC_FIN_PRE,
+           INC_DT_APERTURA_AV, INC_DT_CHIUSURA_AV, INC_DT_ATTIV_MIS,
+           NOTE)
+  
+  writeData(wb, sheet = "A1", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "A1", x = a1, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(a1)[1] + start_row -1
+  addStyle(wb, sheet = "A1", style_border_blue, rows = c(4), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_border, rows = c(5), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_border, rows = seq(start_row, n_max), cols = c(1:7, 20, 30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_number2, rows = seq(start_row, n_max), cols = c(8:19), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A1", style_date, rows = seq(start_row, n_max), cols = c(21:29), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "A1", cols = 1:30)
+  
+  
+  
+  a2 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Stralcio 2 (delibera CIPESS n. 57/2024)")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_TOT, FINANZ_FSC, FINANZ_FDR, FINANZ_REG, FINANZ_ALTRO,
+           FINANZ_ALTRO_PSC, FINANZ_ALTRO_POC, FINANZ_ALTRO_UE, FINANZ_ALTRO_PNRR, FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV, NOTE_COFIN,
+           PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE, PROGET_FIN_PRE, ESEC_INI_PRE, ESEC_FIN_PRE,
+           INC_DT_APERTURA_AV, INC_DT_CHIUSURA_AV, INC_DT_ATTIV_MIS,
+           NOTE)
+  
+  writeData(wb, sheet = "A2", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "A2", x = a2, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(a2)[1] + start_row -1
+  addStyle(wb, sheet = "A2", style_border_blue, rows = c(4), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A2", style_border, rows = c(5), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A2", style_border, rows = seq(start_row, n_max), cols = c(1:7, 20, 30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A2", style_number2, rows = seq(start_row, n_max), cols = c(8:19), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A2", style_date, rows = seq(start_row, n_max), cols = c(21:29), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "A2", cols = 1:30)
+  
+  
+  
+  a3 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Completamenti (delibera CIPESS n. 42/2024)")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_TOT, FINANZ_FSC, FINANZ_FDR, FINANZ_REG, FINANZ_ALTRO,
+           FINANZ_ALTRO_PSC, FINANZ_ALTRO_POC, FINANZ_ALTRO_UE, FINANZ_ALTRO_PNRR, FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV, NOTE_COFIN,
+           PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE, PROGET_FIN_PRE, ESEC_INI_PRE, ESEC_FIN_PRE,
+           INC_DT_APERTURA_AV, INC_DT_CHIUSURA_AV, INC_DT_ATTIV_MIS,
+           NOTE)
+  
+  writeData(wb, sheet = "A3", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "A3", x = a3, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(a3)[1] + start_row -1
+  addStyle(wb, sheet = "A3", style_border_blue, rows = c(4), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A3", style_border, rows = c(5), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A3", style_border, rows = seq(start_row, n_max), cols = c(1:7, 20, 30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A3", style_number2, rows = seq(start_row, n_max), cols = c(8:19), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A3", style_date, rows = seq(start_row, n_max), cols = c(21:29), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "A3", cols = 1:30)
+  
+  a4 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Anticipazioni")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_TOT, FINANZ_FSC,
+           NOTE)
+  
+  writeData(wb, sheet = "A4", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "A4", x = a4, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(a4)[1] + start_row -1
+  addStyle(wb, sheet = "A4", style_border, rows = c(4), cols = c(1:10), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A4", style_border, rows = c(5), cols = c(1:10), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A4", style_border, rows = seq(start_row, n_max), cols = c(1:7, 10), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A4", style_number2, rows = seq(start_row, n_max), cols = c(8:9), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "A4", cols = 1:10)
+  
+
+  
+  a5 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Complementare")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_TOT, FINANZ_FSC, FINANZ_FDR, FINANZ_REG, FINANZ_ALTRO,
+           FINANZ_ALTRO_PSC, FINANZ_ALTRO_POC, FINANZ_ALTRO_UE, FINANZ_ALTRO_PNRR, FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV, NOTE_COFIN,
+           PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE, PROGET_FIN_PRE, ESEC_INI_PRE, ESEC_FIN_PRE,
+           INC_DT_APERTURA_AV, INC_DT_CHIUSURA_AV, INC_DT_ATTIV_MIS,
+           NOTE)
+  
+  writeData(wb, sheet = "A5", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "A5", x = a5, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(a5)[1] + start_row -1
+  addStyle(wb, sheet = "A5", style_border_blue, rows = c(4), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A5", style_border, rows = c(5), cols = c(1:30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A5", style_border, rows = seq(start_row, n_max), cols = c(1:7, 20, 30), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A5", style_number2, rows = seq(start_row, n_max), cols = c(8:19), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "A5", style_date, rows = seq(start_row, n_max), cols = c(21:29), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "A5", cols = 1:30)
+  
+  
+  b0 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Ordinaria", 
+                          "Stralcio 2 (delibera CIPESS n. 57/2024)",
+                          "Completamenti (delibera CIPESS n. 42/2024)")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    group_by(SEZIONE) %>% 
+    summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE),
+              SPESA_2023 = sum(SPESA_2023, na.rm = TRUE),
+              SPESA_2024 = sum(SPESA_2024, na.rm = TRUE),
+              SPESA_2025 = sum(SPESA_2025, na.rm = TRUE),
+              SPESA_2026 = sum(SPESA_2026, na.rm = TRUE),
+              SPESA_2027 = sum(SPESA_2027, na.rm = TRUE),
+              SPESA_2028 = sum(SPESA_2028, na.rm = TRUE),
+              SPESA_2029 = sum(SPESA_2029, na.rm = TRUE),
+              SPESA_2030 = sum(SPESA_2030, na.rm = TRUE),
+              SPESA_2031 = sum(SPESA_2031, na.rm = TRUE),
+              SPESA_2032 = sum(SPESA_2032, na.rm = TRUE),
+              SPESA_2033 = sum(SPESA_2033, na.rm = TRUE),
+              SPESA_2034 = sum(SPESA_2034, na.rm = TRUE),
+              SPESA_2035 = sum(SPESA_2035, na.rm = TRUE))
+  
+  b0_tot <- b0 %>% 
+    mutate(SEZIONE = "Totale") %>% 
+    group_by(SEZIONE) %>% 
+    summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm = TRUE),
+              SPESA_2023 = sum(SPESA_2023, na.rm = TRUE),
+              SPESA_2024 = sum(SPESA_2024, na.rm = TRUE),
+              SPESA_2025 = sum(SPESA_2025, na.rm = TRUE),
+              SPESA_2026 = sum(SPESA_2026, na.rm = TRUE),
+              SPESA_2027 = sum(SPESA_2027, na.rm = TRUE),
+              SPESA_2028 = sum(SPESA_2028, na.rm = TRUE),
+              SPESA_2029 = sum(SPESA_2029, na.rm = TRUE),
+              SPESA_2030 = sum(SPESA_2030, na.rm = TRUE),
+              SPESA_2031 = sum(SPESA_2031, na.rm = TRUE),
+              SPESA_2032 = sum(SPESA_2032, na.rm = TRUE),
+              SPESA_2033 = sum(SPESA_2033, na.rm = TRUE),
+              SPESA_2034 = sum(SPESA_2034, na.rm = TRUE),
+              SPESA_2035 = sum(SPESA_2035, na.rm = TRUE))
+  
+  b0 <- b0 %>% 
+    bind_rows(b0_tot) %>% 
+    mutate(SEZIONE = factor(SEZIONE, levels = c("Ordinaria",
+                                                "Stralcio 2 (delibera CIPESS n. 57/2024)",
+                                                "Completamenti (delibera CIPESS n. 42/2024)",
+                                                "Totale"))) %>%
+    arrange(SEZIONE)
+
+  writeData(wb, sheet = "B", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "B", x = b0, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(b0)[1] + start_row -1
+  addStyle(wb, sheet = "B", style_border_blue, rows = c(4), cols = c(1:16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B", style_border, rows = c(5), cols = c(1:16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B", style_border, rows = seq(start_row, n_max), cols = c(1, 16), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B", style_number2, rows = seq(start_row, n_max), cols = c(2:15), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "B", cols = 1:16)
+  
+  
+  b1 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Ordinaria")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_FSC,
+           SPESA_2023, SPESA_2024, SPESA_2025, SPESA_2026, SPESA_2027, SPESA_2028, SPESA_2029, 
+           SPESA_2030, SPESA_2031, SPESA_2032, SPESA_2033, SPESA_2034, SPESA_2035)
+  
+  writeData(wb, sheet = "B1", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "B1", x = b1, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(b1)[1] + start_row -1
+  addStyle(wb, sheet = "B1", style_border_blue, rows = c(4), cols = c(1:22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B1", style_border, rows = c(5), cols = c(1:22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B1", style_border, rows = seq(start_row, n_max), cols = c(1:7, 22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B1", style_number2, rows = seq(start_row, n_max), cols = c(8:21), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "B1", cols = 1:22)
+  
+  
+  b2 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Stralcio 2 (delibera CIPESS n. 57/2024)")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_FSC,
+           SPESA_2023, SPESA_2024, SPESA_2025, SPESA_2026, SPESA_2027, SPESA_2028, SPESA_2029, 
+           SPESA_2030, SPESA_2031, SPESA_2032, SPESA_2033, SPESA_2034, SPESA_2035)
+  
+  writeData(wb, sheet = "B2", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "B2", x = b2, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(b2)[1] + start_row -1
+  addStyle(wb, sheet = "B2", style_border_blue, rows = c(4), cols = c(1:22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B2", style_border, rows = c(5), cols = c(1:22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B2", style_border, rows = seq(start_row, n_max), cols = c(1:7, 22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B2", style_number2, rows = seq(start_row, n_max), cols = c(8:21), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "B2", cols = 1:22)
+  
+  
+  b3 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Completamenti (delibera CIPESS n. 42/2024)")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_FSC,
+           SPESA_2023, SPESA_2024, SPESA_2025, SPESA_2026, SPESA_2027, SPESA_2028, SPESA_2029, 
+           SPESA_2030, SPESA_2031, SPESA_2032, SPESA_2033, SPESA_2034, SPESA_2035)
+  
+  writeData(wb, sheet = "B3", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "B3", x = b3, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(b3)[1] + start_row -1
+  addStyle(wb, sheet = "B3", style_border_blue, rows = c(4), cols = c(1:22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B3", style_border, rows = c(5), cols = c(1:22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B3", style_border, rows = seq(start_row, n_max), cols = c(1:7, 22), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B3", style_number2, rows = seq(start_row, n_max), cols = c(8:21), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "B3", cols = 1:22)
+  
+  
+  b4 <- interventi %>% 
+    filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
+    filter(SEZIONE %in% c("Complementare")) %>% 
+    mutate_if(is.numeric, replace_na, replace=0) %>% 
+    select(ID, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, AREA_TEMATICA, SETTORE_INTERVENTO, CUP, TITOLO_PROGETTO,
+           FINANZ_FDR, FINANZ_REG,
+           SPESA_2023, SPESA_2024, SPESA_2025, SPESA_2026, SPESA_2027, SPESA_2028, SPESA_2029, 
+           SPESA_2030, SPESA_2031, SPESA_2032, SPESA_2033, SPESA_2034, SPESA_2035)
+  
+  writeData(wb, sheet = "B4", x = titolo, startCol = 1, startRow = 1, colNames = FALSE)
+  writeData(wb, sheet = "B4", x = b4, startCol = 1, startRow = start_row, colNames = FALSE)
+  
+  n_max <- dim(b4)[1] + start_row -1
+  addStyle(wb, sheet = "B4", style_border_blue, rows = c(4), cols = c(1:23), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B4", style_border, rows = c(5), cols = c(1:23), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B4", style_border, rows = seq(start_row, n_max), cols = c(1:7, 23), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "B4", style_number2, rows = seq(start_row, n_max), cols = c(8:22), gridExpand = TRUE, stack = TRUE)
+  
+  ungroupColumns(wb, "B4", cols = 1:23)
+  
+  temp_file <- paste0("Allegati_Accordo_Coesione_Regione_", regione, ".xlsx")
+  saveWorkbook(wb, file = file.path(OUTPUT, "pubblicazione", temp_file), overwrite = TRUE)
+  
+}
