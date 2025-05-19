@@ -1056,7 +1056,7 @@ make_report_programmi_coesione_dataiku <- function(perimetro, usa_meuro=FALSE, s
       filter(FLAG_MONITORAGGIO == 1)
     
     perimetro <- perimetro %>% 
-      filter(OC_FLAG_VISUALIZZAZIONE == 0)
+      filter(OC_FLAG_VISUALIZZAZIONE %in% c(0, 10))
   }
   
   # patch YEI su programmazione
@@ -1251,7 +1251,7 @@ make_report_programmi_macroaree_coesione_dataiku <- function(perimetro, usa_meur
       filter(FLAG_MONITORAGGIO == 1)
     
     perimetro <- perimetro %>% 
-      filter(OC_FLAG_VISUALIZZAZIONE == 0)
+      filter(OC_FLAG_VISUALIZZAZIONE %in% c(0, 10))
     
   }
   
