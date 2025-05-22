@@ -553,11 +553,11 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   
   # chk totale coe
   appo1 %>% 
-    filter(OC_FLAG_VISUALIZZAZIONE == 0) %>% 
+    filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10) %>% 
     summarise(COE = sum(COE, na.rm = TRUE))
   
   appo %>% 
-    filter(OC_FLAG_VISUALIZZAZIONE == 0) %>% 
+    filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10) %>% 
     filter(psc_sezione != "SS_1" & psc_sezione != "SS_2" | is.na(psc_sezione)) %>% 
     summarise(COE = sum(COE, na.rm = TRUE))
   
@@ -926,14 +926,14 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   #                    TRUE ~ "chk"))
   
   # DEBUG:
-  out %>% filter(OC_FLAG_VISUALIZZAZIONE == 0) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
-  appo3 %>% filter(OC_FLAG_VISUALIZZAZIONE == 0) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
-  appo4 %>% filter(OC_FLAG_VISUALIZZAZIONE == 0) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
+  out %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
+  appo3 %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
+  appo4 %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
   # MEMO: con fix_visualizzati_pra_campania ripristino ogv in psc (perdo allineamento ai conteggi sopra!)
   # appo3 %>% 
   #   filter(OC_CODICE_PROGRAMMA == "2007CA001FA009", OC_FLAG_VISUALIZZAZIONE == 4, COD_LOCALE_PROGETTO != "1MISETPL.EAV01") %>% 
   #   summarise(COE = sum(COE))
-  out %>% filter(OC_FLAG_VISUALIZZAZIONE == 0) %>% summarise(COE = sum(COE, na.rm = T))
+  out %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10) %>% summarise(COE = sum(COE, na.rm = T))
   
   # forza flag 7 su duplicati tecnici da migrazione
   if (forza_flag == TRUE) {
@@ -1810,7 +1810,7 @@ make_report_po_psc <- function(progetti_psc, programmazione=NULL, visualizzati=T
   # programmazione <- programmazione_2
   
   if (visualizzati == TRUE){
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0  | OC_FLAG_VISUALIZZAZIONE == 10)
   } else {
     # appo1 <- progetti_psc
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
@@ -1959,7 +1959,7 @@ make_report_temi_psc <- function(progetti_psc, programmazione=NULL, visualizzati
   #   mutate(CP = 0)
   
   if (visualizzati == TRUE){
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0  | OC_FLAG_VISUALIZZAZIONE == 10)
   } else {
     # appo1 <- progetti_psc
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
@@ -2244,7 +2244,7 @@ make_report_temi_macroaree_psc <- function(progetti_psc, operazioni=NULL, progra
     mutate(x_CICLO = "2014-2020")
   
   if (visualizzati == TRUE){
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0  | OC_FLAG_VISUALIZZAZIONE == 10)
   } else {
     # appo1 <- progetti_psc
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
@@ -2513,7 +2513,7 @@ make_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL, visual
     mutate(x_CICLO = "2014-2020")
   
   if (visualizzati == TRUE){
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0  | OC_FLAG_VISUALIZZAZIONE == 10)
   } else {
     # appo1 <- progetti_psc
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
@@ -3562,7 +3562,7 @@ make_report_sezioni_psc <- function(progetti_psc, programmazione=NULL, visualizz
   #   mutate(CP = 0)
   
   if (visualizzati == TRUE){
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10)
   } else {
     # appo1 <- progetti_psc
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &

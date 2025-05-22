@@ -324,7 +324,7 @@ make_report_temi_psc_migrati <- function(progetti_psc, programmazione=NULL, visu
   }
   
   if (visualizzati == TRUE){
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10)
   } else {
     # appo1 <- progetti_psc
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
@@ -487,7 +487,7 @@ make_report_sezioni_psc_migrati <- function(progetti_psc, programmazione=NULL, v
   }
   
   if (visualizzati == TRUE){
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10)
   } else {
     # appo1 <- progetti_psc
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
@@ -636,7 +636,7 @@ make_report_cicli_psc_migrati <- function(progetti_psc, programmazione=NULL, vis
   }
   
   if (visualizzati == TRUE){
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10)
   } else {
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
                                        OC_FLAG_VISUALIZZAZIONE != 5)
@@ -752,7 +752,7 @@ make_report_temi_macroaree_psc_migrati <- function(progetti_psc, operazioni=NULL
   }
   
   if (visualizzati == TRUE) {
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0)
+    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10)
   } else {
     appo1 <- progetti_psc %>% filter(!OC_FLAG_VISUALIZZAZIONE %in% c(4, 5))
   }
