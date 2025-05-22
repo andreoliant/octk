@@ -4131,7 +4131,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
     
     # CHK: perché non c'era? forse all'inizio filtravo solo visualizzati in operazioni...
     perimetro <- perimetro %>% 
-      filter(OC_FLAG_VISUALIZZAZIONE == 0)
+      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10)
   }
   
   # patch YEI
