@@ -1141,6 +1141,22 @@ make_report_programmi_coesione_dataiku <- function(perimetro, usa_meuro=FALSE, s
     refactor_ambito(.) %>%
     refactor_ciclo(.)
   
+  # chk programmi con attuazione e risorse 0
+  chk <- out %>%
+    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
+           `Non avviato`,
+           `In avvio di progettazione`,
+           `In corso di progettazione`,
+           `In affidamento`,
+           `In esecuzione`,
+           `Eseguito`) %>%
+    filter(RISORSE == 0 | is.na(RISORSE)) 
+  write.xlsx(chk, file.path(TEMP, "chk_programmi_risorse_0.xlsx"))
+  
+  if (dim(chk)[1]>0){
+    message("WARNING: sono presenti righe con risore 0 e attuazione valorizzata!")
+  }
+    
   out <- out %>%
     select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
            `Non avviato`,
@@ -1150,6 +1166,8 @@ make_report_programmi_coesione_dataiku <- function(perimetro, usa_meuro=FALSE, s
            `In esecuzione`,
            `Eseguito`) %>%
     filter(RISORSE > 0)
+  
+  
   
   if (usa_meuro == TRUE) {
     out <- out %>%
