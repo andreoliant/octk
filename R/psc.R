@@ -35,7 +35,7 @@ init_psc <- function(PSC=NULL, light=FALSE) {
   
   matrix_temi_settori <<- read_csv2(file.path(PSC, "info", "matrix_temi_settori.csv"))
   
-  lista_psc <<- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE) %>% 
+  lista_psc <<- init_programmazione_dati(DB=DB) %>% 
     filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
     rename(ID_PSC = OC_CODICE_PROGRAMMA) %>% 
     distinct(ID_PSC, TIPOLOGIA_AMMINISTRAZIONE) %>% 
@@ -553,11 +553,7 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   
   # chk totale coe
   appo1 %>% 
-<<<<<<< HEAD
     filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10) %>% 
-=======
-    filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE ==10) %>% 
->>>>>>> f15bf240d290913ae2ac4406ab6c8af80b035be0
     summarise(COE = sum(COE, na.rm = TRUE))
   
   appo %>% 
@@ -930,15 +926,9 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   #                    TRUE ~ "chk"))
   
   # DEBUG:
-<<<<<<< HEAD
   out %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
   appo3 %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
   appo4 %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
-=======
-  out %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE ==10) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
-  appo3 %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
-  appo4 %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE ==10) %>% filter(x_CICLO != "2000-2006") %>% summarise(COE = sum(COE, na.rm = T))
->>>>>>> f15bf240d290913ae2ac4406ab6c8af80b035be0
   # MEMO: con fix_visualizzati_pra_campania ripristino ogv in psc (perdo allineamento ai conteggi sopra!)
   # appo3 %>% 
   #   filter(OC_CODICE_PROGRAMMA == "2007CA001FA009", OC_FLAG_VISUALIZZAZIONE == 4, COD_LOCALE_PROGETTO != "1MISETPL.EAV01") %>% 
@@ -1785,7 +1775,7 @@ make_report_po_psc <- function(progetti_psc, programmazione=NULL, visualizzati=T
     #   select(ID_PSC, PSC, CICLO_PROGRAMMAZIONE, OC_CODICE_PROGRAMMA, DESCRIZIONE_PROGRAMMA, TIPOLOGIA_AMMINISTRAZIONE, FINANZ_TOTALE)
     
     # NEW:
-    programmazione <- init_programmazione_dati(use_713=TRUE, use_sog = TRUE, use_articolaz=TRUE, use_po_psc=TRUE) %>%
+    programmazione <- init_programmazione_dati(DB=DB) %>%
       filter(AMBITO == "FSC") %>% 
       filter(COD_LIVELLO_1 == "SEZ_ORD" | COD_LIVELLO_1 == "DA_PROGRAMMARE") %>% # MEMO: esclude "da programmare"
       filter(!is.na(ID_PSC)) %>% 
@@ -1820,11 +1810,7 @@ make_report_po_psc <- function(progetti_psc, programmazione=NULL, visualizzati=T
   # programmazione <- programmazione_2
   
   if (visualizzati == TRUE){
-<<<<<<< HEAD
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0  | OC_FLAG_VISUALIZZAZIONE == 10)
-=======
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10)
->>>>>>> f15bf240d290913ae2ac4406ab6c8af80b035be0
   } else {
     # appo1 <- progetti_psc
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
@@ -1933,7 +1919,7 @@ make_report_temi_psc <- function(progetti_psc, programmazione=NULL, visualizzati
   
   # NEW:
   if (is.null(programmazione)) {
-    programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, use_articolaz = TRUE) %>% 
+    programmazione <- init_programmazione_dati(DB=DB) %>% 
       filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
       rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1) %>% 
       filter(SEZIONE != "SEZ_SPEC_1_COVID", SEZIONE != "SEZ_SPEC_2_FS") %>% 
@@ -1973,11 +1959,7 @@ make_report_temi_psc <- function(progetti_psc, programmazione=NULL, visualizzati
   #   mutate(CP = 0)
   
   if (visualizzati == TRUE){
-<<<<<<< HEAD
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0  | OC_FLAG_VISUALIZZAZIONE == 10)
-=======
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10)
->>>>>>> f15bf240d290913ae2ac4406ab6c8af80b035be0
   } else {
     # appo1 <- progetti_psc
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
@@ -2235,8 +2217,7 @@ make_report_temi_macroaree_psc <- function(progetti_psc, operazioni=NULL, progra
   
   # NEW:
   if (is.null(programmazione)) {
-    programmazione <- init_programmazione_dati_old(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, 
-                                               use_articolaz = TRUE, use_location = TRUE) %>% 
+    programmazione <- init_programmazione_dati(DB=DB) %>% 
       filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
       rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1)  %>% 
       filter(SEZIONE != "SEZ_SPEC_1_COVID", SEZIONE != "SEZ_SPEC_2_FS") %>% 
@@ -2262,11 +2243,7 @@ make_report_temi_macroaree_psc <- function(progetti_psc, operazioni=NULL, progra
     mutate(x_CICLO = "2014-2020")
   
   if (visualizzati == TRUE){
-<<<<<<< HEAD
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0  | OC_FLAG_VISUALIZZAZIONE == 10)
-=======
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10)
->>>>>>> f15bf240d290913ae2ac4406ab6c8af80b035be0
   } else {
     # appo1 <- progetti_psc
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
@@ -2508,7 +2485,7 @@ make_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL, visual
   
   # NEW:
   if (is.null(programmazione)) {
-    programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, use_articolaz = TRUE) %>% 
+    programmazione <- init_programmazione_dati(DB=DB) %>% 
       filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
       rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1) %>% 
       filter(SEZIONE != "SEZ_SPEC_1_COVID", SEZIONE != "SEZ_SPEC_2_FS") %>% 
@@ -2535,11 +2512,7 @@ make_report_temi_stato_psc <- function(progetti_psc, programmazione=NULL, visual
     mutate(x_CICLO = "2014-2020")
   
   if (visualizzati == TRUE){
-<<<<<<< HEAD
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0  | OC_FLAG_VISUALIZZAZIONE == 10)
-=======
-    appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 10)
->>>>>>> f15bf240d290913ae2ac4406ab6c8af80b035be0
   } else {
     # appo1 <- progetti_psc
     appo1 <- progetti_psc %>% filter(OC_FLAG_VISUALIZZAZIONE != 4 &
@@ -3561,7 +3534,7 @@ make_report_sezioni_psc <- function(progetti_psc, programmazione=NULL, visualizz
   
   # NEW:
   if (is.null(programmazione)) {
-    programmazione <- init_programmazione_dati(use_temi = TRUE, use_713 = TRUE, use_flt = TRUE, use_sog = TRUE, use_articolaz = TRUE) %>% 
+    programmazione <- init_programmazione_dati(DB=DB) %>% 
       filter(TIPOLOGIA_PROGRAMMA == "PSC") %>% 
       rename(ID_PSC = OC_CODICE_PROGRAMMA, SEZIONE = DESCR_LIVELLO_1) %>% 
       filter(SEZIONE == "SEZ_SPEC_1_COVID" | SEZIONE == "SEZ_SPEC_2_FS") %>% 
