@@ -59,7 +59,8 @@ style_percentage <- createStyle(numFmt = "PERCENTAGE", border = c("top", "bottom
 #'
 #' @note  Non prevede parametri editabili, sono stili standard per OC
 #' @return Stile compatibile con addStyle() in openxlsx
-style_date <- createStyle(numFmt = "DATE", border = c("top", "bottom", "left", "right"))
+# style_date <- createStyle(numFmt = "DATE", border = c("top", "bottom", "left", "right"))
+style_date <- createStyle(numFmt = "dd/mm/yyyy", border = c("top", "bottom", "left", "right"))
 
 
 #' Stile per celle con date senza bordo
