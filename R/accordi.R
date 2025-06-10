@@ -4,8 +4,9 @@
 #'
 #' Carica dati interventi accordi per assegnazioni ordinarie
 #'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
-load_db_accordi_ordinarie <- function() {
+load_db_accordi_ordinarie <- function(DB) {
   interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_ordinarie.xlsx"), guess_max=100000)
   return(interventi)
 }
@@ -14,8 +15,9 @@ load_db_accordi_ordinarie <- function() {
 #'
 #' Carica dati interventi accordi per anticipazioni
 #'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
-load_db_accordi_anticipazioni <- function() {
+load_db_accordi_anticipazioni <- function(DB) {
   interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_anticipazioni.xlsx"))
   return(interventi)
 }
@@ -24,8 +26,9 @@ load_db_accordi_anticipazioni <- function() {
 #'
 #' Carica dati interventi accordi per assegnazioni complementari FdR
 #'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
-load_db_accordi_complementari <- function() {
+load_db_accordi_complementari <- function(DB) {
   interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_complementari.xlsx"))
   return(interventi)
 }
@@ -34,8 +37,9 @@ load_db_accordi_complementari <- function() {
 #'
 #' Carica dati interventi accordi per completamenti Campania
 #'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
-load_db_accordi_completamenti <- function() {
+load_db_accordi_completamenti <- function(DB) {
   interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_completamenti.xlsx"))
   return(interventi)
 }
@@ -44,8 +48,9 @@ load_db_accordi_completamenti <- function() {
 #'
 #' Carica dati interventi accordi per cofinanziamenti PR
 #'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
-load_db_accordi_cofinanziamenti <- function() {
+load_db_accordi_cofinanziamenti <- function(DB) {
   interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_cofinanziamenti_por.xlsx"))
   return(interventi)
 }
@@ -54,13 +59,14 @@ load_db_accordi_cofinanziamenti <- function() {
 #'
 #' Carica dati interventi accordi per tutte le assegnazioni
 #'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
-load_db_accordi <- function() {
- appo1 <- load_db_accordi_ordinarie()
- appo2 <- load_db_accordi_anticipazioni()
- appo3 <- load_db_accordi_complementari()
- appo4 <- load_db_accordi_completamenti()
- appo5 <- load_db_accordi_cofinanziamenti()
+load_db_accordi <- function(DB) {
+ appo1 <- load_db_accordi_ordinarie(DB)
+ appo2 <- load_db_accordi_anticipazioni(DB)
+ appo3 <- load_db_accordi_complementari(DB)
+ appo4 <- load_db_accordi_completamenti(DB)
+ appo5 <- load_db_accordi_cofinanziamenti(DB)
   
   interventi <- appo1 %>% 
     bind_rows(appo2) %>% 
@@ -197,6 +203,10 @@ workflow_accordi_pubblicazione <- function(interventi) {
   regioni <- interventi %>% 
     distinct(AMMINISTRAZIONE_TITOLARE) %>% 
     .$AMMINISTRAZIONE_TITOLARE
+  
+  # scarta interventi annuallati presenti per memoria
+  interventi <- interventi %>% 
+    filter(FINANZ_TOT > 0)
   
   dir.create(file.path(OUTPUT, "pubblicazione"))
   
@@ -753,7 +763,8 @@ crea_accordi_pubblicazione_campania <- function(regione, interventi) {
   art3_cofin <- temi  %>% 
     left_join(interventi %>% 
                 filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
-                filter(SEZIONE %in% c("Ordinaria")) %>% 
+                filter(SEZIONE %in% c("Ordinaria", "Complementare",
+                                      "Stralcio 2 (delibera CIPESS n. 57/2024)")) %>% 
                 group_by(AREA_TEMATICA) %>% 
                 summarise(FINANZ_ALTRO_PSC = sum(FINANZ_ALTRO_PSC, na.rm = TRUE),
                           FINANZ_ALTRO_POC = sum(FINANZ_ALTRO_POC, na.rm = TRUE),
@@ -1078,5 +1089,135 @@ crea_accordi_pubblicazione_campania <- function(regione, interventi) {
   
   temp_file <- paste0("Allegati_Accordo_Coesione_Regione_", regione, ".xlsx")
   saveWorkbook(wb, file = file.path(OUTPUT, "pubblicazione", temp_file), overwrite = TRUE)
+  
+}
+
+
+#' Verifica variazioni interventi accordi
+#'
+#' Verifica variazioni tra due versioni del database interventi degli accordi
+#'
+#' @param db_ver_new Nuova versione del DBCOE da confrontare.
+#' @param db_ver_old Precedente versione del DBCOE da confrontare.
+#' @return Salva in TEMP 3 report in ofrmalto long (analisi variazioni, sintesi per regione e sintesi totali) 
+chk_variazioni_accordi <- function(db_ver_new, db_ver_old) {
+  
+  # DEBUG:
+  # db_ver_new <- "20250630.00"
+  # db_ver_old <- "20250430.00"
+  
+  DB_NEW <- file.path(DRIVE, "PROGRAMMAZIONE", db_ver_new)
+  DB_OLD <- file.path(DRIVE, "PROGRAMMAZIONE", db_ver_old)
+  
+  interventi_new <- load_db_accordi(DB_NEW)
+  interventi_old <- load_db_accordi(DB_OLD)
+  
+  # testo
+  appo_text <- interventi_old %>% 
+    mutate(OC_FLAG_MONITORAGGIO = as.character(OC_FLAG_MONITORAGGIO)) %>% 
+    select(ID, AMBITO, CUP, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_TITOLARE, OC_CODICE_PROGRAMMA,
+           DESCRIZIONE_PROGRAMMA, COD_AREA_TEMATICA, COD_SETTORE_INTERVENTO, MACROAREA, REGIONE,
+           AMMINISTRAZIONE_BENEFICIARIA, TITOLO_PROGETTO, CICLO_PROGRAMMAZIONE, COD_LOCALE_PROGETTO,
+           COD_PROC_ATTIVAZIONE, OC_FLAG_MONITORAGGIO, NOTE, ULTIMA_VERSIONE, NOTE_COFIN,
+           AREA_TEMATICA, SETTORE_INTERVENTO) %>% 
+    pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE") %>% 
+    full_join(interventi_new %>% 
+                mutate(OC_FLAG_MONITORAGGIO = as.character(OC_FLAG_MONITORAGGIO)) %>% 
+                select(ID, AMBITO, CUP, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_TITOLARE, OC_CODICE_PROGRAMMA,
+                       DESCRIZIONE_PROGRAMMA, COD_AREA_TEMATICA, COD_SETTORE_INTERVENTO, MACROAREA, REGIONE,
+                       AMMINISTRAZIONE_BENEFICIARIA, TITOLO_PROGETTO, CICLO_PROGRAMMAZIONE, COD_LOCALE_PROGETTO,
+                       COD_PROC_ATTIVAZIONE, OC_FLAG_MONITORAGGIO, NOTE, ULTIMA_VERSIONE, NOTE_COFIN,
+                       AREA_TEMATICA, SETTORE_INTERVENTO) %>% 
+                pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE"),
+              by = c("ID", "AMMINISTRAZIONE_TITOLARE", "SEZIONE", "VARIABILE"), suffix = c("_old", "_new")) %>% 
+    mutate(TIPO_VARIABILE = "TEXT") %>% 
+    filter(!(is.na(VALORE_old) & is.na(VALORE_new))) %>% 
+    mutate(CHK = case_when(VALORE_old == VALORE_new ~ 0, 
+                           VALORE_old != VALORE_new ~ 1,
+                           is.na(VALORE_old) ~ 1,
+                           is.na(VALORE_new) ~ 1)) %>% 
+    filter(CHK > 0)
+  
+  # euro
+  appo_euro <- interventi_old %>% 
+    select(ID, AMMINISTRAZIONE_TITOLARE, SEZIONE, FINANZ_TOT,  FINANZ_FSC, FINANZ_FDR, FINANZ_ALTRO,
+           SPESA_2023, SPESA_2024, SPESA_2025, SPESA_2026, SPESA_2027, SPESA_2028, SPESA_2029, SPESA_2030,
+           SPESA_2031, SPESA_2032, SPESA_2033, SPESA_2034, SPESA_2035, FINANZ_REG,
+           FINANZ_ALTRO_PSC,  FINANZ_ALTRO_POC, FINANZ_ALTRO_UE, FINANZ_ALTRO_PNRR,
+           FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV, FINANZ_POR) %>% 
+    pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE") %>% 
+    full_join(interventi_new %>% 
+                select(ID, AMMINISTRAZIONE_TITOLARE, SEZIONE, FINANZ_TOT,  FINANZ_FSC, FINANZ_FDR, FINANZ_ALTRO,
+                       SPESA_2023, SPESA_2024, SPESA_2025, SPESA_2026, SPESA_2027, SPESA_2028, SPESA_2029, SPESA_2030,
+                       SPESA_2031, SPESA_2032, SPESA_2033, SPESA_2034, SPESA_2035, FINANZ_REG,
+                       FINANZ_ALTRO_PSC,  FINANZ_ALTRO_POC, FINANZ_ALTRO_UE, FINANZ_ALTRO_PNRR,
+                       FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV, FINANZ_POR) %>% 
+                pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE"),
+              by = c("ID", "AMMINISTRAZIONE_TITOLARE", "SEZIONE", "VARIABILE"), suffix = c("_old", "_new")) %>% 
+    mutate(TIPO_VARIABILE = "EURO") %>% 
+    filter(!(is.na(VALORE_old) & is.na(VALORE_new))) %>% 
+    mutate(CHK = case_when(VALORE_old == VALORE_new ~ 0, 
+                           VALORE_old != VALORE_new ~ 1,
+                           is.na(VALORE_old) ~ 1,
+                           is.na(VALORE_new) ~ 1),
+           DELTA_EURO = VALORE_old -VALORE_new) %>% 
+    filter(CHK > 0)
+  
+  # date
+  appo_date <- interventi_old %>% 
+    select(ID, AMMINISTRAZIONE_TITOLARE, SEZIONE, PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE,
+           PROGET_FIN_PRE, ESEC_INI_PRE, ESEC_FIN_PRE, INC_DT_APERTURA_AV,
+           INC_DT_CHIUSURA_AV, INC_DT_ATTIV_MIS) %>% 
+    pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE") %>% 
+    full_join(interventi_new %>% 
+                select(ID, AMMINISTRAZIONE_TITOLARE, SEZIONE, PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE,
+                       PROGET_FIN_PRE, ESEC_INI_PRE, ESEC_FIN_PRE, INC_DT_APERTURA_AV,
+                       INC_DT_CHIUSURA_AV, INC_DT_ATTIV_MIS) %>% 
+                pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE"),
+              by = c("ID", "AMMINISTRAZIONE_TITOLARE", "SEZIONE", "VARIABILE"), suffix = c("_old", "_new")) %>% 
+    mutate(TIPO_VARIABILE = "DATE") %>% 
+    filter(!(is.na(VALORE_old) & is.na(VALORE_new))) %>% 
+    mutate(CHK = case_when(VALORE_old == VALORE_new ~ 0, 
+                           VALORE_old != VALORE_new ~ 1,
+                           is.na(VALORE_old) ~ 1,
+                           is.na(VALORE_new) ~ 1),
+           DELTA_DAYS = difftime(VALORE_old, VALORE_new, units="days")) %>% 
+    filter(CHK > 0)
+  
+  write.xlsx(x = list(text = appo_text, euro = appo_euro, date = appo_date),
+             file.path(TEMP, paste0("chk_delta_", db_ver_new, "_", db_ver_old, ".xlsx")))
+  
+  # report by amministrazione
+  chk_amministrazioni <- appo_text %>% 
+    select(AMMINISTRAZIONE_TITOLARE, SEZIONE, TIPO_VARIABILE, VARIABILE, CHK) %>% 
+    bind_rows(appo_euro %>% 
+                select(AMMINISTRAZIONE_TITOLARE, SEZIONE, TIPO_VARIABILE, VARIABILE, CHK, DELTA_EURO)) %>% 
+    bind_rows(appo_date %>% 
+                select(AMMINISTRAZIONE_TITOLARE, SEZIONE, TIPO_VARIABILE, VARIABILE, CHK, DELTA_DAYS)) %>% 
+    group_by(AMMINISTRAZIONE_TITOLARE, SEZIONE, TIPO_VARIABILE, VARIABILE) %>% 
+    summarise(CHK = sum(CHK, na.rm = TRUE),
+              DELTA_EURO = sum(DELTA_EURO, na.rm = TRUE),
+              DELTA_DAYS = sum(DELTA_DAYS, na.rm = TRUE)) %>% 
+    filter(CHK > 0)
+  
+  write.xlsx(chk_amministrazioni, file.path(TEMP, paste0("chk_delta_", db_ver_new, "_", db_ver_old, "_regioni.xlsx")))
+  
+  # report sintesi
+  chk <- appo_text %>% 
+    select(TIPO_VARIABILE, VARIABILE, CHK) %>% 
+    bind_rows(appo_euro %>% 
+                select(TIPO_VARIABILE, VARIABILE, CHK, DELTA_EURO)) %>% 
+    bind_rows(appo_date %>% 
+                select(TIPO_VARIABILE, VARIABILE, CHK, DELTA_DAYS)) %>% 
+    group_by(TIPO_VARIABILE, VARIABILE) %>% 
+    summarise(CHK = sum(CHK, na.rm = TRUE),
+              DELTA_EURO = sum(DELTA_EURO, na.rm = TRUE),
+              DELTA_DAYS = sum(DELTA_DAYS, na.rm = TRUE)) %>% 
+    filter(CHK > 0)
+  
+  write.xlsx(chk, file.path(TEMP, paste0("chk_delta_", db_ver_new, "_", db_ver_old, "_sintesi.xlsx")))
+  
+  
+  message(paste0("Il report chk_delta_", db_ver_new, "_", db_ver_old, ".xlsx e le relative sintesi sono salvati in TEMP"))
   
 }
