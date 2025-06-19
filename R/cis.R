@@ -1,3 +1,19 @@
+# Funzioni del blocco CIS
+
+
+#' Carica dati interventi CIS
+#'
+#' Carica dati interventi CIS
+#'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
+#' @return Dataframe
+load_db_CIS <- function(DB) {
+  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_CIS.xlsx"), guess_max=100000)
+  return(interventi)
+}
+
+
+
 #' Workflow per analisi CIS
 #' @param bimestre Bimestre di OpenCoesione
 #' @param interventi Interventi CIS da load_db_interventi(tipo = "CIS)
