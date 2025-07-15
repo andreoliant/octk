@@ -4,7 +4,10 @@
 \alias{load_db_accordi_completamenti}
 \title{Carica dati interventi accordi per completamenti Campania}
 \usage{
-load_db_accordi_completamenti()
+load_db_accordi_completamenti(DB)
+}
+\arguments{
+\item{DB}{Percorso al database generato con oc_init() o sovrascritto.}
 }
 \value{
 Dataframe

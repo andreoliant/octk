@@ -9,12 +9,13 @@
 #' @param progetti Dataset con un perimetro in formato "progetti".
 #' @param operazioni_713 File di tipo operazioni da flusso sas/dataiku.
 #' @param operazioni_1420 File di tipo operazioni da flusso sas/dataiku.
+#' @param operazioni_extra File di tipo operazioni da flusso sas/dataiku.
 #' @param use_fix Vuoi applicare fix_progetti() prima di esecuzione? Non impatta su x_AMBITO!
 #' @param use_ecomix Vuoi calcolare il costo coesione al netto delle economie solo per i progetti conclusi?
 #' @param use_sito Vuoi usare il calcolo dellle risorse coesione fatto per il sito OC?
 #' @return Il dataset operazioni con le variabili coesione calcolate: COE, COE_IMP e COE_PAG.
 #' @note La modalità **debug** esporta diversi csv in TEMP La modalità **export** esporta operazioni_light.csv in DATA.
-setup_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1420, export=FALSE, use_fix=FALSE, use_ecomix=FALSE, use_sito=FALSE, debug=FALSE) {
+setup_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1420, operazioni_extra, export=FALSE, use_fix=FALSE, use_ecomix=FALSE, use_sito=FALSE, debug=FALSE) {
   if (exists("DATA", envir = .GlobalEnv)) {
     
     # if (is.null(progetti)) {
@@ -37,7 +38,8 @@ setup_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1420
       # operazioni <- workflow_operazioni_sito(bimestre, progetti, debug=debug)
       # operazioni <- workflow_operazioni_migrazione(bimestre, progetti, debug=debug) #MEMO: versione post migrazione PSC
       # operazioni <- workflow_operazioni_migrazione(bimestre, progetti, operazioni_713, operazioni_1420, debug=debug)
-      operazioni <- workflow_operazioni_dataiku(bimestre, progetti, operazioni_713, operazioni_1420, debug=debug)
+      #operazioni <- workflow_operazioni_dataiku(bimestre, progetti, operazioni_713, operazioni_1420, debug=debug)
+      operazioni <- workflow_operazioni_dataiku_extra(bimestre, progetti, operazioni_713, operazioni_1420, operazioni_extra, debug=debug)
 
     } else {
       operazioni <- workflow_operazioni(bimestre, progetti, debug=debug)

@@ -56,6 +56,98 @@ oc_init_data <- function(bimestre, data_path=NULL) {
 #' Carica operazioni 1420 da dataiku
 #'
 #' @return Dataset operazinoi da dataiuku.
+load_operazioni_extra <- function() {
+  
+  col_types = cols(
+    db = col_character(),
+    cod_locale_progetto = col_character(),
+    oc_cod_programma = col_character(),
+    oc_descrizione_programma = col_character(),
+    CODICE_TIPOLOGIA_PROGRAMMA = col_character(),
+    oc_costo_coesione = col_double(),
+    oc_impegni_coesione = col_double(),
+    oc_tot_pagamenti_coesione = col_double(),
+    OC_COD_CICLO = col_double(),
+    oc_ambito = col_character(),
+    oc_cod_fonte = col_character(),
+    oc_descr_fonte = col_character(),
+    ue_categ_regione = col_character(),
+    ue_descr_categ_regione = col_character(),
+    ue_fondo = col_character(),
+    ue_descr_fondo = col_character(),
+    ue_asse_prioritario = col_character(),
+    ue_descr_asse_prioritario = col_character(),
+    ue_ob_specifico = col_character(),
+    ue_descr_ob_specifico = col_character(),
+    fsc_settore_strategico = col_character(),
+    fsc_descr_settore_strategico = col_character(),
+    fsc_asse_tematico = col_character(),
+    fsc_descr_asse_tematico = col_character(),
+    pac_asse_tematico = col_character(),
+    pac_descr_asse_tematico = col_character(),
+    pac_lineazione = col_character(),
+    pac_descr_lineazione = col_character(),
+    psc_macroarea = col_character(),
+    psc_descr_macroarea = col_character(),
+    psc_sezione = col_character(),
+    psc_descr_sezione = col_character(),
+    psc_area_tematica = col_character(),
+    psc_descr_area_tematica = col_character(),
+    psc_sett_interv = col_character(),
+    psc_descr_sett_interv = col_character(),
+    cod_tipoint_feasr = col_character(),
+    descr_tipoint_feasr = col_character(),
+    cod_misura_feasr = col_character(),
+    descr_misura_feasr = col_character(),
+    cod_submisura_feasr = col_character(),
+    descr_submisura_feasr = col_character(),
+    cod_farea_feasr = col_character(),
+    descr_farea_feasr = col_character(),
+    cod_priorita_feasr = col_character(),
+    descr_priorita_feasr = col_character(),
+    cod_proced_attivazione = col_character(),
+    descr_proced_attivazione = col_character(),
+    cod_tipo_proced_attivazione = col_character(),
+    descr_tipo_proced_attivazione = col_character(),
+    data_effettiva_inizio_proc_attiv = col_integer(),
+    data_effettiva_fine_proc_attiv = col_integer(),
+    COD_RISULTATO_ATTESO = col_character(),
+    DESCR_RISULTATO_ATTESO = col_character(),
+    COD_STRUMENTO = col_character(),
+    DESCR_STRUMENTO = col_character(),
+    COD_TIPO_STRUMENTO = col_character(),
+    DESCR_TIPO_STRUMENTO = col_character(),
+    DATA_APPROV_STRUMENTO = col_double(),
+    costo_rendicontabile_UE = col_double(),
+    oc_tot_pagamenti_rendicontab_ue = col_double(),
+    costo_ammesso_MZ = col_double(),
+    costo_ammesso_CN = col_double(),
+    imp_ammesso_MZ = col_double(),
+    imp_ammesso_CN = col_double(),
+    imp_trasf_ammesso_MZ = col_double(),
+    imp_trasf_ammesso_CN = col_double(),
+    pag_ammesso_MZ = col_double(),
+    pag_ammesso_CN = col_double(),
+    pag_trasf_ammesso_MZ = col_double(),
+    pag_trasf_ammesso_CN = col_double(),
+    oc_spesa_certificata_pubblica = col_double(),
+    oc_spesa_certificata_totale = col_double(),
+    STATO = col_double(),
+    dps_flag_pac = col_double(),
+    OC_FLAG_TR = col_double(),
+    OC_PROGETTO_AGGREGATO = col_character()
+  )
+  
+  operazioni_extra_raw <- read_csv2(file.path(DATA, "oper_extok_preesteso.csv"), col_types = col_types) 
+  return(operazioni_extra_raw)
+}
+
+
+#' Carica operazioni 1420
+#'
+#' Carica operazioni 1420 da dataiku
+#'
+#' @return Dataset operazinoi da dataiuku.
 load_operazioni_1420 <- function() {
   
   col_types = cols(
@@ -384,10 +476,10 @@ chk_bimestre_sub_dbcoe <- function(progetti, export=FALSE) {
   message(paste0("Rilevati ", dim(chk)[1], " nuovi programmi assenti in DBCOE:"))
   print(chk)
   if (export==TRUE) {
-    write_csv2(chk, file.path(TEMP, "chk_mismatch_dboce.csv"))
+    write_csv2(chk, file.path(TEMP, "chk_mismatch_dbcoe.csv"))
   }
   
-  message("Integra il DBCOE in caso di codifiche assenti (vedi file 'chk_mismatch_dboce.csv').")
+  message("Integra il DBCOE in caso di codifiche assenti (vedi file 'chk_mismatch_dbcoe.csv').")
 
 }
 

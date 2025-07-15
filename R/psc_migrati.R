@@ -143,15 +143,15 @@ prep_dati_psc_migrati_bimestre <- function(bimestre, versione_psc, operazioni, p
   appo3 <- appo2 %>% 
     left_join(progetti %>% 
                 select(COD_LOCALE_PROGETTO, COSTO_REALIZZATO, 
-                       FINANZ_STATO_FSC, OC_FINANZ_STATO_FSC_NETTO,
+                       FINANZ_STATO_FSC, OC_FINANZ_Stato_FSC_NETTO,
                        FINANZ_TOTALE_PUBBLICO, FINANZ_PRIVATO, FINANZ_DA_REPERIRE, ECONOMIE_TOTALI,
-                       OC_FINANZ_TOT_PUB_NETTO, DB),
+                       OC_FINANZ_TOT_PUB_NETTO),
               by = "COD_LOCALE_PROGETTO") %>% 
     mutate_if(is.numeric, replace_na, replace = 0) %>% 
     mutate(FINANZ_TOT = FINANZ_TOTALE_PUBBLICO + FINANZ_PRIVATO + FINANZ_DA_REPERIRE - ECONOMIE_TOTALI,
            x = COE/FINANZ_TOT,
            COE_CR = COSTO_REALIZZATO * x,
-           COE_ECO = FINANZ_STATO_FSC - OC_FINANZ_STATO_FSC_NETTO,
+           COE_ECO = FINANZ_STATO_FSC - OC_FINANZ_Stato_FSC_NETTO,
            CP = OC_FINANZ_TOT_PUB_NETTO,
            CPP = FINANZ_TOTALE_PUBBLICO + FINANZ_PRIVATO)
   
@@ -203,8 +203,7 @@ prep_dati_psc_migrati_bimestre <- function(bimestre, versione_psc, operazioni, p
            CP,
            CPP,
            ID_PSC,
-           OC_FLAG_VISUALIZZAZIONE,
-           DB)
+           OC_FLAG_VISUALIZZAZIONE)
   
   
   # export
