@@ -446,7 +446,9 @@ workflow_operazioni_dataiku <- function(bimestre, progetti, operazioni_713, oper
                                OC_COD_CICLO == 3 ~ "2021-2027",
                                OC_COD_CICLO == 9 ~ "2000-2006",
                                TRUE ~ "2014-2020")) # MEMO: fix per anomalie di pre-esteso
-  operazioni_psc %>% count(X_CICLO, OC_COD_CICLO, x_CICLO)
+  
+  # DEBUG:
+  # operazioni_psc %>% count(X_CICLO, OC_COD_CICLO, x_CICLO)
   # operazioni_psc %>% filter(is.na(x_CICLO)) %>% count(OC_CODICE_PROGRAMMA)
   # OC_CODICE_PROGRAMMA     n
   # <chr>               <int>
@@ -500,9 +502,10 @@ workflow_operazioni_dataiku <- function(bimestre, progetti, operazioni_713, oper
   #             select(COD_LOCALE_PROGETTO, OC_FLAG_VISUALIZZAZIONE),
   #           by = "COD_LOCALE_PROGETTO")
   
+  # DEBUG:
   # chk ciclo
-  operazioni %>% count(x_CICLO)
-  operazioni %>% filter(is.na(x_CICLO)) %>% count(x_AMBITO)
+  # operazioni %>% count(x_CICLO)
+  # operazioni %>% filter(is.na(x_CICLO)) %>% count(x_AMBITO)
   
   # fix ciclo
   operazioni <- operazioni %>%
@@ -513,12 +516,13 @@ workflow_operazioni_dataiku <- function(bimestre, progetti, operazioni_713, oper
   # chk compatibile con Fabio x Stefano
   # operazioni %>% distinct(COD_LOCALE_PROGETTO, x_CICLO, x_AMBITO) %>% count(x_CICLO, x_AMBITO)
   
+  # DEBUG:
   # chk dupli per ciclo da po_riclass
-  chk <- operazioni %>% count(COD_LOCALE_PROGETTO, x_CICLO)
-  dim(chk)[1] - dim(progetti)[1]
+  # chk <- operazioni %>% count(COD_LOCALE_PROGETTO, x_CICLO)
+  # dim(chk)[1] - dim(progetti)[1]
   
   # chk dupli da caratteri spuri
-  chk %>% count(COD_LOCALE_PROGETTO) %>% filter(n > 1)
+  # chk %>% count(COD_LOCALE_PROGETTO) %>% filter(n > 1)
   # operazioni %>%
   #   anti_join(progetti, by = "COD_LOCALE_PROGETTO") %>%
   #   write_csv2(file.path(TEMP, "chk_operazioni_duple_missing"))
@@ -529,13 +533,13 @@ workflow_operazioni_dataiku <- function(bimestre, progetti, operazioni_713, oper
   # MEMO: attenzione che a volte si importa progetti con i soli visualizzati e salta il chk sopra
   
   # chk
-  operazioni %>%
-    group_by(x_CICLO, x_AMBITO) %>%
-    # group_by(x_CICLO) %>%
-    summarise(N = n(),
-              COE = sum(COE, na.rm = TRUE),
-              COE_IMP = sum(COE_IMP, na.rm = TRUE),
-              COE_PAG = sum(COE_PAG, na.rm = TRUE))
+  # operazioni %>%
+  #   group_by(x_CICLO, x_AMBITO) %>%
+  #   # group_by(x_CICLO) %>%
+  #   summarise(N = n(),
+  #             COE = sum(COE, na.rm = TRUE),
+  #             COE_IMP = sum(COE_IMP, na.rm = TRUE),
+  #             COE_PAG = sum(COE_PAG, na.rm = TRUE))
   
   # programmi <- operazioni %>%
   #   group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_PROGRAMMA) %>%
