@@ -1202,19 +1202,35 @@ make_input_delta  <- function(OLD) {
   # create
   wb <- createWorkbook()
   
+  # funzione robusta di pulizia
+  safe_utf8_df <- function(df) {
+    df[] <- lapply(df, function(x) {
+      if (is.character(x)) {
+        x <- stringi::stri_enc_toutf8(x)
+        x <- stringi::stri_replace_all_regex(x, "[\\p{C}]", "")
+        x
+      } else x
+    })
+    df
+  }
+  
   for (input_tab in appo) {
     #  input_tab <- appo[5]
     print(input_tab)
     
     # read data from input xls in OLD
-    tab <- read_xlsx(temp_file, sheet = input_tab, col_types = "text")
+    tab <- read_xlsx(temp_file, sheet = input_tab, col_types = "text", )
     
     # read new input data from octk
-    tab_new <- eval(as.name(input_tab))
+    tab_new <- eval(as.name(input_tab))%>%
+      mutate(NOTE = as.character(NOTE))%>%
+      mutate(QUERY = as.character(QUERY))
+      
     
     if (input_tab == "delib_cipe") {
       tab_delta <- tab_new %>%
         mutate_if(is.numeric, as.character) %>%
+        mutate(NOTE = as.character(NOTE))%>%
         anti_join(tab %>%
                     select(-QUERY, -NOTE) %>%
                     select(NUMERO_DEL_CIPE, ANNO_DEL_CIPE))
@@ -1228,6 +1244,7 @@ make_input_delta  <- function(OLD) {
     } else if (input_tab == "patt") {
       tab_delta <- tab_new %>%
         mutate_if(is.numeric, as.character) %>%
+        mutate(NOTE = as.character(NOTE))%>%
         anti_join(tab %>%
                     select(-QUERY, -NOTE) %>%
                     select(contains("COD"))) %>% 
@@ -1244,6 +1261,7 @@ make_input_delta  <- function(OLD) {
     } else if (input_tab == "flag_beniconf") {
       tab_delta <- tab_new %>%
         mutate_if(is.numeric, as.character) %>%
+        mutate(NOTE = as.character(NOTE))%>%
         anti_join(tab %>%
                     select(-QUERY, -NOTE) %>%
                     select(OC_FLAG_BENICONF), 
@@ -1258,7 +1276,6 @@ make_input_delta  <- function(OLD) {
     
     } else if (input_tab == "keyword") {
       tab_delta <- tab_new %>%
-        mutate_if(is.numeric, as.character) %>%
         anti_join(tab %>%
                     select(-QUERY, -NOTE) %>%
                     select(LEMMA, KEYWORD), 
@@ -1275,6 +1292,7 @@ make_input_delta  <- function(OLD) {
     } else {
       tab_delta <- tab_new %>%
         mutate_if(is.numeric, as.character) %>%
+        mutate(NOTE = as.character(NOTE))%>%
         anti_join(tab %>%
                     select(-QUERY, -NOTE) %>%
                     select(contains("COD")))
@@ -1287,7 +1305,7 @@ make_input_delta  <- function(OLD) {
     }
     
     
-    
+    tab_delta <- safe_utf8_df(tab_delta)
     
     
     # set data to excel

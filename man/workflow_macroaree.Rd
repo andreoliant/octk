@@ -9,6 +9,7 @@ workflow_macroaree(
   progetti,
   operazioni_713,
   operazioni_1420,
+  operazioni_extra,
   riprop_yei = FALSE,
   debug = FALSE
 )

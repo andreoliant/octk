@@ -4,7 +4,10 @@
 \alias{load_db_accordi_complementari}
 \title{Carica dati interventi accordi per assegnazioni complementari FdR}
 \usage{
-load_db_accordi_complementari()
+load_db_accordi_complementari(DB)
+}
+\arguments{
+\item{DB}{Percorso al database generato con oc_init() o sovrascritto.}
 }
 \value{
 Dataframe

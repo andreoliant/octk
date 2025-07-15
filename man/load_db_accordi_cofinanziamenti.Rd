@@ -4,7 +4,10 @@
 \alias{load_db_accordi_cofinanziamenti}
 \title{Carica dati interventi accordi per cofinanziamenti PR}
 \usage{
-load_db_accordi_cofinanziamenti()
+load_db_accordi_cofinanziamenti(DB)
+}
+\arguments{
+\item{DB}{Percorso al database generato con oc_init() o sovrascritto.}
 }
 \value{
 Dataframe

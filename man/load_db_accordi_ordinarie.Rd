@@ -4,7 +4,10 @@
 \alias{load_db_accordi_ordinarie}
 \title{Carica dati interventi accordi per assegnazioni ordinarie}
 \usage{
-load_db_accordi_ordinarie()
+load_db_accordi_ordinarie(DB)
+}
+\arguments{
+\item{DB}{Percorso al database generato con oc_init() o sovrascritto.}
 }
 \value{
 Dataframe

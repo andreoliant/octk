@@ -9,6 +9,7 @@ setup_macroaree(
   progetti,
   operazioni_713,
   operazioni_1420,
+  operazioni_extra,
   export = FALSE,
   use_fix = FALSE,
   debug = FALSE
@@ -22,6 +23,8 @@ setup_macroaree(
 \item{operazioni_713}{File di tipo operazioni da flusso sas/dataiku.}
 
 \item{operazioni_1420}{File di tipo operazioni da flusso sas/dataiku.}
+
+\item{operazioni_extra}{File di tipo operazioni da flusso sas/dataiku.}
 
 \item{export}{Vuoi esportare in DATA?}
 

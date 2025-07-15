@@ -9,6 +9,7 @@ setup_operazioni(
   progetti,
   operazioni_713,
   operazioni_1420,
+  operazioni_extra,
   export = FALSE,
   use_fix = FALSE,
   use_ecomix = FALSE,
@@ -24,6 +25,8 @@ setup_operazioni(
 \item{operazioni_713}{File di tipo operazioni da flusso sas/dataiku.}
 
 \item{operazioni_1420}{File di tipo operazioni da flusso sas/dataiku.}
+
+\item{operazioni_extra}{File di tipo operazioni da flusso sas/dataiku.}
 
 \item{use_fix}{Vuoi applicare fix_progetti() prima di esecuzione? Non impatta su x_AMBITO!}
 

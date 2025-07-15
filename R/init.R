@@ -43,7 +43,7 @@ oc_init <- function (bimestre, db_ver, data_path = NULL, db_path = NULL,
       ROOT <- drive_root
     }
     if (is.null(data_path)) {
-      data_path <- file.path(ROOT,"DATI", bimestre ,"DASAS","DATAMART")
+      data_path <- file.path(ROOT,"DATI", bimestre ,"DASAS", "DATAMART")
     } else {
       data_path <- file.path(data_path, bimestre)
     }

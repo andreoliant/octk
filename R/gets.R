@@ -635,7 +635,10 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
   df <- df %>%
     mutate(x_AMBITO = case_when(x_AMBITO == "FESR-FSE" ~ FONDO_COMUNITARIO, # MEMO: split per programmi pluri-fondo
                                 x_AMBITO == "YEI-FSE" ~ FONDO_COMUNITARIO,
+                                FONDO_COMUNITARIO == "FESR:::FSE+" ~ "FESR-FSE+",
                                 x_AMBITO == "FSC-POC" ~ "FSC",  # MEMO: forzo su FSC
+                                x_AMBITO == "FSC-FDR" ~ "FSC",  # MEMO: forzo su FSC
+                                OC_CODICE_PROGRAMMA == "ACCOESCAMPANIA" ~ "FSC",  # MEMO: forzo su FSC
                                 TRUE ~ x_AMBITO)) %>%
     mutate(x_AMBITO = if_else(x_AMBITO == "IOG", "YEI", x_AMBITO)) %>%
     # mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "YEI", "SNAI", "FEASR", "FEAMP", "CTE", "ORD")))
