@@ -1044,6 +1044,7 @@ load_operazioni <- function(bimestre, visualizzati=TRUE) {
   # loads
   # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = TRUE, refactor = TRUE)
   # perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
+  DATA <- file.path(dirname(DATA), bimestre)
   perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), col_types = col_types)
   
   # fix per dissesto
