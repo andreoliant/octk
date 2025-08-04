@@ -1967,6 +1967,7 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, use_fix_siepoc=
   # DEBUG:
   # use_fix_siepoc=TRUE
   # stime_fix_siepoc=FALSE
+  # progetti=operazioni
   
   if (is.null(programmi)) {
     # if (is.null(progetti)) {
@@ -2073,7 +2074,9 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, use_fix_siepoc=
   dim(appo)[1] == dim(programmi)[1]
   
   # label programmi in inglese
-  programmi_en <- read_xlsx(file.path(DB, "label_programmi_en.xlsx")) %>% 
+  # programmi_en <- read_xlsx(file.path(DB, "label_programmi_en.xlsx")) %>% 
+  #   distinct(OC_CODICE_PROGRAMMA, LABEL_PROGRAMMA_EN)
+  programmi_en <- read_xlsx(file.path(DB, "Elenco_ufficiale_nomi.xlsx")) %>% 
     distinct(OC_CODICE_PROGRAMMA, LABEL_PROGRAMMA_EN)
 
   # integrazioni
@@ -2220,8 +2223,9 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, use_fix_siepoc=
   out_2127 <- out %>% 
     filter(LABEL_CICLO == "2021-2027") %>% 
     mutate(LABEL_AMBITO_IT = if_else(LABEL_AMBITO_IT == "FSE", "FSE+", LABEL_AMBITO_IT)) %>% 
+    mutate(LABEL_AMBITO_IT = if_else(LABEL_AMBITO_IT == "POC", "FDR", LABEL_AMBITO_IT)) %>% 
     mutate(LABEL_AMBITO_IT = factor(LABEL_AMBITO_IT, levels = c("FESR", "FSE+", "JTF", "CTE",
-                                                                "FSC", "ALTRO"))) %>% 
+                                                                "FSC", "FDR", "ALTRO"))) %>% 
     arrange(LABEL_AMBITO_IT)
   
   if (export == TRUE) {
@@ -2380,6 +2384,11 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, use_fix_siepo
            LABEL_AMBITO != "FEAMP",
            LABEL_AMBITO != "CTE")
   
+  # fix FDR
+  out <- out %>% 
+    mutate(LABEL_AMBITO = if_else(LABEL_CICLO == "2021-2027" & LABEL_AMBITO == "POC", "FDR", LABEL_AMBITO))
+    
+  
   # export
   if (export == TRUE) {
     write.csv2(out, file.path(TEMP, "dotazioni.csv"), row.names = FALSE)
@@ -2419,8 +2428,8 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, use_fix_siepo
     
     # NEW 2127
     looper <- tibble(
-      LABEL_AMBITO = c("SIE", "FSC", "SIE", "POC", "FSC", "FSC", "FS", "PAC"),
-      LABEL_CICLO = c("2021-2027", "2021-2027", "2014-2020", "2014-2020", "2014-2020", "2007-2013", "2007-2013", "2007-2013"),
+      LABEL_AMBITO = c("SIE", "FSC", "FDR", "SIE", "POC", "FSC", "FSC", "FS", "PAC"),
+      LABEL_CICLO = c("2021-2027", "2021-2027", "2021-2027", "2014-2020", "2014-2020", "2014-2020", "2007-2013", "2007-2013", "2007-2013"),
     )
     
     # # A tibble: 9 x 2
@@ -2441,7 +2450,7 @@ make_opendata_dotazioni <- function(programmi=NULL, progetti=NULL, use_fix_siepo
     out_2 <- out %>%
       # mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "SNAI-SERVIZI", "CTE", "PAC"))) %>% 
       # NEW 2127
-      mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "JTF", "SNAI-SERVIZI", "CTE", "PAC"))) %>% 
+      mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "JTF", "SNAI-SERVIZI", "CTE", "PAC", "FDR"))) %>% 
       # appo per spostare psc
       # mutate(LABEL_CICLO_2 = case_when(OC_TIPOLOGIA_PROGRAMMA == "PSC" ~ "2014-2020",
       #                                  TRUE ~ LABEL_CICLO)) %>% 
@@ -2516,14 +2525,22 @@ make_opendata_decisioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
     mutate(LABEL_DECISIONE_IT = ifelse(is.na(NUMERO_DECISIONE),
                                        "",
                                        paste0(TIPO_DECISIONE, " n. ", NUMERO_DECISIONE, " del ",format(DATA_DECISIONE, "%d/%m/%Y"))))
+  # OLD:
+  # appo1 <- programmi %>%
+  #   mutate(LABEL_PROGRAMMA = x_PROGRAMMA,
+  #          LABEL_AMBITO = x_AMBITO) %>% 
+  #   left_join(info %>% 
+  #               select(-x_AMBITO, -x_CICLO), 
+  #             by = "OC_CODICE_PROGRAMMA")
   
   appo1 <- programmi %>%
     mutate(LABEL_PROGRAMMA = x_PROGRAMMA,
            LABEL_AMBITO = x_AMBITO) %>% 
     left_join(info %>% 
-                select(-x_AMBITO, -x_CICLO), 
-              by = "OC_CODICE_PROGRAMMA")
+                select(-x_CICLO), 
+              by = c("OC_CODICE_PROGRAMMA", "x_AMBITO"))
   # MEMO: uso convenzioni da "workflow" in "programmi" e aggiungo dati per singole delibere (che sono N:1 su programmi)
+  # 2348
   
   # inglese
   appo2 <- appo1 
@@ -2565,6 +2582,10 @@ make_opendata_decisioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
            VERSIONE_PROGRAMMA	= ifelse(is.na(VERSIONE_PROGRAMMA), "-", as.character(VERSIONE_PROGRAMMA)),
            SEQ_DECISIONE	= ifelse(is.na(SEQ_DECISIONE), "-", as.character(SEQ_DECISIONE)))
 
+  # fix FDR
+  out <- out %>% 
+    mutate(LABEL_AMBITO = if_else(LABEL_CICLO == "2021-2027" & LABEL_AMBITO == "POC", "FDR", LABEL_AMBITO))
+  
   # export
   if (export == TRUE) {
     write.csv2(out, file.path(TEMP, "decisioni.csv"), row.names = FALSE, na = "")
@@ -2595,8 +2616,8 @@ make_opendata_decisioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
     
     # NEW 2127
     looper <- tibble(
-      LABEL_AMBITO = c("SIE", "FSC", "SIE", "POC", "FSC", "FSC", "FS", "PAC"),
-      LABEL_CICLO = c("2021-2027", "2021-2027", "2014-2020", "2014-2020", "2014-2020", "2007-2013", "2007-2013", "2007-2013"),
+      LABEL_AMBITO = c("SIE", "FSC", "FDR", "SIE", "POC", "FSC", "FSC", "FS", "PAC"),
+      LABEL_CICLO = c("2021-2027", "2021-2027", "2021-2027", "2014-2020", "2014-2020", "2014-2020", "2007-2013", "2007-2013", "2007-2013"),
     )
 
     # TODO: aggrego FESR e FSE in SIE solo per 1420, forse va fatto anche per 713 oppure nemmeno per 1420?
@@ -2605,7 +2626,7 @@ make_opendata_decisioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
     out_2 <- out %>%
       # mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "SNAI-Servizi", "CTE", "PAC")))
       # NEW 2127
-      mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "JTF", "SNAI-Servizi", "CTE", "PAC")))
+      mutate(LABEL_AMBITO = factor(LABEL_AMBITO, levels = c("SIE", "FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "IOG", "JTF", "SNAI-Servizi", "CTE", "PAC", "FDR")))
 
 
     # loop
@@ -2626,7 +2647,7 @@ make_opendata_decisioni <- function(programmi=NULL, progetti=NULL, export=TRUE, 
         out_3 <- out_2 %>%
           filter(LABEL_AMBITO == x_ambito, LABEL_CICLO == x_ciclo)
       }
-
+      
       # xls
       require("openxlsx")
       # wb <- loadWorkbook(file.path(INPUT, "TemplateDecisioni.xlsx"))
