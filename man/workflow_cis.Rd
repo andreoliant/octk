@@ -6,11 +6,10 @@
 \usage{
 workflow_cis(
   bimestre,
-  interventi = NULL,
-  operazioni = NULL,
-  progetti = NULL,
+  interventi,
+  operazioni,
+  ritardi = NULL,
   debug = FALSE,
-  debug_peri = FALSE,
   export = FALSE
 )
 }
@@ -21,14 +20,17 @@ workflow_cis(
 
 \item{operazioni}{Dataset da operazioni_light}
 
-\item{progetti}{Dataset da progetti_light}
+\item{ritardi}{Dataset da setup_ritardi()}
 
-\item{debug}{Vuoi verificare il DB e il mappging con i clp?}
-
-\item{debug_peri}{Vuoi verificare i se tutti i clp nel perimetro sono mappati nel DB?}
+\item{debug}{Vuoi verificare il DB e il mappging con l'attuazione?}
 
 \item{export}{Vuoi esportare in TEMP in xlsx?}
+
+\item{progetti}{Dataset da progetti_light}
+}
+\value{
+Dataset di base per analisi programmazione vs attuazione CIS
 }
 \description{
-Workflow per analisi CIS
+Crea dataset di base per analisi programmazione vs attuazione CIS
 }

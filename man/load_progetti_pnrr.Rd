@@ -2,18 +2,18 @@
 % Please edit documentation in R/pnrr.R
 \name{load_progetti_pnrr}
 \alias{load_progetti_pnrr}
-\title{Carica dati di base per PNRR}
+\title{Carica dati di attuazione PNRR}
 \usage{
 load_progetti_pnrr(bimestre_pnrr, versione_pnrr)
 }
 \arguments{
-\item{versione_pnrr}{Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)}
+\item{bimestre_pnrr}{Bimestre di riferimento per i dati PNRR}
 
-\item{bimestre}{Bimestre di riferimento}
+\item{versione_pnrr}{Versione di riferimento dei dati (sono possibili più versioni per lo stesso bimestre)}
 }
 \value{
 Dataframe
 }
 \description{
-Carica dati di base per PNRR
+Carica dati di attuazione PNRR
 }
