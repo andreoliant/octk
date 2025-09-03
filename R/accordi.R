@@ -62,17 +62,26 @@ load_db_accordi_cofinanziamenti <- function(DB) {
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
 load_db_accordi <- function(DB) {
- appo1 <- load_db_accordi_ordinarie(DB)
- appo2 <- load_db_accordi_anticipazioni(DB)
- appo3 <- load_db_accordi_complementari(DB)
- appo4 <- load_db_accordi_completamenti(DB)
- appo5 <- load_db_accordi_cofinanziamenti(DB)
+  # Verifica se esiste il file unico degli accordi
+  file_accordi <- file.path(DB, "Interventi_DBCOE_accordi.xlsx")
   
-  interventi <- appo1 %>% 
-    bind_rows(appo2) %>% 
-    bind_rows(appo3) %>% 
-    bind_rows(appo4) %>% 
-    bind_rows(appo5)
+  if (file.exists(file_accordi)) {
+    # Se il file esiste, caricalo direttamente
+    interventi <- read_xlsx(file_accordi, guess_max=100000)
+  } else {
+    # Altrimenti, procedi con il caricamento dei singoli file
+    appo1 <- load_db_accordi_ordinarie(DB)
+    appo2 <- load_db_accordi_anticipazioni(DB)
+    appo3 <- load_db_accordi_complementari(DB)
+    appo4 <- load_db_accordi_completamenti(DB)
+    appo5 <- load_db_accordi_cofinanziamenti(DB)
+    
+    interventi <- appo1 %>% 
+      bind_rows(appo2) %>% 
+      bind_rows(appo3) %>% 
+      bind_rows(appo4) %>% 
+      bind_rows(appo5)
+  }
   
   return(interventi)
 }
