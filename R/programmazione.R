@@ -2950,31 +2950,32 @@ chk_allineamento_interventi_accordi <- function(export=FALSE){
                 filter(TIPOLOGIA_PROGRAMMA == "ACCORDI")) %>% 
     filter(TIPOLOGIA_AMMINISTRAZIONE == "REGIONALE")
   
-  interventi_accordi <- load_db_accordi()
+  interventi_accordi <- load_db_accordi(DB)
   
   out <- dati_accordi %>%
+    # filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2) %>%
     ungroup(.) %>% 
-    group_by(OC_CODICE_PROGRAMMA) %>%
+    group_by(OC_CODICE_PROGRAMMA, FLAG_MONITORAGGIO) %>%
     summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm=TRUE),
               FINANZ_FDR = sum(FINANZ_FDR, na.rm=TRUE)) %>% 
     mutate(FINANZ_FSC = if_else(is.na(FINANZ_FSC), 0, FINANZ_FSC),
            FINANZ_FDR = if_else(is.na(FINANZ_FDR), 0, FINANZ_FDR)) %>%
     mutate(RISORSE = FINANZ_FSC + FINANZ_FDR) %>% 
     full_join(interventi_accordi %>%
-                # filter(OC_FLAG_MONITORAGGIO == 1) %>% 
+                # filter(FLAG_MONITORAGGIO == 1 | FLAG_MONITORAGGIO == 2) %>% 
                 ungroup(.) %>% 
-                group_by(OC_CODICE_PROGRAMMA) %>%
+                group_by(OC_CODICE_PROGRAMMA, FLAG_MONITORAGGIO) %>%
                 summarise(FINANZ_FSC = sum(FINANZ_FSC, na.rm=TRUE),
                           FINANZ_FDR = sum(FINANZ_FDR, na.rm=TRUE)) %>% 
                 mutate(FINANZ_FSC = if_else(is.na(FINANZ_FSC), 0, FINANZ_FSC),
                        FINANZ_FDR = if_else(is.na(FINANZ_FDR), 0, FINANZ_FDR)) %>%
                 mutate(RISORSE = FINANZ_FSC + FINANZ_FDR),
-              by = c("OC_CODICE_PROGRAMMA"),
+              by = c("OC_CODICE_PROGRAMMA", "FLAG_MONITORAGGIO"),
               suffix = c(".dati", ".int")) %>%
     mutate(RISORSE.dati = if_else(is.na(RISORSE.dati), 0, round(RISORSE.dati, 2)),
            RISORSE.int = if_else(is.na(RISORSE.int), 0, round(RISORSE.int, 2))) %>%
-    mutate(CHK = RISORSE.int - RISORSE.dati) %>% 
-    filter(abs(CHK) > 0)
+    mutate(CHK_RISORSE = RISORSE.int - RISORSE.dati) %>% 
+    filter(abs(CHK_RISORSE) > 0)
   
   if (export==TRUE) {
     write.xlsx(out, file.path(TEMP, "chk_allineamento_interventi_accordi.xlsx"))
@@ -3168,4 +3169,43 @@ chk_totali_fsc <- function() {
   message("FSC 2014-2020: il totale di riferimento è ", chk, ", il valore nel DBCOE è ", temp1, " (la differenza è ", delta, ")")
   
   
+}
+
+
+#' Verifica allineamento totali finanziari FSC per accordi coesione
+#'
+#' Verifica allineamento del file "dati" con i totali finanziari FSC per gli accordi per la coesione
+#'
+#' @return Un messaggio di log.
+chk_totali_accordi_fsc <- function() {
+  
+  totali <- load_totali_dbcoe(DB)
+  
+  # chk totale risorse 2127 (FSC_01)
+  chk <- totali %>% filter(ID == "ACCORDI_07") %>% .$RISORSE
+  
+  appo0 <- load_db_dati(DB, "2021-2027", "FSC") 
+  
+  # dati accordi
+  appo1 <- appo0 %>% 
+    filter(CICLO_RISORSE == "2021-2027",
+           TIPOLOGIA_PROGRAMMA == "ACCORDI",
+           TIPOLOGIA_AMMINISTRAZIONE == "REGIONALE") %>% 
+    summarise(RISORSE = sum(FINANZ_FSC, na.rm=TRUE)) %>% 
+    .$RISORSE
+  
+  # dati riduzioni contate in accordi
+  appo2 <- appo0 %>% 
+    filter(CICLO_RISORSE == "2021-2027") %>%
+    filter(OC_CODICE_PROGRAMMA == "RISIDROCAL" | # forestali calabria (440 Meuro)
+           OC_CODICE_PROGRAMMA == "RID_CAMPI_REG" | # campi flegrei campania (206 Meuro)
+           OC_CODICE_PROGRAMMA == "RID_STRETTO_REG") %>% # ponte stretto messina calabria e sicilia (1.600 Meuro)
+    summarise(RISORSE = sum(FINANZ_FSC, na.rm=TRUE)) %>% 
+    .$RISORSE
+
+  temp <- appo1 + appo2
+  delta <- round(temp - chk,2)
+  
+  message("Imputazioni programmatiche accordi FSC 2021-2027: il totale di riferimento è ", chk, ", il valore nel DBCOE è ", temp, " (la differenza è ", delta, ")")
+   
 }
