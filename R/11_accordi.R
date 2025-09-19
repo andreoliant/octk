@@ -1,4 +1,5 @@
 # funzioni del blocco "accordi"
+#da aggiornare
 
 #' Carica dati interventi accordi per assegnazioni ordinarie
 #'
