@@ -1,3 +1,123 @@
+# OC > Toolkit
+# Tools
+
+
+#' Verifica sovrapposizione tra due dataset
+#'
+#' Confronta due dataset per verificare la sorapposizione e gli scarti a sinistra e destra.
+#'
+#' @param df_left Il dataset a SX.
+#' @param df_right Il dataset a DX
+#' @param id La variabile chiave per il join.
+#' @return Una matrice di controllo con le seguenti variabili:
+#'  obs: numero di osservazioni totale
+#'  obs_na: numero di obs con id missing (compreso in "obs" e complemento di "obs_n")
+#'  obs_n: numero di obs con id non missing (compreso in "obs")
+#'  obs_m: numero di obs per id molteplici (compreso in "obs_n")
+#'  id_m: numero di id multeplici (compreso in "id_n")
+chk_match <- function(df_left, df_right, id) {
+  # costruita in "match_patti.R"
+  # DEBUG:
+  # id <- "CUP"
+  # df_left <- export
+  # df_right <- appo
+  # temp <- chk_multi(df_left = export, df_right = appo, id = "CUP")
+  
+  # elimina raggruppamenti
+  df_left <- df_left %>% as_tibble()
+  df_right <- df_right %>% as_tibble()
+
+  chk_nums <- function(df, id) {
+    # require("glue")
+    # DEBUG:
+    # df <- df_left
+    # df <- df_right
+    out <- list(obs = df %>%
+                  nrow(), # numero di osservazioni totale
+
+                obs_na = df %>%
+                  select(id) %>%
+                  filter(is.na(.)) %>%
+                  nrow(), # numero di obs con id missing (compreso in "obs" e complemento di "obs_n")
+
+                obs_n = df %>%
+                  select(id) %>%
+                  filter(!(is.na(.))) %>%
+                  nrow(), # numero di obs con id non missing (compreso in "obs")
+
+                id_n = df %>%
+                  select(id) %>%
+                  distinct() %>%
+                  filter(!(is.na(.))) %>%
+                  nrow, # numero di id univoci e non missing (da confrontare con "obs_n")
+
+                obs_m = df %>%
+                  # filter(!(is.na(id))) %>% # QUESTO NON FUNZIONA PER NON STANDARD EVALUATON! >>> vignette("programming")
+                  # filter_(paste0("!is.na(", id, ")")) %>%
+                  filter_(glue::glue("!is.na({id})")) %>%
+                  group_by_(id) %>%
+                  summarise(N = n()) %>%
+                  filter(N > 1) %>%
+                  summarise(S = sum(N)) %>%
+                  .$S, # numero di obs per id molteplici (compreso in "obs_n")
+
+                id_m = df %>%
+                  filter_(glue::glue("!is.na({id})")) %>%
+                  group_by_(id) %>%
+                  summarise(N = n()) %>%
+                  filter(N > 1) %>%
+                  nrow() # numero di id multeplici (compreso in "id_n")
+
+    )
+    return(out)
+  }
+
+  chk <- list()
+  chk[["left"]] <- chk_nums(df = df_left, id = id)
+  chk[["right"]] <- chk_nums(df = df_right, id = id)
+
+  chk[["inner"]] <- chk_nums(df = df_left %>%
+                               inner_join(df_right, by = id),
+                             id = id)
+
+  chk[["semi_left"]] <- chk_nums(df = df_left %>%
+                                   semi_join(df_right, by = id),
+                                 id = id)
+
+  chk[["anti_left"]] <- chk_nums(df = df_left %>%
+                                   anti_join(df_right, by = id),
+                                 id = id)
+
+  chk[["semi_right"]] <- chk_nums(df = df_right %>%
+                                    semi_join(df_left, by = id),
+                                  id = id)
+
+  chk[["anti_right"]] <- chk_nums(df = df_right %>%
+                                    anti_join(df_left, by = id),
+                                  id = id)
+
+  out <- bind_rows(chk, .id = "area") # converte in dataframe
+  return(out)
+
+}
+
+# come faccio gli stessi chk con sum su altra variabile (es. FTP)? e per due variabili diverse in left e right?
+# come faccio gli stessi chk con count su altra variabile?
+
+
+#' Wrapper di "not in"
+#'
+#' Confronta due vettore per verificare casi "not in".
+#'
+#' @param x Vettore da verificare.
+#' @param y Vettore dei casi da ricercare nel vettore da verificare.
+#' @return Vettorelogico con lunghezza di x e valore TRUE per "not in".
+'%!in%' <- function(x, y) {
+  # c(1,2,3, 4) %!in% c(1,2, 5)
+  !('%in%'(x, y))
+}
+
+
 # Funzioni per la creazione di variabili
 # Logica: entra un df, esce lo stesso df con nuova variabile
 # Per alcune è presente anche debug_mode
@@ -51,10 +171,10 @@ get_dimensione_fin <- function(df, debug_mode=FALSE) {
   # DEBUG:
   # df <- perimetro
   # DEV: da implementare via progetti e con debug_mode (come per "get_stato_attuazione.R")
-
+  
   # load progetti
   # source("loader.R")
-
+  
   # NEW BLOCK
   if (!any(names(df) == "OC_FINANZ_TOT_PUB_NETTO")) {
     df <- df %>%
@@ -62,7 +182,7 @@ get_dimensione_fin <- function(df, debug_mode=FALSE) {
                   select(COD_LOCALE_PROGETTO, OC_FINANZ_TOT_PUB_NETTO),
                 by = "COD_LOCALE_PROGETTO")
   }
-
+  
   df <- df %>%
     # aggiunge classe dimensione finanziaria
     mutate(CLASSE_FIN = case_when(OC_FINANZ_TOT_PUB_NETTO <= 100000 ~ "0-100k",
@@ -73,10 +193,10 @@ get_dimensione_fin <- function(df, debug_mode=FALSE) {
                                   OC_FINANZ_TOT_PUB_NETTO > 5000000 & OC_FINANZ_TOT_PUB_NETTO <= 10000000 ~ "5M-10M",
                                   OC_FINANZ_TOT_PUB_NETTO > 10000000 ~ "10M-inf")) %>%
     mutate(CLASSE_FIN = factor(CLASSE_FIN, levels=c("0-100k", "100k-500k", "500k-1M", "1M-2M", "2M-5M", "5M-10M", "10M-inf")))
-
+  
   return(df)
-
-
+  
+  
 }
 
 
@@ -91,35 +211,35 @@ get_dimensione_fin <- function(df, debug_mode=FALSE) {
 #' @return Il dataset con la variabile x_REGIONE, come factor.
 get_regione_simply <- function(df, progetti, real_reg=TRUE) {
   # MEMO: deve avere struttura di progetti
-
+  
   # if (is.null(progetti)) {
   #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
   #   # if (!exists("progetti", envir = .GlobalEnv)) {
   #   #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
   #   # }
   # }
-
+  
   # NEW BLOCK
   if (!any(names(df) == "COD_REGIONE")) {
     df <- df %>%
       left_join(progetti %>%
                   select(COD_LOCALE_PROGETTO, COD_REGIONE, DEN_REGIONE, COD_PROVINCIA),
                 by = "COD_LOCALE_PROGETTO")
-
+    
   } else if (!any(names(df) == "DEN_REGIONE")) {
     df <- df %>%
       left_join(progetti %>%
                   select(COD_LOCALE_PROGETTO, DEN_REGIONE, COD_PROVINCIA),
                 by = "COD_LOCALE_PROGETTO")
   }
-
+  
   # NEW BLOCK
   if (real_reg == TRUE) {
     df <- get_real_reg(df, progetti)
     # MEMO: sovrascrive COD_REGIONE
   }
-
-
+  
+  
   # NEW BLOCK
   if (!any(names(df) == "COD_PROVINCIA")) {
     df <- df %>%
@@ -127,17 +247,17 @@ get_regione_simply <- function(df, progetti, real_reg=TRUE) {
                   select(COD_LOCALE_PROGETTO, COD_PROVINCIA),
                 by = "COD_LOCALE_PROGETTO")
   }
-
+  
   reg_cn <- c("001", "002", "003", "004", "005", "006",
               "007", "008", "009", "010", "011", "012")
   names(reg_cn) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
                      "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
-
+  
   reg_sud <- c("013", "014", "015", "016", "017", "018", "019", "020")
   names(reg_sud) <- c("ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA", "SARDEGNA")
-
+  
   temp <- c(names(reg_cn[1:3]), "PA TRENTO", "PA BOLZANO", names(reg_cn[5:12]), names(reg_sud), "ALTRO TERRITORIO")
-
+  
   # OLD:
   # regioni
   # df <- df %>%
@@ -158,7 +278,7 @@ get_regione_simply <- function(df, progetti, real_reg=TRUE) {
   #                                COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "1ML1279" ~ "PA TRENTO", # MEMO: progetto del PON AdS FSE forzato qui
   #                                TRUE ~ x_REGIONE)) %>%
   #   mutate(x_REGIONE = factor(x_REGIONE, levels = temp))
-
+  
   # regioni
   df <- df %>%
     mutate(x_REGIONE =
@@ -166,7 +286,7 @@ get_regione_simply <- function(df, progetti, real_reg=TRUE) {
                COD_REGIONE == "001" ~ "PIEMONTE",
                COD_REGIONE == "002" ~ "VALLE D'AOSTA",
                COD_REGIONE == "003" ~ "LOMBARDIA",
-
+               
                COD_REGIONE == "005" ~ "VENETO",
                COD_REGIONE == "006" ~ "FRIULI-VENEZIA GIULIA", # "FRIULI-VENEZIA GIULIA"
                COD_REGIONE == "007" ~ "LIGURIA",
@@ -183,16 +303,16 @@ get_regione_simply <- function(df, progetti, real_reg=TRUE) {
                COD_REGIONE == "017" ~ "BASILICATA",
                COD_REGIONE == "018" ~ "CALABRIA",
                COD_REGIONE == "019" ~ "SICILIA",
-
+               
                COD_PROVINCIA == "004021" ~ "PA BOLZANO",
                COD_PROVINCIA == "004022" ~ "PA TRENTO",
                COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "2BO5-1a-237" ~ "PA BOLZANO", # MEMO: progetto del POR PA Bolzano
                COD_PROVINCIA == "004000" & COD_LOCALE_PROGETTO == "1ML1279" ~ "PA TRENTO", # MEMO: progetto del PON AdS FSE forzato qui
                # COD_REGIONE == "004" ~ "PA BOLZANO", # "TRENTINO-ALTO ADIGE"
-
+               
                TRUE ~ "ALTRO TERRITORIO")) %>%
     mutate(x_REGIONE = factor(x_REGIONE, levels = temp))
-
+  
   return(df)
 }
 
@@ -212,17 +332,17 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
   # DEBUG:
   # df <- perimetro
   # DEV: da implementare via progetti e con debug_mode (come per "get_stato_attuazione.R")
-
+  
   # load progetti
   # source("loader.R")
-
+  
   if (missing(progetti)) {
     progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
     # if (!exists("progetti", envir = .GlobalEnv)) {
     #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
     # }
   }
-
+  
   # NEW BLOCK
   if (!any(names(df) == "COD_REGIONE")) {
     df <- df %>%
@@ -230,41 +350,41 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
                   select(COD_LOCALE_PROGETTO, COD_REGIONE),
                 by = "COD_LOCALE_PROGETTO")
   }
-
+  
   # NEW BLOCK
   if (real_reg == TRUE) {
     df <- get_real_reg(df, progetti)
     # MEMO: sovrascrive COD_REGIONE
   }
-
+  
   # fix per macroarea
   reg_cn <- c("001", "002", "003", "004", "005", "006",
               "007", "008", "009", "010", "011", "012")
   names(reg_cn) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
                      "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
-
+  
   reg_sud <- c("013", "014", "015", "016", "017", "018", "019", "020")
   names(reg_sud) <- c("ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA", "SARDEGNA")
-
+  
   chk_regione <- function(data_vector, test_vector) {
     # DEBUG:
     # temp <- c("001:::002", "001:::003", "001:::020")
     # chk_regione(temp, reg_cn)
     sapply(data_vector, function(x) {all(unlist(str_split(x, pattern = ":::")) %in% test_vector)})
   }
-
+  
   df <- df %>%
     mutate(x_MACROAREA = case_when(COD_REGIONE %in% reg_cn ~ "Centro-Nord",
-                                 COD_REGIONE %in% reg_sud ~ "Mezzogiorno",
-                                 COD_REGIONE == "000" ~ "Ambito nazionale", # AMBITO NAZIONALE
-                                 grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_cn) == TRUE ~ "Centro-Nord",
-                                 grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_sud) == TRUE ~ "Mezzogiorno",
-                                 grepl(":::", COD_REGIONE) ~ "Trasversale", # MEMO: multi-regionale su più macroaree
-                                 TRUE ~ "Estero")) %>%
+                                   COD_REGIONE %in% reg_sud ~ "Mezzogiorno",
+                                   COD_REGIONE == "000" ~ "Ambito nazionale", # AMBITO NAZIONALE
+                                   grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_cn) == TRUE ~ "Centro-Nord",
+                                   grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_sud) == TRUE ~ "Mezzogiorno",
+                                   grepl(":::", COD_REGIONE) ~ "Trasversale", # MEMO: multi-regionale su più macroaree
+                                   TRUE ~ "Estero")) %>%
     # mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")))
     refactor_macroarea(.)
-
-
+  
+  
   # forza Mezzogiorno per alcuni ambiti
   df <- df %>%
     as_tibble(.) %>%
@@ -273,9 +393,9 @@ get_macroarea <- function(df, progetti, real_reg=TRUE, debug_mode=FALSE) {
                                     x_CICLO == "2007-2013" & x_AMBITO == "PAC" & x_REGNAZ == "NAZ" ~ "Mezzogiorno",
                                     TRUE ~ as.character(x_MACROAREA))) %>%
     refactor_macroarea(.)
-
+  
   return(df)
-
+  
 }
 
 
@@ -292,7 +412,7 @@ get_macroarea_oc <- function(df, progetti, debug_mode=FALSE) {
   
   # DEBUG:
   # df <- progetti
-
+  
   if (!any(names(df) == "OC_MACROAREA")) {
     # if (missing(progetti)) {
     #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
@@ -311,7 +431,7 @@ get_macroarea_oc <- function(df, progetti, debug_mode=FALSE) {
                                    OC_MACROAREA == "Estero" ~ "Estero")) %>%
     # mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")))
     refactor_macroarea(.)
-
+  
   return(df)
 }
 
@@ -476,14 +596,14 @@ get_catreg_UE <- function(df, progetti=NULL, real_reg=TRUE, debug_mode=FALSE) {
   # DEBUG:
   # df <- perimetro
   # DEV: da implementare via progetti e con debug_mode (come per "get_stato_attuazione.R")
-
+  
   # load progetti
   # source("loader.R")
-
+  
   # if (is.null(progetti)) {
   #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
   # }
-
+  
   # NEW BLOCK
   if (!any(names(df) == "COD_REGIONE")) {
     df <- df %>%
@@ -491,47 +611,47 @@ get_catreg_UE <- function(df, progetti=NULL, real_reg=TRUE, debug_mode=FALSE) {
                   select(COD_LOCALE_PROGETTO, COD_REGIONE),
                 by = "COD_LOCALE_PROGETTO")
   }
-
+  
   # NEW BLOCK
   if (real_reg == TRUE) {
     df <- get_real_reg(df)
     # MEMO: sovrascrive COD_REGIONE
   }
-
+  
   # fix per macroarea
   rs <- c("001", "002", "003", "004", "005", "006",
           "007", "008", "009", "010", "011", "012")
   names(rs) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
                  "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
-
+  
   rt <- c("013", "014", "020")
   names(rt) <- c("ABRUZZO", "MOLISE", "SARDEGNA")
-
+  
   rms <- c("015", "016", "017", "018", "019")
   names(rms) <- c("CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA")
-
+  
   chk_regione <- function(data_vector, test_vector) {
     # DEBUG:
     # temp <- c("001:::002", "001:::003", "001:::020")
     # chk_regione(temp, reg_cn)
     sapply(data_vector, function(x) {all(unlist(str_split(x, pattern = ":::")) %in% test_vector)})
   }
-
+  
   df <- df %>%
     mutate(x_CATREG = case_when(COD_REGIONE %in% rs ~ "RS",
-                              COD_REGIONE %in% rt ~ "RT",
-                              COD_REGIONE %in% rms ~ "RMS",
-                              COD_REGIONE == "000" ~ "Nazionale", # AMBITO NAZIONALE
-                              grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, rs) == TRUE ~ "RS",
-                              grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, rt) == TRUE ~ "RT",
-                              grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, rms) == TRUE ~ "RMS",
-                              grepl(":::", COD_REGIONE) ~ "Trasversale", # MEMO: multi-regionale su più macroaree
-                              TRUE ~ "Estero")) %>%
+                                COD_REGIONE %in% rt ~ "RT",
+                                COD_REGIONE %in% rms ~ "RMS",
+                                COD_REGIONE == "000" ~ "Nazionale", # AMBITO NAZIONALE
+                                grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, rs) == TRUE ~ "RS",
+                                grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, rt) == TRUE ~ "RT",
+                                grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, rms) == TRUE ~ "RMS",
+                                grepl(":::", COD_REGIONE) ~ "Trasversale", # MEMO: multi-regionale su più macroaree
+                                TRUE ~ "Estero")) %>%
     mutate(x_CATREG = factor(x_CATREG, levels = c("RS", "RT", "RMS", "Trasversale", "Nazionale", "Estero")))
-
+  
   return(df)
-
-
+  
+  
 }
 
 
@@ -610,28 +730,28 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
   
   # DEBUG:
   # df <- progetti
-
+  
   temp <- names(df)
-
+  
   df <- df %>%
     left_join(octk::po_riclass %>%
                 select(-NOTE),
               by = "OC_CODICE_PROGRAMMA")
   # CHK: vedi sotto per fix, qui duplica in caso di programma FSC su 2 cicli
-
+  
   # recupera fondo comunitario da progetti (se assente in df)
   if (!(any(names(df) == "FONDO_COMUNITARIO"))) {
-
+    
     # if (is.null(progetti)) {
     #   progetti <- load_progetti(bimestre = bimestre, visualizzati=TRUE, light = FALSE)
     # }
-
+    
     df <- df %>%
       left_join(progetti %>%
                   select(COD_LOCALE_PROGETTO, FONDO_COMUNITARIO),
                 by = "COD_LOCALE_PROGETTO")
   }
-
+  
   df <- df %>%
     mutate(x_AMBITO = case_when(x_AMBITO == "FESR-FSE" ~ FONDO_COMUNITARIO, # MEMO: split per programmi pluri-fondo
                                 x_AMBITO == "YEI-FSE" ~ FONDO_COMUNITARIO,
@@ -644,17 +764,17 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
     mutate(x_AMBITO = if_else(x_AMBITO == "IOG", "YEI", x_AMBITO)) %>%
     # mutate(x_AMBITO = factor(x_AMBITO, levels = c("FESR", "FSE", "POC", "FSC", "YEI", "SNAI", "FEASR", "FEAMP", "CTE", "ORD")))
     refactor_ambito(.)
-
+  
   df <- df %>%
     filter(!(OC_CODICE_PROGRAMMA == "2016XXAMPSAP00" & x_CICLO == "2007-2013"),
            !(OC_CODICE_PROGRAMMA == "2017TOPIOMBIFSC" & x_CICLO == "2007-2013"))
   # MEMO: fix per doppio entry in po_riclass per piano dissesto
-
+  
   # octk::po_riclass %>%
   #   count(x_CICLO, OC_CODICE_PROGRAMMA) %>%
   #   count(OC_CODICE_PROGRAMMA) %>%
   #   filter(n > 1)
-
+  
   # TODO: inserire elaboraizone diretta anche su "MISTI"?
   
   if (!(any(names(df) == "OC_COD_CICLO"))) {
@@ -671,11 +791,11 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
                                x_AMBITO == "FSC" & x_GRUPPO == "PSC" & OC_COD_CICLO == 2 ~ "2014-2020",
                                x_AMBITO == "FSC" & x_GRUPPO == "PSC" & OC_COD_CICLO == 3 ~ "2021-2027",
                                TRUE ~ x_CICLO))
-
+  
   # riordina vars
   df <- df %>%
     select(temp, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ)
-
+  
   return(df)
 }
 
@@ -689,39 +809,39 @@ get_x_vars <- function(df, debug_mode=FALSE, progetti=NULL) {
 #' @return Il dataset con la variabile COD_REGIONE modificata.
 #' @note La modalità **debug** non + implementata.
 get_real_reg <- function(df, progetti, debug_mode=FALSE) {
-
+  
   # df <- progetti[1000000:1000200, c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "COD_REGIONE")]
   # df <- get_x_vars(df)
-
+  
   # MEMO: richiede e sovrascrive COD_REGIONE
   # MEMO: richiede x_REGNAZ
-
+  
   # if (missing(progetti)) {
   #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
   #   # if (!exists("progetti", envir = .GlobalEnv)) {
   #   #   progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, light = TRUE)
   #   # }
   # }
-
+  
   # NEW BLOCK
   if (!any(names(df) == "COD_REGIONE")) {
     df <- df %>%
       left_join(progetti %>%
                   select(COD_LOCALE_PROGETTO, COD_REGIONE, DEN_REGIONE),
                 by = "COD_LOCALE_PROGETTO")
-
+    
   } else if (!any(names(df) == "DEN_REGIONE")) {
     df <- df %>%
       left_join(progetti %>%
                   select(COD_LOCALE_PROGETTO, COD_REGIONE, DEN_REGIONE),
                 by = c("COD_LOCALE_PROGETTO", "COD_REGIONE"))
   }
-
+  
   # NEW BLOCK
   if (!any(names(df) == "x_CICLO")) {
     df <- get_x_vars(df)
   }
-
+  
   appo <- octk::po_riclass %>%
     filter(!is.na(OC_CODICE_PROGRAMMA)) %>%
     # select(OC_CODICE_PROGRAMMA, x_REGNAZ) %>%
@@ -751,14 +871,14 @@ get_real_reg <- function(df, progetti, debug_mode=FALSE) {
                        x_REGNAZ == "NAZ" ~ "",
                        TRUE ~ "CHK")) %>%
     select(-x_REGNAZ)
-
+  
   out <- df %>%
     # left_join(appo, by = "OC_CODICE_PROGRAMMA") %>%
     left_join(appo, by = c("x_CICLO", "OC_CODICE_PROGRAMMA")) %>%
     mutate(COD_REGIONE = case_when(COD_REGIONE_NEW == "" ~  COD_REGIONE,
                                    TRUE ~ COD_REGIONE_NEW)) %>%
     select(-COD_REGIONE_NEW)
-
+  
   return(out)
 }
 
@@ -792,7 +912,7 @@ get_simply_non_loc <- function(df) {
                                    TRUE ~ x_MACROAREA)) %>%
     # mutate(x_MACROAREA = factor(x_MACROAREA, levels = c("Centro-Nord", "Sud", "Ambito nazionale")))
     refactor_macroarea(.)
-
+  
   return(df)
 }
 
@@ -834,5 +954,65 @@ get_dim_fin <- function(df, debug_mode=FALSE) {
   
   return(df)
   
+  
+}
+
+
+
+#' Refactor di x_AMBITO
+#'
+#' Integra un perimetro di progetti con factor di x_AMBITO.
+#'
+#' @param df Dataset progetti in formato standard.
+#' @return Il dataset integrato.
+refactor_ambito <- function(df) {
+  
+  # levels_ambito <- c("FESR", "FSE", "POC", "FSC", "FEASR", "FEAMP", "YEI", "SNAI",
+  #                    "FEAD", "FAMI", "CTE", "ENI", "ORD", "PAC")
+  
+  # NEW 2127
+  levels_ambito <- c("FESR", "FESR_REACT", "FSE", "FSE_REACT", "FSE+", "FESR-FSE+", "POC", "FDR","FSC", "FEASR", "FEAMP", "YEI", "JTF", "SNAI",
+                     "FEAD", "FAMI", "CTE", "ENI", "ORD", "PAC")
+  
+  df <- df %>%
+    mutate(x_AMBITO = factor(x_AMBITO, levels = levels_ambito))
+  
+  return(df)
+  
+}
+
+
+#' Refactor di x_CICLO
+#'
+#' Integra un perimetro di progetti con factor di x_CICLO.
+#'
+#' @param df Dataset progetti in formato standard.
+#' @return Il dataset integrato.
+refactor_ciclo <- function(df) {
+  
+  levels_ciclo <- c("2021-2027", "2014-2020", "2007-2013", "2000-2006")
+  
+  df <- df %>%
+    mutate(x_CICLO = factor(x_CICLO, levels = levels_ciclo))
+  
+  return(df)
+  
+}
+
+
+#' Refactor di x_MACROAREA
+#'
+#' Integra un perimetro di progetti con factor di x_MACROAREA
+#'
+#' @param df Dataset progetti in formato standard.
+#' @return Il dataset integrato.
+refactor_macroarea <- function(df) {
+  
+  levels_macroarea <- c("Mezzogiorno", "Centro-Nord", "Ambito nazionale", "Trasversale", "Estero")
+  
+  df <- df %>%
+    mutate(x_MACROAREA = factor(x_MACROAREA, levels = levels_macroarea))
+  
+  return(df)
   
 }

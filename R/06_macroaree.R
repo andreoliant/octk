@@ -2783,3 +2783,389 @@ load_operazioni_macroaree <- function(bimestre, visualizzati=TRUE, DATA) {
   
   return(perimetro)
 }
+
+
+# VECCHIA VERSIONE DA QUI----
+
+#' Crea file di base per macroaree
+#'
+#' Crea file di base per macroaree, da operazioni, per programmim sie non react.
+#'
+#' @param operazioni Dataset di classe operazioni
+#' @param bimestre Bimestre di riferimento (serve se non è disponbile operazzoni)
+#' @param export vuoi salvare il file?
+#' @return Dataset macroaree per i report make_report_programmi_macroaree e make_report_macroaree_coesione
+setup_macroaree_sie <- function(operazioni, bimestre=NULL, export=FALSE) {
+  
+  
+  if (is.null(operazioni)) {
+    operazioni_1420_raw <- load_operazioni(bimestre) %>% 
+      filter(x_AMBITO %in% c("FSE", "FESR", "YEI"),
+             x_CICLO == "2014-2020")
+    
+  } else {
+    operazioni_1420_raw <- operazioni %>% 
+      filter(x_AMBITO %in% c("FSE", "FESR", "YEI"),
+             x_CICLO == "2014-2020")
+  }
+  
+  
+  # versione con fix di yei e react
+  # react <- operazioni_1420_raw %>% 
+  #   filter(OC_CODICE_PROGRAMMA %in% c("2014IT05M2OP001", "2014IT05M2OP002", "2014IT05M9OP001", "2014IT05SFOP001", "2014IT05SFOP001",
+  #                                     "2014IT05SFOP002", "2014IT16M2OP003", "2014IT16M2OP004", "2014IT16M2OP005", "2014IT16RFOP003"))  %>%
+  #   mutate(tot = COE_SUD + COE_CN,
+  #          chk = COE - tot) %>% 
+  #   filter(is.na(COE_SUD) & is.na(COE_CN) | COE_SUD == 0 & COE_CN == 0 | abs(chk)>0.01) %>% 
+  #   mutate(COE_SUD = case_when(x_MACROAREA == "Mezzogiorno" ~ COE,
+  #                              x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE * 0.6886, # imprese
+  #                              x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE * 0.4903,
+  #                              TRUE ~ 0),
+  #          COE_IMP_SUD = case_when(x_MACROAREA == "Mezzogiorno" ~ COE_IMP,
+  #                                  x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE_IMP * 0.6886, # imprese
+  #                                  x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE_IMP * 0.4903,
+  #                                  TRUE ~ 0),
+  #          COE_PAG_SUD = case_when(x_MACROAREA == "Mezzogiorno" ~ COE_PAG, 
+  #                                  x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE_PAG * 0.6886, # imprese
+  #                                  x_MACROAREA == "Ambito nazionale" &  OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE_PAG * 0.4903,
+  #                                  TRUE ~ 0),
+  #          COE_CN = case_when(x_MACROAREA == "Centro-Nord" ~ COE, 
+  #                             x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE * 0.3114, # imprese
+  #                             x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE * 0.5097,
+  #                             TRUE ~ 0),
+  #          COE_IMP_CN = case_when(x_MACROAREA == "Centro-Nord" ~ COE_IMP, 
+  #                                 x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE_IMP * 0.3114, # imprese
+  #                                 x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE_IMP * 0.5097,
+  #                                 TRUE ~ 0),
+  #          COE_PAG_CN = case_when(x_MACROAREA == "Centro-Nord" ~ COE_PAG, 
+  #                                 x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE_PAG * 0.3114, # imprese
+  #                                 x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE_PAG * 0.5097,
+  #                                 TRUE ~ 0))
+  # MEMO: valori calcolati da DBCOE su righe con CAT = REACT
+  # MEMO: c'è anche YEI perché presenta anomalie, su ambito YEI non ci sono valori ma ci sono su FSE
+  
+  # 4MISEAT_DGIAI_SOR
+  
+  # react <- operazioni_1420_raw %>% 
+  #   filter(OC_CODICE_PROGRAMMA %in% c("2014IT05M2OP001", "2014IT05M2OP002", "2014IT05M9OP001", "2014IT05SFOP001", "2014IT05SFOP001",
+  #                                     "2014IT05SFOP002", "2014IT16M2OP003", "2014IT16M2OP004", "2014IT16M2OP005", "2014IT16RFOP003"))  %>%
+  #   # filter(OC_CODICE_PROGRAMMA == "2014IT05M9OP001")  %>%
+  #   mutate(tot = COE_SUD + COE_CN,
+  #          chk = COE - tot) %>% 
+  #   filter(is.na(COE_SUD) & is.na(COE_CN) | COE_SUD == 0 & COE_CN == 0 | abs(chk)>1) %>% 
+  #   filter(COD_LOCALE_PROGETTO == "4MISEAT_DGIAI_SOR") %>% 
+  #   select(COD_LOCALE_PROGETTO, COE_SUD, COE_CN, COE, tot, chk)
+  
+  # versione che gestisce tutto REACT e riproporziona solo YEI
+  react <- operazioni_1420_raw %>% 
+    filter(OC_CODICE_PROGRAMMA %in% c("2014IT05M2OP001", "2014IT05M2OP002", "2014IT05M9OP001", "2014IT05SFOP001", "2014IT05SFOP001",
+                                      "2014IT05SFOP002", "2014IT16M2OP003", "2014IT16M2OP004", "2014IT16M2OP005", "2014IT16RFOP003"))  %>%
+    # filter(OC_CODICE_PROGRAMMA == "2014IT05M9OP001")  %>% #MEMO: questo è sbagliato perché altrimento perdo tutto REACT su COE_SUD e COE_CN
+    mutate(tot = COE_SUD + COE_CN,
+           chk = COE - tot) %>% 
+    # filter(is.na(COE_SUD) & is.na(COE_CN) | COE_SUD == 0 & COE_CN == 0 | abs(chk)>0.01) %>% 
+    filter(is.na(COE_SUD) & is.na(COE_CN) | COE_SUD == 0 & COE_CN == 0 | abs(chk)>1) %>% 
+    mutate(COE_SUD = case_when(x_MACROAREA == "Mezzogiorno" ~ COE,
+                               # x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE * 0.6886, # imprese
+                               x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE * 0.4903,
+                               TRUE ~ 0),
+           COE_IMP_SUD = case_when(x_MACROAREA == "Mezzogiorno" ~ COE_IMP,
+                                   # x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE_IMP * 0.6886, # imprese
+                                   x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE_IMP * 0.4903,
+                                   TRUE ~ 0),
+           COE_PAG_SUD = case_when(x_MACROAREA == "Mezzogiorno" ~ COE_PAG, 
+                                   # x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE_PAG * 0.6886, # imprese
+                                   x_MACROAREA == "Ambito nazionale" &  OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE_PAG * 0.4903,
+                                   TRUE ~ 0),
+           COE_CN = case_when(x_MACROAREA == "Centro-Nord" ~ COE, 
+                              # x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE * 0.3114, # imprese
+                              x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE * 0.5097,
+                              TRUE ~ 0),
+           COE_IMP_CN = case_when(x_MACROAREA == "Centro-Nord" ~ COE_IMP, 
+                                  # x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE_IMP * 0.3114, # imprese
+                                  x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE_IMP * 0.5097,
+                                  TRUE ~ 0),
+           COE_PAG_CN = case_when(x_MACROAREA == "Centro-Nord" ~ COE_PAG, 
+                                  # x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT16RFOP003" & x_AMBITO == "FESR" ~ COE_PAG * 0.3114, # imprese
+                                  x_MACROAREA == "Ambito nazionale" & OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & x_AMBITO == "YEI" ~ COE_PAG * 0.5097,
+                                  TRUE ~ 0))
+  
+  
+  message("Controlla se tutti i casi REACT con ambito nazionale sono mappati")
+  react %>%
+    group_by(x_MACROAREA) %>%
+    summarise(COE = sum(COE, na.rm = T),
+              COE_SUD = sum(COE_SUD, na.rm = T),
+              COE_CN = sum(COE_CN, na.rm = T))  %>%
+    mutate(tot = COE_SUD + COE_CN,
+           chk = COE - tot)
+  
+  react %>%
+    filter(x_MACROAREA == "Ambito nazionale") %>%
+    left_join(octk::po_riclass %>%
+                distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA)) %>%
+    group_by(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_AMBITO)  %>%
+    summarise(COE = sum(COE, na.rm = T),
+              COE_SUD = sum(COE_SUD, na.rm = T),
+              COE_CN = sum(COE_CN, na.rm = T))  %>%
+    mutate(tot = COE_SUD + COE_CN,
+           chk = COE - tot)
+  
+  # MEMO: tot deve valere 0
+  
+  operazioni_1420 <- operazioni_1420_raw %>% 
+    anti_join(react, by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_AMBITO")) %>% 
+    bind_rows(react)
+  
+  dim(operazioni_1420)[1] == dim(operazioni_1420_raw)[1]
+  sum(operazioni_1420$COE, na.rm = TRUE) - sum(operazioni_1420_raw$COE, na.rm = TRUE)
+  
+  
+  # pivot macroaree
+  pivo <- workflow_pivot_macroaree(operazioni_1420)
+  
+  out <- pivo %>% 
+    left_join(operazioni_1420 %>% 
+                select(-COE, -COE_IMP, -COE_PAG, -x_MACROAREA, 
+                       -costo_ammesso_MZ, -costo_ammesso_CN, -imp_ammesso_MZ, -imp_ammesso_CN, -pag_ammesso_MZ, -pag_ammesso_CN), 
+              by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_AMBITO")) 
+  
+  nrow(pivo) - nrow(out)
+  sum(pivo$COE, na.rm = TRUE) - sum(out$COE, na.rm = TRUE)
+  sum(operazioni_1420_raw$COE, na.rm = TRUE) - sum(out$COE, na.rm = TRUE)
+  # CHK:
+  # 0.08999634
+  
+  # pulisce dupli per macroaree vuote
+  out <- out %>% 
+    filter(COE != 0)
+  
+  if (export == TRUE) {
+    write_csv2(out, file.path(TEMP, "operazioni_macroaree.csv"))
+  }
+  
+  return(out)
+}
+
+
+#' Workflow per creazione file di base per macroaree
+#'
+#' Workflow per creazione file di base per macroaree.
+#' Funziona con input specifici per sie non react e per psc migrati.
+#'
+#' @param perimetro Dataset di classe operazioni
+#' @return Dataset pivot con macroaree per setup_macroaree_sie e setup_macroaree_psc
+workflow_pivot_macroaree <- function(operazioni) {
+  
+  operazioni_1420 <- operazioni
+  
+  # chk <- operazioni_1420_raw %>%
+  #   anti_join(react, by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_AMBITO")) %>% 
+  #   # filter(!(OC_CODICE_PROGRAMMA %in% c("2014IT05M2OP001", "2014IT05M2OP002", "2014IT05M9OP001", "2014IT05SFOP001", "2014IT05SFOP001",
+  #   #                                   "2014IT05SFOP002", "2014IT16M2OP003", "2014IT16M2OP004", "2014IT16M2OP005", "2014IT16RFOP003"))) %>%
+  #   
+  #   mutate_if(is.numeric, replace_na, replace = 0) %>%
+  #   # filter(is.na(COE_SUD) & is.na(COE_CN) | COE_SUD == 0 & COE_CN == 0)
+  #   mutate(tot = COE_SUD + COE_CN,
+  #          chk = COE - tot) %>%
+  #   filter(chk != 0) %>% 
+  #   select(1:28, "chk")
+  # 
+  # write.xlsx(chk, file.path(TEMP, "test.xlsx"))
+  
+  # chk %>%
+  #   left_join(octk::po_riclass %>%
+  #               distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA)) %>%
+  #   group_by(OC_CODICE_PROGRAMMA, x_PROGRAMMA) %>%
+  #   summarise(COE = sum(COE, na.rm = T),
+  #             COE_SUD = sum(COE_SUD, na.rm = T),
+  #             COE_CN = sum(COE_CN, na.rm = T))  %>%
+  #   mutate(tot = COE_SUD + COE_CN,
+  #          chk = COE - tot)
+  # # OC_CODICE_PROGRAMMA x_PROGRAMMA           COE COE_SUD COE_CN   tot   chk
+  # # <chr>               <chr>               <dbl>   <dbl>  <dbl> <dbl> <dbl>
+  # # 2014IT16M2OP002     POR PUGLIA FESR-FSE     0       0      0     0     0 #MEMO: contiene NA su COE
+  
+  appo_costo <- operazioni_1420  %>% 
+    select(COD_LOCALE_PROGETTO, 
+           OC_CODICE_PROGRAMMA,
+           x_AMBITO,
+           COE,
+           COE_SUD,
+           COE_CN) %>% 
+    mutate_if(is.numeric, replace_na, replace = 0) %>% 
+    mutate(tot = COE_SUD + COE_CN,
+           chk = COE - tot)
+  
+  appo_costo %>%
+    group_by(x_AMBITO) %>%
+    summarise_if(is.numeric, sum, na.rm = TRUE)
+  
+  # chk 
+  # chk <- appo_costo %>% 
+  #   filter(is.na(COE_SUD) & is.na(COE_CN))
+  # chk <- appo_costo %>%
+  #   filter(chk != 0 | is.na(chk)) %>%
+  #   filter(COE > 0) 
+  # chk %>%
+  #   left_join(octk::po_riclass %>% 
+  #               distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA)) %>% 
+  #   group_by(OC_CODICE_PROGRAMMA, x_PROGRAMMA) %>%
+  #   summarise_if(is.numeric, sum, na.rm = TRUE)
+  
+  pivo_costo <- appo_costo %>% 
+    select(-COE, -tot, -chk) %>% 
+    pivot_longer(cols = c(COE_SUD, COE_CN), names_to = "x_MACROAREA", values_to = "COE") %>% 
+    mutate(x_MACROAREA = case_when(x_MACROAREA == "COE_SUD" ~ "Mezzogiorno",
+                                   x_MACROAREA == "COE_CN" ~ "Centro-Nord",
+                                   TRUE ~ "CHK"))
+  
+  
+  sum(appo_costo$COE, na.rm = TRUE) - sum(operazioni_1420$COE, na.rm = TRUE)
+  sum(pivo_costo$COE, na.rm = TRUE) - sum(operazioni_1420$COE, na.rm = TRUE)
+  
+  appo_imp <- operazioni_1420 %>% 
+    select(COD_LOCALE_PROGETTO, 
+           OC_CODICE_PROGRAMMA,
+           x_AMBITO,
+           COE_IMP,
+           COE_IMP_SUD,
+           COE_IMP_CN) %>% 
+    mutate_if(is.numeric, replace_na, replace = 0) %>% 
+    mutate(tot = COE_IMP_SUD + COE_IMP_CN,
+           chk = COE_IMP - tot)
+  
+  appo_imp %>%
+    group_by(x_AMBITO) %>%
+    summarise_if(is.numeric, sum, na.rm = TRUE)
+  
+  
+  pivo_imp <- appo_imp %>% 
+    select(-COE_IMP, -tot, -chk) %>% 
+    pivot_longer(cols = c(COE_IMP_SUD, COE_IMP_CN), names_to = "x_MACROAREA", values_to = "COE_IMP") %>% 
+    mutate(x_MACROAREA = case_when(x_MACROAREA == "COE_IMP_SUD" ~ "Mezzogiorno",
+                                   x_MACROAREA == "COE_IMP_CN" ~ "Centro-Nord",
+                                   TRUE ~ "CHK"))
+  
+  appo_pag <- operazioni_1420 %>% 
+    select(COD_LOCALE_PROGETTO, 
+           OC_CODICE_PROGRAMMA,
+           x_AMBITO,
+           COE_PAG,
+           COE_PAG_SUD,
+           COE_PAG_CN) %>% 
+    mutate_if(is.numeric, replace_na, replace = 0) %>% 
+    mutate(tot = COE_PAG_SUD + COE_PAG_CN,
+           chk = COE_PAG - tot)
+  
+  appo_pag %>%
+    group_by(x_AMBITO) %>%
+    summarise_if(is.numeric, sum, na.rm = TRUE)
+  
+  pivo_pag <- appo_pag %>% 
+    select(-COE_PAG, -tot, -chk) %>% 
+    pivot_longer(cols = c(COE_PAG_SUD, COE_PAG_CN), names_to = "x_MACROAREA", values_to = "COE_PAG") %>% 
+    mutate(x_MACROAREA = case_when(x_MACROAREA == "COE_PAG_SUD" ~ "Mezzogiorno",
+                                   x_MACROAREA == "COE_PAG_CN" ~ "Centro-Nord",
+                                   TRUE ~ "CHK"))
+  
+  pivo <- pivo_costo %>% 
+    full_join(pivo_imp, by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_AMBITO", "x_MACROAREA")) %>% 
+    full_join(pivo_pag, by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_AMBITO", "x_MACROAREA"))
+  
+  # chk
+  sum(pivo$COE, na.rm = TRUE) - (sum(appo_costo$COE_SUD, na.rm = TRUE) + sum(appo_costo$COE_CN, na.rm = TRUE))
+  sum(pivo$COE_IMP, na.rm = TRUE) - (sum(appo_imp$COE_IMP_SUD, na.rm = TRUE) + sum(appo_imp$COE_IMP_CN, na.rm = TRUE))
+  sum(pivo$COE_PAG, na.rm = TRUE) - (sum(appo_pag$COE_PAG_SUD, na.rm = TRUE) + sum(appo_pag$COE_PAG_CN, na.rm = TRUE))
+  
+  return(pivo)
+  
+}
+
+
+#' Corregge progetti con macroaree da livelli gerarchici in operazioni
+#'
+#' Corregge progetti con macroaree da livelli gerarchici in operazioni
+#'
+#' @param bimestre Bimestre di riferimento
+#' @param progetti Dataset di classe "progetti".
+#' @param operazioni Dataset di classe "operazioni"
+#' @param export vuoi salvare il file?
+#' @return Dataset macroaree per i report make_report_programmi_macroaree e make_report_macroaree_coesione
+fix_macroaree_progetti_sie <- function(bimestre, progetti, operazioni, export=FALSE) {
+  
+  # DEV: funzione da mettere dentro make_report_programmi_macroaree per usare add_totali e cp2
+  
+  # loads
+  if (is.null(operazioni)) {
+    operazioni <- load_operazioni(bimestre)
+  } 
+  
+  macroaree <- setup_macroaree_sie(bimestre, operazioni)
+  # MEMO: da qui escono solo righe react informato long
+  
+  if (is.null(progetti)) {
+    progetti <- load_progetti(bimestre, light = TRUE, refactor = TRUE)
+  }
+  
+  # elab
+  # macroaree_gpd <- macroaree %>% 
+  #   group_by(COD_LOCALE_PROGETTO) %>% 
+  #   summarise(n_MACROAREA = paste(x_MACROAREA, collapse = ":::")) %>% 
+  #   mutate(n_MACROAREA = if_else(n_MACROAREA == "Mezzogiorno:::Mezzogiorno", "Mezzogiorno", n_MACROAREA))
+  # 
+  macroaree %>% 
+    count(x_MACROAREA)
+  
+  macroaree_pesi <- macroaree %>% 
+    select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_MACROAREA, COE) %>% 
+    mutate(x_MACROAREA = case_when(x_MACROAREA == "Centro-Nord" ~ "CN",
+                                   x_MACROAREA == "Mezzogiorno" ~ "SUD")) %>% 
+    # pivot_wider(id_cols = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA"), names_from = x_MACROAREA, values_from = COE)
+    group_by(COD_LOCALE_PROGETTO, x_MACROAREA) %>% 
+    summarise(COE = sum(COE, na.rm = TRUE)) %>% 
+    pivot_wider(id_cols = COD_LOCALE_PROGETTO, names_from = x_MACROAREA, values_from = COE) %>% 
+    mutate_if(is.numeric, replace_na, replace = 0) %>% 
+    mutate(tot = SUD + CN,
+           peso_SUD = SUD/tot,
+           peso_CN = CN/tot)
+  # MEMO: c'è solo un caso che appartiene a due programmi (9CA20003AP000000001), calcolo pesi su aggregazione per match con progetti
+  # macroaree_pesi %>% count(COD_LOCALE_PROGETTO) %>% filter(n > 1)
+  
+  appo <- progetti %>% 
+    select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_MACROAREA, OC_FINANZ_TOT_PUB_NETTO, IMPEGNI, TOT_PAGAMENTI) %>% 
+    inner_join(macroaree_pesi %>% 
+                 select(COD_LOCALE_PROGETTO, peso_SUD, peso_CN),
+               by = "COD_LOCALE_PROGETTO") %>% 
+    mutate(CHK = case_when(peso_SUD > 0 & peso_CN > 0 ~ "SUD:::CN",
+                           peso_SUD > 0 ~ "SUD",
+                           peso_CN > 0 ~ "CN"))
+  
+  appo1 <- appo %>% 
+    separate_rows(CHK, sep = ":::") %>% 
+    # sovrascrivo macroarea
+    mutate(x_MACROAREA = case_when(CHK == "SUD" ~ "Mezzogiorno",
+                                   CHK == "CN" ~ "Centro-Nord")) %>% 
+    # ricalcolo variabili finanziarie
+    mutate(CP = case_when(CHK == "SUD" ~ OC_FINANZ_TOT_PUB_NETTO * peso_SUD,
+                          CHK == "CN" ~ OC_FINANZ_TOT_PUB_NETTO * peso_CN),
+           IMP = case_when(CHK == "SUD" ~ IMPEGNI * peso_SUD,
+                           CHK == "CN" ~ IMPEGNI * peso_CN),
+           PAG = case_when(CHK == "SUD" ~ TOT_PAGAMENTI * peso_SUD,
+                           CHK == "CN" ~ TOT_PAGAMENTI * peso_CN))
+  
+  
+  sum(appo1$CP, na.rm = T) - sum(appo$OC_FINANZ_TOT_PUB_NETTO, na.rm = T)
+  
+  out <- appo1 %>% 
+    select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_MACROAREA,  CP, IMP, PAG)
+  
+  # export
+  if (export == TRUE) {
+    write_csv2(out, file.path(TEMP, "progetti_macroaree.csv"))
+  }
+  return(out)
+}
+
+
+
