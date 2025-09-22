@@ -8,7 +8,7 @@
 #' @param progetti File di tipo progetti da load_progetti(light=FALSE, visualizzati=FALSE)
 #' @param operazioni_713 File di tipo operazioni da flusso sas/dataiku.
 #' @return Il dataset viene salvato in DATA e può essere caricato con load_progetti(light = TRUE).
-setup_progetti_light <- function(bimestre, progetti, operazioni_713, fix = FALSE) {
+setup_progetti <- function(bimestre, progetti, operazioni_713, fix = FALSE) {
   if (exists("DATA", envir = .GlobalEnv)) {
     # loads
     # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
@@ -300,124 +300,9 @@ fix_progetti <- function(progetti) {
                                          OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & FONDO_COMUNITARIO == "FSE:::IOG" ~ "YEI",
                                          OC_CODICE_PROGRAMMA == "2014IT05M9OP001" & FONDO_COMUNITARIO == "IOG" ~ "YEI",
                                          TRUE ~ FONDO_COMUNITARIO))
-  
-  # # fix snai
-  # if (!(is.null(path_snai))) {
-  #   progetti <- fix_snai(progetti, path_snai)
-  # }
-  
+
   return(progetti)
 }
-
-
-#' Fix variabili SNAI
-#'
-#' Fix temporaneo per integrare le variabili SNAI (COD_AREA_INT e AREA_INTERNA) dal file di Andrea
-#'
-#' @param progetti Dataset in formato standard.
-#' @return Il dataset progetti integrato.
-fix_snai <- function(progetti, path_snai) {
-  
-  message("------------enter fix snai")
-  # path_snai <- "ELAB/20211031/SNAI/snai/V.01/output/perimetro_snai.xlsx"
-  snai <- read_xlsx(file.path(DRIVE, path_snai)) %>% 
-    # select(COD_LOCALE_PROGETTO, SNAI_OC, COD_AREA_INT, AREA_INTERNA) %>% 
-    distinct(COD_LOCALE_PROGETTO, SNAI_OC, COD_AREA_INT, AREA_INTERNA) %>%
-    filter(SNAI_OC == 1) %>% 
-    select(-SNAI_OC)
-  
-  # fix temporaneo
-  progetti <- progetti %>%
-    left_join(snai, by = "COD_LOCALE_PROGETTO")
-  
-  return(progetti)
-}
-
-
-#' Carica il dataset progetti
-#'
-#' Carica il file progetti_esteso_$BIMESTRE.csv dal folder DATI.
-#'
-#' @param bimestre Stringa in formato "20180630" come da standard per le date in OC.
-#' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
-#' @param debug Logico. Vuoi vedere i totali di progetti e costo pubblico per controllo sul portale OC?
-#' @param light Logico. Vuoi usare la versione light di "progetti.csv"?
-#' @return Il dataset viene caricato come "progetti" nel Global Environment. Se "progetti" è gia presente compare una notifica.
-load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FALSE, light=FALSE, refactor=FALSE)
-{
-  # if (exists("progetti", envir = .GlobalEnv)) {
-  #   print("Progetti esteso è gia caricato")
-  #   progetti <- progetti
-  #
-  # } else {
-
-    # switch di filename per progetti_light
-    if (light == TRUE) {
-      temp <- paste0("progetti_light_", bimestre, ".csv")
-
-    } else {
-      if (as.numeric(bimestre) <= 20181231) {
-        temp <- paste0("progetti_esteso_", bimestre, ".csv")
-
-      } else {
-        temp <- "PROGETTI_PREESTESO.csv"
-      }
-    }
-
-    # switch
-    if (!is.null(data_path)) {
-      DATA <- data_path
-      # MEMO: sovrascrive data_path a DATA
-    } else {
-      # #OLD: questo non aveva senso perché era pleonastico perché risultava "/home/antonio/dati/oc/20210228/../20210228"
-      # data_path=file.path(DATA, "..", bimestre)
-      # DATA <- data_path
-      # # MEMO: questo serve per puntare a bimestre specifico senza modificare data_path
-      DATA <- DATA
-    }
-
-    # load progetti
-    if (visualizzati == TRUE) {
-      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000) %>%
-      #   filter(OC_FLAG_VISUALIZZAZIONE == 0)
-      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1200000) %>%
-      #   filter(OC_FLAG_VISUALIZZAZIONE == 0)
-      progetti <- read_csv2(file.path(DATA, temp), guess_max = 1800000) %>%
-        filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9 | OC_FLAG_VISUALIZZAZIONE == 10) # include progetti FEASR per SNAI e i progetti visualizzati ma accorpati codice 10
-      # CHK: progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 9) %>% count(X_AMBITO)
-    } else {
-      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000)
-      progetti <- read_csv2(file.path(DATA, temp), guess_max = 1800000)
-      # progetti <- read_csv2(file.path(DATA, temp), col_types = col_types)
-      
-      # MEMO: qui prende anche non visualizzati
-    }
-
-    # analisi tipologia colonne
-    # sapply(names(progetti), function(x) {print(paste0(x, " = ", class(progetti[[x]])))})
-
-    # refactor
-    # MEMO: si applica solo a light
-    if (light == TRUE & refactor == TRUE) {
-      progetti <- refactor_progetti(progetti)
-    }
-
-    # debug
-    if (debug == TRUE) {
-      msg <- progetti %>%
-        summarise(N = n(),
-                  CP = sum(OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE))
-      message(paste0("Progetti esteso contiene ", format(msg$N, big.mark = ".", decimal.mark = ","),
-                     " progetti per un costo pubblico totale di ",
-                     format(round(msg$CP/1000000000, 1), big.mark = ".", decimal.mark = ","),
-                     " miliardi di euro."))
-    }
-    return(progetti)
-  # }
-}
-
-
-
 
 
 #' Refactor per perimetro di progetti
@@ -450,14 +335,14 @@ refactor_progetti <- function(perimetro) {
 
 #' Carica il dataset progetti
 #'
-#' Carica il file progetti_esteso_$BIMESTRE.csv dal folder DATI. Versione post dataiku.
+#' Carica il file progetti_esteso_$BIMESTRE.csv dal folder DATI.
 #'
 #' @param bimestre Stringa in formato "20180630" come da standard per le date in OC.
 #' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
 #' @param debug Logico. Vuoi vedere i totali di progetti e costo pubblico per controllo sul portale OC?
 #' @param light Logico. Vuoi usare la versione light di "progetti.csv"?
 #' @return Il dataset viene caricato come "progetti" nel Global Environment. Se "progetti" è gia presente compare una notifica.
-load_progetti_dataiku <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FALSE, light=FALSE, refactor=FALSE)
+load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FALSE, light=FALSE, refactor=FALSE)
 {
   # if (exists("progetti", envir = .GlobalEnv)) {
   #   print("Progetti esteso è gia caricato")
