@@ -70,11 +70,11 @@ load_db_accordi <- function(DB) {
     interventi <- read_xlsx(file_accordi, guess_max=100000)
   } else {
     # Altrimenti, procedi con il caricamento dei singoli file
-    appo1 <- load_db_accordi_ordinarie(DB)
-    appo2 <- load_db_accordi_anticipazioni(DB)
-    appo3 <- load_db_accordi_complementari(DB)
-    appo4 <- load_db_accordi_completamenti(DB)
-    appo5 <- load_db_accordi_cofinanziamenti(DB)
+    appo1 <- load_db_accordi_ordinarie(DB=DB) #%>% mutate(COD_PROCED_ATTIVAZIONE = as.character(COD_PROCED_ATTIVAZIONE))
+    appo2 <- load_db_accordi_anticipazioni(DB=DB) #%>% mutate(COD_PROCED_ATTIVAZIONE = as.character(COD_PROCED_ATTIVAZIONE))
+    appo3 <- load_db_accordi_complementari(DB=DB) #%>% mutate(COD_PROCED_ATTIVAZIONE = as.character(COD_PROCED_ATTIVAZIONE))
+    appo4 <- load_db_accordi_completamenti(DB=DB) #%>% mutate(COD_PROCED_ATTIVAZIONE = as.character(COD_PROCED_ATTIVAZIONE))
+    appo5 <- load_db_accordi_cofinanziamenti(DB=DB) #%>% mutate(COD_PROCED_ATTIVAZIONE = as.character(COD_PROCED_ATTIVAZIONE))
     
     interventi <- appo1 %>% 
       bind_rows(appo2) %>% 
