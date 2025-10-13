@@ -362,7 +362,7 @@ write_table_to_wb <- function(
     } else if (is_int_col(x)) {
       # formatC(x, digits = 0, format = "f",
       #         big.mark = ".", decimal.mark = "")
-      formatC(x, format = "d", big.mark = ".")
+      formatC(x, format = "d", big.mark = ".", decimal.mark = "")
     } else if (is.numeric(x)) {
       formatC(x, digits = 2, format = "f",
               big.mark = ".", decimal.mark = ",")
@@ -518,7 +518,7 @@ write_tables_to_wb <- function(
     if (is_pct_col(name, x)) {
       paste0(round(x * 100), "%")
     } else if (is_int_col(name, x)) {
-      formatC(x, format = "d", big.mark = ".")
+      formatC(x, format = "d", big.mark = ".", decimal.mark = "")
     } else if (is.numeric(x)) {
       formatC(x, digits = 2, format = "f",
               big.mark = ".", decimal.mark = ",")
@@ -896,3 +896,1023 @@ style_date2 <- createStyle(numFmt = "DATE")
 
 # format automatico per righe e colonne
 # TODO: copia da 20240831 > DEV > PNRR > schede aacc
+
+
+
+
+
+
+
+
+
+
+#' Scrive N tabelle verticali in un foglio Excel usando openxlsx
+#'
+#' @param wb          workbook openxlsx già creato
+#' @param tables      lista di data.frame; ogni elemento è una tabella da incollare
+#' @param title       character(1) – titolo generale del foglio (prima riga)
+#' @param subtitles   character vector – titoli specifici per ciascuna tabella
+#' @param sources     character vector o NULL – fonte per ciascuna tabella
+#' @param note        character(1) o NULL – nota finale (dopo l’ultima tabella)
+#' @param sheet_name  nome del foglio (se non esiste viene creato)
+#' @param start_row   riga dell’header blu (default 4)
+#' @param gap_rows    righe vuote fra una tabella e la successiva (default 1)
+#' @param header_df   opzionale: data-frame con colonne name / label / (formula|formule)
+#' @param apply_labels se TRUE applica i label presenti in header_df
+#' @return workbook invisibile (wb)
+#' @export
+write_tables_to_wb_2 <- function(
+    wb,
+    tables,
+    title,
+    subtitles,
+    sources = NULL,
+    note = NULL,
+    sheet_name = "Foglio1",
+    start_row  = 4,      # riga header blu della 1ª tabella
+    gap_rows   = 1,      # righe bianche fra tabelle
+    header_df  = NULL,
+    apply_labels = TRUE
+) {
+  # ── 0) prerequisiti & helper ---------------------------------------------------
+  if (!requireNamespace("openxlsx", quietly = TRUE))
+    stop("Serve il pacchetto 'openxlsx'.")
+  
+  `%||%` <- function(a, b) if (!is.null(a) && nzchar(a)) a else b
+  
+  is_int_col <- function(nm, x) {
+    if (!is.numeric(x)) return(FALSE)
+    nm <- toupper(nm)
+    is_integer_type <- typeof(x) == "integer"
+    name_hint <- grepl("^(N|ID|COUNT|TOT)$|_N$", nm)
+    is_integer_type || name_hint
+  }
+  
+  is_pct_col <- function(nm, x) {
+    nm <- tolower(nm)
+    if (grepl("%|perc|pct|p_", nm)) return(TRUE)
+    if (!is.numeric(x)) return(FALSE)
+    rng <- range(x, na.rm = TRUE)
+    if (rng[1] < 0 || rng[2] > 1) return(FALSE)
+    any(x != 0 & x != 1, na.rm = TRUE)
+  }
+  
+  fmt_val <- function(x, name) {
+    if (is_pct_col(name, x)) {
+      paste0(round(x * 100), "%")
+    } else if (is_int_col(name, x)) {
+      formatC(x, format = "d", big.mark = ".", decimal.mark = "")
+    } else if (is.numeric(x)) {
+      formatC(x, digits = 2, format = "f", big.mark = ".", decimal.mark = ",")
+    } else {
+      as.character(x)
+    }
+  }
+  
+  lines_needed <- function(text, col_width)
+    ceiling(nchar(text, type = "width") / pmax(col_width, 1))
+  
+  # ── 1) input ---------------------------------------------------
+  if (!is.list(tables) || length(tables) == 0)
+    stop("`tables` deve essere una lista di data.frame.")
+  if (!all(vapply(tables, is.data.frame, logical(1))))
+    stop("Tutti gli elementi di `tables` devono essere data.frame.")
+  
+  n_tables  <- length(tables)
+  subtitles <- rep_len(subtitles, n_tables)
+  sources   <- rep_len(sources,   n_tables)
+  
+  # ── 2) label opzionali + lookup formule ---------------------------------
+  formula_col <- NULL
+  if (!is.null(header_df)) {
+    if (!all(c("name", "label") %in% names(header_df)))
+      stop("`header_df` deve avere colonne 'name' e 'label'.")
+    # supporto sia 'formula' che 'formule'
+    if ("formula" %in% names(header_df)) formula_col <- "formula"
+    if (is.null(formula_col) && "formule" %in% names(header_df)) formula_col <- "formule"
+    
+    if (apply_labels) {
+      for (tbl in tables) {
+        hdr_sub <- header_df[header_df$name %in% names(tbl), , drop = FALSE]
+        mapply(function(nm, lb) attr(tbl[[nm]], "label") <<- lb,
+               hdr_sub$name, hdr_sub$label)
+      }
+    }
+  }
+  
+  # ── 3) foglio ------------------------------------------------------------
+  if (!(sheet_name %in% openxlsx::sheets(wb)))
+    openxlsx::addWorksheet(wb, sheet_name)
+  openxlsx::showGridLines(wb, sheet_name, showGridLines = FALSE)
+  
+  # ── 4) stili -------------------------------------------------------------
+  titleStyle    <- openxlsx::createStyle(fontSize = 14, textDecoration = "bold",
+                                         halign = "left", wrapText = FALSE)
+  subtitleStyle <- openxlsx::createStyle(fontSize = 12, textDecoration = "bold",
+                                         halign = "left", wrapText = FALSE)
+  
+  headBlue <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                    fgFill = "#4F81BD", fontColour = "#FFFFFF",
+                                    halign = "center", valign = "center",
+                                    wrapText = TRUE,
+                                    border = c("top","bottom","left","right"))
+  headGrey <- openxlsx::createStyle(fontSize = 10, textDecoration = "bold",
+                                    fgFill = "#D9D9D9",
+                                    halign = "center", valign = "center",
+                                    wrapText = TRUE,
+                                    border = c("top","bottom","left","right"))
+  formulaStyle <- openxlsx::createStyle(fontSize = 10,
+                                        textDecoration = "italic",
+                                        fgFill = "#EEEEEE",
+                                        halign = "center", valign = "center",
+                                        border = c("top","bottom","left","right"))
+  
+  dataText <- openxlsx::createStyle(border = c("top","bottom","left","right"))
+  dataInt  <- openxlsx::createStyle(numFmt = "#,##0",
+                                    border = c("top","bottom","left","right"))
+  dataNum  <- openxlsx::createStyle(numFmt = "#,##0.00",
+                                    border = c("top","bottom","left","right"))
+  dataPct  <- openxlsx::createStyle(numFmt = "0%",
+                                    border = c("top","bottom","left","right"))
+  
+  totalBorder <- openxlsx::createStyle(border = c("top","bottom","left","right"))
+  totalText   <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       halign = "left")
+  totalInt    <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       numFmt = "#,##0",   halign = "right")
+  totalNum    <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       numFmt = "#,##0.00", halign = "right")
+  totalPct    <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       numFmt = "0%",       halign = "right")
+  
+  sourceStyle <- openxlsx::createStyle(fontSize = 9, textDecoration = "italic",
+                                       halign = "left", wrapText = FALSE)
+  noteStyle   <- openxlsx::createStyle(fontSize = 9, textDecoration = "italic",
+                                       halign = "left", wrapText = FALSE)
+  
+  # ── 5) titolo globale ----------------------------------------------------
+  openxlsx::writeData(wb, sheet_name, title, startRow = 1, startCol = 1)
+  openxlsx::addStyle(wb, sheet_name, titleStyle, rows = 1, cols = 1)
+  
+  # ── 6) loop tabelle ------------------------------------------------------
+  current_row <- start_row - 1                 # riga del 1° sottotitolo
+  max_cols    <- max(vapply(tables, ncol, integer(1)))
+  col_widths  <- numeric(max_cols)             # larghezze cumulative
+  
+  for (i in seq_len(n_tables)) {
+    df       <- tables[[i]]
+    ncol_df  <- ncol(df)
+    nrow_df  <- nrow(df)
+    
+    subtitle_row <- current_row
+    hdr1         <- subtitle_row + 1           # riga blu
+    hdr2         <- subtitle_row + 2           # riga grigia
+    formula_row  <- subtitle_row + 3           # riga “formule” (testo)
+    data_start   <- subtitle_row + 4           # inizio dati
+    data_end     <- data_start + nrow_df - 1   # fine dati (incluso eventuale Totale)
+    source_row   <- data_end + 1               # riga fonte (subito dopo i dati)
+    
+    # 6a) sottotitolo
+    openxlsx::writeData(wb, sheet_name, subtitles[i],
+                        startRow = subtitle_row, startCol = 1)
+    openxlsx::addStyle(wb, sheet_name, subtitleStyle,
+                       rows = subtitle_row, cols = 1)
+    
+    # 6b) header doppio
+    desc <- vapply(names(df), function(nm) {
+      if (!is.null(header_df) && nm %in% header_df$name) {
+        lab <- header_df$label[match(nm, header_df$name)]
+        if (!is.null(lab) && nzchar(lab)) return(lab)
+      }
+      lb <- attr(df[[nm]], "label", exact = TRUE)
+      if (!is.null(lb) && nzchar(lb)) lb else toupper(nm)
+    }, character(1))
+    
+    names_uc <- toupper(names(df))
+    
+    openxlsx::writeData(wb, sheet_name, as.list(desc),
+                        startRow = hdr1, startCol = 1, colNames = FALSE)
+    openxlsx::writeData(wb, sheet_name, as.list(names_uc),
+                        startRow = hdr2, startCol = 1, colNames = FALSE)
+    openxlsx::addStyle(wb, sheet_name, headBlue,
+                       rows = hdr1, cols = 1:ncol_df, gridExpand = TRUE)
+    openxlsx::addStyle(wb, sheet_name, headGrey,
+                       rows = hdr2, cols = 1:ncol_df, gridExpand = TRUE)
+    
+    # 6c) riga “formule” (nuovo: prende testo da header_df$formula/formule)
+    formula_labels <- rep("", ncol_df)
+    if (!is.null(header_df) && !is.null(formula_col)) {
+      m <- match(names(df), header_df$name)
+      has <- !is.na(m)
+      txt <- rep("", length(m))
+      txt[has] <- header_df[[formula_col]][m[has]]
+      # normalizzo NAs e stringhe vuote
+      txt[is.na(txt)] <- ""
+      formula_labels <- as.character(txt)
+    }
+    openxlsx::writeData(wb, sheet_name, as.list(formula_labels),
+                        startRow = formula_row, startCol = 1, colNames = FALSE)
+    openxlsx::addStyle(wb, sheet_name, formulaStyle,
+                       rows = formula_row, cols = 1:ncol_df, gridExpand = TRUE)
+    
+    # 6d) dati
+    openxlsx::writeData(wb, sheet_name, df,
+                        startRow = data_start, startCol = 1,
+                        colNames = FALSE, rowNames = FALSE)
+    
+    # stili celle dati
+    for (j in seq_along(df)) {
+      nm <- names(df)[j]
+      x  <- df[[j]]
+      st <- if (is_pct_col(nm, x)) {
+        dataPct
+      } else if (is.numeric(x)) {
+        if (is_int_col(nm, x)) dataInt else dataNum
+      } else {
+        dataText
+      }
+      openxlsx::addStyle(wb, sheet_name, st,
+                         rows = data_start:data_end, cols = j,
+                         gridExpand = TRUE, stack = TRUE)
+    }
+    
+    # 6e) totali (nuovo: niente formule Excel; uso l’ultima riga se 1a colonna = "Totale")
+    if (nrow_df > 0) {
+      first_col_vals <- df[[1]]
+      last_is_total <- is.character(first_col_vals) &&
+        grepl("^\\s*totale\\s*$", tail(first_col_vals, 1), ignore.case = TRUE)
+      if (last_is_total) {
+        total_row_idx <- data_end
+        # bordo su tutta la riga dei totali
+        openxlsx::addStyle(wb, sheet_name, totalBorder,
+                           rows = total_row_idx, cols = 1:ncol_df, gridExpand = TRUE)
+        # prima colonna: testo in bold
+        openxlsx::addStyle(wb, sheet_name, totalText,
+                           rows = total_row_idx, cols = 1, stack = TRUE)
+        # altre colonne: formattazione numerica da “totale”
+        for (j in 2:ncol_df) {
+          nm <- names(df)[j]
+          if (is.numeric(df[[j]])) {
+            st_tot <- if (is_pct_col(nm, df[[j]])) {
+              totalPct
+            } else if (is_int_col(nm, df[[j]])) {
+              totalInt
+            } else {
+              totalNum
+            }
+            openxlsx::addStyle(wb, sheet_name, st_tot,
+                               rows = total_row_idx, cols = j, stack = TRUE)
+          }
+        }
+      }
+    }
+    
+    # 6f) fonte
+    if (!is.null(sources[i]) && nzchar(sources[i])) {
+      openxlsx::writeData(wb, sheet_name, paste0("Fonte: ", sources[i]),
+                          startRow = source_row, startCol = 1)
+      openxlsx::addStyle(wb, sheet_name, sourceStyle,
+                         rows = source_row, cols = 1)
+    } else {
+      source_row <- data_end  # nessuna riga addizionale se non c'è la fonte
+    }
+    
+    # 6g) larghezze colonne (accumulate)
+    for (j in seq_along(df)) {
+      vals <- fmt_val(df[[j]], names(df)[j])
+      vals <- vals[!is.na(vals) & vals != ""]
+      # se l’ultima riga è un “Totale” numerico, è già dentro ai vals
+      max_char <- if (length(vals)) max(nchar(vals, type = "width")) else 0
+      width_tmp <- ceiling(max_char * 1.1) + 2
+      if (is.numeric(df[[j]])) {
+        width_tmp <- max(width_tmp, 12)
+      } else {
+        width_tmp <- max(width_tmp, 10)
+      }
+      width_tmp <- min(width_tmp, 50)
+      col_widths[j] <- max(col_widths[j], width_tmp, na.rm = TRUE)
+    }
+    
+    # 6h) altezze dinamiche header
+    eff_w <- col_widths[seq_len(ncol_df)]
+    eff_w[eff_w == 0] <- 10
+    eff_w[1] <- max(eff_w[1], 15)
+    
+    extra <- 0.25
+    h_desc <- max(mapply(lines_needed, desc,     eff_w)); h_desc <- ceiling(h_desc + extra)
+    h_name <- max(mapply(lines_needed, names_uc, eff_w)); h_name <- ceiling(h_name + extra)
+    
+    openxlsx::setRowHeights(wb, sheet_name, rows = hdr1,
+                            heights = 15 + (h_desc - 1) * 15)
+    openxlsx::setRowHeights(wb, sheet_name, rows = hdr2,
+                            heights = 15 + (h_name - 1) * 15)
+    openxlsx::setRowHeights(wb, sheet_name, rows = formula_row, heights = 15)
+    
+    # 6i) riga successiva
+    current_row <- source_row + 1 + gap_rows
+  }
+  
+  # ── 7) nota finale -------------------------------------------------------
+  if (!is.null(note) && nzchar(note)) {
+    openxlsx::writeData(wb, sheet_name, note,
+                        startRow = current_row, startCol = 1)
+    openxlsx::addStyle(wb, sheet_name, noteStyle,
+                       rows = current_row, cols = 1)
+  }
+  
+  # ── 8) applico larghezze colonne ----------------------------------------
+  col_widths[col_widths == 0] <- 10
+  col_widths[1] <- max(col_widths[1], 15)
+  openxlsx::setColWidths(wb, sheet_name,
+                         cols = seq_along(col_widths),
+                         widths = pmax(col_widths, 10))
+  
+  invisible(wb)
+}
+
+
+
+#' Scrive N tabelle verticali in un foglio Excel usando openxlsx
+#'
+#' @param wb          workbook openxlsx già creato
+#' @param tables      lista di data.frame; ogni elemento è una tabella da incollare
+#' @param title       character(1) – titolo generale del foglio (prima riga)
+#' @param subtitles   character vector – titoli specifici per ciascuna tabella
+#' @param sources     character vector o NULL – fonte per ciascuna tabella
+#' @param note        character(1) o NULL – nota finale (dopo l’ultima tabella)
+#' @param sheet_name  nome del foglio (se non esiste viene creato)
+#' @param start_row   riga dell’header blu (default 4)
+#' @param gap_rows    righe vuote fra una tabella e la successiva (default 1)
+#' @param header_df   opzionale: data-frame con colonne name / label / (formula|formule)
+#' @param apply_labels se TRUE applica i label presenti in header_df
+#' @param total_regex regex per riconoscere Totali/Subtotali nella prima colonna
+#'        (default: inizio riga con "totale" o "subtotale", case-insensitive)
+#' @return workbook invisibile (wb)
+#' @export
+write_tables_to_wb_3_old <- function(
+    wb,
+    tables,
+    title,
+    subtitles,
+    sources = NULL,
+    note = NULL,
+    sheet_name = "Foglio1",
+    start_row  = 4,      # riga header blu della 1ª tabella
+    gap_rows   = 1,      # righe bianche fra tabelle
+    header_df  = NULL,
+    apply_labels = TRUE,
+    total_regex = "^(?i)\\s*(?:sub)?totale\\b"
+) {
+  # ── 0) prerequisiti & helper ---------------------------------------------------
+  if (!requireNamespace("openxlsx", quietly = TRUE))
+    stop("Serve il pacchetto 'openxlsx'.")
+  
+  `%||%` <- function(a, b) if (!is.null(a) && nzchar(a)) a else b
+  
+  is_int_col <- function(nm, x) {
+    if (!is.numeric(x)) return(FALSE)
+    nm <- toupper(nm)
+    is_integer_type <- typeof(x) == "integer"
+    name_hint <- grepl("^(N|ID|COUNT|TOT)$|_N$", nm)
+    is_integer_type || name_hint
+  }
+  
+  is_pct_col <- function(nm, x) {
+    nm <- tolower(nm)
+    if (grepl("%|perc|pct|p_", nm)) return(TRUE)
+    if (!is.numeric(x)) return(FALSE)
+    rng <- range(x, na.rm = TRUE)
+    if (rng[1] < 0 || rng[2] > 1) return(FALSE)
+    any(x != 0 & x != 1, na.rm = TRUE)
+  }
+  
+  fmt_val <- function(x, name) {
+    if (is_pct_col(name, x)) {
+      paste0(round(x * 100), "%")
+    } else if (is_int_col(name, x)) {
+      formatC(x, format = "d", big.mark = ".", decimal.mark = "")
+    } else if (is.numeric(x)) {
+      formatC(x, digits = 2, format = "f", big.mark = ".", decimal.mark = ",")
+    } else {
+      as.character(x)
+    }
+  }
+  
+  lines_needed <- function(text, col_width)
+    ceiling(nchar(text, type = "width") / pmax(col_width, 1))
+  
+  # NUOVO: helper per righe Totale/Subtotale basato sulla prima colonna
+  is_total_like <- function(x, rx) {
+    x_chr <- trimws(as.character(x))
+    nz <- nzchar(x_chr)
+    out <- rep(FALSE, length(x_chr))
+    out[nz] <- grepl(rx, x_chr[nz], perl = TRUE)
+    out
+  }
+  
+  # ── 1) input ---------------------------------------------------
+  if (!is.list(tables) || length(tables) == 0)
+    stop("`tables` deve essere una lista di data.frame.")
+  if (!all(vapply(tables, is.data.frame, logical(1))))
+    stop("Tutti gli elementi di `tables` devono essere data.frame.")
+  
+  n_tables  <- length(tables)
+  subtitles <- rep_len(subtitles, n_tables)
+  sources   <- rep_len(sources,   n_tables)
+  
+  # ── 2) label opzionali + lookup formule ---------------------------------
+  formula_col <- NULL
+  if (!is.null(header_df)) {
+    if (!all(c("name", "label") %in% names(header_df)))
+      stop("`header_df` deve avere colonne 'name' e 'label'.")
+    # supporto sia 'formula' che 'formule'
+    if ("formula" %in% names(header_df)) formula_col <- "formula"
+    if (is.null(formula_col) && "formule" %in% names(header_df)) formula_col <- "formule"
+    
+    if (apply_labels) {
+      for (tbl in tables) {
+        hdr_sub <- header_df[header_df$name %in% names(tbl), , drop = FALSE]
+        mapply(function(nm, lb) attr(tbl[[nm]], "label") <<- lb,
+               hdr_sub$name, hdr_sub$label)
+      }
+    }
+  }
+  
+  # ── 3) foglio ------------------------------------------------------------
+  if (!(sheet_name %in% openxlsx::sheets(wb)))
+    openxlsx::addWorksheet(wb, sheet_name)
+  openxlsx::showGridLines(wb, sheet_name, showGridLines = FALSE)
+  
+  # ── 4) stili -------------------------------------------------------------
+  titleStyle    <- openxlsx::createStyle(fontSize = 14, textDecoration = "bold",
+                                         halign = "left", wrapText = FALSE)
+  subtitleStyle <- openxlsx::createStyle(fontSize = 12, textDecoration = "bold",
+                                         halign = "left", wrapText = FALSE)
+  
+  headBlue <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                    fgFill = "#4F81BD", fontColour = "#FFFFFF",
+                                    halign = "center", valign = "center",
+                                    wrapText = TRUE,
+                                    border = c("top","bottom","left","right"))
+  headGrey <- openxlsx::createStyle(fontSize = 10, textDecoration = "bold",
+                                    fgFill = "#D9D9D9",
+                                    halign = "center", valign = "center",
+                                    wrapText = TRUE,
+                                    border = c("top","bottom","left","right"))
+  formulaStyle <- openxlsx::createStyle(fontSize = 10,
+                                        textDecoration = "italic",
+                                        fgFill = "#EEEEEE",
+                                        halign = "center", valign = "center",
+                                        border = c("top","bottom","left","right"))
+  
+  dataText <- openxlsx::createStyle(border = c("top","bottom","left","right"))
+  dataInt  <- openxlsx::createStyle(numFmt = "#,##0",
+                                    border = c("top","bottom","left","right"))
+  dataNum  <- openxlsx::createStyle(numFmt = "#,##0.00",
+                                    border = c("top","bottom","left","right"))
+  dataPct  <- openxlsx::createStyle(numFmt = "0%",
+                                    border = c("top","bottom","left","right"))
+  
+  totalBorder <- openxlsx::createStyle(border = c("top","bottom","left","right"))
+  totalText   <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       halign = "left")
+  totalInt    <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       numFmt = "#,##0",   halign = "right")
+  totalNum    <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       numFmt = "#,##0.00", halign = "right")
+  totalPct    <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       numFmt = "0%",       halign = "right")
+  
+  sourceStyle <- openxlsx::createStyle(fontSize = 9, textDecoration = "italic",
+                                       halign = "left", wrapText = FALSE)
+  noteStyle   <- openxlsx::createStyle(fontSize = 9, textDecoration = "italic",
+                                       halign = "left", wrapText = FALSE)
+  
+  # ── 5) titolo globale ----------------------------------------------------
+  openxlsx::writeData(wb, sheet_name, title, startRow = 1, startCol = 1)
+  openxlsx::addStyle(wb, sheet_name, titleStyle, rows = 1, cols = 1)
+  
+  # ── 6) loop tabelle ------------------------------------------------------
+  current_row <- start_row - 1                 # riga del 1° sottotitolo
+  max_cols    <- max(vapply(tables, ncol, integer(1)))
+  col_widths  <- numeric(max_cols)             # larghezze cumulative
+  
+  for (i in seq_len(n_tables)) {
+    df       <- tables[[i]]
+    ncol_df  <- ncol(df)
+    nrow_df  <- nrow(df)
+    
+    subtitle_row <- current_row
+    hdr1         <- subtitle_row + 1           # riga blu
+    hdr2         <- subtitle_row + 2           # riga grigia
+    formula_row  <- subtitle_row + 3           # riga “formule” (testo)
+    data_start   <- subtitle_row + 4           # inizio dati
+    data_end     <- data_start + nrow_df - 1   # fine dati (incluso eventuale Totale)
+    source_row   <- data_end + 1               # riga fonte (subito dopo i dati)
+    
+    # 6a) sottotitolo
+    openxlsx::writeData(wb, sheet_name, subtitles[i],
+                        startRow = subtitle_row, startCol = 1)
+    openxlsx::addStyle(wb, sheet_name, subtitleStyle,
+                       rows = subtitle_row, cols = 1)
+    
+    # 6b) header doppio
+    desc <- vapply(names(df), function(nm) {
+      if (!is.null(header_df) && nm %in% header_df$name) {
+        lab <- header_df$label[match(nm, header_df$name)]
+        if (!is.null(lab) && nzchar(lab)) return(lab)
+      }
+      lb <- attr(df[[nm]], "label", exact = TRUE)
+      if (!is.null(lb) && nzchar(lb)) lb else toupper(nm)
+    }, character(1))
+    
+    names_uc <- toupper(names(df))
+    
+    openxlsx::writeData(wb, sheet_name, as.list(desc),
+                        startRow = hdr1, startCol = 1, colNames = FALSE)
+    openxlsx::writeData(wb, sheet_name, as.list(names_uc),
+                        startRow = hdr2, startCol = 1, colNames = FALSE)
+    openxlsx::addStyle(wb, sheet_name, headBlue,
+                       rows = hdr1, cols = 1:ncol_df, gridExpand = TRUE)
+    openxlsx::addStyle(wb, sheet_name, headGrey,
+                       rows = hdr2, cols = 1:ncol_df, gridExpand = TRUE)
+    
+    # 6c) riga “formule” (testo da header_df$formula/formule)
+    formula_labels <- rep("", ncol_df)
+    if (!is.null(header_df) && !is.null(formula_col)) {
+      m <- match(names(df), header_df$name)
+      has <- !is.na(m)
+      txt <- rep("", length(m))
+      txt[has] <- header_df[[formula_col]][m[has]]
+      txt[is.na(txt)] <- ""
+      formula_labels <- as.character(txt)
+    }
+    openxlsx::writeData(wb, sheet_name, as.list(formula_labels),
+                        startRow = formula_row, startCol = 1, colNames = FALSE)
+    openxlsx::addStyle(wb, sheet_name, formulaStyle,
+                       rows = formula_row, cols = 1:ncol_df, gridExpand = TRUE)
+    
+    # 6d) dati
+    openxlsx::writeData(wb, sheet_name, df,
+                        startRow = data_start, startCol = 1,
+                        colNames = FALSE, rowNames = FALSE)
+    
+    # stili celle dati
+    for (j in seq_along(df)) {
+      nm <- names(df)[j]
+      x  <- df[[j]]
+      st <- if (is_pct_col(nm, x)) {
+        dataPct
+      } else if (is.numeric(x)) {
+        if (is_int_col(nm, x)) dataInt else dataNum
+      } else {
+        dataText
+      }
+      openxlsx::addStyle(wb, sheet_name, st,
+                         rows = data_start:data_end, cols = j,
+                         gridExpand = TRUE, stack = TRUE)
+    }
+    
+    # 6e) totali + SUB-TOTALI: applica stili a tutte le righe che matchano total_regex
+    if (nrow_df > 0) {
+      idx_totlike <- which(is_total_like(df[[1]], total_regex))
+      if (length(idx_totlike)) {
+        for (k in idx_totlike) {
+          total_row_idx <- data_start + k - 1
+          
+          # bordo su tutta la riga dei (sub)totali
+          openxlsx::addStyle(wb, sheet_name, totalBorder,
+                             rows = total_row_idx, cols = 1:ncol_df, gridExpand = TRUE)
+          # prima colonna bold left
+          openxlsx::addStyle(wb, sheet_name, totalText,
+                             rows = total_row_idx, cols = 1, stack = TRUE)
+          
+          # altre colonne: stile numerico da totale
+          for (j in 2:ncol_df) {
+            if (is.numeric(df[[j]])) {
+              nm <- names(df)[j]
+              st_tot <- if (is_pct_col(nm, df[[j]])) {
+                totalPct
+              } else if (is_int_col(nm, df[[j]])) {
+                totalInt
+              } else {
+                totalNum
+              }
+              openxlsx::addStyle(wb, sheet_name, st_tot,
+                                 rows = total_row_idx, cols = j, stack = TRUE)
+            }
+          }
+        }
+      }
+    }
+    
+    # 6f) fonte
+    if (!is.null(sources[i]) && nzchar(sources[i])) {
+      openxlsx::writeData(wb, sheet_name, paste0("Fonte: ", sources[i]),
+                          startRow = source_row, startCol = 1)
+      openxlsx::addStyle(wb, sheet_name, sourceStyle,
+                         rows = source_row, cols = 1)
+    } else {
+      source_row <- data_end  # nessuna riga addizionale se non c'è la fonte
+    }
+    
+    # 6g) larghezze colonne (accumulate)
+    for (j in seq_along(df)) {
+      vals <- fmt_val(df[[j]], names(df)[j])
+      vals <- vals[!is.na(vals) & vals != ""]
+      max_char <- if (length(vals)) max(nchar(vals, type = "width")) else 0
+      width_tmp <- ceiling(max_char * 1.1) + 2
+      if (is.numeric(df[[j]])) {
+        width_tmp <- max(width_tmp, 12)
+      } else {
+        width_tmp <- max(width_tmp, 10)
+      }
+      width_tmp <- min(width_tmp, 50)
+      col_widths[j] <- max(col_widths[j], width_tmp, na.rm = TRUE)
+    }
+    
+    # 6h) altezze dinamiche header
+    eff_w <- col_widths[seq_len(ncol_df)]
+    eff_w[eff_w == 0] <- 10
+    eff_w[1] <- max(eff_w[1], 15)
+    
+    extra <- 0.25
+    h_desc <- max(mapply(lines_needed, desc,     eff_w)); h_desc <- ceiling(h_desc + extra)
+    h_name <- max(mapply(lines_needed, names_uc, eff_w)); h_name <- ceiling(h_name + extra)
+    
+    openxlsx::setRowHeights(wb, sheet_name, rows = hdr1,
+                            heights = 15 + (h_desc - 1) * 15)
+    openxlsx::setRowHeights(wb, sheet_name, rows = hdr2,
+                            heights = 15 + (h_name - 1) * 15)
+    openxlsx::setRowHeights(wb, sheet_name, rows = formula_row, heights = 15)
+    
+    # 6i) riga successiva
+    current_row <- source_row + 1 + gap_rows
+  }
+  
+  # ── 7) nota finale -------------------------------------------------------
+  if (!is.null(note) && nzchar(note)) {
+    openxlsx::writeData(wb, sheet_name, note,
+                        startRow = current_row, startCol = 1)
+    openxlsx::addStyle(wb, sheet_name, noteStyle,
+                       rows = current_row, cols = 1)
+  }
+  
+  # ── 8) applico larghezze colonne ----------------------------------------
+  col_widths[col_widths == 0] <- 10
+  col_widths[1] <- max(col_widths[1], 15)
+  openxlsx::setColWidths(wb, sheet_name,
+                         cols = seq_along(col_widths),
+                         widths = pmax(col_widths, 10))
+  
+  invisible(wb)
+}
+
+
+
+#' Scrive N tabelle verticali in un foglio Excel usando openxlsx
+#'
+#' @param wb          workbook openxlsx già creato
+#' @param tables      lista di data.frame; ogni elemento è una tabella da incollare
+#' @param title       character(1) – titolo generale del foglio (prima riga)
+#' @param subtitles   character vector – titoli specifici per ciascuna tabella
+#' @param sources     character vector o NULL – fonte per ciascuna tabella
+#' @param note        character(1) o NULL – nota finale (dopo l’ultima tabella)
+#' @param sheet_name  nome del foglio (se non esiste viene creato)
+#' @param start_row   riga dell’header blu (default 4)
+#' @param gap_rows    righe vuote fra una tabella e la successiva (default 1)
+#' @param header_df   opzionale: data-frame con colonne name / label / (formula|formule)
+#' @param apply_labels se TRUE applica i label presenti in header_df
+#' @param total_regex regex per riconoscere Totali/Subtotali nella prima colonna
+#'        (default: inizio riga con "totale" o "subtotale", case-insensitive)
+#' @return workbook invisibile (wb)
+#' @export
+write_tables_to_wb_3 <- function(
+    wb,
+    tables,
+    title,
+    subtitles,
+    sources = NULL,
+    note = NULL,
+    sheet_name = "Foglio1",
+    start_row  = 4,      # riga header blu della 1ª tabella
+    gap_rows   = 1,      # righe bianche fra tabelle
+    header_df  = NULL,
+    apply_labels = TRUE,
+    total_regex = "^(?i)\\s*(?:sub)?totale\\b"
+) {
+  # ── 0) prerequisiti & helper ---------------------------------------------------
+  if (!requireNamespace("openxlsx", quietly = TRUE))
+    stop("Serve il pacchetto 'openxlsx'.")
+  
+  `%||%` <- function(a, b) if (!is.null(a) && nzchar(a)) a else b
+  
+  is_int_col <- function(nm, x) {
+    if (!is.numeric(x)) return(FALSE)
+    nm <- toupper(nm)
+    is_integer_type <- typeof(x) == "integer"
+    name_hint <- grepl("^(N|ID|COUNT|TOT)$|_N$", nm)
+    is_integer_type || name_hint
+  }
+  
+  is_pct_col <- function(nm, x) {
+    nm <- tolower(nm)
+    if (grepl("%|perc|pct|p_", nm)) return(TRUE)
+    if (!is.numeric(x)) return(FALSE)
+    rng <- range(x, na.rm = TRUE)
+    if (rng[1] < 0 || rng[2] > 1) return(FALSE)
+    any(x != 0 & x != 1, na.rm = TRUE)
+  }
+  
+  fmt_val <- function(x, name) {
+    if (is_pct_col(name, x)) {
+      paste0(round(x * 100), "%")
+    } else if (is_int_col(name, x)) {
+      formatC(x, format = "d", big.mark = ".", decimal.mark = "")
+    } else if (is.numeric(x)) {
+      formatC(x, digits = 2, format = "f", big.mark = ".", decimal.mark = ",")
+    } else {
+      as.character(x)
+    }
+  }
+  
+  lines_needed <- function(text, col_width)
+    ceiling(nchar(text, type = "width") / pmax(col_width, 1))
+  
+  # NUOVO: helper per righe Totale/Subtotale basato sulla prima colonna
+  is_total_like <- function(x, rx) {
+    x_chr <- trimws(as.character(x))
+    nz <- nzchar(x_chr)
+    out <- rep(FALSE, length(x_chr))
+    out[nz] <- grepl(rx, x_chr[nz], perl = TRUE)
+    out
+  }
+  
+  # ── 1) input ---------------------------------------------------
+  if (!is.list(tables) || length(tables) == 0)
+    stop("`tables` deve essere una lista di data.frame.")
+  if (!all(vapply(tables, is.data.frame, logical(1))))
+    stop("Tutti gli elementi di `tables` devono essere data.frame.")
+  
+  n_tables  <- length(tables)
+  subtitles <- rep_len(subtitles, n_tables)
+  sources   <- rep_len(sources,   n_tables)
+  
+  # ── 2) label opzionali + lookup formule ---------------------------------
+  formula_col <- NULL
+  if (!is.null(header_df)) {
+    if (!all(c("name", "label") %in% names(header_df)))
+      stop("`header_df` deve avere colonne 'name' e 'label'.")
+    # supporto sia 'formula' che 'formule'
+    if ("formula" %in% names(header_df)) formula_col <- "formula"
+    if (is.null(formula_col) && "formule" %in% names(header_df)) formula_col <- "formule"
+    
+    if (apply_labels) {
+      for (tbl in tables) {
+        hdr_sub <- header_df[header_df$name %in% names(tbl), , drop = FALSE]
+        mapply(function(nm, lb) attr(tbl[[nm]], "label") <<- lb,
+               hdr_sub$name, hdr_sub$label)
+      }
+    }
+  }
+  
+  # ── 3) foglio ------------------------------------------------------------
+  if (!(sheet_name %in% openxlsx::sheets(wb)))
+    openxlsx::addWorksheet(wb, sheet_name)
+  openxlsx::showGridLines(wb, sheet_name, showGridLines = FALSE)
+  
+  # ── 4) stili -------------------------------------------------------------
+  titleStyle    <- openxlsx::createStyle(fontSize = 14, textDecoration = "bold",
+                                         halign = "left", wrapText = FALSE)
+  subtitleStyle <- openxlsx::createStyle(fontSize = 12, textDecoration = "bold",
+                                         halign = "left", wrapText = FALSE)
+  
+  headBlue <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                    fgFill = "#4F81BD", fontColour = "#FFFFFF",
+                                    halign = "center", valign = "center",
+                                    wrapText = TRUE,
+                                    border = c("top","bottom","left","right"))
+  headGrey <- openxlsx::createStyle(fontSize = 10, textDecoration = "bold",
+                                    fgFill = "#D9D9D9",
+                                    halign = "center", valign = "center",
+                                    wrapText = TRUE,
+                                    border = c("top","bottom","left","right"))
+  formulaStyle <- openxlsx::createStyle(fontSize = 8,
+                                        textDecoration = "italic",
+                                        fgFill = "#EEEEEE",
+                                        halign = "center", valign = "center",
+                                        border = c("top","bottom","left","right"))
+  
+  dataText <- openxlsx::createStyle(border = c("top","bottom","left","right"))
+  dataInt  <- openxlsx::createStyle(numFmt = "#,##0",
+                                    border = c("top","bottom","left","right"))
+  dataNum  <- openxlsx::createStyle(numFmt = "#,##0.00",
+                                    border = c("top","bottom","left","right"))
+  dataPct  <- openxlsx::createStyle(numFmt = "0%",
+                                    border = c("top","bottom","left","right"))
+  
+  totalBorder <- openxlsx::createStyle(border = c("top","bottom","left","right"))
+  totalText   <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       halign = "left")
+  totalInt    <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       numFmt = "#,##0",   halign = "right")
+  totalNum    <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       numFmt = "#,##0.00", halign = "right")
+  totalPct    <- openxlsx::createStyle(fontSize = 11, textDecoration = "bold",
+                                       numFmt = "0%",       halign = "right")
+  
+  sourceStyle <- openxlsx::createStyle(fontSize = 9, textDecoration = "italic",
+                                       halign = "left", wrapText = FALSE)
+  noteStyle   <- openxlsx::createStyle(fontSize = 9, textDecoration = "italic",
+                                       halign = "left", wrapText = FALSE)
+  
+  # ── 5) titolo globale ----------------------------------------------------
+  openxlsx::writeData(wb, sheet_name, title, startRow = 1, startCol = 1)
+  openxlsx::addStyle(wb, sheet_name, titleStyle, rows = 1, cols = 1)
+  
+  # ── 6) loop tabelle ------------------------------------------------------
+  current_row <- start_row - 1                 # riga del 1° sottotitolo
+  max_cols    <- max(vapply(tables, ncol, integer(1)))
+  col_widths  <- numeric(max_cols)             # larghezze cumulative
+  
+  for (i in seq_len(n_tables)) {
+    df       <- tables[[i]]
+    ncol_df  <- ncol(df)
+    nrow_df  <- nrow(df)
+    
+    subtitle_row <- current_row
+    hdr1         <- subtitle_row + 1           # riga blu
+    hdr2         <- subtitle_row + 2           # riga grigia
+    formula_row  <- subtitle_row + 3           # riga “formule” (testo)
+    data_start   <- subtitle_row + 4           # inizio dati
+    data_end     <- data_start + nrow_df - 1   # fine dati (incluso eventuale Totale)
+    source_row   <- data_end + 1               # riga fonte (subito dopo i dati)
+    
+    # 6a) sottotitolo
+    openxlsx::writeData(wb, sheet_name, subtitles[i],
+                        startRow = subtitle_row, startCol = 1)
+    openxlsx::addStyle(wb, sheet_name, subtitleStyle,
+                       rows = subtitle_row, cols = 1)
+    
+    # 6b) header doppio
+    desc <- vapply(names(df), function(nm) {
+      if (!is.null(header_df) && nm %in% header_df$name) {
+        lab <- header_df$label[match(nm, header_df$name)]
+        if (!is.null(lab) && nzchar(lab)) return(lab)
+      }
+      lb <- attr(df[[nm]], "label", exact = TRUE)
+      if (!is.null(lb) && nzchar(lb)) lb else toupper(nm)
+    }, character(1))
+    
+    names_uc <- toupper(names(df))
+    
+    openxlsx::writeData(wb, sheet_name, as.list(desc),
+                        startRow = hdr1, startCol = 1, colNames = FALSE)
+    openxlsx::writeData(wb, sheet_name, as.list(names_uc),
+                        startRow = hdr2, startCol = 1, colNames = FALSE)
+    openxlsx::addStyle(wb, sheet_name, headBlue,
+                       rows = hdr1, cols = 1:ncol_df, gridExpand = TRUE)
+    openxlsx::addStyle(wb, sheet_name, headGrey,
+                       rows = hdr2, cols = 1:ncol_df, gridExpand = TRUE)
+    
+    # 6c) riga “formule” (testo da header_df$formula/formule)
+    formula_labels <- rep("", ncol_df)
+    if (!is.null(header_df) && !is.null(formula_col)) {
+      m <- match(names(df), header_df$name)
+      has <- !is.na(m)
+      txt <- rep("", length(m))
+      txt[has] <- header_df[[formula_col]][m[has]]
+      txt[is.na(txt)] <- ""
+      formula_labels <- as.character(txt)
+    }
+    openxlsx::writeData(wb, sheet_name, as.list(formula_labels),
+                        startRow = formula_row, startCol = 1, colNames = FALSE)
+    openxlsx::addStyle(wb, sheet_name, formulaStyle,
+                       rows = formula_row, cols = 1:ncol_df, gridExpand = TRUE)
+    
+    # 6d) dati
+    openxlsx::writeData(wb, sheet_name, df,
+                        startRow = data_start, startCol = 1,
+                        colNames = FALSE, rowNames = FALSE)
+    
+    # stili celle dati
+    for (j in seq_along(df)) {
+      nm <- names(df)[j]
+      x  <- df[[j]]
+      st <- if (is_pct_col(nm, x)) {
+        dataPct
+      } else if (is.numeric(x)) {
+        if (is_int_col(nm, x)) dataInt else dataNum
+      } else {
+        dataText
+      }
+      openxlsx::addStyle(wb, sheet_name, st,
+                         rows = data_start:data_end, cols = j,
+                         gridExpand = TRUE, stack = TRUE)
+    }
+    
+    # 6e) totali + SUB-TOTALI: applica stili a tutte le righe che matchano total_regex
+    if (nrow_df > 0) {
+      idx_totlike <- which(is_total_like(df[[1]], total_regex))
+      if (length(idx_totlike)) {
+        for (k in idx_totlike) {
+          total_row_idx <- data_start + k - 1
+          
+          # bordo su tutta la riga dei (sub)totali
+          openxlsx::addStyle(wb, sheet_name, totalBorder,
+                             rows = total_row_idx, cols = 1:ncol_df, gridExpand = TRUE)
+          # prima colonna bold left
+          openxlsx::addStyle(wb, sheet_name, totalText,
+                             rows = total_row_idx, cols = 1, stack = TRUE)
+          
+          # altre colonne: stile numerico da totale
+          for (j in 2:ncol_df) {
+            if (is.numeric(df[[j]])) {
+              nm <- names(df)[j]
+              st_tot <- if (is_pct_col(nm, df[[j]])) {
+                totalPct
+              } else if (is_int_col(nm, df[[j]])) {
+                totalInt
+              } else {
+                totalNum
+              }
+              openxlsx::addStyle(wb, sheet_name, st_tot,
+                                 rows = total_row_idx, cols = j, stack = TRUE)
+            }
+          }
+        }
+      }
+    }
+    
+    # 6f) fonte
+    if (!is.null(sources[i]) && nzchar(sources[i])) {
+      openxlsx::writeData(wb, sheet_name, paste0("Fonte: ", sources[i]),
+                          startRow = source_row, startCol = 1)
+      openxlsx::addStyle(wb, sheet_name, sourceStyle,
+                         rows = source_row, cols = 1)
+    } else {
+      source_row <- data_end  # nessuna riga addizionale se non c'è la fonte
+    }
+    
+    # 6g) larghezze colonne (accumulate) — includi ANCHE la riga "formule"
+    for (j in seq_along(df)) {
+      # dati formattati
+      vals <- fmt_val(df[[j]], names(df)[j])
+      vals <- vals[!is.na(vals) & vals != ""]
+      data_chars <- if (length(vals)) max(nchar(vals, type = "width")) else 0L
+      
+      # testo formule per la colonna j (stringa singola)
+      fl <- if (!is.null(formula_labels) && length(formula_labels) >= j) formula_labels[j] else ""
+      if (is.na(fl)) fl <- ""
+      formula_chars <- nchar(fl, type = "width")
+      
+      max_char <- max(data_chars, formula_chars, na.rm = TRUE)
+      
+      # margini e limiti come già facevi
+      width_tmp <- ceiling(max_char * 1.10) + 2
+      if (is.numeric(df[[j]])) {
+        width_tmp <- max(width_tmp, 12)
+      } else {
+        width_tmp <- max(width_tmp, 10)
+      }
+      width_tmp <- min(width_tmp, 50)
+      
+      col_widths[j] <- max(col_widths[j], width_tmp, na.rm = TRUE)
+    }
+    
+    # 6h) altezze dinamiche header
+    eff_w <- col_widths[seq_len(ncol_df)]
+    eff_w[eff_w == 0] <- 10
+    eff_w[1] <- max(eff_w[1], 15)
+    
+    extra <- 0.25
+    h_desc <- max(mapply(lines_needed, desc,     eff_w)); h_desc <- ceiling(h_desc + extra)
+    h_name <- max(mapply(lines_needed, names_uc, eff_w)); h_name <- ceiling(h_name + extra)
+    
+    openxlsx::setRowHeights(wb, sheet_name, rows = hdr1,
+                            heights = 15 + (h_desc - 1) * 15)
+    openxlsx::setRowHeights(wb, sheet_name, rows = hdr2,
+                            heights = 15 + (h_name - 1) * 15)
+    openxlsx::setRowHeights(wb, sheet_name, rows = formula_row, heights = 15)
+    
+    # 6i) riga successiva
+    current_row <- source_row + 1 + gap_rows
+  }
+  
+  # ── 7) nota finale -------------------------------------------------------
+  if (!is.null(note) && nzchar(note)) {
+    openxlsx::writeData(wb, sheet_name, note,
+                        startRow = current_row, startCol = 1)
+    openxlsx::addStyle(wb, sheet_name, noteStyle,
+                       rows = current_row, cols = 1)
+  }
+  
+  # ── 8) applico larghezze colonne ----------------------------------------
+  col_widths[col_widths == 0] <- 10
+  col_widths[1] <- max(col_widths[1], 15)
+  openxlsx::setColWidths(wb, sheet_name,
+                         cols = seq_along(col_widths),
+                         widths = pmax(col_widths, 10))
+  
+  invisible(wb)
+}
