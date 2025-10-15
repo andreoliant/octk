@@ -42,7 +42,7 @@ workflow_cis <- function(bimestre, interventi, operazioni, ritardi=NULL, debug=F
     mutate(RISORSE_COE = case_when(AMBITO == "FSC" ~ FINANZ_FSC,
                                    AMBITO == "FESR" ~ FINANZ_UE,
                                    AMBITO == "PAC" ~ FINANZ_FDR,
-                                   AMBITO == "PNRR" ~ FINANZ_PNRR,
+                                   # AMBITO == "PNRR" ~ FINANZ_PNRR,
                                    TRUE ~ 0),
            RISORSE_TOT = FINANZ_TOT) %>% 
     select(ID, CIS, TIPO_CIS, CUP, COD_LOCALE_PROGETTO, AMBITO, OC_CODICE_PROGRAMMA, x_PROGRAMMA=DESCRIZIONE_PROGRAMMA, 
@@ -528,8 +528,9 @@ make_report_cis_bkp01 <- function(bimestre, analisi) {
 #' @param bimestre Bimestre di OpenCoesione
 #' @param analisi Analisi interventi CIS con programmazione, attuazione e ritardi da workflow_cis()
 #' @param setup_risk Vuoi esportare anche i report per la verifia dei rischi di attuazione a partire dall'analisi dei ritardi?
+#' @param setup_summary Vuoi esportare anche il riepilogo per tutti i CIS?
 #' @return Per ogni CIS, un dossier excel in OUTPUT/dossier
-make_report_cis <- function(bimestre, analisi, setup_risk=FALSE) {
+make_report_cis <- function(bimestre, analisi, setup_risk=FALSE, setup_summary=FALSE) {
   
   # DEBUG:
   # cis <- "CIS VOLARE"
@@ -889,121 +890,121 @@ make_report_cis <- function(bimestre, analisi, setup_risk=FALSE) {
   # sintesi
   print("Sintesi per tutti i CIS")
   
-  
-  # sintesi per cis
-  sintesi_cis_1 <- analisi %>% 
-    group_by(CIS) %>% 
-    summarise(N = n(),
-              RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE), 
-              COE = sum(COE, na.rm = TRUE), 
-              COE_IMP = sum(COE_IMP, na.rm = TRUE),
-              COE_PAG = sum(COE_PAG, na.rm = TRUE),
-              RISORSE_TOT = sum(RISORSE_TOT, na.rm = TRUE),
-              CP = sum(CP, na.rm = TRUE), 
-              IMP = sum(IMP, na.rm = TRUE),
-              PAG = sum(PAG, na.rm = TRUE)) %>% 
-    mutate(p_COE = if_else(RISORSE_COE == 0, 0, round(COE/RISORSE_COE, 2)),
-           p_COE_IMP = if_else(RISORSE_COE == 0, 0, round(COE_IMP/RISORSE_COE, 2)),
-           p_COE_PAG = if_else(RISORSE_COE == 0, 0, round(COE_PAG/RISORSE_COE, 2)),
-           p_CP = if_else(RISORSE_TOT == 0, 0, round(CP/RISORSE_TOT, 2)),
-           p_IMP = if_else(RISORSE_TOT == 0, 0, round(IMP/RISORSE_TOT, 2)),
-           p_PAG = if_else(RISORSE_TOT == 0, 0, round(PAG/RISORSE_TOT, 2))) %>% 
-    select(CIS, 
-           N, RISORSE_COE, COE, p_COE, COE_IMP, p_COE_IMP, COE_PAG, p_COE_PAG,
-           RISORSE_TOT, CP, p_CP, IMP, p_IMP, PAG, p_PAG) 
-  
-
-  sintesi_cis_2 <- analisi %>% 
-    group_by(x_STATO_PROCEDURALE, CIS) %>% 
-    summarise(RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE)) %>% 
-    pivot_wider(id_cols = "CIS", names_from = "x_STATO_PROCEDURALE", 
-                names_expand = TRUE,
-                values_from = "RISORSE_COE", values_fill = 0)
-  
-  
-  sintesi_cis_3 <- analisi %>% 
-    group_by(CHK_RITARDO, CIS) %>% 
-    summarise(RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE)) %>% 
-    pivot_wider(id_cols = "CIS", names_from = "CHK_RITARDO", 
-                names_expand = TRUE,
-                values_from = "RISORSE_COE", values_fill = 0)
-  
-  
-  # sintesi per programma
-  programmi_cis_1 <- analisi %>% 
-    group_by(CIS, AMBITO, OC_CODICE_PROGRAMMA, x_PROGRAMMA) %>% 
-    summarise(N = n(),
-              RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE), 
-              COE = sum(COE, na.rm = TRUE), 
-              COE_IMP = sum(COE_IMP, na.rm = TRUE),
-              COE_PAG = sum(COE_PAG, na.rm = TRUE),
-              RISORSE_TOT = sum(RISORSE_TOT, na.rm = TRUE),
-              CP = sum(CP, na.rm = TRUE), 
-              IMP = sum(IMP, na.rm = TRUE),
-              PAG = sum(PAG, na.rm = TRUE)) %>% 
-    mutate(p_COE = if_else(RISORSE_COE == 0, 0, round(COE/RISORSE_COE, 2)),
-           p_COE_IMP = if_else(RISORSE_COE == 0, 0, round(COE_IMP/RISORSE_COE, 2)),
-           p_COE_PAG = if_else(RISORSE_COE == 0, 0, round(COE_PAG/RISORSE_COE, 2)),
-           p_CP = if_else(RISORSE_TOT == 0, 0, round(CP/RISORSE_TOT, 2)),
-           p_IMP = if_else(RISORSE_TOT == 0, 0, round(IMP/RISORSE_TOT, 2)),
-           p_PAG = if_else(RISORSE_TOT == 0, 0, round(PAG/RISORSE_TOT, 2))) %>% 
-    select(CIS, AMBITO, OC_CODICE_PROGRAMMA, x_PROGRAMMA, 
-           N, RISORSE_COE, COE, p_COE, COE_IMP, p_COE_IMP, COE_PAG, p_COE_PAG,
-           RISORSE_TOT, CP, p_CP, IMP, p_IMP, PAG, p_PAG)
-  
-  programmi_cis_2 <- analisi %>% 
-    group_by(x_STATO_PROCEDURALE, CIS, AMBITO, OC_CODICE_PROGRAMMA, x_PROGRAMMA) %>% 
-    summarise(RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE)) %>% 
-    pivot_wider(id_cols = c("CIS", "AMBITO", "OC_CODICE_PROGRAMMA", "x_PROGRAMMA"), names_from = "x_STATO_PROCEDURALE", 
-                names_expand = TRUE,
-                values_from = "RISORSE_COE", values_fill = 0)
-  
-  programmi_cis_3 <- analisi %>% 
-    group_by(CHK_RITARDO, CIS, AMBITO, OC_CODICE_PROGRAMMA, x_PROGRAMMA) %>% 
-    summarise(RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE)) %>% 
-    pivot_wider(id_cols = c("CIS", "AMBITO", "OC_CODICE_PROGRAMMA", "x_PROGRAMMA"), names_from = "CHK_RITARDO", 
-                names_expand = TRUE,
-                values_from = "RISORSE_COE", values_fill = 0)
-  
-  # export sintesi
-  file_name <- paste0("sintesi_cis_", bimestre,".xlsx")
-  data_bimestre <- format(ymd(bimestre), "%d/%m/%Y")
-  titolo_base <- paste0("Analisi attuazione CIS - Aggiornamento al ", data_bimestre)
-  wb <- createWorkbook()
-  
-  write_tables_to_wb(
-    wb          = wb,
-    tables      = list(sintesi_cis_1, sintesi_cis_2, sintesi_cis_3),
-    title       = titolo_base,
-    subtitles   = c("Avanzamento finanziario per CIS", 
-                    "Avanzamento procedurale per CIS - Risorse coesione programmate per stato di avanzamento procedurale",
-                    "Analisi ritardi per per CIS - Risorse coesione programmate per casistiche analisi ritardi"),
-    source      = c("Elaborazione Dipcoes-NUPC",
-                    "Elaborazione Dipcoes-NUPC", 
-                    "Elaborazione Dipcoes-NUPC"),
-    # note        = "Nota: ...",
-    sheet_name  = "cis",
-    start_row   = 4,
-    header_df   = header
-  )
-  
-  
-  write_tables_to_wb(
-    wb          = wb,
-    tables      = list(sintesi_cis_1, sintesi_cis_2, sintesi_cis_3),
-    title       = titolo_base,
-    subtitles   = c("Avanzamento finanziario per CIS e programma", 
-                    "Avanzamento procedurale per CIS e programma - Risorse coesione programmate per stato di avanzamento procedurale",
-                    "Analisi ritardi per CIS e programma - Risorse coesione programmate per casistiche analisi ritardi"),
-    source      = c("Elaborazione Dipcoes-NUPC",
-                    "Elaborazione Dipcoes-NUPC", 
-                    "Elaborazione Dipcoes-NUPC"),
-    # note        = "Nota: ...",
-    sheet_name  = "programmi",
-    start_row   = 4,
-    header_df   = header
-  )
-
-  saveWorkbook(wb, file = file.path(OUTPUT, "dossier", file_name), overwrite = TRUE)
-  
+  if (setup_summary == TRUE) {
+    # sintesi per cis
+    sintesi_cis_1 <- analisi %>% 
+      group_by(CIS) %>% 
+      summarise(N = n(),
+                RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE), 
+                COE = sum(COE, na.rm = TRUE), 
+                COE_IMP = sum(COE_IMP, na.rm = TRUE),
+                COE_PAG = sum(COE_PAG, na.rm = TRUE),
+                RISORSE_TOT = sum(RISORSE_TOT, na.rm = TRUE),
+                CP = sum(CP, na.rm = TRUE), 
+                IMP = sum(IMP, na.rm = TRUE),
+                PAG = sum(PAG, na.rm = TRUE)) %>% 
+      mutate(p_COE = if_else(RISORSE_COE == 0, 0, round(COE/RISORSE_COE, 2)),
+             p_COE_IMP = if_else(RISORSE_COE == 0, 0, round(COE_IMP/RISORSE_COE, 2)),
+             p_COE_PAG = if_else(RISORSE_COE == 0, 0, round(COE_PAG/RISORSE_COE, 2)),
+             p_CP = if_else(RISORSE_TOT == 0, 0, round(CP/RISORSE_TOT, 2)),
+             p_IMP = if_else(RISORSE_TOT == 0, 0, round(IMP/RISORSE_TOT, 2)),
+             p_PAG = if_else(RISORSE_TOT == 0, 0, round(PAG/RISORSE_TOT, 2))) %>% 
+      select(CIS, 
+             N, RISORSE_COE, COE, p_COE, COE_IMP, p_COE_IMP, COE_PAG, p_COE_PAG,
+             RISORSE_TOT, CP, p_CP, IMP, p_IMP, PAG, p_PAG) 
+    
+    
+    sintesi_cis_2 <- analisi %>% 
+      group_by(x_STATO_PROCEDURALE, CIS) %>% 
+      summarise(RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE)) %>% 
+      pivot_wider(id_cols = "CIS", names_from = "x_STATO_PROCEDURALE", 
+                  names_expand = TRUE,
+                  values_from = "RISORSE_COE", values_fill = 0)
+    
+    
+    sintesi_cis_3 <- analisi %>% 
+      group_by(CHK_RITARDO, CIS) %>% 
+      summarise(RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE)) %>% 
+      pivot_wider(id_cols = "CIS", names_from = "CHK_RITARDO", 
+                  names_expand = TRUE,
+                  values_from = "RISORSE_COE", values_fill = 0)
+    
+    
+    # sintesi per programma
+    programmi_cis_1 <- analisi %>% 
+      group_by(CIS, AMBITO, OC_CODICE_PROGRAMMA, x_PROGRAMMA) %>% 
+      summarise(N = n(),
+                RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE), 
+                COE = sum(COE, na.rm = TRUE), 
+                COE_IMP = sum(COE_IMP, na.rm = TRUE),
+                COE_PAG = sum(COE_PAG, na.rm = TRUE),
+                RISORSE_TOT = sum(RISORSE_TOT, na.rm = TRUE),
+                CP = sum(CP, na.rm = TRUE), 
+                IMP = sum(IMP, na.rm = TRUE),
+                PAG = sum(PAG, na.rm = TRUE)) %>% 
+      mutate(p_COE = if_else(RISORSE_COE == 0, 0, round(COE/RISORSE_COE, 2)),
+             p_COE_IMP = if_else(RISORSE_COE == 0, 0, round(COE_IMP/RISORSE_COE, 2)),
+             p_COE_PAG = if_else(RISORSE_COE == 0, 0, round(COE_PAG/RISORSE_COE, 2)),
+             p_CP = if_else(RISORSE_TOT == 0, 0, round(CP/RISORSE_TOT, 2)),
+             p_IMP = if_else(RISORSE_TOT == 0, 0, round(IMP/RISORSE_TOT, 2)),
+             p_PAG = if_else(RISORSE_TOT == 0, 0, round(PAG/RISORSE_TOT, 2))) %>% 
+      select(CIS, AMBITO, OC_CODICE_PROGRAMMA, x_PROGRAMMA, 
+             N, RISORSE_COE, COE, p_COE, COE_IMP, p_COE_IMP, COE_PAG, p_COE_PAG,
+             RISORSE_TOT, CP, p_CP, IMP, p_IMP, PAG, p_PAG)
+    
+    programmi_cis_2 <- analisi %>% 
+      group_by(x_STATO_PROCEDURALE, CIS, AMBITO, OC_CODICE_PROGRAMMA, x_PROGRAMMA) %>% 
+      summarise(RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE)) %>% 
+      pivot_wider(id_cols = c("CIS", "AMBITO", "OC_CODICE_PROGRAMMA", "x_PROGRAMMA"), names_from = "x_STATO_PROCEDURALE", 
+                  names_expand = TRUE,
+                  values_from = "RISORSE_COE", values_fill = 0)
+    
+    programmi_cis_3 <- analisi %>% 
+      group_by(CHK_RITARDO, CIS, AMBITO, OC_CODICE_PROGRAMMA, x_PROGRAMMA) %>% 
+      summarise(RISORSE_COE = sum(RISORSE_COE, na.rm = TRUE)) %>% 
+      pivot_wider(id_cols = c("CIS", "AMBITO", "OC_CODICE_PROGRAMMA", "x_PROGRAMMA"), names_from = "CHK_RITARDO", 
+                  names_expand = TRUE,
+                  values_from = "RISORSE_COE", values_fill = 0)
+    
+    # export sintesi
+    file_name <- paste0("sintesi_cis_", bimestre,".xlsx")
+    data_bimestre <- format(ymd(bimestre), "%d/%m/%Y")
+    titolo_base <- paste0("Analisi attuazione CIS - Aggiornamento al ", data_bimestre)
+    wb <- createWorkbook()
+    
+    write_tables_to_wb(
+      wb          = wb,
+      tables      = list(sintesi_cis_1, sintesi_cis_2, sintesi_cis_3),
+      title       = titolo_base,
+      subtitles   = c("Avanzamento finanziario per CIS", 
+                      "Avanzamento procedurale per CIS - Risorse coesione programmate per stato di avanzamento procedurale",
+                      "Analisi ritardi per per CIS - Risorse coesione programmate per casistiche analisi ritardi"),
+      source      = c("Elaborazione Dipcoes-NUPC",
+                      "Elaborazione Dipcoes-NUPC", 
+                      "Elaborazione Dipcoes-NUPC"),
+      # note        = "Nota: ...",
+      sheet_name  = "cis",
+      start_row   = 4,
+      header_df   = header
+    )
+    
+    
+    write_tables_to_wb(
+      wb          = wb,
+      tables      = list(programmi_cis_1, programmi_cis_2, programmi_cis_3),
+      title       = titolo_base,
+      subtitles   = c("Avanzamento finanziario per CIS e programma", 
+                      "Avanzamento procedurale per CIS e programma - Risorse coesione programmate per stato di avanzamento procedurale",
+                      "Analisi ritardi per CIS e programma - Risorse coesione programmate per casistiche analisi ritardi"),
+      source      = c("Elaborazione Dipcoes-NUPC",
+                      "Elaborazione Dipcoes-NUPC", 
+                      "Elaborazione Dipcoes-NUPC"),
+      # note        = "Nota: ...",
+      sheet_name  = "programmi",
+      start_row   = 4,
+      header_df   = header
+    )
+    
+    saveWorkbook(wb, file = file.path(OUTPUT, "dossier", file_name), overwrite = TRUE)
+  }
 }
