@@ -67,7 +67,7 @@ load_db_accordi <- function(DB) {
   
   if (file.exists(file_accordi)) {
     # Se il file esiste, caricalo direttamente
-    interventi <- read_xlsx(file_accordi, guess_max=100000)
+    interventi <- readxl::read_xlsx(file_accordi, guess_max=100000)
   } else {
     # Altrimenti, procedi con il caricamento dei singoli file
     appo1 <- load_db_accordi_ordinarie(DB=DB) #%>% mutate(COD_PROCED_ATTIVAZIONE = as.character(COD_PROCED_ATTIVAZIONE))
