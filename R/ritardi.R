@@ -72,7 +72,24 @@ setup_ritardi <- function(bimestre, progetti, progetti_old, chk_today, perimetro
                                      DATA_INIZIO_EFF_PROG_PREL > 0 & DATA_INIZIO_EFF_PROG_PREL <= max_date ~ "PP",
                                      DATA_FINE_EFF_STUDIO_FATT > 0 & DATA_FINE_EFF_STUDIO_FATT <= max_date ~ "SDF_PP",
                                      DATA_INIZIO_EFF_STUDIO_FATT > 0 & DATA_INIZIO_EFF_STUDIO_FATT <= max_date ~ "SDF",
-                                     TRUE ~ "START"))
+                                     TRUE ~ "START")) %>% 
+    # NEW:
+    mutate(FASE_CORRENTE_DATA = case_when(FASE_CORRENTE == "END" ~ as.numeric(bimestre), #MEMO: posto per definizione pari a bimestre
+                                          FASE_CORRENTE == "COL_END" ~ DATA_FINE_EFF_COLLAUDO,
+                                          FASE_CORRENTE == "COL" ~ DATA_INIZIO_EFF_COLLAUDO,
+                                          FASE_CORRENTE == "ESEC_COL" ~ DATA_FINE_EFF_ESECUZIONE,
+                                          FASE_CORRENTE == "ESEC" ~ DATA_INIZIO_EFF_ESECUZIONE,
+                                          FASE_CORRENTE == "STIP_ESEC" ~ DATA_FINE_EFF_STIP_ATTRIB,
+                                          FASE_CORRENTE == "STIP" ~ DATA_INIZIO_EFF_STIP_ATTRIB,
+                                          FASE_CORRENTE == "PE_STIP" ~ DATA_FINE_EFF_PROG_ESEC,
+                                          FASE_CORRENTE == "PE" ~ DATA_INIZIO_EFF_PROG_ESEC,
+                                          FASE_CORRENTE == "PD_PE" ~ DATA_FINE_EFF_PROG_DEF,
+                                          FASE_CORRENTE == "PD" ~ DATA_INIZIO_EFF_PROG_DEF,
+                                          FASE_CORRENTE == "PP_PD" ~ DATA_FINE_EFF_PROG_PREL,
+                                          FASE_CORRENTE == "PP" ~ DATA_INIZIO_EFF_PROG_PREL,
+                                          FASE_CORRENTE == "SDF_PP" ~ DATA_FINE_EFF_STUDIO_FATT,
+                                          FASE_CORRENTE == "SDF" ~ DATA_INIZIO_EFF_STUDIO_FATT,
+                                          FASE_CORRENTE == "START" ~ as.numeric(bimestre)))
   
   # calcolo fase seguente
   appo2 <- appo1 %>% 
