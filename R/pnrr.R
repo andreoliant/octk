@@ -22,11 +22,16 @@ load_progetti_pnrr <- function(bimestre_pnrr, versione_pnrr) {
 #' Carica dati di programmazione PNRR dal database della programmazione
 #'
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
+#' @param use_macroaree Vuoi usare le macroaree territoriali? Default FALSE.
 #' @return Dataframe
-load_db_pnrr <- function(DB) {
+load_db_pnrr <- function(DB, use_macroaree=FALSE) {
   
-  pnrr <- read_xlsx(file.path(DB, "Dati_DBCOE_PNRR.xlsx"))
-
+  if (use_macroaree==TRUE) {
+    pnrr <- readxl::read_xlsx(file.path(DB, "Dati_DBCOE_PNRR_40%.xlsx"))
+  } else {
+    pnrr <- readxl::read_xlsx(file.path(DB, "Dati_DBCOE_PNRR.xlsx"))  
+  }
+  
   return(pnrr)
 }
 
