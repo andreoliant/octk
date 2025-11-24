@@ -141,7 +141,7 @@ crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
     select(ID, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, 
            AREA_TEMATICA, SETTORE_INTERVENTO, 
            CUP, TITOLO_PROGETTO,
-           FINANZ_TOT, FINANZ_COE)
+           FINANZ_TOT, FINANZ_FSC, FINANZ_FDR)
   
   appo2 <- interventi %>% 
     filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
@@ -155,7 +155,7 @@ crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
     select(ID, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, 
            AREA_TEMATICA, SETTORE_INTERVENTO, 
            TITOLO_PROGETTO,
-           FINANZ_TOT, FINANZ_COE)
+           FINANZ_TOT, FINANZ_FSC, FINANZ_FDR)
 
   writeData(wb, sheet = "progetti", x = appo1, startCol = 1, startRow = 3, colNames = FALSE)
   
@@ -187,12 +187,12 @@ crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
   addStyle(wb, sheet = "linee", style_border, rows = 2, cols = c(1:9), gridExpand = TRUE, stack = TRUE)
   
   addStyle(wb, sheet = "linee", style_border, rows = seq(start_row, n_max), cols = c(1:7), gridExpand = TRUE, stack = TRUE)
-  addStyle(wb, sheet = "linee", style_number2, rows = seq(start_row, n_max), cols = c(8:9), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "linee", style_number2, rows = seq(start_row, n_max), cols = c(8:10), gridExpand = TRUE, stack = TRUE)
 
   setColWidths(wb, sheet = "linee", cols = c(1:7), widths = 24)
-  setColWidths(wb, sheet = "linee", cols = c(8:9), widths = 16)
+  setColWidths(wb, sheet = "linee", cols = c(8:10), widths = 16)
 
-  ungroupColumns(wb, "linee", cols = 1:9)
+  ungroupColumns(wb, "linee", cols = 1:10)
   
   temp_file <- paste0(regione, "_monitoraggio_accordi.xlsx")
   saveWorkbook(wb, file = file.path(OUTPUT, "monitoraggio", temp_file), overwrite = TRUE)
