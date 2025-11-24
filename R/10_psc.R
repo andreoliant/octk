@@ -1,7 +1,353 @@
-# Funzioni per la gestione dei PSC (nuova versione post 20241031 fine migrazione)
+# Funzioni per la gestione dei PSC (versione fino a 20240831 con migrazione in corso)
 
 # DEV:
-# per distinguere le funzioni da versioni ante migrazioni ora hanno suffisso "_psc_migrati"
+# questa versione resta viva per elaborazioni retrospettive
+
+#' Inizializza PSC
+#'
+#' Inizializza global environment per flusso di lavoro PSC
+#' 
+#' @param PSC Folder di supporto per dati PSC
+#' @param light Vuoi usare versione leggera (senza liste progetti art44, cds, ecc.)?
+#' @return Carica i file necessario al flusso nel global environment
+#' @note ...
+init_psc <- function(PSC=NULL, light=FALSE) {
+  
+  if (is.null(PSC)) {
+    PSC <- file.path(DRIVE, "DATI", "PSC")
+  } 
+  
+  PSC <<- PSC
+    
+}
+
+
+
+
+
+clean_data_dmy <- function(colonna_data) {
+  
+  # DEBUG:
+  # colonna_data <- appo0$DATA_FINE_EFF_ESECUZIONE
+  # colonna_data <- appo0$DATA_FINE_EFF_STIP_ATTRIB
+
+  require("lubridate")
+  out <- dmy(colonna_data)
+  # out <- tryCatch(dmy(colonna_data),
+  #                 error = ymd(colonna_data))
+  return(out)
+
+}
+
+clean_data_ymd <- function(colonna_data) {
+  
+  # DEBUG:
+  # colonna_data <- appo0$DATA_FINE_EFF_ESECUZIONE
+  # colonna_data <- appo0$DATA_FINE_EFF_STIP_ATTRIB
+  
+  require("lubridate")
+  out <- ymd(colonna_data)
+  return(out)
+  
+}
+
+
+get_stato_attuazione <- function(df, chk_today) {
+  # MEMO: 
+  # formato per data è diverso da standad oc
+  # può essere necessaria qualche pulizia nelle date in excel
+
+  # chk_today <- as.POSIXct("2019-12-31")
+  chk_today <- as.POSIXct(chk_today)
+  
+  require(lubridate)
+  # DEBUG:
+  # df <- appo2
+  # df <- appo_stato
+  # chk_today = "2022-04-30"
+  
+  # switch per ciclo
+  if ("A00_DATA_INIZIO_EFFETTIVA" %in% names(df)) {
+    
+    test <- is.POSIXct(df$A00_DATA_INIZIO_EFFETTIVA)
+    
+    # fix per xls fino al 31/12/2021 (vengono lette come date e non funziona case_when dopo)
+    if (test == TRUE) {
+      df <- df %>% 
+        mutate_if(is.POSIXct, list(~str_sub(as.character(.), 1, 10)))
+    }
+    
+    #2000-2006 da sgp
+    appo0 <- df %>%
+      mutate(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_INIZIO_EFFETTIVA) ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                  # DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_INIZIO_EFFETTIVA != "" ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                  DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_INIZIO_EFFETTIVA) & A00_DATA_INIZIO_EFFETTIVA != "" ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                  TRUE ~ DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA),
+             DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_FINE_EFFETTIVA) ~ A00_DATA_FINE_EFFETTIVA,
+                                                                # DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_FINE_EFFETTIVA != "" ~ A00_DATA_FINE_EFFETTIVA,
+                                                                DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_FINE_EFFETTIVA) & A00_DATA_FINE_EFFETTIVA != "" ~ A00_DATA_FINE_EFFETTIVA,
+                                                                TRUE ~ DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA),
+             DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_INIZIO_EFFETTIVA) ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                   # DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_INIZIO_EFFETTIVA != "" ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                   DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_INIZIO_EFFETTIVA) & A01_DATA_INIZIO_EFFETTIVA != "" ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                   TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE),
+             DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_FINE_EFFETTIVA) ~ A01_DATA_FINE_EFFETTIVA,
+                                                                 # DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_FINE_EFFETTIVA != "" ~ A01_DATA_FINE_EFFETTIVA,
+                                                                 DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_FINE_EFFETTIVA) & A01_DATA_FINE_EFFETTIVA != "" ~ A01_DATA_FINE_EFFETTIVA,
+                                                                 TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE),
+             DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_INIZIO_EFFETTIVA) ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                  # DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & A02_DATA_INIZIO_EFFETTIVA != "" ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                  DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & !is.na(A02_DATA_INIZIO_EFFETTIVA) & A02_DATA_INIZIO_EFFETTIVA != "" ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                  TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA),
+             DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_FINE_EFFETTIVA) ~ A02_DATA_FINE_EFFETTIVA,
+                                                                # DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & A02_DATA_FINE_EFFETTIVA != "" ~ A02_DATA_FINE_EFFETTIVA,
+                                                                DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & !is.na(A02_DATA_FINE_EFFETTIVA) & A02_DATA_FINE_EFFETTIVA != "" ~ A02_DATA_FINE_EFFETTIVA,
+                                                                TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA),
+             DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_INIZIO_EFFETTIVA) ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                                 # DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_INIZIO_EFFETTIVA != "" ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                                 DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_INIZIO_EFFETTIVA) & A03_DATA_INIZIO_EFFETTIVA != "" ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                                 TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA),
+             DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_FINE_EFFETTIVA) ~ A03_DATA_FINE_EFFETTIVA,
+                                                               # DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_FINE_EFFETTIVA != "" ~ A03_DATA_FINE_EFFETTIVA,
+                                                               DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_FINE_EFFETTIVA) & A03_DATA_FINE_EFFETTIVA != "" ~ A03_DATA_FINE_EFFETTIVA,
+                                                               TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA),
+             DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_INIZIO_EFFETTIVA) ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                                 # DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_INIZIO_EFFETTIVA != "" ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                                 DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_INIZIO_EFFETTIVA) & B01_DATA_INIZIO_EFFETTIVA != "" ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                                 is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_INIZIO_EFFETTIVA) ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                                 # DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_INIZIO_EFFETTIVA != "" ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                                 DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_INIZIO_EFFETTIVA) & C01_DATA_INIZIO_EFFETTIVA != "" ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                                 # step non presente per lavori
+                                                                 TRUE ~ DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO),
+             DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_FINE_EFFETTIVA) ~ B01_DATA_FINE_EFFETTIVA,
+                                                               # DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_FINE_EFFETTIVA != "" ~ B01_DATA_FINE_EFFETTIVA,
+                                                               DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_FINE_EFFETTIVA) & B01_DATA_FINE_EFFETTIVA != "" ~ B01_DATA_FINE_EFFETTIVA,
+                                                               is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_FINE_EFFETTIVA) ~ C01_DATA_FINE_EFFETTIVA,
+                                                               # DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_FINE_EFFETTIVA != "" ~ C01_DATA_FINE_EFFETTIVA,
+                                                               DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_FINE_EFFETTIVA) & C01_DATA_FINE_EFFETTIVA != "" ~ C01_DATA_FINE_EFFETTIVA,
+                                                               # step non presente per lavori
+                                                               TRUE ~ DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO),
+             DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_INIZIO_EFFETTIVA) ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                           # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_INIZIO_EFFETTIVA != "" ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                           DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_INIZIO_EFFETTIVA) & A04_DATA_INIZIO_EFFETTIVA != "" ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                           is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_INIZIO_EFFETTIVA) ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                           # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_INIZIO_EFFETTIVA != "" ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                           DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_INIZIO_EFFETTIVA) & B02_DATA_INIZIO_EFFETTIVA != "" ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                           is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_INIZIO_EFFETTIVA) ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                           # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_INIZIO_EFFETTIVA != "" ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                           DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_INIZIO_EFFETTIVA) & C02_DATA_INIZIO_EFFETTIVA != "" ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                           TRUE ~ DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE),
+             DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_FINE_EFFETTIVA) ~ A04_DATA_FINE_EFFETTIVA,
+                                                                         # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_FINE_EFFETTIVA != "" ~ A04_DATA_FINE_EFFETTIVA,
+                                                                         DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_FINE_EFFETTIVA) & A04_DATA_FINE_EFFETTIVA != "" ~ A04_DATA_FINE_EFFETTIVA,
+                                                                         is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_FINE_EFFETTIVA) ~ B02_DATA_FINE_EFFETTIVA,
+                                                                         # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_FINE_EFFETTIVA != "" ~ B02_DATA_FINE_EFFETTIVA,
+                                                                         DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_FINE_EFFETTIVA) & B02_DATA_FINE_EFFETTIVA != "" ~ B02_DATA_FINE_EFFETTIVA,
+                                                                         is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_FINE_EFFETTIVA) ~ C02_DATA_FINE_EFFETTIVA,
+                                                                         # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_FINE_EFFETTIVA != "" ~ C02_DATA_FINE_EFFETTIVA,
+                                                                         DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_FINE_EFFETTIVA) & C02_DATA_FINE_EFFETTIVA != "" ~ C02_DATA_FINE_EFFETTIVA,
+                                                                         TRUE ~ DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE)) %>%
+      select(COD_LOCALE_PROGETTO,
+             # DATA_FINE_EFF_COLLAUDO,
+             # DATA_INIZIO_EFF_COLLAUDO,
+             DATA_FINE_EFF_ESECUZIONE = DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE,
+             DATA_INIZIO_EFF_ESECUZIONE = DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE,
+             DATA_FINE_EFF_STIP_ATTRIB = DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO,
+             DATA_INIZIO_EFF_STIP_ATTRIB = DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO,
+             # DATA_FINE_EFF_AGG_BANDO,
+             # DATA_INIZIO_EFF_AGG_BANDO,
+             DATA_FINE_EFF_PROG_ESEC = DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA,
+             DATA_INIZIO_EFF_PROG_ESEC = DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA,
+             DATA_FINE_EFF_PROG_DEF = DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA,
+             DATA_INIZIO_EFF_PROG_DEF = DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA,
+             DATA_FINE_EFF_PROG_PREL = DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE,
+             DATA_INIZIO_EFF_PROG_PREL = DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE, 
+             DATA_FINE_EFF_STUDIO_FATT = DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA,
+             DATA_INIZIO_EFF_STUDIO_FATT = DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA)
+    
+    if (test == TRUE) {
+      appo <- appo0 %>% 
+        mutate(DATA_FINE_EFF_ESECUZIONE = clean_data_ymd(DATA_FINE_EFF_ESECUZIONE),
+               DATA_INIZIO_EFF_ESECUZIONE = clean_data_ymd(DATA_INIZIO_EFF_ESECUZIONE),
+               DATA_FINE_EFF_STIP_ATTRIB = clean_data_ymd(DATA_FINE_EFF_STIP_ATTRIB),
+               DATA_INIZIO_EFF_STIP_ATTRIB = clean_data_ymd(DATA_INIZIO_EFF_STIP_ATTRIB),
+               # DATA_FINE_EFF_AGG_BANDO,
+               # DATA_INIZIO_EFF_AGG_BANDO,
+               DATA_FINE_EFF_PROG_ESEC = clean_data_ymd(DATA_FINE_EFF_PROG_ESEC),
+               DATA_INIZIO_EFF_PROG_ESEC = clean_data_ymd(DATA_INIZIO_EFF_PROG_ESEC),
+               DATA_FINE_EFF_PROG_DEF = clean_data_ymd(DATA_FINE_EFF_PROG_DEF),
+               DATA_INIZIO_EFF_PROG_DEF = clean_data_ymd(DATA_INIZIO_EFF_PROG_DEF),
+               DATA_FINE_EFF_PROG_PREL = clean_data_ymd(DATA_FINE_EFF_PROG_PREL),
+               DATA_INIZIO_EFF_PROG_PREL = clean_data_ymd(DATA_INIZIO_EFF_PROG_PREL), 
+               DATA_FINE_EFF_STUDIO_FATT = clean_data_ymd(DATA_FINE_EFF_STUDIO_FATT),
+               DATA_INIZIO_EFF_STUDIO_FATT = clean_data_ymd(DATA_INIZIO_EFF_STUDIO_FATT))
+      
+    } else {
+      appo <- appo0 %>% 
+        mutate(DATA_FINE_EFF_ESECUZIONE = clean_data_dmy(DATA_FINE_EFF_ESECUZIONE),
+               DATA_INIZIO_EFF_ESECUZIONE = clean_data_dmy(DATA_INIZIO_EFF_ESECUZIONE),
+               DATA_FINE_EFF_STIP_ATTRIB = clean_data_dmy(DATA_FINE_EFF_STIP_ATTRIB),
+               DATA_INIZIO_EFF_STIP_ATTRIB = clean_data_dmy(DATA_INIZIO_EFF_STIP_ATTRIB),
+               # DATA_FINE_EFF_AGG_BANDO,
+               # DATA_INIZIO_EFF_AGG_BANDO,
+               DATA_FINE_EFF_PROG_ESEC = clean_data_dmy(DATA_FINE_EFF_PROG_ESEC),
+               DATA_INIZIO_EFF_PROG_ESEC = clean_data_dmy(DATA_INIZIO_EFF_PROG_ESEC),
+               DATA_FINE_EFF_PROG_DEF = clean_data_dmy(DATA_FINE_EFF_PROG_DEF),
+               DATA_INIZIO_EFF_PROG_DEF = clean_data_dmy(DATA_INIZIO_EFF_PROG_DEF),
+               DATA_FINE_EFF_PROG_PREL = clean_data_dmy(DATA_FINE_EFF_PROG_PREL),
+               DATA_INIZIO_EFF_PROG_PREL = clean_data_dmy(DATA_INIZIO_EFF_PROG_PREL), 
+               DATA_FINE_EFF_STUDIO_FATT = clean_data_dmy(DATA_FINE_EFF_STUDIO_FATT),
+               DATA_INIZIO_EFF_STUDIO_FATT = clean_data_dmy(DATA_INIZIO_EFF_STUDIO_FATT))
+
+    }
+    
+    
+  } else {
+    appo0 <- df %>%
+      mutate(DATA_INIZIO_EFF_STUDIO_FATT = paste0(str_sub(DATA_INIZIO_EFF_STUDIO_FATT, 7, 8), "/", str_sub(DATA_INIZIO_EFF_STUDIO_FATT, 5, 6), "/", str_sub(DATA_INIZIO_EFF_STUDIO_FATT, 1, 4)),
+             DATA_FINE_EFF_STUDIO_FATT = paste0(str_sub(DATA_FINE_EFF_STUDIO_FATT, 7, 8), "/", str_sub(DATA_FINE_EFF_STUDIO_FATT, 5, 6), "/", str_sub(DATA_FINE_EFF_STUDIO_FATT, 1, 4)),
+             DATA_INIZIO_EFF_PROG_PREL = paste0(str_sub(DATA_INIZIO_EFF_PROG_PREL, 7, 8), "/", str_sub(DATA_INIZIO_EFF_PROG_PREL, 5, 6), "/", str_sub(DATA_INIZIO_EFF_PROG_PREL, 1, 4)),
+             DATA_FINE_EFF_PROG_PREL = paste0(str_sub(DATA_FINE_EFF_PROG_PREL, 7, 8), "/", str_sub(DATA_FINE_EFF_PROG_PREL, 5, 6), "/", str_sub(DATA_FINE_EFF_PROG_PREL, 1, 4)),
+             DATA_INIZIO_EFF_PROG_DEF = paste0(str_sub(DATA_INIZIO_EFF_PROG_DEF, 7, 8), "/", str_sub(DATA_INIZIO_EFF_PROG_DEF, 5, 6), "/", str_sub(DATA_INIZIO_EFF_PROG_DEF, 1, 4)),
+             DATA_FINE_EFF_PROG_DEF = paste0(str_sub(DATA_FINE_EFF_PROG_DEF, 7, 8), "/", str_sub(DATA_FINE_EFF_PROG_DEF, 5, 6), "/", str_sub(DATA_FINE_EFF_PROG_DEF, 1, 4)),
+             DATA_INIZIO_EFF_PROG_ESEC = paste0(str_sub(DATA_INIZIO_EFF_PROG_ESEC, 7, 8), "/", str_sub(DATA_INIZIO_EFF_PROG_ESEC, 5, 6), "/", str_sub(DATA_INIZIO_EFF_PROG_ESEC, 1, 4)),
+             DATA_FINE_EFF_PROG_ESEC = paste0(str_sub(DATA_FINE_EFF_PROG_ESEC, 7, 8), "/", str_sub(DATA_FINE_EFF_PROG_ESEC, 5, 6), "/", str_sub(DATA_FINE_EFF_PROG_ESEC, 1, 4)),
+             DATA_INIZIO_EFF_STIP_ATTRIB = paste0(str_sub(DATA_INIZIO_EFF_STIP_ATTRIB, 7, 8), "/", str_sub(DATA_INIZIO_EFF_STIP_ATTRIB, 5, 6), "/", str_sub(DATA_INIZIO_EFF_STIP_ATTRIB, 1, 4)),
+             DATA_FINE_EFF_STIP_ATTRIB = paste0(str_sub(DATA_FINE_EFF_STIP_ATTRIB, 7, 8), "/", str_sub(DATA_FINE_EFF_STIP_ATTRIB, 5, 6), "/", str_sub(DATA_FINE_EFF_STIP_ATTRIB, 1, 4)),
+             DATA_INIZIO_EFF_ESECUZIONE = paste0(str_sub(DATA_INIZIO_EFF_ESECUZIONE, 7, 8), "/", str_sub(DATA_INIZIO_EFF_ESECUZIONE, 5, 6), "/", str_sub(DATA_INIZIO_EFF_ESECUZIONE, 1, 4)),
+             DATA_FINE_EFF_ESECUZIONE = paste0(str_sub(DATA_FINE_EFF_ESECUZIONE, 7, 8), "/", str_sub(DATA_FINE_EFF_ESECUZIONE, 5, 6), "/", str_sub(DATA_FINE_EFF_ESECUZIONE, 1, 4))) %>%
+      select(COD_LOCALE_PROGETTO,
+             # DATA_FINE_EFF_COLLAUDO,
+             # DATA_INIZIO_EFF_COLLAUDO,
+             DATA_FINE_EFF_ESECUZIONE,
+             DATA_INIZIO_EFF_ESECUZIONE,
+             DATA_FINE_EFF_STIP_ATTRIB,
+             DATA_INIZIO_EFF_STIP_ATTRIB,
+             # DATA_FINE_EFF_AGG_BANDO,
+             # DATA_INIZIO_EFF_AGG_BANDO,
+             DATA_FINE_EFF_PROG_ESEC,
+             DATA_INIZIO_EFF_PROG_ESEC,
+             DATA_FINE_EFF_PROG_DEF,
+             DATA_INIZIO_EFF_PROG_DEF,
+             DATA_FINE_EFF_PROG_PREL,
+             DATA_INIZIO_EFF_PROG_PREL, 
+             DATA_FINE_EFF_STUDIO_FATT,
+             DATA_INIZIO_EFF_STUDIO_FATT)
+    
+    appo <- appo0 %>% 
+      mutate(DATA_FINE_EFF_ESECUZIONE = clean_data_dmy(DATA_FINE_EFF_ESECUZIONE),
+             DATA_INIZIO_EFF_ESECUZIONE = clean_data_dmy(DATA_INIZIO_EFF_ESECUZIONE),
+             DATA_FINE_EFF_STIP_ATTRIB = clean_data_dmy(DATA_FINE_EFF_STIP_ATTRIB),
+             DATA_INIZIO_EFF_STIP_ATTRIB = clean_data_dmy(DATA_INIZIO_EFF_STIP_ATTRIB),
+             # DATA_FINE_EFF_AGG_BANDO,
+             # DATA_INIZIO_EFF_AGG_BANDO,
+             DATA_FINE_EFF_PROG_ESEC = clean_data_dmy(DATA_FINE_EFF_PROG_ESEC),
+             DATA_INIZIO_EFF_PROG_ESEC = clean_data_dmy(DATA_INIZIO_EFF_PROG_ESEC),
+             DATA_FINE_EFF_PROG_DEF = clean_data_dmy(DATA_FINE_EFF_PROG_DEF),
+             DATA_INIZIO_EFF_PROG_DEF = clean_data_dmy(DATA_INIZIO_EFF_PROG_DEF),
+             DATA_FINE_EFF_PROG_PREL = clean_data_dmy(DATA_FINE_EFF_PROG_PREL),
+             DATA_INIZIO_EFF_PROG_PREL = clean_data_dmy(DATA_INIZIO_EFF_PROG_PREL), 
+             DATA_FINE_EFF_STUDIO_FATT = clean_data_dmy(DATA_FINE_EFF_STUDIO_FATT),
+             DATA_INIZIO_EFF_STUDIO_FATT = clean_data_dmy(DATA_INIZIO_EFF_STUDIO_FATT))
+    
+  }
+  
+  message("Se ci sono 12 waring su clean_data va bene perché è il numero delle variabili e il warning indica date NA in input")
+
+  # appo <- appo0 %>% 
+  #   mutate(DATA_FINE_EFF_ESECUZIONE = clean_data(DATA_FINE_EFF_ESECUZIONE),
+  #          DATA_INIZIO_EFF_ESECUZIONE = clean_data(DATA_INIZIO_EFF_ESECUZIONE),
+  #          DATA_FINE_EFF_STIP_ATTRIB = clean_data(DATA_FINE_EFF_STIP_ATTRIB),
+  #          DATA_INIZIO_EFF_STIP_ATTRIB = clean_data(DATA_INIZIO_EFF_STIP_ATTRIB),
+  #          # DATA_FINE_EFF_AGG_BANDO,
+  #          # DATA_INIZIO_EFF_AGG_BANDO,
+  #          DATA_FINE_EFF_PROG_ESEC = clean_data(DATA_FINE_EFF_PROG_ESEC),
+  #          DATA_INIZIO_EFF_PROG_ESEC = clean_data(DATA_INIZIO_EFF_PROG_ESEC),
+  #          DATA_FINE_EFF_PROG_DEF = clean_data(DATA_FINE_EFF_PROG_DEF),
+  #          DATA_INIZIO_EFF_PROG_DEF = clean_data(DATA_INIZIO_EFF_PROG_DEF),
+  #          DATA_FINE_EFF_PROG_PREL = clean_data(DATA_FINE_EFF_PROG_PREL),
+  #          DATA_INIZIO_EFF_PROG_PREL = clean_data(DATA_INIZIO_EFF_PROG_PREL), 
+  #          DATA_FINE_EFF_STUDIO_FATT = clean_data(DATA_FINE_EFF_STUDIO_FATT),
+  #          DATA_INIZIO_EFF_STUDIO_FATT = clean_data(DATA_INIZIO_EFF_STUDIO_FATT))
+  # MEMO: recupera solo le variabili che non sono gia presenti in df
+  
+  out <- appo %>%
+    mutate(CHK_END = case_when(# DATA_FINE_EFF_COLLAUDO <= chk_today ~ 1,
+                               # DATA_INIZIO_EFF_COLLAUDO <= chk_today ~ 1,
+                               DATA_FINE_EFF_ESECUZIONE <= chk_today ~ 1,
+                               TRUE ~ 0),
+      CHK_ESEC = case_when(DATA_INIZIO_EFF_ESECUZIONE <= chk_today ~ 1,
+                           DATA_FINE_EFF_STIP_ATTRIB <= chk_today ~ 1, # MEMO: da portare sotto...? altrimenti resta classe GARA quasi vuota
+                           # DATA_FINE_EFF_AGG_BANDO <= chk_today ~ 1,
+                           # is.na(DATA_INIZIO_EFF_ESECUZIONE) ~ 0,
+                           TRUE ~ 0),
+      CHK_GARA = case_when(DATA_INIZIO_EFF_STIP_ATTRIB <= chk_today ~ 1,
+                           DATA_FINE_EFF_PROG_ESEC <= chk_today ~ 1, # MEMO: allineamento a regola OC
+                           # DATA_FINE_EFF_AGG_BANDO <= chk_today ~ 1,
+                           # DATA_INIZIO_EFF_AGG_BANDO <= chk_today ~ 1,
+                           # DATA_FINE_EFF_PROG_ESEC <= chk_today ~ 1,
+                           TRUE ~ 0),
+      # MEMO: blocco su progettazione presente solo per le opere
+      CHK_PROG = case_when( # as.POSIXct(DATA_FINE_EFF_PROG_ESEC) <= chk_today ~ 1, # MEMO: allineamento a regola OC
+                           as.POSIXct(DATA_INIZIO_EFF_PROG_ESEC) <= chk_today ~ 1, 
+                           as.POSIXct(DATA_FINE_EFF_PROG_DEF) <= chk_today ~ 1,
+                           as.POSIXct(DATA_INIZIO_EFF_PROG_DEF) <= chk_today ~ 1,
+                           as.POSIXct(DATA_FINE_EFF_PROG_PREL) <= chk_today ~ 1,
+                           as.POSIXct(DATA_INIZIO_EFF_PROG_PREL) <= chk_today ~ 1,
+                           as.POSIXct(DATA_FINE_EFF_STUDIO_FATT) <= chk_today ~ 1, # MEMO: allineamento a regola OC
+                           # DATA_FINE_EFF_STUDIO_FATT <= chk_today ~ 1,
+                           # DATA_INIZIO_EFF_STUDIO_FATT <= chk_today ~ 1,
+                           TRUE ~ 0),
+      CHK_AVVP = case_when(# DATA_FINE_EFF_STUDIO_FATT <= chk_today ~ 1, # MEMO: allineamento a regola OC
+                           DATA_INIZIO_EFF_STUDIO_FATT <= chk_today ~ 1,
+                           TRUE ~ 0)) %>%
+    mutate(STATO_PROCED = case_when(CHK_END == 1 ~ "Eseguito",
+                                    CHK_ESEC == 1 ~ "In esecuzione",
+                                    CHK_GARA == 1 ~ "In affidamento",
+                                    CHK_PROG == 1 ~ "In corso di progettazione",
+                                    CHK_AVVP == 1 ~ "In avvio di progettazione",
+                                    # IMPEGNI > 0 ~ "esecuzione", # MEMO: assegnazione forzata per risolvere anomalie
+                                    TRUE ~ "Non avviato")) %>%
+    mutate(STATO_PROCED = factor(STATO_PROCED, levels = c("Non avviato", "In avvio di progettazione", "In corso di progettazione", 
+                                                          "In affidamento", "In esecuzione", "Eseguito")))
+  
+  out <- df %>%
+    left_join(out %>%
+                select(COD_LOCALE_PROGETTO, STATO_PROCED),
+              by = "COD_LOCALE_PROGETTO")
+  
+  print(out %>% count(STATO_PROCED))
+  
+  return(out)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#' Report PSC per temi con sezioni speciali 
+#'
+#' Crea report di confronto programmazione attuazione per PSC e tema su sezione speciale 1
+#' 
+#' @param progetti_psc Dataset da load_progetti_psc()
+#' @param programmazione Dati di programmazione DBCOE di tipo "fsc_matrice_po_psc.xlsx"
+#' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
+#' @param usa_meuro Logico. Vuoi dati in Meuro?
+#' @param show_cp Logico. Vuoi calcolare anche il costo pubblico (CP)?
+#' @param export Vuoi salvare il file csv in TEMP?
+#' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
+#' @return Report di confronto programmazione attuazione per PSC e PO in essi confluiti. I nuovi 
+#' @note ...
+DA_SOSTITUIRE_make_report_sezioni_psc <- function() {}
+
 
 
 #' Carica dati di base per PSC
@@ -32,7 +378,7 @@ load_progetti_psc_migrati <- function(bimestre, versione_psc) {
 #' @return File "dati_psc_BIMESTRE_VERSIONE.csv" in OUTPUT 
 #' @note ...
 prep_dati_psc_migrati_bimestre <- function(bimestre, versione_psc, operazioni, progetti, chk_today, export=TRUE) {
-
+  
   # DEBUG:
   # chk_today = "2023-08-31"
   
@@ -821,7 +1167,7 @@ make_report_temi_macroaree_psc_migrati <- function(progetti_psc, operazioni=NULL
              RISORSE, COE, COE_IMP, COE_CR, COE_PAG, N) %>% 
       arrange(TIPOLOGIA_AMMINISTRAZIONE, ID_PSC, x_CICLO) 
   }
-
+  
   if (usa_meuro == TRUE) {
     if (show_cp == TRUE) {
       report <- report %>% mutate(across(c(RISORSE, COE, COE_IMP, COE_CR, COE_PAG, CP), ~./1e6))
@@ -999,174 +1345,8 @@ chk_dati_dbcoe_psc_migrati <- function() {
 }
 
 
-#' Integra CLP da attuazione in DB interventi programmati nei PSC
-#'
-#' Integra CLP da attuazione in DB interventi programmati nei PSC.
-#' Integra CLP per match su CLP al netto di codice SIL e poi per CUP univoci.
-#' Sostituisce CUP vuoti con CUP da attuazione.
-#'
-#' @param progetti_psc Dataset da load_progetti_psc_migrati()
-#' @param interventi_psc Dataset da DBCOE per programmazione interventi PSC (ATTENZIONE: use_flt=FALSE altrimenti si perdono righe)
-#' @param debug Vuoi esportare in TEMP le variazioni dei CLP?
-#' @param export Vuoi esportare nel file interventi del DBCOE?
-#' @return Dataframe
-update_clp_interventi_psc <- function(progetti_psc, interventi_psc, debug=TRUE, export=FALSE) {
-  
-  # DEBUG:
-  # debug=TRUE
-  
-  # join by clp
-  
-  clean_clp <- function(x, sil) {
-    for (l in sil$sil) {
-      # DEBUG:
-      # x <- "1MISE10067"
-      # l <- "1MISE"
-      r_l <- paste0("^", l)
-      # print(r_l)
-      x <- str_replace_all(x, r_l, "")
-    }
-    return(x)
-  }
-  
-  appo_int <- interventi_psc %>% 
-    anti_join(progetti_psc, by = "COD_LOCALE_PROGETTO") %>% 
-    mutate(COD_LOCALE_PROGETTO_OGV = COD_LOCALE_PROGETTO,
-           CUP_OGV = CUP) %>% 
-    mutate(TEMP_CLP = clean_clp(COD_LOCALE_PROGETTO, octk::sil))
-  
-  appo_pro <- progetti_psc %>% 
-    anti_join(interventi_psc, by = "COD_LOCALE_PROGETTO") %>% 
-    mutate(TEMP_CLP = clean_clp(COD_LOCALE_PROGETTO, octk::sil)) %>% 
-    select(TEMP_CLP, ID_PSC, COD_LOCALE_PROGETTO, CUP)
-  
-  appo <- appo_int %>% 
-    inner_join(appo_pro, 
-               by = c("TEMP_CLP", "ID_PSC"),
-               suffix = c(".int", ".pro")) 
-  
-  if (debug == TRUE) {
-    chk <- appo %>%
-      select(TEMP_CLP, ID_PSC, COD_LOCALE_PROGETTO.int, COD_LOCALE_PROGETTO.pro, CUP.int, CUP.pro)
-    write.xlsx(chk, file.path(TEMP, "chk_match_interventi_by_clp.xlsx"))
-    message("Correzioni da match su CLP senza codice SIL per ", dim(chk)[1], " interventi")
-  }
-  
-  appo1 <- appo %>% 
-    mutate(CUP = if_else(is.na(CUP.int), CUP.pro, CUP.int), #MEMO: integra solo CUP vuoti lato programmazione, non modifica CUP diversi con attuazione (che si controllano in data quality)
-           COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.pro) 
-  
-  interventi_psc_2 <- appo1 %>% 
-    select(-TEMP_CLP, -COD_LOCALE_PROGETTO.int, -COD_LOCALE_PROGETTO.pro, -CUP.int, -CUP.pro) %>% 
-    # bind_rows(interventi_psc %>% 
-    #             anti_join(appo1 %>% 
-    #                         select(COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.int), # MEMO: il join va fatto sul codice originale!
-    #                       by = "COD_LOCALE_PROGETTO")) %>% 
-    bind_rows(interventi_psc %>% 
-                anti_join(appo1 %>% 
-                            select(ID),
-                          by = "ID")) %>% 
-    select(names(interventi_psc))
-  
-  dim(interventi_psc_2)[1] == dim(interventi_psc)[1]    
-  
-  
-  # join by cup 
-  n_cup_int <- interventi_psc_2 %>% 
-    filter(!is.na(CUP)) %>% 
-    filter(CUP != "no") %>% 
-    filter(CUP != "-") %>% 
-    filter(nchar(CUP) == 15) %>% 
-    # count(CUP) %>%
-    count(CUP, ID_PSC) %>%
-    filter(n == 1)
-  
-  n_cup_pro <- progetti_psc %>% 
-    # count(CUP) %>%
-    count(CUP, ID_PSC) %>%
-    filter(n == 1)
-  
-  appo_int_2 <- interventi_psc_2 %>% 
-    semi_join(n_cup_int, by = c("CUP", "ID_PSC"))
-  
-  appo_pro_2 <- progetti_psc %>% 
-    semi_join(n_cup_pro, by = c("CUP", "ID_PSC")) %>% 
-    anti_join(interventi_psc_2, by = "COD_LOCALE_PROGETTO") %>% 
-    select(ID_PSC, CUP, COD_LOCALE_PROGETTO)
-  
-  appo2 <- appo_int_2 %>% 
-    inner_join(appo_pro_2, 
-               by = c("CUP", "ID_PSC"),
-               suffix = c(".int", ".pro")) 
-  
-  if (debug == TRUE) {
-    chk1 <- appo2 %>%
-      select(ID_PSC, CUP, COD_LOCALE_PROGETTO.int, COD_LOCALE_PROGETTO.pro)
-    write.xlsx(chk1, file.path(TEMP, "chk_match_interventi_by_cup.xlsx"))
-    message("Correzioni da match su CUP per ", dim(chk1)[1], " interventi")
-    
-    # # chk su cup duplicati
-    # n_cup_int_dupli <- interventi_psc_2 %>%
-    #   filter(!is.na(CUP)) %>%
-    #   filter(CUP != "no") %>%
-    #   filter(CUP != "-") %>%
-    #   filter(nchar(CUP) == 15) %>%
-    #   count(CUP, ID_PSC) %>%
-    #   filter(n > 1)
-    # 
-    # n_cup_pro_dupli <- progetti_psc %>%
-    #   count(CUP, ID_PSC) %>%
-    #   filter(n > 1)
-    # 
-    # appo_int_2_dupli <- interventi_psc_2 %>%
-    #   semi_join(n_cup_int_dupli, by = c("CUP", "ID_PSC"))
-    # 
-    # appo_pro_2_dupli <- progetti_psc %>%
-    #   semi_join(n_cup_pro_dupli, by = c("CUP", "ID_PSC")) %>%
-    #   anti_join(interventi_psc_2, by = "COD_LOCALE_PROGETTO") %>%
-    #   select(ID_PSC, CUP, COD_LOCALE_PROGETTO, TITOLO_PROGETTO=OC_TITOLO_PROGETTO)
-    # 
-    # appo2_dupli <- appo_int_2_dupli %>%
-    #   inner_join(appo_pro_2_dupli,
-    #              by = c("CUP", "ID_PSC"))
-    # 
-    # chk2 <- appo2_dupli %>%
-    #   select(ID_PSC, CUP, COD_LOCALE_PROGETTO.x, TITOLO_PROGETTO.x, COD_LOCALE_PROGETTO.y, TITOLO_PROGETTO.y)
-    # 
-    # 
-    # write.xlsx(chk2, file.path(TEMP, "chk_match_interventi_by_cup_duplicati.xlsx"))
-    # message("Duplicati da match su CUP per ", dim(chk2)[1], " interventi/progetti. Analizza il file chk_match_interventi_by_cup_duplicati.xlsx e correggi a mano nel DBCOE")
-  }
-  
-  appo3 <- appo2 %>% 
-    mutate(COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.pro) 
-  
-  interventi_psc_3 <- appo3 %>% 
-    select(-COD_LOCALE_PROGETTO.int, -COD_LOCALE_PROGETTO.pro) %>% 
-    # bind_rows(interventi_psc_2 %>% 
-    #             anti_join(appo3 %>% 
-    #                         select(COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.int), # MEMO: il join va fatto sul codice originale!
-    #                       by = "COD_LOCALE_PROGETTO")) %>% 
-    bind_rows(interventi_psc_2 %>% 
-                anti_join(appo3 %>% 
-                            select(ID),
-                          by = "ID")) %>% 
-    select(names(interventi_psc))
 
-  dim(interventi_psc_3)[1] == dim(interventi_psc_2)[1] 
-  
-  if (export == TRUE) {
-    write.xlsx(interventi_psc_3, file.path(DB, "Interventi_DBCOE_PSC.xlsx"))
-  }
-  
-  if (debug == TRUE) {
-    write.xlsx(interventi_psc_3, file.path(TEMP, "Interventi_DBCOE_PSC.xlsx"))
-  }
-  
-  return(interventi_psc_3)
-}
-
-
+#QUALITA DATI PSC----
 
 #' Analisi qualità dati PSC
 #'
@@ -1269,15 +1449,15 @@ analisi_data_quality_psc <- function(progetti_psc, interventi_psc, progetti, exp
     mutate(DELTA = RISORSE - COE) %>%
     # mutate(DELTA = RISORSE_COE - COE) %>% 
     mutate(CHK_RISORSE = case_when(# DELTA > 0 ~ "da monitorare",
-                                   # DELTA == 0 ~ "invariati",
-                                   # DELTA < 0 ~ "overbooking",
-                                   DELTA > 1 ~ "da monitorare", #MEMO: introduco tolleranza di un euro
-                                   DELTA >= -1 & DELTA < 1 ~ "invariati",
-                                   DELTA < -1 ~ "overbooking",
-                                   # is.na(RISORSE_COE) ~ "overbooking",
-                                   is.na(RISORSE) ~ "overbooking",
-                                   is.na(COE) ~ "da monitorare",
-                                   TRUE ~ "chk")) %>% 
+      # DELTA == 0 ~ "invariati",
+      # DELTA < 0 ~ "overbooking",
+      DELTA > 1 ~ "da monitorare", #MEMO: introduco tolleranza di un euro
+      DELTA >= -1 & DELTA < 1 ~ "invariati",
+      DELTA < -1 ~ "overbooking",
+      # is.na(RISORSE_COE) ~ "overbooking",
+      is.na(RISORSE) ~ "overbooking",
+      is.na(COE) ~ "da monitorare",
+      TRUE ~ "chk")) %>% 
     mutate(COE_FIX = case_when(CHK_LISTE == "no monit" ~ RISORSE,
                                CHK_LISTE == "economie" ~ RISORSE,
                                CHK_LISTE == "match" ~ RISORSE,
@@ -1394,7 +1574,7 @@ dossier_data_quality_psc <- function(analisi) {
     filter(OGV == "NO OGV") %>% 
     # filter(CHK_LISTE_2 =="no psc") %>%
     select(-OC_FLAG_VISUALIZZAZIONE, -COE_FIX, -CHK_LISTE_2, -OGV)
-
+  
   #Progetti con COE diverso
   CHK_coe <- analisi %>%
     filter(OGV == "OGV") %>% 
@@ -1973,3 +2153,196 @@ ranking_data_quality_psc <- function(report, export=TRUE) {
   return(ranking)
 }
 
+
+#PROGRAMMAZIONE PSC----
+
+#' Carica lista interventi PSC
+#'
+#' Carica la lista di interventi delle sezioni ordinarie di PSC dal DBCOE in base alla variabile DB da oc_init().
+#'
+#' @param use_flt Vuoi caricare solo gli interventi monitorabili (con FLAG_MONITORAGGIO == 1)?
+#' @details I progetti privi di OGV rientrano tra gli interventi monitorabili se la delibera di definanziamento non è ancora intervenuta a fronte di istruttoria OGV chiusa.
+#' @return Dataframe
+load_db_psc <- function(DB, use_flt=FALSE) {
+  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_PSC.xlsx"), 
+                          col_types = c("text", "text", "text", "text", "text", "text",
+                                        "text", "text", "text", "text", "text", "text", "text",
+                                        "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
+                                        "numeric",
+                                        "text", "text", "text", 
+                                        "text", "text", "text", "text"))
+  if (use_flt == TRUE) {
+    interventi <- interventi %>% 
+      filter(FLAG_MONITORAGGIO == 1)
+  }
+  
+  return(interventi)
+}
+
+
+#' Integra CLP da attuazione in DB interventi programmati nei PSC
+#'
+#' Integra CLP da attuazione in DB interventi programmati nei PSC.
+#' Integra CLP per match su CLP al netto di codice SIL e poi per CUP univoci.
+#' Sostituisce CUP vuoti con CUP da attuazione.
+#'
+#' @param progetti_psc Dataset da load_progetti_psc_migrati()
+#' @param interventi_psc Dataset da DBCOE per programmazione interventi PSC (ATTENZIONE: use_flt=FALSE altrimenti si perdono righe)
+#' @param debug Vuoi esportare in TEMP le variazioni dei CLP?
+#' @param export Vuoi esportare nel file interventi del DBCOE?
+#' @return Dataframe
+update_clp_interventi_psc <- function(progetti_psc, interventi_psc, debug=TRUE, export=FALSE) {
+  
+  # DEBUG:
+  # debug=TRUE
+  
+  # join by clp
+  
+  clean_clp <- function(x, sil) {
+    for (l in sil$sil) {
+      # DEBUG:
+      # x <- "1MISE10067"
+      # l <- "1MISE"
+      r_l <- paste0("^", l)
+      # print(r_l)
+      x <- str_replace_all(x, r_l, "")
+    }
+    return(x)
+  }
+  
+  appo_int <- interventi_psc %>% 
+    anti_join(progetti_psc, by = "COD_LOCALE_PROGETTO") %>% 
+    mutate(COD_LOCALE_PROGETTO_OGV = COD_LOCALE_PROGETTO,
+           CUP_OGV = CUP) %>% 
+    mutate(TEMP_CLP = clean_clp(COD_LOCALE_PROGETTO, octk::sil))
+  
+  appo_pro <- progetti_psc %>% 
+    anti_join(interventi_psc, by = "COD_LOCALE_PROGETTO") %>% 
+    mutate(TEMP_CLP = clean_clp(COD_LOCALE_PROGETTO, octk::sil)) %>% 
+    select(TEMP_CLP, ID_PSC, COD_LOCALE_PROGETTO, CUP)
+  
+  appo <- appo_int %>% 
+    inner_join(appo_pro, 
+               by = c("TEMP_CLP", "ID_PSC"),
+               suffix = c(".int", ".pro")) 
+  
+  if (debug == TRUE) {
+    chk <- appo %>%
+      select(TEMP_CLP, ID_PSC, COD_LOCALE_PROGETTO.int, COD_LOCALE_PROGETTO.pro, CUP.int, CUP.pro)
+    write.xlsx(chk, file.path(TEMP, "chk_match_interventi_by_clp.xlsx"))
+    message("Correzioni da match su CLP senza codice SIL per ", dim(chk)[1], " interventi")
+  }
+  
+  appo1 <- appo %>% 
+    mutate(CUP = if_else(is.na(CUP.int), CUP.pro, CUP.int), #MEMO: integra solo CUP vuoti lato programmazione, non modifica CUP diversi con attuazione (che si controllano in data quality)
+           COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.pro) 
+  
+  interventi_psc_2 <- appo1 %>% 
+    select(-TEMP_CLP, -COD_LOCALE_PROGETTO.int, -COD_LOCALE_PROGETTO.pro, -CUP.int, -CUP.pro) %>% 
+    # bind_rows(interventi_psc %>% 
+    #             anti_join(appo1 %>% 
+    #                         select(COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.int), # MEMO: il join va fatto sul codice originale!
+    #                       by = "COD_LOCALE_PROGETTO")) %>% 
+    bind_rows(interventi_psc %>% 
+                anti_join(appo1 %>% 
+                            select(ID),
+                          by = "ID")) %>% 
+    select(names(interventi_psc))
+  
+  dim(interventi_psc_2)[1] == dim(interventi_psc)[1]    
+  
+  
+  # join by cup 
+  n_cup_int <- interventi_psc_2 %>% 
+    filter(!is.na(CUP)) %>% 
+    filter(CUP != "no") %>% 
+    filter(CUP != "-") %>% 
+    filter(nchar(CUP) == 15) %>% 
+    # count(CUP) %>%
+    count(CUP, ID_PSC) %>%
+    filter(n == 1)
+  
+  n_cup_pro <- progetti_psc %>% 
+    # count(CUP) %>%
+    count(CUP, ID_PSC) %>%
+    filter(n == 1)
+  
+  appo_int_2 <- interventi_psc_2 %>% 
+    semi_join(n_cup_int, by = c("CUP", "ID_PSC"))
+  
+  appo_pro_2 <- progetti_psc %>% 
+    semi_join(n_cup_pro, by = c("CUP", "ID_PSC")) %>% 
+    anti_join(interventi_psc_2, by = "COD_LOCALE_PROGETTO") %>% 
+    select(ID_PSC, CUP, COD_LOCALE_PROGETTO)
+  
+  appo2 <- appo_int_2 %>% 
+    inner_join(appo_pro_2, 
+               by = c("CUP", "ID_PSC"),
+               suffix = c(".int", ".pro")) 
+  
+  if (debug == TRUE) {
+    chk1 <- appo2 %>%
+      select(ID_PSC, CUP, COD_LOCALE_PROGETTO.int, COD_LOCALE_PROGETTO.pro)
+    write.xlsx(chk1, file.path(TEMP, "chk_match_interventi_by_cup.xlsx"))
+    message("Correzioni da match su CUP per ", dim(chk1)[1], " interventi")
+    
+    # # chk su cup duplicati
+    # n_cup_int_dupli <- interventi_psc_2 %>%
+    #   filter(!is.na(CUP)) %>%
+    #   filter(CUP != "no") %>%
+    #   filter(CUP != "-") %>%
+    #   filter(nchar(CUP) == 15) %>%
+    #   count(CUP, ID_PSC) %>%
+    #   filter(n > 1)
+    # 
+    # n_cup_pro_dupli <- progetti_psc %>%
+    #   count(CUP, ID_PSC) %>%
+    #   filter(n > 1)
+    # 
+    # appo_int_2_dupli <- interventi_psc_2 %>%
+    #   semi_join(n_cup_int_dupli, by = c("CUP", "ID_PSC"))
+    # 
+    # appo_pro_2_dupli <- progetti_psc %>%
+    #   semi_join(n_cup_pro_dupli, by = c("CUP", "ID_PSC")) %>%
+    #   anti_join(interventi_psc_2, by = "COD_LOCALE_PROGETTO") %>%
+    #   select(ID_PSC, CUP, COD_LOCALE_PROGETTO, TITOLO_PROGETTO=OC_TITOLO_PROGETTO)
+    # 
+    # appo2_dupli <- appo_int_2_dupli %>%
+    #   inner_join(appo_pro_2_dupli,
+    #              by = c("CUP", "ID_PSC"))
+    # 
+    # chk2 <- appo2_dupli %>%
+    #   select(ID_PSC, CUP, COD_LOCALE_PROGETTO.x, TITOLO_PROGETTO.x, COD_LOCALE_PROGETTO.y, TITOLO_PROGETTO.y)
+    # 
+    # 
+    # write.xlsx(chk2, file.path(TEMP, "chk_match_interventi_by_cup_duplicati.xlsx"))
+    # message("Duplicati da match su CUP per ", dim(chk2)[1], " interventi/progetti. Analizza il file chk_match_interventi_by_cup_duplicati.xlsx e correggi a mano nel DBCOE")
+  }
+  
+  appo3 <- appo2 %>% 
+    mutate(COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.pro) 
+  
+  interventi_psc_3 <- appo3 %>% 
+    select(-COD_LOCALE_PROGETTO.int, -COD_LOCALE_PROGETTO.pro) %>% 
+    # bind_rows(interventi_psc_2 %>% 
+    #             anti_join(appo3 %>% 
+    #                         select(COD_LOCALE_PROGETTO = COD_LOCALE_PROGETTO.int), # MEMO: il join va fatto sul codice originale!
+    #                       by = "COD_LOCALE_PROGETTO")) %>% 
+    bind_rows(interventi_psc_2 %>% 
+                anti_join(appo3 %>% 
+                            select(ID),
+                          by = "ID")) %>% 
+    select(names(interventi_psc))
+  
+  dim(interventi_psc_3)[1] == dim(interventi_psc_2)[1] 
+  
+  if (export == TRUE) {
+    write.xlsx(interventi_psc_3, file.path(DB, "Interventi_DBCOE_PSC.xlsx"))
+  }
+  
+  if (debug == TRUE) {
+    write.xlsx(interventi_psc_3, file.path(TEMP, "Interventi_DBCOE_PSC.xlsx"))
+  }
+  
+  return(interventi_psc_3)
+}

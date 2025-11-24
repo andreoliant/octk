@@ -138,7 +138,7 @@ setup_macroaree <- function(bimestre, progetti, operazioni_713, operazioni_1420,
 #'
 #' @param df Dataset in formato standard.
 #' @return Il dataset operazioni integrato.
-fix_operazioni_macroaree <- function(df) {
+fix_macroaree_1420 <- function(df) {
   
   
   # patch per caratteri spuri
@@ -191,7 +191,7 @@ fix_operazioni_macroaree <- function(df) {
 #'
 #' @param df Dataset in formato standard.
 #' @return Il dataset operazioni integrato.
-fix_operazioni_713_macroaree <- function(df) {
+fix_macroaree_713 <- function(df) {
   
   
   # df <- df %>%
@@ -325,7 +325,7 @@ workflow_macroaree <- function(bimestre, progetti, operazioni_713, operazioni_14
     # elimina duplicati anomali (solo per 1420)
     filter(STATO == 1) %>%
     # fix per anomalie (cambiano nei diversi bimestri ma sono abbastanza generiche)
-    fix_operazioni_macroaree(.) %>%
+    fix_macroaree_1420(.) %>%
     # creo ambito
     # mutate(x_AMBITO = case_when(oc_cod_fonte == "FS1420" & ue_descr_fondo == "IOG" ~ "YEI",
     #                             oc_cod_fonte == "FS1420" & ue_descr_fondo == "PAC" ~ "SNAI",
@@ -1099,7 +1099,7 @@ workflow_macroaree <- function(bimestre, progetti, operazioni_713, operazioni_14
     # elimina duplicati anomali (solo per 1420)
     filter(STATO == 1) %>%
     # fix per anomalie (cambiano nei diversi bimestri ma sono abbastanza generiche)
-    fix_operazioni_macroaree(.) %>%
+    fix_macroaree_1420(.) %>%
     # creo ambito
     # mutate(x_AMBITO = case_when(oc_cod_fonte == "FS1420" & ue_descr_fondo == "IOG" ~ "YEI",
     #                             oc_cod_fonte == "FS1420" & ue_descr_fondo == "PAC" ~ "SNAI",
@@ -1865,7 +1865,7 @@ workflow_macroaree <- function(bimestre, progetti, operazioni_713, operazioni_14
     mutate(x_AMBITO = "PAC:::FSC") %>%
     separate_rows(x_AMBITO, sep = ":::") %>%
     # ricalcolo variabili coe (sovrascive fabio)
-    fix_operazioni_713_macroaree(.) %>%
+    fix_macroaree_713(.) %>%
     # map per ambito
     mutate(COS_AMM = case_when(x_AMBITO == "FSC" ~ 0,
                                x_AMBITO == "PAC" ~ 0,
@@ -1946,7 +1946,7 @@ workflow_macroaree <- function(bimestre, progetti, operazioni_713, operazioni_14
   # clean
   operazioni_713 <- operazioni_713_raw_temp %>%
     # fix per caratteri spuri
-    fix_operazioni_713_macroaree(.) %>%
+    fix_macroaree_713(.) %>%
     # creo ambito e ciclo
     mutate(x_AMBITO = case_when(!is.na(x_AMBITO) ~ x_AMBITO, # MEMO: serve a incorporare fix sopra
                                 OC_COD_FONTE == "FS0713" ~ QSN_FONDO_COMUNITARIO,
@@ -2725,6 +2725,7 @@ load_macroaree <- function(bimestre, visualizzati=TRUE, DATA) {
   return(perimetro)
 }
 
+#OPERAZIONI DA MACROAREE----
 
 #' Crea il dataset operazioni
 #'
@@ -2783,3 +2784,5 @@ load_operazioni_macroaree <- function(bimestre, visualizzati=TRUE, DATA) {
   
   return(perimetro)
 }
+
+
