@@ -27,7 +27,7 @@ setup_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1420
       message("Fix su progetti effettuati")
     }
     
-    operazioni <- workflow_operazioni_dataiku_extra(bimestre, progetti, operazioni_713, operazioni_1420, operazioni_extra, debug=debug)
+    operazioni <- workflow_operazioni(bimestre, progetti, operazioni_713, operazioni_1420, operazioni_extra, debug=debug)
     
     # export
     if (export == TRUE) {
@@ -131,7 +131,7 @@ setup_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1420
                   by = "COD_LOCALE_PROGETTO") %>% 
         # NEW
         mutate(COD_SEZIONE = x_COD_LIVELLO_0, 
-               DES_SEZIONE = x_DES_LIVELLO_0, 
+               DESCR_SEZIONE = x_DES_LIVELLO_0, 
                OC_COD_ARTICOLAZ_PROGRAMMA = x_COD_LIVELLO_1,
                OC_DESCR_ARTICOLAZ_PROGRAMMA = x_DES_LIVELLO_1,
                OC_COD_SUBARTICOLAZ_PROGRAMMA = x_COD_LIVELLO_2,
@@ -158,15 +158,6 @@ setup_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1420
     message("Non hai definito il folder DATA. Carica 'oc' ed inizializza 'oc_init()'.")
   }
 }
-
-
-
-
-
-
-
-
-
 
 
 
