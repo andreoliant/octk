@@ -27,6 +27,10 @@ setup_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1420
       message("Fix su progetti effettuati")
     }
     
+<<<<<<< HEAD
+=======
+    # TODO: rinominare
+>>>>>>> 84e4233469b292ea2b798e519cec4254eccca249
     operazioni <- workflow_operazioni(bimestre, progetti, operazioni_713, operazioni_1420, operazioni_extra, debug=debug)
     
     # export
@@ -53,6 +57,7 @@ setup_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1420
         left_join(progetti %>%
                   select(COD_LOCALE_PROGETTO, CUP_COD_NATURA),
                 by = "COD_LOCALE_PROGETTO") %>%
+        # TODO: decidere se spostare dentreo workflow
         mutate(COE_SUD = costo_ammesso_MZ, 
                COE_CN = costo_ammesso_CN,
                COE_IMP_SUD = case_when(CUP_COD_NATURA == "08" ~ imp_trasf_ammesso_MZ,
@@ -141,6 +146,7 @@ setup_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1420
       # x_COD_LIVELLO_1, x_DES_LIVELLO_1, 
       # x_COD_LIVELLO_2, x_DES_LIVELLO_2
       
+      # TODO: serve un solo export
       # export
       if (use_ecomix == TRUE) {
         write.csv2(operazioni_light, file.path(DATA, paste0("operazioni_ecomix_", bimestre, ".csv")), row.names = FALSE)
@@ -215,7 +221,7 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
   
   
   # ----------------------------------------------------------------------------------- #
-  #  variabili COE per 2014-2020
+  #  variabili COE per extra
   
   # chk
   # operazioni_1420_raw %>% count(oc_cod_fonte, ue_descr_fondo)
@@ -251,7 +257,7 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
   #     count(oc_cod_fonte, ue_descr_fondo, MULTI)
   
   message("Preparazione dati extra...")
-  
+  # dati extrasistema----
   
   # clean
   operazioni_extra <- operazioni_extra_raw %>%
@@ -270,6 +276,7 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
     #fix ACCOESBAILICATA
     mutate(OC_CODICE_PROGRAMMA = ifelse(OC_CODICE_PROGRAMMA == "ACCOESBASILICATA", "ACCOESBASILICAT", OC_CODICE_PROGRAMMA))%>%
     # creo ambito
+    # TODO: togliere casi 1420
     mutate(x_AMBITO = case_when(oc_cod_fonte == "FSC1420"& ue_descr_fondo == "PAC" ~ "SNAI", # AREEINTVVFF: STRATEGIA AREE INTERNE INCENDI BOSCHIVI
                                 oc_cod_fonte == "NAZORD" & ue_descr_fondo == "PAC" ~ "SNAI", # programmi SNAI LdS
                                 oc_cod_fonte == "FS1420" & ue_descr_fondo == "PAC" ~ "SNAI", # 2020PCDPCINA001: CONTRIBUTI AI COMUNI DELLE AREE INTERNE
@@ -286,8 +293,9 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
                                 oc_cod_fonte == "NAZORD" ~ "SNAI",
                                 oc_cod_fonte == "FS2127" ~ oc_ambito,
                                 oc_cod_fonte == "FDR2127" ~ oc_ambito,
-                                oc_cod_fonte == "FSC2127" ~ oc_ambito,)) %>%
+                                oc_cod_fonte == "FSC2127" ~ oc_ambito)) %>%
     # articolazioni
+    # TODO: togliere casi 1420
     mutate(x_COD_LIVELLO_0 = case_when(x_AMBITO == "FSC" & !is.na(psc_sezione) ~ psc_sezione,
                                        x_AMBITO == "FDR" & !is.na(psc_sezione) ~ psc_sezione,
                                        TRUE ~ NA_character_),
@@ -345,7 +353,8 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
                                        x_AMBITO == "SNAI" ~ pac_descr_lineazione,
                                        x_AMBITO == "FEASR" ~ descr_submisura_feasr,
                                        x_AMBITO == "FDR" ~ psc_descr_sett_interv,
-                                       x_AMBITO == "JTF" ~ ue_descr_ob_specifico,)) %>% 
+                                       x_AMBITO == "JTF" ~ ue_descr_ob_specifico)) %>% 
+    # TODO: valutare se lasciare FDR
     mutate(x_AMBITO = ifelse(x_AMBITO == "FDR", "POC", x_AMBITO))%>%
     # variabili coesione
     mutate(COS_AMM = oc_costo_coesione,
@@ -388,6 +397,7 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
   
   
   message("Preparazione dati 1420...")
+  # dati bdu 1420----
   
   # DEBUG: (post fix_operazioni_1420())
   # operazioni_1420 %>% count(oc_cod_fonte, ue_descr_fondo)
@@ -523,6 +533,7 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
   # 5 PAC          ""                     25353
   
   message("Preparazione dati 713...")
+  # dati bdu 713----
   
   operazioni_713_raw <- operazioni_713_raw %>%
     rename(COD_LOCALE_PROGETTO = cod_locale_progetto,
@@ -539,6 +550,11 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
   
   # filter(OC_CODICE_PROGRAMMA %in% c("2007IT005FA
   
+  # TODO: verificare se serve ancora (sono interamente dentro PSC?) 
+  # in teoria sono da cancellare, ma va gestita rappresentazione su PAC...
+  # es. https://opencoesione.gov.it/it/dati/progetti/1mise788/
+  # es. https://opencoesione.gov.it/it/dati/progetti/?q=&programma=2007IT001FA005&selected_facets=fonte:PAC0713&r=1
+  # TODO: semplificare perché troppo contorto
   # FIX: duplicazione di programmi PAC-FSC (es. direttrici ferroviarie)
   appo <- operazioni_713_raw %>%
     # rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>%
@@ -731,7 +747,7 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
   
   
   # ----------------------------------------------------------------------------------- #
-  # bind
+  # bind----
   
   message("Unione dati...")
   
@@ -748,6 +764,7 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
                                OC_COD_CICLO == 2 ~ "2014-2020",
                                OC_COD_CICLO == 3 ~ "2021-2027",
                                OC_COD_CICLO == 9 ~ "2000-2006",
+                               # TODO: controllare true finale, va bene ancora 1420? c'è diff con fabio su 1420
                                TRUE ~ "2014-2020")) # MEMO: fix per anomalie di pre-esteso
   
   # DEBUG:
@@ -862,6 +879,7 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
   # ----------------------------------------------------------------------------------- #
   # debug multi
   
+  # TODO: da buttare
   if (debug == TRUE) {
     appo <- operazioni %>%
       semi_join(progetti_multi, by = "COD_LOCALE_PROGETTO") %>%
@@ -931,6 +949,8 @@ workflow_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1
 #' @return Il dataset operazioni integrato.
 fix_operazioni_1420 <- function(df) {
   
+  # TODO: da spostare in workflow quando creo x_AMBITO
+  
   df <- df %>%
     mutate(ue_descr_fondo = case_when(ue_descr_fondo == "EAFRD" ~ "FEASR",
                                       ue_descr_fondo == "ESF" ~ "FSE",
@@ -951,6 +971,7 @@ fix_operazioni_1420 <- function(df) {
 #' @return Il dataset operazioni integrato.
 fix_operazioni_713 <- function(df) {
   
+  # TODO: capire se va fatto ancora
   
   # df <- df %>%
   #   mutate(COD_LOCALE_PROGETTO = case_when(grepl("^1MISE174", COD_LOCALE_PROGETTO) ~ "1MISE174",
