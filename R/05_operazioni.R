@@ -27,10 +27,10 @@ setup_operazioni <- function(bimestre, progetti, operazioni_713, operazioni_1420
       message("Fix su progetti effettuati")
     }
     
-<<<<<<< HEAD
-=======
+
+
     # TODO: rinominare
->>>>>>> 84e4233469b292ea2b798e519cec4254eccca249
+
     operazioni <- workflow_operazioni(bimestre, progetti, operazioni_713, operazioni_1420, operazioni_extra, debug=debug)
     
     # export
