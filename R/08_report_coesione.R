@@ -23,7 +23,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
                                                    export=FALSE, export_xls=FALSE, progetti=NULL, DB) {
   
   # DEBUG: 
-  # perimetro <- macroaree
+  # perimetro <- operazioni
   # use_flt <- TRUE
   # use_cicli_psc <- TRUE
   # use_fix_siepoc <- TRUE
@@ -61,24 +61,34 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
   
   # programmazione
   spalla <- programmi %>%
-    group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA) %>%
+    mutate(COD_SEZIONE = case_when(COD_LIVELLO_1 == "ORD" ~ "SO",
+                               COD_LIVELLO_1 == "SEZ_SPEC_1_COVID" ~ "SS_1",
+                               COD_LIVELLO_1 == "SEZ_SPEC_2_FS" ~ "SS_2",
+                               COD_LIVELLO_1 == "CIS" ~ "SOCIS",
+                               TRUE ~ NA))%>%    
+    group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, COD_SEZIONE) %>%
     summarise(RISORSE = sum(FINANZ_TOTALE, na.rm = TRUE),
               RISORSE_UE = sum(FINANZ_UE, na.rm = TRUE))
   
   # integra totali
   appo0 <- perimetro %>% 
-    group_by(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO) %>%
+    group_by(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, COD_SEZIONE, DES_SEZIONE) %>%
     summarise(N = n(),
               COE = sum(COE, na.rm = TRUE),
               COE_IMP = sum(COE_IMP, na.rm = TRUE),
               COE_PAG = sum(COE_PAG, na.rm = TRUE)) %>% 
+    mutate(COD_SEZIONE = case_when(str_detect(COD_SEZIONE, "SOCIS") ~ "SOCIS",
+                                   COD_SEZIONE == "SO" ~ "SO",
+                                   COD_SEZIONE == "SS_1" ~ "SS_1",
+                                   COD_SEZIONE == "SS_2" ~ "SS_2",
+                                   TRUE ~ NA))%>%
     left_join(progetti %>% 
                 select(COD_LOCALE_PROGETTO, CP=OC_FINANZ_TOT_PUB_NETTO, IMP=IMPEGNI, PAG=TOT_PAGAMENTI),
               by = "COD_LOCALE_PROGETTO")
   
   # attuazione
   appo <- appo0 %>%
-    group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO) %>%
+    group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, COD_SEZIONE, DES_SEZIONE) %>%
     summarise(N = n(),
               COE = sum(COE, na.rm = TRUE),
               COE_IMP = sum(COE_IMP, na.rm = TRUE),
@@ -95,7 +105,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
                             summarise(COE = sum(COE, na.rm = TRUE)) %>%
                             spread(OC_STATO_PROCEDURALE, COE, fill = 0, drop = FALSE),
                           by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO")),
-              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO")) %>%
+              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "COD_SEZIONE")) %>%
     as_tibble(.) %>%
     # riempie NA con 0
     # mutate_if(is.numeric, funs(replace(., is.na(.), 0))) %>%
@@ -129,7 +139,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
   
   # chk programmi con attuazione e risorse 0
   chk <- out %>%
-    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
+    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, COD_SEZIONE, DES_SEZIONE, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
            `Non avviato`,
            `In avvio di progettazione`,
            `In corso di progettazione`,
@@ -144,7 +154,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
   }
   
   out <- out %>%
-    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
+    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, COD_SEZIONE, DES_SEZIONE, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
            `Non avviato`,
            `In avvio di progettazione`,
            `In corso di progettazione`,
