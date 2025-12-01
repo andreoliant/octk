@@ -72,7 +72,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
   
   # integra totali
   appo0 <- perimetro %>% 
-    group_by(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, COD_SEZIONE, DES_SEZIONE) %>%
+    group_by(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, COD_SEZIONE, DESCR_SEZIONE) %>%
     summarise(N = n(),
               COE = sum(COE, na.rm = TRUE),
               COE_IMP = sum(COE_IMP, na.rm = TRUE),
@@ -88,7 +88,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
   
   # attuazione
   appo <- appo0 %>%
-    group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, COD_SEZIONE, DES_SEZIONE) %>%
+    group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, COD_SEZIONE, DESCR_SEZIONE) %>%
     summarise(N = n(),
               COE = sum(COE, na.rm = TRUE),
               COE_IMP = sum(COE_IMP, na.rm = TRUE),
@@ -139,7 +139,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
   
   # chk programmi con attuazione e risorse 0
   chk <- out %>%
-    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, COD_SEZIONE, DES_SEZIONE, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
+    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, COD_SEZIONE, DESCR_SEZIONE, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
            `Non avviato`,
            `In avvio di progettazione`,
            `In corso di progettazione`,
@@ -154,7 +154,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
   }
   
   out <- out %>%
-    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, COD_SEZIONE, DES_SEZIONE, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
+    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, COD_SEZIONE, DESCR_SEZIONE, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
            `Non avviato`,
            `In avvio di progettazione`,
            `In corso di progettazione`,
