@@ -1,7 +1,11 @@
 Package: octk
 Type: Package
 Title: OpenCoesione Toolkit
+<<<<<<< HEAD
 Version: 0.7.12
+=======
+Version: 0.7.11
+>>>>>>> 4c794bd546dbe2c383762754a121507a27d54364
 Author: Antonio Andreoli
 Maintainer: Antonio Andreoli <antonio.andreoli@opencoesione.team>
 Description: Toolkit per l'importazione e l'analisi dei dati di OpenCoesione

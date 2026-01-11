@@ -1045,7 +1045,8 @@ load_operazioni <- function(bimestre, visualizzati=TRUE) {
   # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = TRUE, refactor = TRUE)
   # perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
   DATA <- file.path(dirname(DATA), bimestre)
-  perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), col_types = col_types)
+  # perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), col_types = col_types)
+  perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), col_types = col_types, locale = readr::locale(encoding = "UTF-8"))
   
   # fix per dissesto
   # TODO: da spostare a monte nel workflow di operazioni

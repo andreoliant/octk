@@ -461,6 +461,11 @@ workflow_macroaree <- function(bimestre, progetti, operazioni_713, operazioni_14
   #   group_by(x_AMBITO) %>% 
   #   summarise_if(is.numeric, sum, na.rm=TRUE)
   
+  # CHK:
+  # chk <- operazioni_extra %>% 
+  #   filter(OC_CODICE_PROGRAMMA == "ACCOESPUGLIA") 
+  # chk %>% 
+  #   summarise_if(is.numeric, sum, na.rm=TRUE)
   
   
   # ----------------------------------------------------------------------------------- #
