@@ -1289,17 +1289,18 @@ make_input_delta  <- function(OLD) {
                     mutate_if(is.numeric, as.character))
       
           
-    } else {
+    }    
+    else {
       tab_delta <- tab_new %>%
         mutate_if(is.numeric, as.character) %>%
         mutate(NOTE = as.character(NOTE))%>%
         anti_join(tab %>%
-                    select(-QUERY, -NOTE) %>%
-                    select(contains("COD")))
+                    select(-QUERY, -NOTE)%>%
+                    select(contains("COD")|contains("psc")))
       
       chk <- tab %>%
         select(-QUERY, -NOTE) %>%
-        select(contains("COD")) %>%
+        select(contains("COD")|contains("psc")) %>%
         anti_join(tab_new %>%
                     mutate_if(is.numeric, as.character))
     }
@@ -1437,7 +1438,8 @@ update_input_with_delta <- function(OLD) {
         semi_join(tab_new %>%
                     mutate_if(is.numeric, as.character) %>%
                     select(-QUERY, -NOTE) %>%
-                    select(contains("COD")))
+                    select(contains("COD")|contains("psc")))
+                    
       
       # chk <- tab %>%
       #   select(-QUERY, -NOTE) %>%

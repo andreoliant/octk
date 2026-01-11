@@ -166,7 +166,7 @@ set_developer <- function(user) {
                                     "Daniela2",
                                     "Paolo",
                                     "AndreaT"),
-                          path = c(file.path("G:","Drive condivisi"), # "G:/Drive condivisi"
+                          path = c(file.path("H:","Drive condivisi"), # "G:/Drive condivisi"
                                    file.path("G:","Drive condivisi"),
                                    file.path("G:","Drive condivisi"),
                                    # file.path("/Volumes", "GoogleDrive", "Drive condivisi"), # "/Volumes/GoogleDrive/Drive condivisi"
