@@ -163,15 +163,15 @@ crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
   
   addStyle(wb, sheet = "progetti", style_border, rows = 2, cols = c(1:22), gridExpand = TRUE, stack = TRUE)
   
-  addStyle(wb, sheet = "progetti", style_border, rows = seq(start_row, n_max), cols = c(1:8, 22), gridExpand = TRUE, stack = TRUE)
-  addStyle(wb, sheet = "progetti", style_number2, rows = seq(start_row, n_max), cols = c(9:15), gridExpand = TRUE, stack = TRUE)
-  addStyle(wb, sheet = "progetti", style_date, rows = seq(start_row, n_max), cols = c(16:21), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "progetti", style_border, rows = seq(start_row, n_max), cols = c(1:8, 25), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "progetti", style_number2, rows = seq(start_row, n_max), cols = c(9:18), gridExpand = TRUE, stack = TRUE)
+  addStyle(wb, sheet = "progetti", style_date, rows = seq(start_row, n_max), cols = c(19:24), gridExpand = TRUE, stack = TRUE)
   
-  setColWidths(wb, sheet = "progetti", cols = c(1:8, 22), widths = 24)
-  setColWidths(wb, sheet = "progetti", cols = c(9:15), widths = 16)
-  setColWidths(wb, sheet = "progetti", cols = c(16:21), widths = 12)
+  setColWidths(wb, sheet = "progetti", cols = c(1:8, 25), widths = 24)
+  setColWidths(wb, sheet = "progetti", cols = c(9:18), widths = 16)
+  setColWidths(wb, sheet = "progetti", cols = c(19:24), widths = 12)
   
-  ungroupColumns(wb, "progetti", cols = 1:22)
+  ungroupColumns(wb, "progetti", cols = 1:25)
   
   writeData(wb, sheet = "linee", x = appo2, startCol = 1, startRow = 3, colNames = FALSE)
   
@@ -189,9 +189,9 @@ crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
   addStyle(wb, sheet = "linee", style_number2, rows = seq(start_row, n_max), cols = c(8:9), gridExpand = TRUE, stack = TRUE)
 
   setColWidths(wb, sheet = "linee", cols = c(1:7), widths = 24)
-  setColWidths(wb, sheet = "linee", cols = c(8:9), widths = 16)
+  setColWidths(wb, sheet = "linee", cols = c(8:10), widths = 16)
 
-  ungroupColumns(wb, "linee", cols = 1:9)
+  ungroupColumns(wb, "linee", cols = 1:10)
   
   temp_file <- paste0(regione, "_monitoraggio_accordi.xlsx")
   saveWorkbook(wb, file = file.path(OUTPUT, "monitoraggio", temp_file), overwrite = TRUE)

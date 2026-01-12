@@ -15,7 +15,8 @@ write_tables_to_wb(
   start_row = 4,
   gap_rows = 1,
   header_df = NULL,
-  apply_labels = TRUE
+  apply_labels = TRUE,
+  total_regex = "^(?i)\\\\s*(?:sub)?totale\\\\b"
 )
 }
 \arguments{
@@ -35,11 +36,14 @@ write_tables_to_wb(
 
 \item{start_row}{riga dell’header blu (default 4)}
 
-\item{gap_rows}{righe vuote fra una tabella e la successiva (default 2)}
+\item{gap_rows}{righe vuote fra una tabella e la successiva (default 1)}
 
-\item{header_df}{opzionale: data‑frame con colonne name / label}
+\item{header_df}{opzionale: data-frame con colonne name / label / (formula|formule)}
 
 \item{apply_labels}{se TRUE applica i label presenti in header_df}
+
+\item{total_regex}{regex per riconoscere Totali/Subtotali nella prima colonna
+(default: inizio riga con "totale" o "subtotale", case-insensitive)}
 }
 \value{
 workbook invisibile (wb)
