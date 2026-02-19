@@ -1161,7 +1161,7 @@ report_summarise_coe <- function(
       p_COE_PAG = dplyr::if_else(abs(RISORSE_COE) < 0.01 | RISORSE_COE == 0 | is.na(RISORSE_COE), 0, round(COE_PAG/ RISORSE_COE, 2))
     ) %>%
     dplyr::select(dplyr::all_of(group_cols),
-                  N, RISORSE_COE, COE, p_COE, COE_IMP, p_COE_IMP, COE_PAG, p_COE_PAG)
+                  RISORSE_COE, COE, p_COE, COE_IMP, p_COE_IMP, COE_PAG, p_COE_PAG, N)
   
   # --- output finale ---
   dplyr::bind_rows(by_grp, total_row)
@@ -1392,7 +1392,7 @@ report_summarise_cp <- function(
       p_PAG = dplyr::if_else(abs(RISORSE_COE) < 0.01 | RISORSE_TOT == 0 | is.na(RISORSE_TOT), 0, round(PAG / RISORSE_TOT, 2))
     ) %>%
     dplyr::select(dplyr::all_of(group_cols),
-                  N, RISORSE_TOT, CP, p_CP, IMP, p_IMP, PAG, p_PAG)
+                  RISORSE_TOT, CP, p_CP, IMP, p_IMP, PAG, p_PAG, N)
   
   # --- riga totale in stile tuo: mutate + summarise ---
   blank_others <- setdiff(group_cols, total_label_col)
@@ -1418,7 +1418,7 @@ report_summarise_cp <- function(
       p_PAG = dplyr::if_else(abs(RISORSE_COE) < 0.01 | RISORSE_TOT == 0 | is.na(RISORSE_TOT), 0, round(PAG / RISORSE_TOT, 2))
     ) %>%
     dplyr::select(dplyr::all_of(group_cols),
-                  N, RISORSE_TOT, CP, p_CP, IMP, p_IMP, PAG, p_PAG)
+                  RISORSE_TOT, CP, p_CP, IMP, p_IMP, PAG, p_PAG, N)
   
   dplyr::bind_rows(by_grp, total_row)
 }
