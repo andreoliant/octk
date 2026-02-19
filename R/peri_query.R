@@ -772,7 +772,53 @@ query_comuni <- function(progetti) {
 
 
 
-
+#' Ricerca progetti per comune
+#'
+#' Ricerca progetti per comune di localizzazione a partire da input in "comuni".
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_COMUNI.
+query_comuni_2 <- function(progetti) {
+  
+  # load matrix
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), 
+                      sheet = "comuni_2", 
+                      col_types = c("numeric", "text", "numeric", 
+                                    "text", "text", "text", "numeric", "text", "text", "text", "text"))
+  } else {
+    appo <- read_csv2(file.path(INPUT, "comuni.csv"))
+  }
+  
+  matrix <- appo  %>%
+    rename(QUERY_COMUNI = QUERY)
+  
+  # merge
+  peri_comuni <- progetti %>%
+    select(COD_LOCALE_PROGETTO, COD_COMUNE) %>%
+    separate_rows(COD_COMUNE, sep = ":::") %>%
+    # allinea codici oc a matrix (senza regione)
+    mutate(chk = nchar(COD_COMUNE)) %>% 
+    filter(chk == 9) %>% 
+    mutate(COD_COMUNE = substr(COD_COMUNE, 4, 9)) %>% 
+    inner_join(matrix %>%
+                 filter(QUERY_COMUNI != 0),
+               by = "COD_COMUNE") %>%
+    # select(COD_LOCALE_PROGETTO, QUERY_COMUNI, AMBITO, AMBITO_SUB)
+    distinct(COD_LOCALE_PROGETTO, QUERY_COMUNI, AMBITO, AMBITO_SUB, AMBITO_SUB_2)
+  # MEMO: uso inner_join per tenere QUERY_COMUNI
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_comuni <- peri_comuni %>%
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_COMUNI = min(QUERY_COMUNI),
+              AMBITO = paste0(AMBITO, collapse = ":::"),
+              AMBITO_SUB = paste0(AMBITO_SUB, collapse = ":::"),
+              AMBITO_SUB_2 = paste0(AMBITO_SUB_2, collapse = ":::"))
+  
+  return(peri_comuni)
+  
+}
 
 
 
