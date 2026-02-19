@@ -4,16 +4,12 @@
 \alias{make_report_cis}
 \title{Report CIS}
 \usage{
-make_report_cis(bimestre, analisi, setup_risk = FALSE, setup_summary = FALSE)
+make_report_cis(bimestre, analisi)
 }
 \arguments{
 \item{bimestre}{Bimestre di OpenCoesione}
 
 \item{analisi}{Analisi interventi CIS con programmazione, attuazione e ritardi da workflow_cis()}
-
-\item{setup_risk}{Vuoi esportare anche i report per la verifia dei rischi di attuazione a partire dall'analisi dei ritardi?}
-
-\item{setup_summary}{Vuoi esportare anche il riepilogo per tutti i CIS?}
 }
 \value{
 Per ogni CIS, un dossier excel in OUTPUT/dossier

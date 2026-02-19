@@ -4,10 +4,12 @@
 \alias{load_db_pnrr}
 \title{Carica dati di programmazione PNRR dal database della programmazione}
 \usage{
-load_db_pnrr(DB)
+load_db_pnrr(DB, use_macroaree = FALSE)
 }
 \arguments{
 \item{DB}{Percorso al database generato con oc_init() o sovrascritto.}
+
+\item{use_macroaree}{Vuoi usare le macroaree territoriali? Default FALSE.}
 }
 \value{
 Dataframe
