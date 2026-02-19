@@ -86,6 +86,13 @@ load_db_accordi <- function(DB) {
   return(interventi)
 }
 
+load_mapping_accordi <- function(bimestre) {
+  
+  out <- read_xlsx(file.path(DRIVE, "DATI", "ACCORDI", "operazioni-interventi", paste0("operazioni_accordi_", bimestre, ".xlsx")))
+  # out <- read_xlsx(file.path(DRIVE, "DATI", "ACCORDI", "operazioni-interventi", paste0("operazioni_accordi_", "20250630", ".xlsx")))
+  return(out)
+}
+
 #' Workflow per template monitoraggio extra-sistema accordi
 #' 
 #' Workflow per template monitoraggio extra-sistema accordi
@@ -1112,8 +1119,8 @@ crea_accordi_pubblicazione_campania <- function(regione, interventi) {
 chk_variazioni_accordi <- function(db_ver_new, db_ver_old) {
   
   # DEBUG:
-  # db_ver_new <- "20250630.00"
-  # db_ver_old <- "20250430.00"
+  # db_ver_new <- "20251031.00"
+  # db_ver_old <- "20250831.00"
   
   DB_NEW <- file.path(DRIVE, "PROGRAMMAZIONE", db_ver_new)
   DB_OLD <- file.path(DRIVE, "PROGRAMMAZIONE", db_ver_old)
@@ -1123,22 +1130,36 @@ chk_variazioni_accordi <- function(db_ver_new, db_ver_old) {
   
   # testo
   appo_text <- interventi_old %>% 
-    mutate(OC_FLAG_MONITORAGGIO = as.character(OC_FLAG_MONITORAGGIO)) %>% 
-    select(ID, AMBITO, CUP, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_TITOLARE, OC_CODICE_PROGRAMMA,
+    # duplica cup e titolo per controllo e anagrafica
+    mutate(ID_CUP = CUP,
+           ID_TITOLO = TITOLO_PROGETTO) %>% 
+    mutate(FLAG_MONITORAGGIO = as.character(FLAG_MONITORAGGIO)) %>% 
+    select(ID, ID_CUP, ID_TITOLO, AMBITO, CUP, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_TITOLARE, OC_CODICE_PROGRAMMA,
            DESCRIZIONE_PROGRAMMA, COD_AREA_TEMATICA, COD_SETTORE_INTERVENTO, MACROAREA, REGIONE,
-           AMMINISTRAZIONE_BENEFICIARIA, TITOLO_PROGETTO, CICLO_PROGRAMMAZIONE, COD_LOCALE_PROGETTO,
-           COD_PROC_ATTIVAZIONE, OC_FLAG_MONITORAGGIO, NOTE, ULTIMA_VERSIONE, NOTE_COFIN,
+           AMMINISTRAZIONE_BENEFICIARIA, TITOLO_PROGETTO, CICLO_PROGRAMMAZIONE, 
+           FLAG_MONITORAGGIO, NOTE, ULTIMA_VERSIONE, NOTE_COFIN,
            AREA_TEMATICA, SETTORE_INTERVENTO) %>% 
-    pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE") %>% 
+    pivot_longer(cols = c(-ID, -ID_CUP, -ID_TITOLO, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), 
+                 names_to = "VARIABILE", values_to = "VALORE") %>% 
     full_join(interventi_new %>% 
-                mutate(OC_FLAG_MONITORAGGIO = as.character(OC_FLAG_MONITORAGGIO)) %>% 
-                select(ID, AMBITO, CUP, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_TITOLARE, OC_CODICE_PROGRAMMA,
+                # duplica cup e titolo per controllo e anagrafica
+                mutate(ID_CUP = CUP,
+                       ID_TITOLO = TITOLO_PROGETTO) %>% 
+                mutate(FLAG_MONITORAGGIO = as.character(FLAG_MONITORAGGIO)) %>% 
+                select(ID, ID_CUP, ID_TITOLO, AMBITO, CUP, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_TITOLARE, OC_CODICE_PROGRAMMA,
                        DESCRIZIONE_PROGRAMMA, COD_AREA_TEMATICA, COD_SETTORE_INTERVENTO, MACROAREA, REGIONE,
-                       AMMINISTRAZIONE_BENEFICIARIA, TITOLO_PROGETTO, CICLO_PROGRAMMAZIONE, COD_LOCALE_PROGETTO,
-                       COD_PROC_ATTIVAZIONE, OC_FLAG_MONITORAGGIO, NOTE, ULTIMA_VERSIONE, NOTE_COFIN,
+                       AMMINISTRAZIONE_BENEFICIARIA, TITOLO_PROGETTO, CICLO_PROGRAMMAZIONE, 
+                       FLAG_MONITORAGGIO, NOTE, ULTIMA_VERSIONE, NOTE_COFIN,
                        AREA_TEMATICA, SETTORE_INTERVENTO) %>% 
-                pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE"),
+                pivot_longer(cols = c(-ID, -ID_CUP, -ID_TITOLO, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE"),
               by = c("ID", "AMMINISTRAZIONE_TITOLARE", "SEZIONE", "VARIABILE"), suffix = c("_old", "_new")) %>% 
+    # consolida CUP e TITOLO
+    mutate(ID_CUP = if_else(is.na(ID_CUP_new), ID_CUP_old, ID_CUP_new),
+           ID_TITOLO = if_else(is.na(ID_TITOLO_new), ID_TITOLO_old, ID_TITOLO_new)) %>%  
+    select(AMMINISTRAZIONE_TITOLARE, SEZIONE, ID, ID_CUP, ID_TITOLO,	VARIABILE,	VALORE_old,	VALORE_new) %>% 
+    
+    
+    # verifica
     mutate(TIPO_VARIABILE = "TEXT") %>% 
     filter(!(is.na(VALORE_old) & is.na(VALORE_new))) %>% 
     mutate(CHK = case_when(VALORE_old == VALORE_new ~ 0, 
@@ -1149,52 +1170,70 @@ chk_variazioni_accordi <- function(db_ver_new, db_ver_old) {
   
   # euro
   appo_euro <- interventi_old %>% 
-    select(ID, AMMINISTRAZIONE_TITOLARE, SEZIONE, FINANZ_TOT,  FINANZ_FSC, FINANZ_FDR, FINANZ_ALTRO,
+    select(ID, CUP, TITOLO_PROGETTO, AMMINISTRAZIONE_TITOLARE, SEZIONE, FINANZ_TOT,  FINANZ_FSC, FINANZ_FDR, FINANZ_ALTRO,
            SPESA_2023, SPESA_2024, SPESA_2025, SPESA_2026, SPESA_2027, SPESA_2028, SPESA_2029, SPESA_2030,
            SPESA_2031, SPESA_2032, SPESA_2033, SPESA_2034, SPESA_2035, FINANZ_REG,
            FINANZ_ALTRO_PSC,  FINANZ_ALTRO_POC, FINANZ_ALTRO_UE, FINANZ_ALTRO_PNRR,
-           FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV, FINANZ_POR) %>% 
-    pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE") %>% 
+           FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV) %>% 
+    pivot_longer(cols = c(-ID, -CUP, -TITOLO_PROGETTO, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE") %>% 
     full_join(interventi_new %>% 
-                select(ID, AMMINISTRAZIONE_TITOLARE, SEZIONE, FINANZ_TOT,  FINANZ_FSC, FINANZ_FDR, FINANZ_ALTRO,
+                select(ID, CUP, TITOLO_PROGETTO, AMMINISTRAZIONE_TITOLARE, SEZIONE, FINANZ_TOT,  FINANZ_FSC, FINANZ_FDR, FINANZ_ALTRO,
                        SPESA_2023, SPESA_2024, SPESA_2025, SPESA_2026, SPESA_2027, SPESA_2028, SPESA_2029, SPESA_2030,
                        SPESA_2031, SPESA_2032, SPESA_2033, SPESA_2034, SPESA_2035, FINANZ_REG,
                        FINANZ_ALTRO_PSC,  FINANZ_ALTRO_POC, FINANZ_ALTRO_UE, FINANZ_ALTRO_PNRR,
-                       FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV, FINANZ_POR) %>% 
-                pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE"),
+                       FINANZ_ALTRO_LOC, FINANZ_ALTRO_NAZ, FINANZ_ALTRO_PRIV) %>% 
+                pivot_longer(cols = c(-ID, -CUP, -TITOLO_PROGETTO, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE"),
               by = c("ID", "AMMINISTRAZIONE_TITOLARE", "SEZIONE", "VARIABILE"), suffix = c("_old", "_new")) %>% 
+    # consolida CUP e TITOLO
+    mutate(CUP = if_else(is.na(CUP_new), CUP_old, CUP_new),
+           TITOLO_PROGETTO = if_else(is.na(TITOLO_PROGETTO_new), TITOLO_PROGETTO_old, TITOLO_PROGETTO_new)) %>% 
+    select(AMMINISTRAZIONE_TITOLARE, SEZIONE, ID, CUP, TITOLO_PROGETTO,	VARIABILE,	VALORE_old,	VALORE_new) %>% 
+    # verifica
     mutate(TIPO_VARIABILE = "EURO") %>% 
     filter(!(is.na(VALORE_old) & is.na(VALORE_new))) %>% 
     mutate(CHK = case_when(VALORE_old == VALORE_new ~ 0, 
-                           VALORE_old != VALORE_new ~ 1,
+                           # VALORE_old != VALORE_new ~ 1,
+                           abs(round(VALORE_old, 2)) != abs(round(VALORE_new, 2)) ~ 1,
                            is.na(VALORE_old) ~ 1,
-                           is.na(VALORE_new) ~ 1),
-           DELTA_EURO = VALORE_old -VALORE_new) %>% 
-    filter(CHK > 0)
+                           is.na(VALORE_new) ~ 1)) %>% 
+    mutate_if(is.numeric, replace_na, replace = 0) %>% 
+    mutate(DELTA_EURO = VALORE_new - VALORE_old) %>% 
+    filter(CHK > 0) %>% 
+    # fix nomi anagrafica cpme caso "text"
+    rename(ID_CUP = CUP,
+           ID_TITOLO = TITOLO_PROGETTO) 
   
   # date
   appo_date <- interventi_old %>% 
-    select(ID, AMMINISTRAZIONE_TITOLARE, SEZIONE, PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE,
+    select(ID, CUP, TITOLO_PROGETTO, AMMINISTRAZIONE_TITOLARE, SEZIONE, PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE,
            PROGET_FIN_PRE, ESEC_INI_PRE, ESEC_FIN_PRE, INC_DT_APERTURA_AV,
            INC_DT_CHIUSURA_AV, INC_DT_ATTIV_MIS) %>% 
-    pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE") %>% 
+    pivot_longer(cols = c(-ID, -CUP, -TITOLO_PROGETTO, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE") %>% 
     full_join(interventi_new %>% 
-                select(ID, AMMINISTRAZIONE_TITOLARE, SEZIONE, PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE,
+                select(ID, CUP, TITOLO_PROGETTO, AMMINISTRAZIONE_TITOLARE, SEZIONE, PROGRAM_INI_PRE, PROGRAM_FIN_PRE, PROGET_INI_PRE,
                        PROGET_FIN_PRE, ESEC_INI_PRE, ESEC_FIN_PRE, INC_DT_APERTURA_AV,
                        INC_DT_CHIUSURA_AV, INC_DT_ATTIV_MIS) %>% 
-                pivot_longer(cols = c(-ID, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE"),
+                pivot_longer(cols = c(-ID, -CUP, -TITOLO_PROGETTO, -AMMINISTRAZIONE_TITOLARE, -SEZIONE), names_to = "VARIABILE", values_to = "VALORE"),
               by = c("ID", "AMMINISTRAZIONE_TITOLARE", "SEZIONE", "VARIABILE"), suffix = c("_old", "_new")) %>% 
+    # consolida CUP e TITOLO
+    mutate(CUP = if_else(is.na(CUP_new), CUP_old, CUP_new),
+           TITOLO_PROGETTO = if_else(is.na(TITOLO_PROGETTO_new), TITOLO_PROGETTO_old, TITOLO_PROGETTO_new)) %>% 
+    select(AMMINISTRAZIONE_TITOLARE, SEZIONE, ID, CUP, TITOLO_PROGETTO,	VARIABILE,	VALORE_old,	VALORE_new) %>% 
+    # verifica
     mutate(TIPO_VARIABILE = "DATE") %>% 
     filter(!(is.na(VALORE_old) & is.na(VALORE_new))) %>% 
     mutate(CHK = case_when(VALORE_old == VALORE_new ~ 0, 
                            VALORE_old != VALORE_new ~ 1,
                            is.na(VALORE_old) ~ 1,
                            is.na(VALORE_new) ~ 1),
-           DELTA_DAYS = difftime(VALORE_old, VALORE_new, units="days")) %>% 
-    filter(CHK > 0)
+           DELTA_DAYS = as.numeric(difftime(VALORE_new, VALORE_old, units="days"))) %>% 
+    filter(CHK > 0) %>% 
+    # fix nomi anagrafica cpme caso "text"
+    rename(ID_CUP = CUP,
+           ID_TITOLO = TITOLO_PROGETTO) 
   
   write.xlsx(x = list(text = appo_text, euro = appo_euro, date = appo_date),
-             file.path(TEMP, paste0("chk_delta_", db_ver_new, "_", db_ver_old, ".xlsx")))
+             file.path(TEMP, paste0("chk_delta_", db_ver_new, "_", db_ver_old, "_id_cup.xlsx")))
   
   # report by amministrazione
   chk_amministrazioni <- appo_text %>% 
@@ -1211,20 +1250,20 @@ chk_variazioni_accordi <- function(db_ver_new, db_ver_old) {
   
   write.xlsx(chk_amministrazioni, file.path(TEMP, paste0("chk_delta_", db_ver_new, "_", db_ver_old, "_regioni.xlsx")))
   
-  # report sintesi
-  chk <- appo_text %>% 
-    select(TIPO_VARIABILE, VARIABILE, CHK) %>% 
-    bind_rows(appo_euro %>% 
-                select(TIPO_VARIABILE, VARIABILE, CHK, DELTA_EURO)) %>% 
-    bind_rows(appo_date %>% 
-                select(TIPO_VARIABILE, VARIABILE, CHK, DELTA_DAYS)) %>% 
-    group_by(TIPO_VARIABILE, VARIABILE) %>% 
-    summarise(CHK = sum(CHK, na.rm = TRUE),
-              DELTA_EURO = sum(DELTA_EURO, na.rm = TRUE),
-              DELTA_DAYS = sum(DELTA_DAYS, na.rm = TRUE)) %>% 
-    filter(CHK > 0)
-  
-  write.xlsx(chk, file.path(TEMP, paste0("chk_delta_", db_ver_new, "_", db_ver_old, "_sintesi.xlsx")))
+  # # report sintesi
+  # chk <- appo_text %>% 
+  #   select(TIPO_VARIABILE, VARIABILE, CHK) %>% 
+  #   bind_rows(appo_euro %>% 
+  #               select(TIPO_VARIABILE, VARIABILE, CHK, DELTA_EURO)) %>% 
+  #   bind_rows(appo_date %>% 
+  #               select(TIPO_VARIABILE, VARIABILE, CHK, DELTA_DAYS)) %>% 
+  #   group_by(TIPO_VARIABILE, VARIABILE) %>% 
+  #   summarise(CHK = sum(CHK, na.rm = TRUE),
+  #             DELTA_EURO = sum(DELTA_EURO, na.rm = TRUE),
+  #             DELTA_DAYS = sum(DELTA_DAYS, na.rm = TRUE)) %>% 
+  #   filter(CHK > 0)
+  # 
+  # write.xlsx(chk, file.path(TEMP, paste0("chk_delta_", db_ver_new, "_", db_ver_old, "_sintesi.xlsx")))
   
   
   message(paste0("Il report chk_delta_", db_ver_new, "_", db_ver_old, ".xlsx e le relative sintesi sono salvati in TEMP"))
