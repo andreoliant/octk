@@ -194,6 +194,8 @@ load_progetti_regis <- function(scarico) {
   progetti <- read_delim(
     file.path(DRIVE, "DATI", "PNRR", "opendata_regis", scarico, "Z__Progetti.csv"),
     delim = ";",
+    # quote = "\"",            # default, ma lo esplicito
+    # escape_double = TRUE,    # gestisce "" dentro campi quotati
     locale = locale(encoding = "utf8", decimal_mark = "."),
     col_types = list(
       Programma = col_character(),
