@@ -745,11 +745,11 @@ prep_dati_psc_bimestre <- function(bimestre, versione, matrix_po_psc, po_naz, ar
   
   chk <- appo3 %>% 
     filter(OC_CODICE_PROGRAMMA == "2016PATTISICI" & COE>COSTO_AMM_FSC) %>% 
-    select(COD_LOCALE_PROGETTO, COE, costo_ammesso_MZ, COE_SUD)
+    select(COD_LOCALE_PROGETTO, COE, costo_ammesso_MZ)
   
   chk2 <- appo5 %>% 
     semi_join(chk, by = "COD_LOCALE_PROGETTO") %>% 
-    select(COD_LOCALE_PROGETTO, COE, costo_ammesso_MZ, COE_SUD)
+    select(COD_LOCALE_PROGETTO, COE, costo_ammesso_MZ)
   
   # DEV: allineare numerazione
   appo2 <- appo5
@@ -2198,14 +2198,14 @@ make_report_temi_macroaree_psc <- function(progetti_psc, operazioni=NULL, progra
   }
   
   
-  progetti_psc_migrati <- setup_macroaree_psc(progetti_psc, operazioni)
-  
-  appo <- progetti_psc %>% 
-    anti_join(progetti_psc_migrati, 
-              by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_CICLO")) %>% 
-    bind_rows(progetti_psc_migrati)
-
-  progetti_psc <- appo
+  # progetti_psc_migrati <- setup_macroaree_psc(progetti_psc, operazioni)
+  # 
+  # appo <- progetti_psc %>% 
+  #   anti_join(progetti_psc_migrati, 
+  #             by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_CICLO")) %>% 
+  #   bind_rows(progetti_psc_migrati)
+  # 
+  # progetti_psc <- appo
   
   # OLD:
   # if (is.null(programmazione)) {
@@ -3815,15 +3815,19 @@ setup_macroaree_psc <- function(progetti_psc, operazioni, export=FALSE) {
  
   # fix temporaneo su imp e pag
   appo <- operazioni_1420_raw %>% 
-    mutate(QUOTA_SUD = COE_SUD/COE) %>% 
-    mutate(COE_IMP_SUD = QUOTA_SUD * COE_IMP,
+    #mutate(QUOTA_SUD = COE_SUD/COE) %>% 
+    mutate(COE_SUD = ifelse( x_MACROAREA == "Mezzogiorno", COE, 0),
+           COE_CN = COE - COE_SUD,
+           COE_IMP_SUD = ifelse( x_MACROAREA == "Mezzogiorno", COE_IMP, 0),
            COE_IMP_CN = COE_IMP - COE_IMP_SUD,
-           COE_PAG_SUD = QUOTA_SUD * COE_PAG,
+           COE_PAG_SUD = ifelse( x_MACROAREA == "Mezzogiorno", COE_PAG, 0),
            COE_PAG_CN = COE_PAG - COE_PAG_SUD)
   
   # chk fix
   appo %>% 
-    summarise(COE_IMP = sum(COE_IMP, na.rm = TRUE),
+    summarise(COE_SUD = sum(COE_SUD, na.rm = TRUE),
+              COE_CN = sum(COE_CN, na.rm = TRUE),
+              COE_IMP = sum(COE_IMP, na.rm = TRUE),
               COE_PAG = sum(COE_PAG, na.rm = TRUE),
               COE_IMP_SUD = sum(COE_IMP_SUD, na.rm = TRUE),
               COE_IMP_CN = sum(COE_IMP_CN, na.rm = TRUE),
@@ -3831,12 +3835,13 @@ setup_macroaree_psc <- function(progetti_psc, operazioni, export=FALSE) {
               COE_PAG_CN = sum(COE_PAG_CN, na.rm = TRUE)) %>% 
     mutate(CHK_IMP = COE_IMP - COE_IMP_SUD - COE_IMP_CN,
            CHK_PAG = COE_PAG - COE_PAG_SUD - COE_PAG_CN)
+ 
   # COE_IMP     COE_PAG COE_IMP_SUD  COE_IMP_CN COE_PAG_SUD  COE_PAG_CN     CHK_IMP      CHK_PAG
   # <dbl>       <dbl>       <dbl>       <dbl>       <dbl>       <dbl>       <dbl>        <dbl>
   # 13720805269. 4075468994. 9318101036. 4402704233. 2421109661. 1654359333. 0.000000954 -0.000000238
   
   # chk quota fix
-  appo %>% filter(QUOTA_SUD > 1)
+  #appo %>% filter(QUOTA_SUD > 1)
   # 0
   
   # integra variabili finanziarie per macroaree
@@ -3844,7 +3849,9 @@ setup_macroaree_psc <- function(progetti_psc, operazioni, export=FALSE) {
     mutate(x_AMBITO = "FSC") %>% 
     left_join(appo %>% 
                 select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_CICLO,
-                       COE_SUD, COE_CN, COE_IMP_SUD, COE_IMP_CN, COE_PAG_SUD, COE_PAG_CN),
+                       #COE_SUD, 
+                       #COE_CN,
+                       COE_IMP_SUD, COE_IMP_CN, COE_PAG_SUD, COE_PAG_CN),
               by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_CICLO"))
 
   pivo <- workflow_pivot_macroaree(operazioni_1420)

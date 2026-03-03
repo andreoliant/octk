@@ -3890,6 +3890,8 @@ workflow_pivot_macroaree <- function(operazioni) {
   # # 2014IT16M2OP002     POR PUGLIA FESR-FSE     0       0      0     0     0 #MEMO: contiene NA su COE
   
   appo_costo <- operazioni_1420  %>% 
+    mutate(COE_SUD = ifelse( x_MACROAREA == "Mezzogiorno", COE, 0),
+           COE_CN = COE - COE_SUD)%>%
     select(COD_LOCALE_PROGETTO, 
            OC_CODICE_PROGRAMMA,
            x_AMBITO,
@@ -3928,6 +3930,8 @@ workflow_pivot_macroaree <- function(operazioni) {
   sum(pivo_costo$COE, na.rm = TRUE) - sum(operazioni_1420$COE, na.rm = TRUE)
   
   appo_imp <- operazioni_1420 %>% 
+    mutate(COE_IMP_SUD = ifelse( x_MACROAREA == "Mezzogiorno", COE_IMP, 0),
+           COE_IMP_CN = COE_IMP - COE_IMP_SUD)%>%
     select(COD_LOCALE_PROGETTO, 
            OC_CODICE_PROGRAMMA,
            x_AMBITO,
@@ -3951,6 +3955,8 @@ workflow_pivot_macroaree <- function(operazioni) {
                                    TRUE ~ "CHK"))
   
   appo_pag <- operazioni_1420 %>% 
+    mutate(COE_PAG_SUD = ifelse( x_MACROAREA == "Mezzogiorno", COE_PAG, 0),
+           COE_PAG_CN = COE_PAG - COE_PAG_SUD)%>%
     select(COD_LOCALE_PROGETTO, 
            OC_CODICE_PROGRAMMA,
            x_AMBITO,
