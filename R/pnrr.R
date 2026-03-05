@@ -700,6 +700,7 @@ setup_dati_pnrr <- function(struttura, progetti, localizzazioni, iter, pagamenti
   # 4 Mezzogiorno      129959
   
   # NEW:
+  # versione presa da flusso temi
   reg_cn <- c("001", "002", "003", "004", "005", "006",
               "007", "008", "009", "010", "011", "012")
   reg_sud <- c("013", "014", "015", "016", "017", "018", "019", "020")
@@ -714,7 +715,85 @@ setup_dati_pnrr <- function(struttura, progetti, localizzazioni, iter, pagamenti
     sapply(data_vector, function(x) {all(unlist(str_split(x, pattern = ":::")) %in% test_vector)})
   }
   
-  temp_localizzazioni <- localizzazioni %>%
+  strip_000_tokens <- function(x, sep_out = ":::") {
+    vapply(x, function(s) {
+      
+      # MEMO:
+      # data_vector <- c("000", "001", "000:::001", "000:::000", "000:::001:::000", "000:::000:::000", "001:::000:::002", "001:::003", "001:::020")
+      # strip_000_tokens(data_vector)
+      
+      if (is.na(s)) return(NA_character_)
+      
+      # split su una o più ":" (gestisce ":::","::", ecc.)
+      parts <- unlist(stringr::str_split(s, ":+"))
+      parts <- parts[parts != "" & parts != "000"]
+      
+      if (length(parts) == 0L) "000" else paste(parts, collapse = sep_out)
+    }, character(1))
+  }
+  
+  workflow_macroaree_sub_fixing <- function(df) {
+    
+    
+    reg_cn <- c("001", "002", "003", "004", "005", "006",
+                "007", "008", "009", "010", "011", "012")
+    names(reg_cn) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
+                       "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
+    
+    reg_sud <- c("013", "014", "015", "016", "017", "018", "019", "020")
+    names(reg_sud) <- c("ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA", "SARDEGNA")
+    
+    df1 <- df %>% 
+      mutate(x_REGNAZ = "NAZ") %>% #default, serve in workflow_macroaree_sub_fixing() 
+      mutate(x_REGIONE = case_when(x_REGNAZ == "NAZ" & x_MACROAREA == "Mezzogiorno" & x_REGIONE %in% names(reg_sud) ~ x_REGIONE,
+                                   x_REGNAZ == "NAZ" & x_MACROAREA == "Mezzogiorno" ~ "ALTRO TERRITORIO",
+                                   x_REGNAZ == "NAZ" & x_MACROAREA == "Centro-Nord" & x_REGIONE %in% names(reg_cn) ~ x_REGIONE,
+                                   x_REGNAZ == "NAZ" & x_MACROAREA == "Centro-Nord" ~ "ALTRO TERRITORIO",
+                                   x_REGNAZ == "NAZ" & x_MACROAREA == "NC" ~ "ALTRO TERRITORIO", #NEW
+                                   TRUE ~ x_REGIONE),
+             x_CATREG = case_when(x_REGNAZ == "NAZ" & x_MACROAREA == "Mezzogiorno" & x_CATREG == "RMS" ~ x_CATREG,
+                                  x_REGNAZ == "NAZ" & x_MACROAREA == "Mezzogiorno" & x_CATREG == "RT" & x_REGIONE == "ABRUZZO" ~ x_CATREG,
+                                  x_REGNAZ == "NAZ" & x_MACROAREA == "Mezzogiorno" ~ "ALTRO TERRITORIO",
+                                  x_REGNAZ == "NAZ" & x_MACROAREA == "Centro-Nord" & x_CATREG == "RS" ~ x_CATREG,
+                                  x_REGNAZ == "NAZ" & x_MACROAREA == "Centro-Nord" & x_CATREG == "RT" & x_REGIONE %in% c("MARCHE", "UMBRIA") ~ x_CATREG,
+                                  x_REGNAZ == "NAZ" & x_MACROAREA == "Centro-Nord" ~ "ALTRO TERRITORIO",
+                                  x_REGNAZ == "NAZ" & x_MACROAREA == "NC" ~ "ALTRO TERRITORIO", #NEW
+                                  TRUE ~ x_CATREG))
+
+    return(df1)
+    
+  }
+  
+  # OLD:
+  # temp_localizzazioni <- localizzazioni %>%
+  #   semi_join(progetti, by = c("id_submisura_uni", "cup", "clp")) %>%
+  #   arrange(id_reg, id_pro, id_com) %>%
+  #   group_by(id_submisura_uni, cup, clp) %>%
+  #   summarise(COD_REGIONE = paste0(id_reg, collapse = ":::"),
+  #             DEN_REGIONE = paste0(reg, collapse = ":::"),
+  #             COD_PROVINCIA = paste0(id_pro, collapse = ":::"),
+  #             DEN_PROVINCIA = paste0(pro, collapse = ":::"),
+  #             COD_COMUNE = paste0(id_com, collapse = ":::"),
+  #             DEN_COMUNE = paste0(com, collapse = ":::")) %>%
+  #   mutate(x_MACROAREA = case_when(COD_REGIONE %in% reg_sud ~ "Mezzogiorno",
+  #                                  COD_REGIONE %in% reg_cn ~ "Centro-Nord",
+  #                                  grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_sud) == TRUE ~ "Mezzogiorno",
+  #                                  grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_cn) == TRUE ~ "Centro-Nord",
+  #                                  grepl(":::", COD_REGIONE) ~ "Trasversale",
+  #                                  COD_REGIONE == "999" ~ "Estero",
+  #                                  COD_REGIONE == "000" ~ "Ambito nazionale",
+  #                                  TRUE ~ "chk"))
+  # 
+  # temp_localizzazioni %>% ungroup() %>% count(x_MACROAREA)
+  # # x_MACROAREA           n
+  # # <chr>             <int>
+  # # 1 Ambito nazionale    901
+  # # 2 Centro-Nord      267410
+  # # 3 Mezzogiorno      132419
+  # # 4 Trasversale         460
+ 
+  # DEV: qui si potrebbe semplificare perché prima faccio collapse e poi cerco di semplificare 000 da esito collapse
+  temp_localizzazioni_0 <- localizzazioni %>%
     semi_join(progetti, by = c("id_submisura_uni", "cup", "clp")) %>%
     arrange(id_reg, id_pro, id_com) %>%
     group_by(id_submisura_uni, cup, clp) %>%
@@ -733,14 +812,100 @@ setup_dati_pnrr <- function(struttura, progetti, localizzazioni, iter, pagamenti
                                    COD_REGIONE == "000" ~ "Ambito nazionale",
                                    TRUE ~ "chk"))
   
-  temp_localizzazioni %>% ungroup() %>% count(x_MACROAREA)
-  # x_MACROAREA           n
-  # <chr>             <int>
-  # 1 Ambito nazionale    901
-  # 2 Centro-Nord      267410
-  # 3 Mezzogiorno      132419
-  # 4 Trasversale         460
- 
+  temp_localizzazioni_0 %>% ungroup() %>% count(x_MACROAREA)
+  
+  temp_localizzazioni <- temp_localizzazioni_0 %>% 
+    # integra regione 
+    mutate(COD_REGIONE = strip_000_tokens(COD_REGIONE)) %>% 
+    mutate(x_REGIONE = case_when(
+      COD_REGIONE == "001" ~ "PIEMONTE",
+      COD_REGIONE == "002" ~ "VALLE D'AOSTA",
+      COD_REGIONE == "003" ~ "LOMBARDIA",
+      COD_REGIONE == "005" ~ "VENETO",
+      COD_REGIONE == "006" ~ "FRIULI-VENEZIA GIULIA",
+      COD_REGIONE == "007" ~ "LIGURIA",
+      COD_REGIONE == "008" ~ "EMILIA-ROMAGNA",
+      COD_REGIONE == "009" ~ "TOSCANA",
+      COD_REGIONE == "010" ~ "UMBRIA",
+      COD_REGIONE == "011" ~ "MARCHE",
+      COD_REGIONE == "012" ~ "LAZIO",
+      COD_REGIONE == "013" ~ "ABRUZZO",
+      COD_REGIONE == "014" ~ "MOLISE",
+      COD_REGIONE == "020" ~ "SARDEGNA",
+      COD_REGIONE == "015" ~ "CAMPANIA",
+      COD_REGIONE == "016" ~ "PUGLIA",
+      COD_REGIONE == "017" ~ "BASILICATA",
+      COD_REGIONE == "018" ~ "CALABRIA",
+      COD_REGIONE == "019" ~ "SICILIA",
+      COD_REGIONE == "004" & COD_PROVINCIA == "004021" ~ "PA BOLZANO",
+      COD_REGIONE == "004" & COD_PROVINCIA == "004022" ~ "PA TRENTO",
+      TRUE ~ "ALTRO TERRITORIO")) %>%
+    # integra caterg
+    mutate(x_CATREG = case_when(
+      COD_REGIONE == "001" ~ "RS", #"PIEMONTE"
+      COD_REGIONE == "002" ~ "RS", #"VALLE D'AOSTA"
+      COD_REGIONE == "003" ~ "RS", #"LOMBARDIA"
+      COD_REGIONE == "004" & COD_PROVINCIA == "004022" ~ "RS", #"PA TRENTO"
+      COD_REGIONE == "004" & COD_PROVINCIA == "004021" ~ "RS", #"PA BOLZANO"
+      COD_REGIONE == "005" ~ "RS", #"VENETO"
+      COD_REGIONE == "006" ~ "RS", #"FRIULI-VENEZIA GIULIA"
+      COD_REGIONE == "007" ~ "RS", #"LIGURIA"
+      COD_REGIONE == "008" ~ "RS", #"EMILIA-ROMAGNA"
+      COD_REGIONE == "009" ~ "RS", #"TOSCANA"
+      COD_REGIONE == "010" ~ "RT", #"UMBRIA"
+      COD_REGIONE == "011" ~ "RT", #"MARCHE"
+      COD_REGIONE == "012" ~ "RS", #"LAZIO"
+      COD_REGIONE == "013" ~ "RT", #"ABRUZZO"
+      COD_REGIONE == "014" ~ "RMS", #"MOLISE"
+      COD_REGIONE == "020" ~ "RMS", #"SARDEGNA" 
+      COD_REGIONE == "015" ~ "RMS", #"CAMPANIA"
+      COD_REGIONE == "016" ~ "RMS", #"PUGLIA"
+      COD_REGIONE == "017" ~ "RMS", #"BASILICATA"
+      COD_REGIONE == "018" ~ "RMS", #"CALABRIA"
+      COD_REGIONE == "019" ~ "RMS", #"SICILIA"
+      TRUE ~ "ALTRO TERRITORIO")) %>%
+    # integra macroarea
+    mutate(x_MACROAREA = case_when(COD_REGIONE %in% reg_cn ~ "Centro-Nord",
+                                   COD_REGIONE %in% reg_sud ~ "Mezzogiorno",
+                                   COD_REGIONE == "000" ~ "Ambito nazionale", # AMBITO NAZIONALE
+                                   grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_cn) == TRUE ~ "Centro-Nord",
+                                   grepl(":::", COD_REGIONE) & chk_regione(COD_REGIONE, reg_sud) == TRUE ~ "Mezzogiorno",
+                                   grepl(":::", COD_REGIONE) ~ "Trasversale", # MEMO: multi-regionale su più macroaree
+                                   COD_REGIONE == "997" ~ "Estero",
+                                   COD_REGIONE == "998" ~ "Estero",
+                                   TRUE ~ "chk")) %>% 
+    # fix macroarea da programmazione (tutto sud, tutto cn, tutto ads)
+    mutate(x_MACROAREA = case_when(id_submisura_uni == "M1C1R2.03.01" ~ "NC",
+                                   id_submisura_uni == "M1C2I1.01.00" ~ "NC",
+                                   id_submisura_uni == "M1C3I1.01.01" ~ "NC",
+                                   id_submisura_uni == "M1C3I1.01.02" ~ "NC",
+                                   id_submisura_uni == "M1C3I1.01.03" ~ "NC",
+                                   id_submisura_uni == "M1C3I1.01.04" ~ "NC",
+                                   id_submisura_uni == "M1C3I1.01.06" ~ "NC",
+                                   id_submisura_uni == "M1C3I1.01.07" ~ "NC",
+                                   id_submisura_uni == "M1C3I1.01.08" ~ "NC",
+                                   id_submisura_uni == "M1C3I1.01.09" ~ "NC",
+                                   id_submisura_uni == "M1C3I1.01.11" ~ "NC",
+                                   id_submisura_uni == "M1C3I1.01.12" ~ "NC",
+                                   id_submisura_uni == "M2C1I3.03.00" ~ "NC",
+                                   id_submisura_uni == "M2C2I1.04.00" ~ "NC",
+                                   id_submisura_uni == "M2C3I2.01.00" ~ "NC",
+                                   id_submisura_uni == "M2C4I2.01.A1" ~ "Centro-Nord",
+                                   id_submisura_uni == "M2C4I3.02.02" ~ "NC",
+                                   id_submisura_uni == "M2C4I3.02.03" ~ "NC",
+                                   id_submisura_uni == "M2C4I3.05.00" ~ "NC",
+                                   id_submisura_uni == "M4C1R2.02.00" ~ "Centro-Nord",
+                                   id_submisura_uni == "M5C1I1.03.00" ~ "NC",
+                                   id_submisura_uni == "M5C3I1.03.00" ~ "Mezzogiorno",
+                                   id_submisura_uni == "M7C1I04.1.00" ~ "NC",
+                                   id_submisura_uni == "M7C1I07.1.00" ~ "NC",
+                                   id_submisura_uni == "M7C1I13.1.00" ~ "NC",
+                                   id_submisura_uni == "M7C1I14.1.00" ~ "NC",
+                                   id_submisura_uni == "M7C1I15.1.01" ~ "NC",
+                                   TRUE ~ x_MACROAREA)) %>% 
+    workflow_macroaree_sub_fixing(.)
+  
+  
   
   # ----------------------------------------------------------------------------------- #
   # iter
@@ -1005,6 +1170,8 @@ setup_dati_pnrr <- function(struttura, progetti, localizzazioni, iter, pagamenti
            OC_CODFISC_BENEFICIARIO = cf_sogg_att,
            OC_DENOM_BENEFICIARIO = sogg_att,
            x_MACROAREA,
+           x_CATREG,
+           x_REGIONE,
            COD_REGIONE,
            DEN_REGIONE,
            COD_PROVINCIA, 
