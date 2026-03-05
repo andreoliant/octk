@@ -631,8 +631,7 @@ workflow_operazioni_dataiku_extra <- function(bimestre, progetti, operazioni_713
   
   message("Entro in workflow operazioni")
   
-  po <- octk::po_riclass%>%
-    mutate(OC_CODICE_PROGRAMMA = ifelse(OC_CODICE_PROGRAMMA == "ACCOESBASILICATA", "ACCOESBASILICAT", OC_CODICE_PROGRAMMA))
+  po <- octk::po_riclass
   
   
   operazioni_extra_raw <- operazioni_extra
@@ -723,7 +722,7 @@ workflow_operazioni_dataiku_extra <- function(bimestre, progetti, operazioni_713
     #                                   oc_cod_fonte == "FS1420" & ue_descr_fondo == "Y.E.I." ~ "IOG",
     #                                   TRUE ~ ue_descr_fondo)) %>%
     #fix ACCOESBAILICATA
-    mutate(OC_CODICE_PROGRAMMA = ifelse(OC_CODICE_PROGRAMMA == "ACCOESBASILICATA", "ACCOESBASILICAT", OC_CODICE_PROGRAMMA))%>%
+    #mutate(OC_CODICE_PROGRAMMA = ifelse(OC_CODICE_PROGRAMMA == "ACCOESBASILICATA", "ACCOESBASILICAT", OC_CODICE_PROGRAMMA))%>%
     # creo ambito
     mutate(x_AMBITO = case_when(oc_cod_fonte == "FSC1420"& ue_descr_fondo == "PAC" ~ "SNAI", # AREEINTVVFF: STRATEGIA AREE INTERNE INCENDI BOSCHIVI
                                 oc_cod_fonte == "NAZORD" & ue_descr_fondo == "PAC" ~ "SNAI", # programmi SNAI LdS
@@ -1816,8 +1815,9 @@ make_report_programmi_coesione_dataiku <- function(perimetro, usa_meuro=FALSE, s
   
   if (use_flt == TRUE) {
     programmi <- programmi %>%
-      filter(FLAG_MONITORAGGIO == 1)%>%
-      mutate(OC_CODICE_PROGRAMMA = ifelse(OC_CODICE_PROGRAMMA == "ACCOESBASILICATA", "ACCOESBASILICAT", OC_CODICE_PROGRAMMA))
+      filter(FLAG_MONITORAGGIO == 1)
+    # %>%
+    #   mutate(OC_CODICE_PROGRAMMA = ifelse(OC_CODICE_PROGRAMMA == "ACCOESBASILICATA", "ACCOESBASILICAT", OC_CODICE_PROGRAMMA))
     
     perimetro <- perimetro %>% 
       filter(OC_FLAG_VISUALIZZAZIONE %in% c(0, 10))
@@ -2019,7 +2019,7 @@ make_report_programmi_macroaree_coesione_dataiku <- function(perimetro, usa_meur
   
   # NEW:
   po <- init_programmazione_dati(DB=DB, use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) %>%
-    mutate(OC_CODICE_PROGRAMMA = ifelse(OC_CODICE_PROGRAMMA == "ACCOESBASILICATA", "ACCOESBASILICAT", OC_CODICE_PROGRAMMA))%>%
+    #mutate(OC_CODICE_PROGRAMMA = ifelse(OC_CODICE_PROGRAMMA == "ACCOESBASILICATA", "ACCOESBASILICAT", OC_CODICE_PROGRAMMA))%>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
            x_PROGRAMMA = DESCRIZIONE_PROGRAMMA) %>%
     distinct(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO)
@@ -2027,8 +2027,9 @@ make_report_programmi_macroaree_coesione_dataiku <- function(perimetro, usa_meur
   # programmazione
   programmi <- init_programmazione_dati(DB=DB, use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc) %>%
     rename(x_GRUPPO = TIPOLOGIA_PROGRAMMA,
-           x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)%>%
-    mutate(OC_CODICE_PROGRAMMA = ifelse(OC_CODICE_PROGRAMMA == "ACCOESBASILICATA", "ACCOESBASILICAT", OC_CODICE_PROGRAMMA))
+           x_PROGRAMMA = DESCRIZIONE_PROGRAMMA)
+  # %>%
+  #   mutate(OC_CODICE_PROGRAMMA = ifelse(OC_CODICE_PROGRAMMA == "ACCOESBASILICATA", "ACCOESBASILICAT", OC_CODICE_PROGRAMMA))
   
   if (use_flt == TRUE) {
     programmi <- programmi %>%
@@ -2219,10 +2220,10 @@ make_report_bimestre_coesione_dataiku <- function(programmi, usa_meuro=TRUE, exp
                 COE = sum(COE, na.rm = TRUE),
                 COE_IMP = sum(COE_IMP, na.rm = TRUE),
                 COE_PAG = sum(COE_PAG, na.rm = TRUE),
-                N_CLP = sum(N_CLP, na.rm = TRUE),
-                CP = sum(CP, na.rm = TRUE),
-                IMP = sum(IMP, na.rm = TRUE),
-                PAG = sum(PAG)) %>%
+                N_CLP = sum(N_CLP, na.rm = TRUE))%>%
+                #CP = sum(CP, na.rm = TRUE),
+                # IMP = sum(IMP, na.rm = TRUE),
+                # PAG = sum(PAG)) %>%
       arrange(x_CICLO, x_AMBITO)
     
     if (usa_meuro == TRUE) {
@@ -2231,16 +2232,18 @@ make_report_bimestre_coesione_dataiku <- function(programmi, usa_meuro=TRUE, exp
                RISORSE_UE = round(RISORSE_UE/1000000, 1),
                COE = round(COE/1000000, 1),
                COE_IMP = round(COE_IMP/1000000, 1),
-               COE_PAG = round(COE_PAG/1000000, 1),
-               CP = round(CP/1000000, 1),
-               IMP = round(IMP/1000000, 1),
-               PAG = round(PAG/1000000, 1))
+               COE_PAG = round(COE_PAG/1000000, 1))
+               #CP = round(CP/1000000, 1),
+               # IMP = round(IMP/1000000, 1),
+               # PAG = round(PAG/1000000, 1))
     }
     
     # arrange per template
     report <- report %>% 
       filter(x_AMBITO != "FEAMP", x_AMBITO != "FEASR") %>% 
-      select(x_CICLO,	x_AMBITO,	RISORSE, RISORSE_UE, COE, COE_IMP, COE_PAG, N, CP, IMP, PAG, N_CLP) %>% 
+      select(x_CICLO,	x_AMBITO,	RISORSE, RISORSE_UE, COE, COE_IMP, COE_PAG, N, 
+             #CP, IMP, PAG, 
+             N_CLP) %>% 
       arrange(desc(x_CICLO), x_AMBITO)
     
   } else {
@@ -2255,10 +2258,10 @@ make_report_bimestre_coesione_dataiku <- function(programmi, usa_meuro=TRUE, exp
                 COE = sum(COE, na.rm = TRUE),
                 COE_IMP = sum(COE_IMP, na.rm = TRUE),
                 COE_PAG = sum(COE_PAG, na.rm = TRUE),
-                N_CLP = sum(N_CLP, na.rm = TRUE),
-                CP = sum(CP, na.rm = TRUE),
-                IMP = sum(IMP, na.rm = TRUE),
-                PAG = sum(PAG)) %>%
+                N_CLP = sum(N_CLP, na.rm = TRUE))%>%
+                # #CP = sum(CP, na.rm = TRUE),
+                # IMP = sum(IMP, na.rm = TRUE),
+                # PAG = sum(PAG)) %>%
       arrange(x_CICLO, x_AMBITO)
     
     if (usa_meuro == TRUE) {
@@ -2266,16 +2269,18 @@ make_report_bimestre_coesione_dataiku <- function(programmi, usa_meuro=TRUE, exp
         mutate(RISORSE = round(RISORSE/1000000, 1),
                COE = round(COE/1000000, 1),
                COE_IMP = round(COE_IMP/1000000, 1),
-               COE_PAG = round(COE_PAG/1000000, 1),
-               CP = round(CP/1000000, 1),
-               IMP = round(IMP/1000000, 1),
-               PAG = round(PAG/1000000, 1))
+               COE_PAG = round(COE_PAG/1000000, 1))
+               # #CP = round(CP/1000000, 1),
+               # IMP = round(IMP/1000000, 1),
+               # PAG = round(PAG/1000000, 1))
     }
     
     # arrange per template
     report <- report %>% 
       filter(x_AMBITO != "FEAMP", x_AMBITO != "FEASR") %>% 
-      select(x_CICLO,	x_AMBITO,	RISORSE, COE, COE_IMP, COE_PAG, N, CP, IMP, PAG, N_CLP) %>% 
+      select(x_CICLO,	x_AMBITO,	RISORSE, COE, COE_IMP, COE_PAG, N, 
+             #CP, IMP, PAG, 
+             N_CLP) %>% 
       arrange(desc(x_CICLO), x_AMBITO)
   }
   

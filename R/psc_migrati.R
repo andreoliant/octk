@@ -64,10 +64,10 @@ prep_dati_psc_migrati_bimestre <- function(bimestre, versione_psc, operazioni, p
   chk <- appo0 %>% 
     select(COD_LOCALE_PROGETTO, 
            ID_PSC,
-           x_COD_LIVELLO_1,
-           x_COD_LIVELLO_2,
+           x_LIVELLO_1,
+           x_LIVELLO_2,
            COE) %>% 
-    filter(grepl(":::", x_COD_LIVELLO_1) | grepl(":::", x_COD_LIVELLO_2)) %>% 
+    filter(grepl(":::", x_LIVELLO_1) | grepl(":::", x_LIVELLO_2)) %>% 
     arrange(ID_PSC)
   write.xlsx(chk, file.path(TEMP, "chk_temi_multipli.xlsx"))
   
@@ -80,20 +80,20 @@ prep_dati_psc_migrati_bimestre <- function(bimestre, versione_psc, operazioni, p
     #        x_COD_LIVELLO_2,
     #        COE) %>% 
     # fix per anomalie con 2 temi per 1 settore
-    mutate(x_COD_LIVELLO_1 = case_when(nchar(x_COD_LIVELLO_2) == 2 & nchar(x_COD_LIVELLO_1) > 2 ~ str_sub(x_COD_LIVELLO_1, 1, 2),
-                                       TRUE ~ x_COD_LIVELLO_1)) %>% 
+    mutate(x_LIVELLO_1 = case_when(nchar(x_LIVELLO_2) == 2 & nchar(x_LIVELLO_1) > 2 ~ str_sub(x_LIVELLO_1, 1, 2),
+                                       TRUE ~ x_LIVELLO_1)) %>% 
     # DEV: qui andrebbero separate le righe
     # codifica temi con fix per temi e settori multipli
-    mutate(COD_AREA_TEMATICA = case_when(nchar(x_COD_LIVELLO_1) > 2 & ID_PSC == "PSC_MIC" ~ "06",
-                                         nchar(x_COD_LIVELLO_1) > 2 & COD_LOCALE_PROGETTO == "9CA23034CP000000001" ~ "07",
-                                         nchar(x_COD_LIVELLO_1) > 2 & COD_LOCALE_PROGETTO == "1MISE24" ~ "06",
-                                         nchar(x_COD_LIVELLO_1) > 2 ~ NA_character_,
-                                         TRUE ~ x_COD_LIVELLO_1),
-           COD_SETTORE_INTERVENTO = case_when(nchar(x_COD_LIVELLO_2) > 2 & ID_PSC == "PSC_MIC" ~ "01",
-                                              nchar(x_COD_LIVELLO_2) > 2 & COD_LOCALE_PROGETTO == "9CA23034CP000000001" ~ "05",
-                                              nchar(x_COD_LIVELLO_2) > 2 & COD_LOCALE_PROGETTO == "1MISE24" ~ "01",
-                                              nchar(x_COD_LIVELLO_2) > 2 ~ NA_character_,
-                                              TRUE ~ x_COD_LIVELLO_2)) %>% 
+    mutate(COD_AREA_TEMATICA = case_when(nchar(x_LIVELLO_1) > 2 & ID_PSC == "PSC_MIC" ~ "06",
+                                         nchar(x_LIVELLO_1) > 2 & COD_LOCALE_PROGETTO == "9CA23034CP000000001" ~ "07",
+                                         nchar(x_LIVELLO_1) > 2 & COD_LOCALE_PROGETTO == "1MISE24" ~ "06",
+                                         nchar(x_LIVELLO_1) > 2 ~ NA_character_,
+                                         TRUE ~ x_LIVELLO_1),
+           COD_SETTORE_INTERVENTO = case_when(nchar(x_LIVELLO_2) > 2 & ID_PSC == "PSC_MIC" ~ "01",
+                                              nchar(x_LIVELLO_2) > 2 & COD_LOCALE_PROGETTO == "9CA23034CP000000001" ~ "05",
+                                              nchar(x_LIVELLO_2) > 2 & COD_LOCALE_PROGETTO == "1MISE24" ~ "01",
+                                              nchar(x_LIVELLO_2) > 2 ~ NA_character_,
+                                              TRUE ~ x_LIVELLO_2)) %>% 
     left_join(octk::info_psc_matrix_temi %>% 
                 select(COD_AREA_TEMATICA, COD_SETTORE_INTERVENTO, AREA_TEMATICA, SETTORE_INTERVENTO), 
               by = c("COD_AREA_TEMATICA", "COD_SETTORE_INTERVENTO")) 
@@ -107,31 +107,31 @@ prep_dati_psc_migrati_bimestre <- function(bimestre, versione_psc, operazioni, p
   chk <- appo1 %>% 
     select(COD_LOCALE_PROGETTO, 
            ID_PSC,
-           x_COD_LIVELLO_0,
+           x_LIVELLO_0,
            COE) %>% 
-    count(ID_PSC, x_COD_LIVELLO_0) %>% 
-    filter(!x_COD_LIVELLO_0 %in% c("SO", "SS_1", "SS_2")) %>% 
+    count(ID_PSC, x_LIVELLO_0) %>% 
+    filter(!x_LIVELLO_0 %in% c("SO", "SS_1", "SS_2")) %>% 
     arrange(ID_PSC)
   write.xlsx(chk, file.path(TEMP, "chk_sezioni.xlsx"))
   
   # clean sezione
   appo2 <- appo1 %>% 
-    mutate(SEZIONE = case_when(x_COD_LIVELLO_0 == "SO" ~ "ORD",
+    mutate(SEZIONE = case_when(x_LIVELLO_0 == "SO" ~ "ORD",
                                # x_COD_LIVELLO_0 == "SO:::" ~ "ORD",
                                # x_COD_LIVELLO_0 == "SO:::SOCIS_RC" ~ "ORD",
-                               x_COD_LIVELLO_0 == "SOCIS" ~ "CIS",
-                               x_COD_LIVELLO_0 == "SOCIS_CO" ~ "CIS",
-                               x_COD_LIVELLO_0 == "SOCIS_NA" ~ "CIS",
-                               x_COD_LIVELLO_0 == "SOCIS_PAL" ~ "CIS",
-                               x_COD_LIVELLO_0 == "SOCIS_RC" ~ "CIS",
-                               x_COD_LIVELLO_0 == "SOCIS_SA" ~ "CIS",
-                               x_COD_LIVELLO_0 == "SOCIS_VENT" ~ "CIS",
-                               x_COD_LIVELLO_0 == "SOCISTA" ~ "CIS",
-                               x_COD_LIVELLO_0 == "SS_1" ~ "SS_1",
-                               x_COD_LIVELLO_0 == "SS_2" ~ "SS_2",
-                               x_COD_LIVELLO_0 == "SS_2:" ~ "SS_2",
-                               is.na(x_COD_LIVELLO_0) ~ "CHK",
-                               x_COD_LIVELLO_0 == "" ~ "CHK",
+                               x_LIVELLO_0 == "SOCIS" ~ "CIS",
+                               x_LIVELLO_0 == "SOCIS_CO" ~ "CIS",
+                               x_LIVELLO_0 == "SOCIS_NA" ~ "CIS",
+                               x_LIVELLO_0 == "SOCIS_PAL" ~ "CIS",
+                               x_LIVELLO_0 == "SOCIS_RC" ~ "CIS",
+                               x_LIVELLO_0 == "SOCIS_SA" ~ "CIS",
+                               x_LIVELLO_0 == "SOCIS_VENT" ~ "CIS",
+                               x_LIVELLO_0 == "SOCISTA" ~ "CIS",
+                               x_LIVELLO_0 == "SS_1" ~ "SS_1",
+                               x_LIVELLO_0 == "SS_2" ~ "SS_2",
+                               x_LIVELLO_0 == "SS_2:" ~ "SS_2",
+                               is.na(x_LIVELLO_0) ~ "CHK",
+                               x_LIVELLO_0 == "" ~ "CHK",
                                TRUE ~ "CHK"))
   
   appo2 %>% 
@@ -907,15 +907,19 @@ setup_macroaree_psc_migrati <- function(progetti_psc, operazioni, export=FALSE) 
   
   # fix temporaneo su imp e pag
   appo <- operazioni_1420_raw %>% 
-    mutate(QUOTA_SUD = COE_SUD/COE) %>% 
-    mutate(COE_IMP_SUD = QUOTA_SUD * COE_IMP,
+    #mutate(QUOTA_SUD = COE_SUD/COE) %>% 
+    mutate(COE_SUD = ifelse( x_MACROAREA == "Mezzogiorno", COE, 0),
+           COE_CN = COE - COE_SUD,
+           COE_IMP_SUD = ifelse( x_MACROAREA == "Mezzogiorno", COE_IMP, 0),
            COE_IMP_CN = COE_IMP - COE_IMP_SUD,
-           COE_PAG_SUD = QUOTA_SUD * COE_PAG,
+           COE_PAG_SUD = ifelse( x_MACROAREA == "Mezzogiorno", COE_PAG, 0),
            COE_PAG_CN = COE_PAG - COE_PAG_SUD)
   
   # chk fix
   appo %>% 
-    summarise(COE_IMP = sum(COE_IMP, na.rm = TRUE),
+    summarise(COE_SUD = sum(COE_SUD, na.rm = TRUE),
+              COE_CN = sum(COE_CN, na.rm = TRUE),
+              COE_IMP = sum(COE_IMP, na.rm = TRUE),
               COE_PAG = sum(COE_PAG, na.rm = TRUE),
               COE_IMP_SUD = sum(COE_IMP_SUD, na.rm = TRUE),
               COE_IMP_CN = sum(COE_IMP_CN, na.rm = TRUE),
@@ -928,7 +932,7 @@ setup_macroaree_psc_migrati <- function(progetti_psc, operazioni, export=FALSE) 
   # 13720805269. 4075468994. 9318101036. 4402704233. 2421109661. 1654359333. 0.000000954 -0.000000238
   
   # chk quota fix
-  appo %>% filter(QUOTA_SUD > 1)
+  #appo %>% filter(QUOTA_SUD > 1)
   # 0
   
   # integra variabili finanziarie per macroaree
@@ -936,7 +940,9 @@ setup_macroaree_psc_migrati <- function(progetti_psc, operazioni, export=FALSE) 
     mutate(x_AMBITO = "FSC") %>% 
     left_join(appo %>% 
                 select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_CICLO,
-                       COE_SUD, COE_CN, COE_IMP_SUD, COE_IMP_CN, COE_PAG_SUD, COE_PAG_CN),
+                       COE_SUD, 
+                       COE_CN, 
+                       COE_IMP_SUD, COE_IMP_CN, COE_PAG_SUD, COE_PAG_CN),
               by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_CICLO"))
   
   pivo <- workflow_pivot_macroaree(operazioni_1420)
