@@ -417,7 +417,7 @@ setup_operazioni_evo_macro <- function(bimestre, progetti,
     arrow::write_parquet(out, file.path(DATA, paste0("operazioni_light_", bimestre, ".parquet")))
   }
   
-  return(out)
+  # return(out)
 }
 
 
