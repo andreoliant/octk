@@ -441,10 +441,11 @@ setup_progetti <- function(bimestre, progetti, operazioni_713, fix = FALSE, expo
              IMPORTO_AGGIUDICATO,
              IMPORTO_AGGIUDICATO_NODATA,
              IMPORTO_AGGIUDICATO_BANDITO,
-             
              COD_AREA_INT = OC_COD_AI, 
              AREA_INTERNA = OC_DENOM_AI,
-             x_STATO)
+             x_STATO,
+             OC_FLAG_AGGREGATO,
+             OC_PROGETTO_AGGREGATO)
     
     # add QSN
     message("...integro variabili qsn")
@@ -493,6 +494,7 @@ setup_progetti <- function(bimestre, progetti, operazioni_713, fix = FALSE, expo
   } else {
     message("Non hai definito il folder DATA. Carica 'oc' ed inizializza 'oc_init()'.")
   }
+  
 }
 
 
@@ -641,7 +643,10 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
       x_PROGRAMMA = col_character(),
       x_REGNAZ = col_character(),
       x_MACROAREA = col_character(),
-      x_REGIONE = col_character()
+      x_REGIONE = col_character(),
+      x_STATO = col_character(), 
+      OC_FLAG_AGGREGATO = col_integer(),
+      OC_PROGETTO_AGGREGATO = col_character()
     )
     
   } else {
