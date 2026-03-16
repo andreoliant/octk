@@ -674,6 +674,14 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
     # MEMO: qui prende anche non visualizzati
   }
   
+  # NEW: rinomina variabili minuscole di fabio
+  if (light == FALSE) {
+    progetti <- progetti %>% 
+      rename(X_CICLO = x_ciclo,
+             X_AMBITO = x_ambito,
+             X_REGNAZ = x_regnaz)
+  }
+  
   # analisi tipologia colonne
   # sapply(names(progetti), function(x) {print(paste0(x, " = ", class(progetti[[x]])))})
   
