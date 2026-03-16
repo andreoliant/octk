@@ -7,8 +7,9 @@
 #' @param bimestre Bimestre di riferimento.
 #' @param progetti File di tipo progetti da load_progetti(light=FALSE, visualizzati=FALSE)
 #' @param operazioni_713 File di tipo operazioni da flusso sas/dataiku.
+#' @param export_pqt Vuoi esportare il file di tipo progetti in formato parquet?
 #' @return Il dataset viene salvato in DATA e può essere caricato con load_progetti(light = TRUE).
-setup_progetti <- function(bimestre, progetti, operazioni_713, fix = FALSE) {
+setup_progetti <- function(bimestre, progetti, operazioni_713, fix = FALSE, export_pqt=FALSE) {
   if (exists("DATA", envir = .GlobalEnv)) {
     # loads
     # progetti <- load_progetti(bimestre = bimestre, visualizzati = TRUE, debug = TRUE, light = FALSE)
@@ -237,7 +238,7 @@ setup_progetti <- function(bimestre, progetti, operazioni_713, fix = FALSE) {
              
              COD_AREA_INT = OC_COD_AI, 
              AREA_INTERNA = OC_DENOM_AI
-      )
+             )
     
     # add QSN
     message("...integro variabili qsn")
@@ -277,6 +278,10 @@ setup_progetti <- function(bimestre, progetti, operazioni_713, fix = FALSE) {
     # export
     message("...salvataggio")
     write.csv2(progetti_light, file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), row.names = FALSE)
+    
+    if (export_pqt == TRUE) {
+      arrow::write_parquet(progetti_light, file.path(DATA, paste0("progetti_light_", bimestre, ".parquet")))
+    }
     
     
   } else {
@@ -342,8 +347,9 @@ refactor_progetti <- function(perimetro) {
 #' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
 #' @param debug Logico. Vuoi vedere i totali di progetti e costo pubblico per controllo sul portale OC?
 #' @param light Logico. Vuoi usare la versione light di "progetti.csv"?
+#' @param use_pqt Vuoi leggere progetti_light da file parquet?
 #' @return Il dataset viene caricato come "progetti" nel Global Environment. Se "progetti" è gia presente compare una notifica.
-load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FALSE, light=FALSE, refactor=FALSE)
+load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FALSE, light=FALSE, refactor=FALSE, use_pqt=FALSE)
 {
   # if (exists("progetti", envir = .GlobalEnv)) {
   #   print("Progetti esteso è gia caricato")
@@ -656,23 +662,35 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
   }
   
   # load progetti
-  if (visualizzati == TRUE) {
-    # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000) %>%
-    #   filter(OC_FLAG_VISUALIZZAZIONE == 0)
-    # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1200000) %>%
-    #   filter(OC_FLAG_VISUALIZZAZIONE == 0)
-    # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1800000) %>%
-    #   filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9) # include progetti FEASR per SNAI
-    progetti <- read_csv2(file.path(DATA, temp), col_types = col_types) %>%
-      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9 | OC_FLAG_VISUALIZZAZIONE == 10) # include progetti FEASR per SNAI
-    # CHK: progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 9) %>% count(X_AMBITO)
-  } else {
-    # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000)
-    # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1800000)
-    progetti <- read_csv2(file.path(DATA, temp), col_types = col_types)
+  if (light == TRUE & use_pqt == TRUE) {
+    progetti <- read_parquet(file.path(DATA, paste0("progetti_light_", bimestre, ".parquet")))
+    if (visualizzati == TRUE) {
+      progetti <- progetti %>%
+        filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9 | OC_FLAG_VISUALIZZAZIONE == 10)
+    }
     
-    # MEMO: qui prende anche non visualizzati
+  } else {
+    
+    if (visualizzati == TRUE) {
+      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000) %>%
+      #   filter(OC_FLAG_VISUALIZZAZIONE == 0)
+      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1200000) %>%
+      #   filter(OC_FLAG_VISUALIZZAZIONE == 0)
+      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1800000) %>%
+      #   filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9) # include progetti FEASR per SNAI
+      progetti <- read_csv2(file.path(DATA, temp), col_types = col_types) %>%
+        filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9 | OC_FLAG_VISUALIZZAZIONE == 10) # include progetti FEASR per SNAI
+      # CHK: progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 9) %>% count(X_AMBITO)
+    } else {
+      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000)
+      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1800000)
+      progetti <- read_csv2(file.path(DATA, temp), col_types = col_types)
+      
+      # MEMO: qui prende anche non visualizzati
+    }
   }
+  
+  
   
   # NEW: rinomina variabili minuscole di fabio
   if (light == FALSE) {

@@ -26,6 +26,7 @@ oc_init <- function (bimestre, db_ver, data_path = NULL, db_path = NULL,
 {
   library("tidyverse")
   library("haven")
+  library("arrow")
   library("readxl")
   library("openxlsx")
   library("lubridate")

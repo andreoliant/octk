@@ -4,8 +4,9 @@
 #'
 #' @param perimetro Dataset di classe operazioni
 #' @param visualizzati Logico. Vuoi solo i progetti visualizzati sul portale OC?
+#' @param use_pqt Vuoi leggere progetti_light da file parquet?
 #' @param DATA Path to DATA
-load_operazioni <- function(bimestre, visualizzati=TRUE, DATA) {
+load_operazioni <- function(bimestre, visualizzati=TRUE, use_pqt=FALSE, DATA) {
   
   col_types <- cols(
     COD_LOCALE_PROGETTO = col_character(),
@@ -62,8 +63,16 @@ load_operazioni <- function(bimestre, visualizzati=TRUE, DATA) {
   # perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), guess_max = 1000000)
   DATA <- file.path(dirname(DATA), bimestre)
   # perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), col_types = col_types)
-  perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), col_types = col_types, locale = readr::locale(encoding = "UTF-8"))
   
+  
+  if (use_pqt == TRUE) {
+    perimetro <- read_parquet(file.path(DATA, paste0("operazioni_light_", bimestre, ".parquet")))
+    
+  } else {
+    perimetro <- read_csv2(file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), col_types = col_types, locale = readr::locale(encoding = "UTF-8"))
+    
+  }
+
   # fix per dissesto
   # TODO: da spostare a monte nel workflow di operazioni
   # perimetro <- perimetro %>%
@@ -372,11 +381,12 @@ load_operazioni_713 <- function() {
 #' @param operazioni_1420_raw File di tipo operazioni da flusso sas/dataiku.
 #' @param operazioni_extra_raw File di tipo operazioni da flusso sas/dataiku.
 #' @param export Vuoi esportare il file in formato operazioni?
+#' @param export_pqt Vuoi esportare il file in formato operazioni in formato parquet?
 #' @param debug_mode Vuoi esportare i file di debug?
 #' @return Il dataset operazioni.
 setup_operazioni_evo_macro <- function(bimestre, progetti, 
                                        operazioni_713_raw, operazioni_1420_raw, operazioni_extra_raw, 
-                                       export=TRUE, debug=FALSE) {
+                                       export=TRUE, export_pqt=FALSE, debug=FALSE) {
   
   appo <- workflow_macroaree(bimestre, progetti, operazioni_713=operazioni_713_raw, 
                              operazioni_1420=operazioni_1420_raw, operazioni_extra=operazioni_extra_raw, 
@@ -396,11 +406,15 @@ setup_operazioni_evo_macro <- function(bimestre, progetti,
                                  x_GRUPPO == "ACCORDI" & grepl("Ord", x_LIVELLO_0) ~ "ORD",
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCSTRCAMPANIA" ~ "STRAL2",
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCBAGNCAMPANIA" ~ "STRAL3",
-                                 TRUE ~ NA_character_))
+                                 TRUE ~ NA_character_)) 
   
   
   if (export == TRUE) {
     write.csv2(out, file.path(DATA, paste0("operazioni_light_", bimestre, ".csv")), row.names = FALSE)
+  }
+  
+  if (export_pqt == TRUE) {
+    arrow::write_parquet(out, file.path(DATA, paste0("operazioni_light_", bimestre, ".parquet")))
   }
   
   return(out)
@@ -1094,7 +1108,9 @@ workflow_macroaree <- function(bimestre, progetti,
                        OC_CODFISC_BENEFICIARIO,
                        OC_DENOM_BENEFICIARIO,
                        OC_FLAG_VISUALIZZAZIONE,
-                       OC_FLAG_AGGREGATO),
+                       OC_FLAG_AGGREGATO,
+                       x_STATO
+                       ),
               by = "COD_LOCALE_PROGETTO")
   
   
