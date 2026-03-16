@@ -1,5 +1,209 @@
 # OC > Progetti
 
+
+convert_preesteso_to_parquet <- function(DATA) {
+  
+  col_types <- cols(
+    db = col_character(),
+    COD_LOCALE_PROGETTO = col_character(),
+    CUP = col_character(),
+    OC_TITOLO_PROGETTO = col_character(),
+    OC_SINTESI_PROGETTO = col_character(),
+    OC_COD_CICLO = col_double(),
+    OC_DESCR_CICLO = col_character(),
+    OC_COD_TEMA_SINTETICO = col_character(),
+    OC_TEMA_SINTETICO = col_character(),
+    COD_GRANDE_PROGETTO = col_character(),
+    DESCRIZIONE_GRANDE_PROGETTO = col_character(),
+    COD_PROGETTO_COMPLESSO = col_character(),
+    DESCRIZIONE_PROGETTO_COMPLESSO = col_character(),
+    COD_TIPO_COMPLESSITA = col_character(),
+    DESCR_TIPO_COMPLESSITA = col_character(),
+    x_ciclo = col_character(),
+    x_ambito = col_character(),
+    x_gruppo = col_character(),
+    x_regnaz = col_character(),
+    x_programma = col_character(),
+    OC_COD_FONTE = col_character(),
+    OC_DESCR_FONTE = col_character(),
+    FONDO_COMUNITARIO = col_character(),
+    OC_CODICE_PROGRAMMA = col_character(),
+    OC_DESCRIZIONE_PROGRAMMA = col_character(),
+    COD_OB_TEMATICO = col_character(),
+    DESCR_OB_TEMATICO = col_character(),
+    COD_RISULTATO_ATTESO = col_character(),
+    DESCR_RISULTATO_ATTESO = col_character(),
+    OC_COD_CATEGORIA_SPESA = col_character(),
+    OC_DESCR_CATEGORIA_SPESA = col_character(),
+    OC_ARTICOLAZIONE_PROGRAMMA = col_character(),
+    OC_SUBARTICOLAZIONE_PROGRAMMA = col_character(),
+    OC_COD_ARTICOLAZ_PROGRAMMA = col_character(),
+    OC_DESCR_ARTICOLAZ_PROGRAMMA = col_character(),
+    OC_COD_SUBARTICOLAZ_PROGRAMMA = col_character(),
+    OC_DESCR_SUBARTICOLAZ_PROGRAMMA = col_character(),
+    COD_STRUMENTO = col_character(),
+    DESCR_STRUMENTO = col_character(),
+    DESCR_TIPO_STRUMENTO = col_character(),
+    CUP_COD_NATURA = col_character(),
+    CUP_DESCR_NATURA = col_character(),
+    CUP_COD_TIPOLOGIA = col_character(),
+    CUP_DESCR_TIPOLOGIA = col_character(),
+    CUP_COD_SETTORE = col_character(),
+    CUP_DESCR_SETTORE = col_character(),
+    CUP_COD_SOTTOSETTORE = col_character(),
+    CUP_DESCR_SOTTOSETTORE = col_character(),
+    CUP_COD_CATEGORIA = col_character(),
+    CUP_DESCR_CATEGORIA = col_character(),
+    COD_ATECO = col_character(),
+    DESCRIZIONE_ATECO = col_character(),
+    OC_COD_TIPO_AIUTO = col_character(),
+    OC_DESCR_TIPO_AIUTO = col_character(),
+    COD_REGIONE = col_character(),
+    DEN_REGIONE = col_character(),
+    COD_PROVINCIA = col_character(),
+    DEN_PROVINCIA = col_character(),
+    COD_COMUNE = col_character(),
+    DEN_COMUNE = col_character(),
+    OC_MACROAREA = col_character(),
+    OC_MAREA = col_character(),
+    oc_macroarea_sas = col_character(),
+    oc_marea_sas = col_character(),
+    oc_cod_sll = col_character(),
+    OC_DENOMINAZIONE_SLL = col_character(),
+    OC_COD_AI = col_character(),
+    OC_DENOM_AI = col_character(),
+    FINANZ_UE = col_double(),
+    FINANZ_STATO_FONDO_DI_ROTAZIONE = col_double(),
+    FINANZ_STATO_FSC = col_double(),
+    FINANZ_STATO_PAC = col_double(),
+    FINANZ_PRIVATO = col_double(),
+    FINANZ_DA_REPERIRE = col_double(),
+    FINANZ_TOTALE_PUBBLICO = col_double(),
+    ECONOMIE_TOTALI = col_double(),
+    ECONOMIE_TOTALI_PUBBLICHE = col_double(),
+    ECONOMIE_PRIVATO = col_double(),
+    ECONOMIE_DA_REPERIRE = col_double(),
+    OC_FINANZ_UE_NETTO = col_double(),
+    OC_FINANZ_UE_FESR_NETTO = col_double(),
+    OC_FINANZ_UE_FSE_NETTO = col_double(),
+    OC_FINANZ_UE_FEASR_NETTO = col_double(),
+    OC_FINANZ_UE_FEAMP_NETTO = col_double(),
+    OC_FINANZ_UE_IOG_NETTO = col_double(),
+    OC_FINANZ_Stato_Fondo_Rot_NETTO = col_double(),
+    OC_FINANZ_Stato_FSC_NETTO = col_double(),
+    OC_FINANZ_Stato_PAC_NETTO = col_double(),
+    OC_FINANZ_Stato_compl_NETTO = col_double(),
+    OC_FINANZ_Stato_altri_prov_NETTO = col_double(),
+    OC_FINANZ_Regione_NETTO = col_double(),
+    OC_FINANZ_Provincia_NETTO = col_double(),
+    OC_FINANZ_Comune_NETTO = col_double(),
+    OC_FINANZ_Risorse_liberate_NETTO = col_double(),
+    OC_FINANZ_Altro_pubblico_NETTO = col_double(),
+    OC_FINANZ_Stato_estero_NETTO = col_double(),
+    OC_FINANZ_Privato_NETTO = col_double(),
+    OC_FINANZ_TOT_PUB_NETTO = col_double(),
+    OC_COSTO_COESIONE = col_double(),
+    IMPEGNI = col_double(),
+    OC_IMPEGNI_GIURID_VINCOLANTI = col_double(),
+    OC_IMPEGNI_TRASFERIMENTI = col_double(),
+    OC_IMPEGNI_COESIONE = col_double(),
+    TOT_PAGAMENTI = col_double(),
+    OC_TOT_PAGAMENTI_BENEFICIARI = col_double(),
+    OC_TOT_PAGAMENTI_TRASFERIMENTI = col_double(),
+    OC_PAGAMENTI_COESIONE = col_double(),
+    COSTO_REALIZZATO = col_double(),
+    IMPORTO_AGGIUDICATO = col_double(),
+    IMPORTO_AGGIUDICATO_NODATA = col_double(),
+    IMPORTO_AGGIUDICATO_BANDITO = col_double(),
+    COSTO_RENDICONTABILE_UE = col_double(),
+    OC_TOT_PAGAMENTI_RENDICONTAB_UE = col_double(),
+    OC_TOT_PAGAMENTI_FSC = col_double(),
+    OC_TOT_PAGAMENTI_PAC = col_double(),
+    OC_DATA_INIZIO_PROGETTO = col_integer(),
+    OC_DATA_FINE_PROGETTO_PREVISTA = col_integer(),
+    OC_DATA_FINE_PROGETTO_EFFETTIVA = col_integer(),
+    DATA_INIZIO_PREV_STUDIO_FATT = col_integer(),
+    DATA_INIZIO_EFF_STUDIO_FATT = col_integer(),
+    DATA_FINE_PREV_STUDIO_FATT = col_integer(),
+    DATA_FINE_EFF_STUDIO_FATT = col_integer(),
+    DATA_INIZIO_PREV_PROG_PREL = col_integer(),
+    DATA_INIZIO_EFF_PROG_PREL = col_integer(),
+    DATA_FINE_PREV_PROG_PREL = col_integer(),
+    DATA_FINE_EFF_PROG_PREL = col_integer(),
+    DATA_INIZIO_PREV_PROG_DEF = col_integer(),
+    DATA_INIZIO_EFF_PROG_DEF = col_integer(),
+    DATA_FINE_PREV_PROG_DEF = col_integer(),
+    DATA_FINE_EFF_PROG_DEF = col_integer(),
+    DATA_INIZIO_PREV_PROG_ESEC = col_integer(),
+    DATA_INIZIO_EFF_PROG_ESEC = col_integer(),
+    DATA_FINE_PREV_PROG_ESEC = col_integer(),
+    DATA_FINE_EFF_PROG_ESEC = col_integer(),
+    DATA_INIZIO_PREV_AGG_BANDO = col_integer(),
+    DATA_INIZIO_EFF_AGG_BANDO = col_integer(),
+    DATA_FINE_PREV_AGG_BANDO = col_integer(),
+    DATA_FINE_EFF_AGG_BANDO = col_integer(),
+    DATA_INIZIO_PREV_STIP_ATTRIB = col_integer(),
+    DATA_INIZIO_EFF_STIP_ATTRIB = col_integer(),
+    DATA_FINE_PREV_STIP_ATTRIB = col_integer(),
+    DATA_FINE_EFF_STIP_ATTRIB = col_integer(),
+    DATA_INIZIO_PREV_ESECUZIONE = col_integer(),
+    DATA_INIZIO_EFF_ESECUZIONE = col_integer(),
+    DATA_FINE_PREV_ESECUZIONE = col_integer(),
+    DATA_FINE_EFF_ESECUZIONE = col_integer(),
+    DATA_INIZIO_PREV_COLLAUDO = col_integer(),
+    DATA_INIZIO_EFF_COLLAUDO = col_integer(),
+    DATA_FINE_PREV_COLLAUDO = col_integer(),
+    DATA_FINE_EFF_COLLAUDO = col_integer(),
+    OC_STATO_FINANZIARIO = col_character(),
+    OC_STATO_PROGETTO = col_character(),
+    OC_STATO_PROCEDURALE = col_character(),
+    OC_STATO_PROCEDURALE_OGV = col_character(),
+    OC_COD_FASE_CORRENTE = col_character(),
+    OC_DESCR_FASE_CORRENTE = col_character(),
+    COD_PROCED_ATTIVAZIONE = col_character(),
+    DESCR_PROCED_ATTIVAZIONE = col_character(),
+    COD_TIPO_PROCED_ATTIVAZIONE = col_character(),
+    DESCR_TIPO_PROCED_ATTIVAZIONE = col_character(),
+    OC_CODFISC_PROGRAMMATORE = col_character(),
+    OC_DENOM_PROGRAMMATORE = col_character(),
+    OC_COD_FORMA_GIU_PROGRAMMATORE = col_character(),
+    OC_DESCR_FORMA_GIU_PROGRAMMATORE = col_character(),
+    OC_TOTALE_PROGRAMMATORI = col_double(),
+    OC_CODFISC_attuatore = col_character(),
+    OC_DENOM_attuatore = col_character(),
+    OC_COD_FORMA_GIU_attuatore = col_character(),
+    OC_DESCR_FORMA_GIU_attuatore = col_character(),
+    OC_TOTALE_ATTUATORI = col_double(),
+    OC_CODFISC_BENEFICIARIO = col_character(),
+    OC_DENOM_BENEFICIARIO = col_character(),
+    OC_COD_FORMA_GIU_BENEFICIARIO = col_character(),
+    OC_DESCR_FORMA_GIU_BENEFICIARIO = col_character(),
+    OC_TOTALE_BENEFICIARI = col_double(),
+    OC_CODFISC_realizzatorE = col_character(),
+    OC_DENOM_realizzatorE = col_character(),
+    OC_COD_FORMA_GIU_realizzatorE = col_character(),
+    OC_DESCR_FORMA_GIU_realizzatorE = col_character(),
+    OC_TOTALE_realizzatori = col_double(),
+    OC_FLAG_REGIONE_UNICA = col_double(),
+    OC_FLAG_VISUALIZZAZIONE = col_double(),
+    OC_FLAG_PAC = col_double(),
+    OC_FLAG_TAG_BENICONF = col_double(),
+    COVID = col_character(),
+    pnrr = col_double(),
+    SNAI = col_character(),
+    DATA_AGGIORNAMENTO = col_double(),
+    OC_FOCUS = col_character(),
+    x_fondo = col_character(),
+    OC_FLAG_AGGREGATO = col_integer(),
+    OC_PROGETTO_AGGREGATO = col_character()
+  )
+  
+  progetti <- read_csv2(file.path(DATA, "PROGETTI_PREESTESO.csv"), col_types = col_types)
+  
+  arrow::write_parquet(progetti, file.path(DATA, paste0("PROGETTI_PREESTESO.parquet")))
+}
+
+
 #' Crea progetti_light.csv
 #'
 #' Crea un file progetti da progetti_esteso.csv, con le sole variabili fondamentali. Aggiunge blocco x_var e x_MACROAREA.
@@ -17,8 +221,10 @@ setup_progetti <- function(bimestre, progetti, operazioni_713, fix = FALSE, expo
     
     message("Avvio creazione di progetti_light")
     
-    # clean
     progetti_light <- progetti %>%
+      # crea x_STATO (va subito perché dopo riduco variabili)
+      get_x_stato(., data_scarico=bimestre) %>% 
+      # clean
       select(COD_LOCALE_PROGETTO,
              CUP,
              OC_TITOLO_PROGETTO,
@@ -237,8 +443,8 @@ setup_progetti <- function(bimestre, progetti, operazioni_713, fix = FALSE, expo
              IMPORTO_AGGIUDICATO_BANDITO,
              
              COD_AREA_INT = OC_COD_AI, 
-             AREA_INTERNA = OC_DENOM_AI
-             )
+             AREA_INTERNA = OC_DENOM_AI,
+             x_STATO)
     
     # add QSN
     message("...integro variabili qsn")
@@ -351,15 +557,10 @@ refactor_progetti <- function(perimetro) {
 #' @return Il dataset viene caricato come "progetti" nel Global Environment. Se "progetti" è gia presente compare una notifica.
 load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FALSE, light=FALSE, refactor=FALSE, use_pqt=FALSE)
 {
-  # if (exists("progetti", envir = .GlobalEnv)) {
-  #   print("Progetti esteso è gia caricato")
-  #   progetti <- progetti
-  #
-  # } else {
+
   
-  # switch di filename per progetti_light
+  # switch nomi colonne per csv (non serve per parquet)
   if (light == TRUE) {
-    temp <- paste0("progetti_light_", bimestre, ".csv")
     
     col_types <- cols(
       COD_LOCALE_PROGETTO = col_character(),
@@ -444,13 +645,6 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
     )
     
   } else {
-    if (as.numeric(bimestre) <= 20181231) {
-      temp <- paste0("progetti_esteso_", bimestre, ".csv")
-      
-      col_types <- cols()
-      
-    } else {
-      temp <- "PROGETTI_PREESTESO.csv"
       
       col_types <- cols(
         db = col_character(),
@@ -647,7 +841,6 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
         OC_PROGETTO_AGGREGATO = col_character()
       )
     }
-  }
   
   # switch
   if (!is.null(data_path)) {
@@ -662,36 +855,26 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
   }
   
   # load progetti
-  if (light == TRUE & use_pqt == TRUE) {
-    progetti <- read_parquet(file.path(DATA, paste0("progetti_light_", bimestre, ".parquet")))
-    if (visualizzati == TRUE) {
-      progetti <- progetti %>%
-        filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9 | OC_FLAG_VISUALIZZAZIONE == 10)
-    }
-    
-  } else {
-    
-    if (visualizzati == TRUE) {
-      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000) %>%
-      #   filter(OC_FLAG_VISUALIZZAZIONE == 0)
-      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1200000) %>%
-      #   filter(OC_FLAG_VISUALIZZAZIONE == 0)
-      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1800000) %>%
-      #   filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9) # include progetti FEASR per SNAI
-      progetti <- read_csv2(file.path(DATA, temp), col_types = col_types) %>%
-        filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9 | OC_FLAG_VISUALIZZAZIONE == 10) # include progetti FEASR per SNAI
-      # CHK: progetti %>% filter(OC_FLAG_VISUALIZZAZIONE == 9) %>% count(X_AMBITO)
+  if (light == TRUE) {
+    if (use_pqt == TRUE) {
+      progetti <- read_parquet(file.path(DATA, paste0("progetti_light_", bimestre, ".parquet")))
     } else {
-      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1000000)
-      # progetti <- read_csv2(file.path(DATA, temp), guess_max = 1800000)
-      progetti <- read_csv2(file.path(DATA, temp), col_types = col_types)
-      
-      # MEMO: qui prende anche non visualizzati
+      progetti <- read_csv2(file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), col_types = col_types)
+    }
+  } else {
+    if (use_pqt == TRUE) {
+      progetti <- read_parquet(file.path(DATA, paste0("PROGETTI_PREESTESO.parquet")))
+    } else {
+      progetti <- read_csv2(file.path(DATA, paste0("PROGETTI_PREESTESO.csv")), col_types = col_types)
     }
   }
-  
-  
-  
+
+  # filtra visualizzati
+  if (visualizzati == TRUE) {
+    progetti <- progetti %>%
+      filter(OC_FLAG_VISUALIZZAZIONE == 0 | OC_FLAG_VISUALIZZAZIONE == 9 | OC_FLAG_VISUALIZZAZIONE == 10)
+  }
+
   # NEW: rinomina variabili minuscole di fabio
   if (light == FALSE) {
     progetti <- progetti %>% 
@@ -699,10 +882,7 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
              X_AMBITO = x_ambito,
              X_REGNAZ = x_regnaz)
   }
-  
-  # analisi tipologia colonne
-  # sapply(names(progetti), function(x) {print(paste0(x, " = ", class(progetti[[x]])))})
-  
+
   # refactor
   # MEMO: si applica solo a light
   if (light == TRUE & refactor == TRUE) {
@@ -720,6 +900,5 @@ load_progetti <- function(bimestre, data_path=NULL, visualizzati=TRUE, debug=FAL
                    " miliardi di euro."))
   }
   return(progetti)
-  # }
 }
 
