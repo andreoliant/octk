@@ -278,6 +278,7 @@ setup_progetti <- function(bimestre, progetti, operazioni_713, fix = FALSE) {
     message("...salvataggio")
     write.csv2(progetti_light, file.path(DATA, paste0("progetti_light_", bimestre, ".csv")), row.names = FALSE)
     
+    
   } else {
     message("Non hai definito il folder DATA. Carica 'oc' ed inizializza 'oc_init()'.")
   }

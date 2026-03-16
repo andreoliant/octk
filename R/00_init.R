@@ -43,7 +43,11 @@ oc_init <- function (bimestre, db_ver, data_path = NULL, db_path = NULL,
       ROOT <- drive_root
     }
     if (is.null(data_path)) {
-      data_path <- file.path(ROOT,"DATI", bimestre ,"DASAS", "DATAMART")
+      if (user == "Antonio2") {
+        data_path <- file.path(set_data_path(user), bimestre)
+      } else {
+        data_path <- file.path(ROOT,"DATI", bimestre ,"DASAS", "DATAMART")
+      }
     } else {
       data_path <- file.path(data_path, bimestre)
     }
@@ -166,17 +170,17 @@ set_developer <- function(user) {
                                     "Daniela2",
                                     "Paolo",
                                     "AndreaT"),
-                          path = c(file.path("G:","Drive condivisi"), # "G:/Drive condivisi"
-                                   file.path("G:","Drive condivisi"),
-                                   file.path("G:","Drive condivisi"),
-                                   # file.path("/Volumes", "GoogleDrive", "Drive condivisi"), # "/Volumes/GoogleDrive/Drive condivisi"
-                                   file.path("/Users", "nicoladechiara", "Library", "CloudStorage", "GoogleDrive-nicola.dechiara@opencoesione.team", "Drive condivisi"), # "/Users/nicoladechiara/Library/CloudStorage/GoogleDrive-nicola.dechiara@opencoesione.team/Drive condivisi"
-                                   file.path("/home", "antonio", "ExpanDrive", "OC", "Shared Drives"),
-                                   file.path("/home", "aa", "oc_drive"),
-                                   file.path("G:","Shared drives"),
-                                   file.path("G:","Drive condivisi"),
-                                   file.path("G:","Drive condivisi"),
-                                   file.path("/Users", "andreataddei", "Google Drive", "Drive condivisi"))) 
+                      path = c(file.path("H:","Drive condivisi"), # "G:/Drive condivisi"
+                               file.path("G:","Drive condivisi"),
+                               file.path("G:","Drive condivisi"),
+                               # file.path("/Volumes", "GoogleDrive", "Drive condivisi"), # "/Volumes/GoogleDrive/Drive condivisi"
+                               file.path("/Users", "nicoladechiara", "Library", "CloudStorage", "GoogleDrive-nicola.dechiara@opencoesione.team", "Drive condivisi"), # "/Users/nicoladechiara/Library/CloudStorage/GoogleDrive-nicola.dechiara@opencoesione.team/Drive condivisi"
+                               file.path("/home", "antonio", "ExpanDrive", "OC", "Shared Drives"),
+                               file.path("/home", "aa", "oc_drive"),
+                               file.path("G:","Shared drives"),
+                               file.path("G:","Drive condivisi"),
+                               file.path("G:","Drive condivisi"),
+                               file.path("/Users", "andreataddei", "Google Drive", "Drive condivisi"))) 
   
   drive_root <- developer%>%
     filter(developer == user)%>%
@@ -187,5 +191,20 @@ set_developer <- function(user) {
 }
 
 
-
-
+#' Gestione utenti OCTK su GoogleDrive
+#'
+#' Definisce il puntamento a EXT_DATA per ogni utente.
+#'
+#' @param user Nome utente da cui deriva drive_root
+#' @return Puntamento a EXT_DATA per ogni utente (drive_root)
+set_data_path <- function(user) {
+  developer <- tibble(developer = c("Antonio2"),
+                      path = c(file.path("/media", "aa", "22F70AE20061C7C8", "dati", "oc")))
+  
+  data_path <- developer%>%
+    filter(developer == user)%>%
+    select(path)%>%
+    as.character()
+  
+  return(data_path)
+}

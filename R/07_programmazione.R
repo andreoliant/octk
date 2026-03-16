@@ -168,6 +168,152 @@ load_db_info <- function(DB, ciclo, ambito) {
   
 }
 
+#' Carica dati interventi accordi per assegnazioni ordinarie
+#'
+#' Carica dati interventi accordi per assegnazioni ordinarie
+#'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
+#' @return Dataframe
+load_db_accordi_ordinarie <- function(DB) {
+  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_ordinarie.xlsx"), guess_max=100000)
+  return(interventi)
+}
+
+#' Carica dati interventi accordi per anticipazioni
+#'
+#' Carica dati interventi accordi per anticipazioni
+#'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
+#' @return Dataframe
+load_db_accordi_anticipazioni <- function(DB) {
+  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_anticipazioni.xlsx"))
+  return(interventi)
+}
+
+#' Carica dati interventi accordi per assegnazioni complementari FdR
+#'
+#' Carica dati interventi accordi per assegnazioni complementari FdR
+#'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
+#' @return Dataframe
+load_db_accordi_complementari <- function(DB) {
+  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_complementari.xlsx"))
+  return(interventi)
+}
+
+#' Carica dati interventi accordi per completamenti Campania
+#'
+#' Carica dati interventi accordi per completamenti Campania
+#'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
+#' @return Dataframe
+load_db_accordi_completamenti <- function(DB) {
+  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_completamenti.xlsx"))
+  return(interventi)
+}
+
+#' Carica dati interventi accordi per cofinanziamenti PR
+#'
+#' Carica dati interventi accordi per cofinanziamenti PR
+#'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
+#' @return Dataframe
+load_db_accordi_cofinanziamenti <- function(DB) {
+  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_cofinanziamenti_por.xlsx"))
+  return(interventi)
+}
+
+#' Carica dati interventi accordi 
+#'
+#' Carica dati interventi accordi per tutte le assegnazioni
+#'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
+#' @return Dataframe
+load_db_accordi <- function(DB) {
+  # Verifica se esiste il file unico degli accordi
+  file_accordi <- file.path(DB, "Interventi_DBCOE_accordi.xlsx")
+  
+  if (file.exists(file_accordi)) {
+    # Se il file esiste, caricalo direttamente
+    interventi <- readxl::read_xlsx(file_accordi, guess_max=100000)
+  } else {
+    # Altrimenti, procedi con il caricamento dei singoli file
+    appo1 <- load_db_accordi_ordinarie(DB=DB) #%>% mutate(COD_PROCED_ATTIVAZIONE = as.character(COD_PROCED_ATTIVAZIONE))
+    appo2 <- load_db_accordi_anticipazioni(DB=DB) #%>% mutate(COD_PROCED_ATTIVAZIONE = as.character(COD_PROCED_ATTIVAZIONE))
+    appo3 <- load_db_accordi_complementari(DB=DB) #%>% mutate(COD_PROCED_ATTIVAZIONE = as.character(COD_PROCED_ATTIVAZIONE))
+    appo4 <- load_db_accordi_completamenti(DB=DB) #%>% mutate(COD_PROCED_ATTIVAZIONE = as.character(COD_PROCED_ATTIVAZIONE))
+    appo5 <- load_db_accordi_cofinanziamenti(DB=DB) #%>% mutate(COD_PROCED_ATTIVAZIONE = as.character(COD_PROCED_ATTIVAZIONE))
+    
+    interventi <- appo1 %>% 
+      bind_rows(appo2) %>% 
+      bind_rows(appo3) %>% 
+      bind_rows(appo4) %>% 
+      bind_rows(appo5)
+  }
+  
+  return(interventi)
+}
+
+
+#' Carica dati interventi accordi AACC
+#'
+#' Carica dati interventi accordi delle AACC
+#'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
+#' @return Dataframe
+load_db_accordi_aacc <- function(DB) {
+  interventi <- readxl::read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_aacc.xlsx"), guess_max=100000)
+  return(interventi)
+}
+
+
+#' Carica dati altri interventi FSC
+#'
+#' Carica dati altri interventi FSC
+#'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
+#' @return Dataframe
+load_db_altro_fsc <- function(DB) {
+  interventi <- readxl::read_xlsx(file.path(DB, "Interventi_DBCOE_altro_fsc_2127.xlsx"), guess_max=100000)
+  return(interventi)
+}
+
+#' Carica dati interventi CIS
+#'
+#' Carica dati interventi CIS
+#'
+#' @param DB Percorso al database generato con oc_init() o sovrascritto.
+#' @return Dataframe
+load_db_cis <- function(DB) {
+  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_CIS.xlsx"), guess_max=100000)
+  return(interventi)
+}
+
+#' Carica lista interventi PSC
+#'
+#' Carica la lista di interventi delle sezioni ordinarie di PSC dal DBCOE in base alla variabile DB da oc_init().
+#'
+#' @param use_flt Vuoi caricare solo gli interventi monitorabili (con FLAG_MONITORAGGIO == 1)?
+#' @details I progetti privi di OGV rientrano tra gli interventi monitorabili se la delibera di definanziamento non è ancora intervenuta a fronte di istruttoria OGV chiusa.
+#' @return Dataframe
+load_db_psc <- function(DB, use_flt=FALSE) {
+  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_PSC.xlsx"), 
+                          col_types = c("text", "text", "text", "text", "text", "text",
+                                        "text", "text", "text", "text", "text", "text", "text",
+                                        "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
+                                        "numeric",
+                                        "text", "text", "text", 
+                                        "text", "text", "text", "text"))
+  if (use_flt == TRUE) {
+    interventi <- interventi %>% 
+      filter(FLAG_MONITORAGGIO == 1)
+  }
+  
+  return(interventi)
+}
+
+
+
 #' Carica un dataset "correzioni" dal database della programmazione
 #'
 #' Carica il dataset "correzioni" per SIE e POC 2014-2020 richiesto dal database della programmazione.

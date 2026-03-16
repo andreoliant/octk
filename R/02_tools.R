@@ -1016,3 +1016,313 @@ refactor_macroarea <- function(df) {
   return(df)
   
 }
+
+
+
+get_stato_attuazione <- function(df, chk_today) {
+  # MEMO: 
+  # formato per data è diverso da standad oc
+  # può essere necessaria qualche pulizia nelle date in excel
+  
+  # chk_today <- as.POSIXct("2019-12-31")
+  chk_today <- as.POSIXct(chk_today)
+  
+  require(lubridate)
+  # DEBUG:
+  # df <- appo2
+  # df <- appo_stato
+  # chk_today = "2022-04-30"
+  
+  # switch per ciclo
+  if ("A00_DATA_INIZIO_EFFETTIVA" %in% names(df)) {
+    
+    test <- is.POSIXct(df$A00_DATA_INIZIO_EFFETTIVA)
+    
+    # fix per xls fino al 31/12/2021 (vengono lette come date e non funziona case_when dopo)
+    if (test == TRUE) {
+      df <- df %>% 
+        mutate_if(is.POSIXct, list(~str_sub(as.character(.), 1, 10)))
+    }
+    
+    #2000-2006 da sgp
+    appo0 <- df %>%
+      mutate(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_INIZIO_EFFETTIVA) ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                  # DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_INIZIO_EFFETTIVA != "" ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                  DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_INIZIO_EFFETTIVA) & A00_DATA_INIZIO_EFFETTIVA != "" ~ A00_DATA_INIZIO_EFFETTIVA,
+                                                                  TRUE ~ DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA),
+             DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA = case_when(is.na(DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA) & !is.na(A00_DATA_FINE_EFFETTIVA) ~ A00_DATA_FINE_EFFETTIVA,
+                                                                # DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & A00_DATA_FINE_EFFETTIVA != "" ~ A00_DATA_FINE_EFFETTIVA,
+                                                                DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA == "" & !is.na(A00_DATA_FINE_EFFETTIVA) & A00_DATA_FINE_EFFETTIVA != "" ~ A00_DATA_FINE_EFFETTIVA,
+                                                                TRUE ~ DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA),
+             DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_INIZIO_EFFETTIVA) ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                   # DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_INIZIO_EFFETTIVA != "" ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                   DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_INIZIO_EFFETTIVA) & A01_DATA_INIZIO_EFFETTIVA != "" ~ A01_DATA_INIZIO_EFFETTIVA,
+                                                                   TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE),
+             DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE) & !is.na(A01_DATA_FINE_EFFETTIVA) ~ A01_DATA_FINE_EFFETTIVA,
+                                                                 # DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & A01_DATA_FINE_EFFETTIVA != "" ~ A01_DATA_FINE_EFFETTIVA,
+                                                                 DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE == "" & !is.na(A01_DATA_FINE_EFFETTIVA) & A01_DATA_FINE_EFFETTIVA != "" ~ A01_DATA_FINE_EFFETTIVA,
+                                                                 TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE),
+             DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_INIZIO_EFFETTIVA) ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                  # DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & A02_DATA_INIZIO_EFFETTIVA != "" ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                  DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA == "" & !is.na(A02_DATA_INIZIO_EFFETTIVA) & A02_DATA_INIZIO_EFFETTIVA != "" ~ A02_DATA_INIZIO_EFFETTIVA,
+                                                                  TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA),
+             DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA) & !is.na(A02_DATA_FINE_EFFETTIVA) ~ A02_DATA_FINE_EFFETTIVA,
+                                                                # DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & A02_DATA_FINE_EFFETTIVA != "" ~ A02_DATA_FINE_EFFETTIVA,
+                                                                DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA =="" & !is.na(A02_DATA_FINE_EFFETTIVA) & A02_DATA_FINE_EFFETTIVA != "" ~ A02_DATA_FINE_EFFETTIVA,
+                                                                TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA),
+             DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_INIZIO_EFFETTIVA) ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                                 # DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_INIZIO_EFFETTIVA != "" ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                                 DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_INIZIO_EFFETTIVA) & A03_DATA_INIZIO_EFFETTIVA != "" ~ A03_DATA_INIZIO_EFFETTIVA,
+                                                                 TRUE ~ DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA),
+             DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA = case_when(is.na(DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA) & !is.na(A03_DATA_FINE_EFFETTIVA) ~ A03_DATA_FINE_EFFETTIVA,
+                                                               # DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & A03_DATA_FINE_EFFETTIVA != "" ~ A03_DATA_FINE_EFFETTIVA,
+                                                               DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA == "" & !is.na(A03_DATA_FINE_EFFETTIVA) & A03_DATA_FINE_EFFETTIVA != "" ~ A03_DATA_FINE_EFFETTIVA,
+                                                               TRUE ~ DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA),
+             DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_INIZIO_EFFETTIVA) ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                                 # DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_INIZIO_EFFETTIVA != "" ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                                 DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_INIZIO_EFFETTIVA) & B01_DATA_INIZIO_EFFETTIVA != "" ~ B01_DATA_INIZIO_EFFETTIVA,
+                                                                 is.na(DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_INIZIO_EFFETTIVA) ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                                 # DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_INIZIO_EFFETTIVA != "" ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                                 DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_INIZIO_EFFETTIVA) & C01_DATA_INIZIO_EFFETTIVA != "" ~ C01_DATA_INIZIO_EFFETTIVA,
+                                                                 # step non presente per lavori
+                                                                 TRUE ~ DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO),
+             DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO = case_when(is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(B01_DATA_FINE_EFFETTIVA) ~ B01_DATA_FINE_EFFETTIVA,
+                                                               # DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & B01_DATA_FINE_EFFETTIVA != "" ~ B01_DATA_FINE_EFFETTIVA,
+                                                               DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(B01_DATA_FINE_EFFETTIVA) & B01_DATA_FINE_EFFETTIVA != "" ~ B01_DATA_FINE_EFFETTIVA,
+                                                               is.na(DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO) & !is.na(C01_DATA_FINE_EFFETTIVA) ~ C01_DATA_FINE_EFFETTIVA,
+                                                               # DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & C01_DATA_FINE_EFFETTIVA != "" ~ C01_DATA_FINE_EFFETTIVA,
+                                                               DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO == "" & !is.na(C01_DATA_FINE_EFFETTIVA) & C01_DATA_FINE_EFFETTIVA != "" ~ C01_DATA_FINE_EFFETTIVA,
+                                                               # step non presente per lavori
+                                                               TRUE ~ DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO),
+             DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_INIZIO_EFFETTIVA) ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                           # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_INIZIO_EFFETTIVA != "" ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                           DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_INIZIO_EFFETTIVA) & A04_DATA_INIZIO_EFFETTIVA != "" ~ A04_DATA_INIZIO_EFFETTIVA,
+                                                                           is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_INIZIO_EFFETTIVA) ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                           # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_INIZIO_EFFETTIVA != "" ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                           DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_INIZIO_EFFETTIVA) & B02_DATA_INIZIO_EFFETTIVA != "" ~ B02_DATA_INIZIO_EFFETTIVA,
+                                                                           is.na(DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_INIZIO_EFFETTIVA) ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                           # DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_INIZIO_EFFETTIVA != "" ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                           DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_INIZIO_EFFETTIVA) & C02_DATA_INIZIO_EFFETTIVA != "" ~ C02_DATA_INIZIO_EFFETTIVA,
+                                                                           TRUE ~ DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE),
+             DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE = case_when(is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(A04_DATA_FINE_EFFETTIVA) ~ A04_DATA_FINE_EFFETTIVA,
+                                                                         # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & A04_DATA_FINE_EFFETTIVA != "" ~ A04_DATA_FINE_EFFETTIVA,
+                                                                         DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(A04_DATA_FINE_EFFETTIVA) & A04_DATA_FINE_EFFETTIVA != "" ~ A04_DATA_FINE_EFFETTIVA,
+                                                                         is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(B02_DATA_FINE_EFFETTIVA) ~ B02_DATA_FINE_EFFETTIVA,
+                                                                         # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & B02_DATA_FINE_EFFETTIVA != "" ~ B02_DATA_FINE_EFFETTIVA,
+                                                                         DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(B02_DATA_FINE_EFFETTIVA) & B02_DATA_FINE_EFFETTIVA != "" ~ B02_DATA_FINE_EFFETTIVA,
+                                                                         is.na(DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE) & !is.na(C02_DATA_FINE_EFFETTIVA) ~ C02_DATA_FINE_EFFETTIVA,
+                                                                         # DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & C02_DATA_FINE_EFFETTIVA != "" ~ C02_DATA_FINE_EFFETTIVA,
+                                                                         DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE == "" & !is.na(C02_DATA_FINE_EFFETTIVA) & C02_DATA_FINE_EFFETTIVA != "" ~ C02_DATA_FINE_EFFETTIVA,
+                                                                         TRUE ~ DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE)) %>%
+      select(COD_LOCALE_PROGETTO,
+             # DATA_FINE_EFF_COLLAUDO,
+             # DATA_INIZIO_EFF_COLLAUDO,
+             DATA_FINE_EFF_ESECUZIONE = DATA_FINE_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE,
+             DATA_INIZIO_EFF_ESECUZIONE = DATA_INIZIO_EFFETTIVA_ESECUZIONE_LAVORI_FORNITURE,
+             DATA_FINE_EFF_STIP_ATTRIB = DATA_FINE_EFFETTIVA_STIPULA_CONTRATTO,
+             DATA_INIZIO_EFF_STIP_ATTRIB = DATA_INIZIO_EFFETTIVA_STIPULA_CONTRATTO,
+             # DATA_FINE_EFF_AGG_BANDO,
+             # DATA_INIZIO_EFF_AGG_BANDO,
+             DATA_FINE_EFF_PROG_ESEC = DATA_FINE_EFFETTIVA_PROGETT_ESECUTIVA,
+             DATA_INIZIO_EFF_PROG_ESEC = DATA_INIZIO_EFFETTIVA_PROGETT_ESECUTIVA,
+             DATA_FINE_EFF_PROG_DEF = DATA_FINE_EFFETTIVA_PROGETT_DEFINITIVA,
+             DATA_INIZIO_EFF_PROG_DEF = DATA_INIZIO_EFFETTIVA_PROGETT_DEFINITIVA,
+             DATA_FINE_EFF_PROG_PREL = DATA_FINE_EFFETTIVA_PROGETT_PRELIMINARE,
+             DATA_INIZIO_EFF_PROG_PREL = DATA_INIZIO_EFFETTIVA_PROGETT_PRELIMINARE, 
+             DATA_FINE_EFF_STUDIO_FATT = DATA_FINE_EFFETTIVA_STUDIO_FATTIBILITA,
+             DATA_INIZIO_EFF_STUDIO_FATT = DATA_INIZIO_EFFETTIVA_STUDIO_FATTIBILITA)
+    
+    if (test == TRUE) {
+      appo <- appo0 %>% 
+        mutate(DATA_FINE_EFF_ESECUZIONE = clean_data_ymd(DATA_FINE_EFF_ESECUZIONE),
+               DATA_INIZIO_EFF_ESECUZIONE = clean_data_ymd(DATA_INIZIO_EFF_ESECUZIONE),
+               DATA_FINE_EFF_STIP_ATTRIB = clean_data_ymd(DATA_FINE_EFF_STIP_ATTRIB),
+               DATA_INIZIO_EFF_STIP_ATTRIB = clean_data_ymd(DATA_INIZIO_EFF_STIP_ATTRIB),
+               # DATA_FINE_EFF_AGG_BANDO,
+               # DATA_INIZIO_EFF_AGG_BANDO,
+               DATA_FINE_EFF_PROG_ESEC = clean_data_ymd(DATA_FINE_EFF_PROG_ESEC),
+               DATA_INIZIO_EFF_PROG_ESEC = clean_data_ymd(DATA_INIZIO_EFF_PROG_ESEC),
+               DATA_FINE_EFF_PROG_DEF = clean_data_ymd(DATA_FINE_EFF_PROG_DEF),
+               DATA_INIZIO_EFF_PROG_DEF = clean_data_ymd(DATA_INIZIO_EFF_PROG_DEF),
+               DATA_FINE_EFF_PROG_PREL = clean_data_ymd(DATA_FINE_EFF_PROG_PREL),
+               DATA_INIZIO_EFF_PROG_PREL = clean_data_ymd(DATA_INIZIO_EFF_PROG_PREL), 
+               DATA_FINE_EFF_STUDIO_FATT = clean_data_ymd(DATA_FINE_EFF_STUDIO_FATT),
+               DATA_INIZIO_EFF_STUDIO_FATT = clean_data_ymd(DATA_INIZIO_EFF_STUDIO_FATT))
+      
+    } else {
+      appo <- appo0 %>% 
+        mutate(DATA_FINE_EFF_ESECUZIONE = clean_data_dmy(DATA_FINE_EFF_ESECUZIONE),
+               DATA_INIZIO_EFF_ESECUZIONE = clean_data_dmy(DATA_INIZIO_EFF_ESECUZIONE),
+               DATA_FINE_EFF_STIP_ATTRIB = clean_data_dmy(DATA_FINE_EFF_STIP_ATTRIB),
+               DATA_INIZIO_EFF_STIP_ATTRIB = clean_data_dmy(DATA_INIZIO_EFF_STIP_ATTRIB),
+               # DATA_FINE_EFF_AGG_BANDO,
+               # DATA_INIZIO_EFF_AGG_BANDO,
+               DATA_FINE_EFF_PROG_ESEC = clean_data_dmy(DATA_FINE_EFF_PROG_ESEC),
+               DATA_INIZIO_EFF_PROG_ESEC = clean_data_dmy(DATA_INIZIO_EFF_PROG_ESEC),
+               DATA_FINE_EFF_PROG_DEF = clean_data_dmy(DATA_FINE_EFF_PROG_DEF),
+               DATA_INIZIO_EFF_PROG_DEF = clean_data_dmy(DATA_INIZIO_EFF_PROG_DEF),
+               DATA_FINE_EFF_PROG_PREL = clean_data_dmy(DATA_FINE_EFF_PROG_PREL),
+               DATA_INIZIO_EFF_PROG_PREL = clean_data_dmy(DATA_INIZIO_EFF_PROG_PREL), 
+               DATA_FINE_EFF_STUDIO_FATT = clean_data_dmy(DATA_FINE_EFF_STUDIO_FATT),
+               DATA_INIZIO_EFF_STUDIO_FATT = clean_data_dmy(DATA_INIZIO_EFF_STUDIO_FATT))
+      
+    }
+    
+    
+  } else {
+    appo0 <- df %>%
+      mutate(DATA_INIZIO_EFF_STUDIO_FATT = paste0(str_sub(DATA_INIZIO_EFF_STUDIO_FATT, 7, 8), "/", str_sub(DATA_INIZIO_EFF_STUDIO_FATT, 5, 6), "/", str_sub(DATA_INIZIO_EFF_STUDIO_FATT, 1, 4)),
+             DATA_FINE_EFF_STUDIO_FATT = paste0(str_sub(DATA_FINE_EFF_STUDIO_FATT, 7, 8), "/", str_sub(DATA_FINE_EFF_STUDIO_FATT, 5, 6), "/", str_sub(DATA_FINE_EFF_STUDIO_FATT, 1, 4)),
+             DATA_INIZIO_EFF_PROG_PREL = paste0(str_sub(DATA_INIZIO_EFF_PROG_PREL, 7, 8), "/", str_sub(DATA_INIZIO_EFF_PROG_PREL, 5, 6), "/", str_sub(DATA_INIZIO_EFF_PROG_PREL, 1, 4)),
+             DATA_FINE_EFF_PROG_PREL = paste0(str_sub(DATA_FINE_EFF_PROG_PREL, 7, 8), "/", str_sub(DATA_FINE_EFF_PROG_PREL, 5, 6), "/", str_sub(DATA_FINE_EFF_PROG_PREL, 1, 4)),
+             DATA_INIZIO_EFF_PROG_DEF = paste0(str_sub(DATA_INIZIO_EFF_PROG_DEF, 7, 8), "/", str_sub(DATA_INIZIO_EFF_PROG_DEF, 5, 6), "/", str_sub(DATA_INIZIO_EFF_PROG_DEF, 1, 4)),
+             DATA_FINE_EFF_PROG_DEF = paste0(str_sub(DATA_FINE_EFF_PROG_DEF, 7, 8), "/", str_sub(DATA_FINE_EFF_PROG_DEF, 5, 6), "/", str_sub(DATA_FINE_EFF_PROG_DEF, 1, 4)),
+             DATA_INIZIO_EFF_PROG_ESEC = paste0(str_sub(DATA_INIZIO_EFF_PROG_ESEC, 7, 8), "/", str_sub(DATA_INIZIO_EFF_PROG_ESEC, 5, 6), "/", str_sub(DATA_INIZIO_EFF_PROG_ESEC, 1, 4)),
+             DATA_FINE_EFF_PROG_ESEC = paste0(str_sub(DATA_FINE_EFF_PROG_ESEC, 7, 8), "/", str_sub(DATA_FINE_EFF_PROG_ESEC, 5, 6), "/", str_sub(DATA_FINE_EFF_PROG_ESEC, 1, 4)),
+             DATA_INIZIO_EFF_STIP_ATTRIB = paste0(str_sub(DATA_INIZIO_EFF_STIP_ATTRIB, 7, 8), "/", str_sub(DATA_INIZIO_EFF_STIP_ATTRIB, 5, 6), "/", str_sub(DATA_INIZIO_EFF_STIP_ATTRIB, 1, 4)),
+             DATA_FINE_EFF_STIP_ATTRIB = paste0(str_sub(DATA_FINE_EFF_STIP_ATTRIB, 7, 8), "/", str_sub(DATA_FINE_EFF_STIP_ATTRIB, 5, 6), "/", str_sub(DATA_FINE_EFF_STIP_ATTRIB, 1, 4)),
+             DATA_INIZIO_EFF_ESECUZIONE = paste0(str_sub(DATA_INIZIO_EFF_ESECUZIONE, 7, 8), "/", str_sub(DATA_INIZIO_EFF_ESECUZIONE, 5, 6), "/", str_sub(DATA_INIZIO_EFF_ESECUZIONE, 1, 4)),
+             DATA_FINE_EFF_ESECUZIONE = paste0(str_sub(DATA_FINE_EFF_ESECUZIONE, 7, 8), "/", str_sub(DATA_FINE_EFF_ESECUZIONE, 5, 6), "/", str_sub(DATA_FINE_EFF_ESECUZIONE, 1, 4))) %>%
+      select(COD_LOCALE_PROGETTO,
+             # DATA_FINE_EFF_COLLAUDO,
+             # DATA_INIZIO_EFF_COLLAUDO,
+             DATA_FINE_EFF_ESECUZIONE,
+             DATA_INIZIO_EFF_ESECUZIONE,
+             DATA_FINE_EFF_STIP_ATTRIB,
+             DATA_INIZIO_EFF_STIP_ATTRIB,
+             # DATA_FINE_EFF_AGG_BANDO,
+             # DATA_INIZIO_EFF_AGG_BANDO,
+             DATA_FINE_EFF_PROG_ESEC,
+             DATA_INIZIO_EFF_PROG_ESEC,
+             DATA_FINE_EFF_PROG_DEF,
+             DATA_INIZIO_EFF_PROG_DEF,
+             DATA_FINE_EFF_PROG_PREL,
+             DATA_INIZIO_EFF_PROG_PREL, 
+             DATA_FINE_EFF_STUDIO_FATT,
+             DATA_INIZIO_EFF_STUDIO_FATT)
+    
+    appo <- appo0 %>% 
+      mutate(DATA_FINE_EFF_ESECUZIONE = clean_data_dmy(DATA_FINE_EFF_ESECUZIONE),
+             DATA_INIZIO_EFF_ESECUZIONE = clean_data_dmy(DATA_INIZIO_EFF_ESECUZIONE),
+             DATA_FINE_EFF_STIP_ATTRIB = clean_data_dmy(DATA_FINE_EFF_STIP_ATTRIB),
+             DATA_INIZIO_EFF_STIP_ATTRIB = clean_data_dmy(DATA_INIZIO_EFF_STIP_ATTRIB),
+             # DATA_FINE_EFF_AGG_BANDO,
+             # DATA_INIZIO_EFF_AGG_BANDO,
+             DATA_FINE_EFF_PROG_ESEC = clean_data_dmy(DATA_FINE_EFF_PROG_ESEC),
+             DATA_INIZIO_EFF_PROG_ESEC = clean_data_dmy(DATA_INIZIO_EFF_PROG_ESEC),
+             DATA_FINE_EFF_PROG_DEF = clean_data_dmy(DATA_FINE_EFF_PROG_DEF),
+             DATA_INIZIO_EFF_PROG_DEF = clean_data_dmy(DATA_INIZIO_EFF_PROG_DEF),
+             DATA_FINE_EFF_PROG_PREL = clean_data_dmy(DATA_FINE_EFF_PROG_PREL),
+             DATA_INIZIO_EFF_PROG_PREL = clean_data_dmy(DATA_INIZIO_EFF_PROG_PREL), 
+             DATA_FINE_EFF_STUDIO_FATT = clean_data_dmy(DATA_FINE_EFF_STUDIO_FATT),
+             DATA_INIZIO_EFF_STUDIO_FATT = clean_data_dmy(DATA_INIZIO_EFF_STUDIO_FATT))
+    
+  }
+  
+  message("Se ci sono 12 waring su clean_data va bene perché è il numero delle variabili e il warning indica date NA in input")
+  
+  # appo <- appo0 %>% 
+  #   mutate(DATA_FINE_EFF_ESECUZIONE = clean_data(DATA_FINE_EFF_ESECUZIONE),
+  #          DATA_INIZIO_EFF_ESECUZIONE = clean_data(DATA_INIZIO_EFF_ESECUZIONE),
+  #          DATA_FINE_EFF_STIP_ATTRIB = clean_data(DATA_FINE_EFF_STIP_ATTRIB),
+  #          DATA_INIZIO_EFF_STIP_ATTRIB = clean_data(DATA_INIZIO_EFF_STIP_ATTRIB),
+  #          # DATA_FINE_EFF_AGG_BANDO,
+  #          # DATA_INIZIO_EFF_AGG_BANDO,
+  #          DATA_FINE_EFF_PROG_ESEC = clean_data(DATA_FINE_EFF_PROG_ESEC),
+  #          DATA_INIZIO_EFF_PROG_ESEC = clean_data(DATA_INIZIO_EFF_PROG_ESEC),
+  #          DATA_FINE_EFF_PROG_DEF = clean_data(DATA_FINE_EFF_PROG_DEF),
+  #          DATA_INIZIO_EFF_PROG_DEF = clean_data(DATA_INIZIO_EFF_PROG_DEF),
+  #          DATA_FINE_EFF_PROG_PREL = clean_data(DATA_FINE_EFF_PROG_PREL),
+  #          DATA_INIZIO_EFF_PROG_PREL = clean_data(DATA_INIZIO_EFF_PROG_PREL), 
+  #          DATA_FINE_EFF_STUDIO_FATT = clean_data(DATA_FINE_EFF_STUDIO_FATT),
+  #          DATA_INIZIO_EFF_STUDIO_FATT = clean_data(DATA_INIZIO_EFF_STUDIO_FATT))
+  # MEMO: recupera solo le variabili che non sono gia presenti in df
+  
+  out <- appo %>%
+    mutate(CHK_END = case_when(# DATA_FINE_EFF_COLLAUDO <= chk_today ~ 1,
+      # DATA_INIZIO_EFF_COLLAUDO <= chk_today ~ 1,
+      DATA_FINE_EFF_ESECUZIONE <= chk_today ~ 1,
+      TRUE ~ 0),
+      CHK_ESEC = case_when(DATA_INIZIO_EFF_ESECUZIONE <= chk_today ~ 1,
+                           DATA_FINE_EFF_STIP_ATTRIB <= chk_today ~ 1, # MEMO: da portare sotto...? altrimenti resta classe GARA quasi vuota
+                           # DATA_FINE_EFF_AGG_BANDO <= chk_today ~ 1,
+                           # is.na(DATA_INIZIO_EFF_ESECUZIONE) ~ 0,
+                           TRUE ~ 0),
+      CHK_GARA = case_when(DATA_INIZIO_EFF_STIP_ATTRIB <= chk_today ~ 1,
+                           DATA_FINE_EFF_PROG_ESEC <= chk_today ~ 1, # MEMO: allineamento a regola OC
+                           # DATA_FINE_EFF_AGG_BANDO <= chk_today ~ 1,
+                           # DATA_INIZIO_EFF_AGG_BANDO <= chk_today ~ 1,
+                           # DATA_FINE_EFF_PROG_ESEC <= chk_today ~ 1,
+                           TRUE ~ 0),
+      # MEMO: blocco su progettazione presente solo per le opere
+      CHK_PROG = case_when( # as.POSIXct(DATA_FINE_EFF_PROG_ESEC) <= chk_today ~ 1, # MEMO: allineamento a regola OC
+        as.POSIXct(DATA_INIZIO_EFF_PROG_ESEC) <= chk_today ~ 1, 
+        as.POSIXct(DATA_FINE_EFF_PROG_DEF) <= chk_today ~ 1,
+        as.POSIXct(DATA_INIZIO_EFF_PROG_DEF) <= chk_today ~ 1,
+        as.POSIXct(DATA_FINE_EFF_PROG_PREL) <= chk_today ~ 1,
+        as.POSIXct(DATA_INIZIO_EFF_PROG_PREL) <= chk_today ~ 1,
+        as.POSIXct(DATA_FINE_EFF_STUDIO_FATT) <= chk_today ~ 1, # MEMO: allineamento a regola OC
+        # DATA_FINE_EFF_STUDIO_FATT <= chk_today ~ 1,
+        # DATA_INIZIO_EFF_STUDIO_FATT <= chk_today ~ 1,
+        TRUE ~ 0),
+      CHK_AVVP = case_when(# DATA_FINE_EFF_STUDIO_FATT <= chk_today ~ 1, # MEMO: allineamento a regola OC
+        DATA_INIZIO_EFF_STUDIO_FATT <= chk_today ~ 1,
+        TRUE ~ 0)) %>%
+    mutate(STATO_PROCED = case_when(CHK_END == 1 ~ "Eseguito",
+                                    CHK_ESEC == 1 ~ "In esecuzione",
+                                    CHK_GARA == 1 ~ "In affidamento",
+                                    CHK_PROG == 1 ~ "In corso di progettazione",
+                                    CHK_AVVP == 1 ~ "In avvio di progettazione",
+                                    # IMPEGNI > 0 ~ "esecuzione", # MEMO: assegnazione forzata per risolvere anomalie
+                                    TRUE ~ "Non avviato")) %>%
+    mutate(STATO_PROCED = factor(STATO_PROCED, levels = c("Non avviato", "In avvio di progettazione", "In corso di progettazione", 
+                                                          "In affidamento", "In esecuzione", "Eseguito")))
+  
+  out <- df %>%
+    left_join(out %>%
+                select(COD_LOCALE_PROGETTO, STATO_PROCED),
+              by = "COD_LOCALE_PROGETTO")
+  
+  print(out %>% count(STATO_PROCED))
+  
+  return(out)
+}
+
+get_x_stato <- function(df, data_scarico) {
+  
+  # DEBUG:
+  # df <- progetti
+  # data_scarico <- bimestre
+  
+  data_scarico <- as.integer(data_scarico)
+  
+  appo <- df %>% 
+    mutate(x_STATO = case_when(
+      DATA_FINE_EFF_COLLAUDO > 0 & DATA_FINE_EFF_COLLAUDO <= data_scarico ~ "Eseguito",
+      DATA_INIZIO_EFF_COLLAUDO > 0 & DATA_INIZIO_EFF_COLLAUDO <= data_scarico ~ "Eseguito",
+      DATA_FINE_EFF_ESECUZIONE > 0 & DATA_FINE_EFF_ESECUZIONE <= data_scarico ~ "Eseguito",
+      IMPEGNI/OC_FINANZ_TOT_PUB_NETTO > 0.95 & TOT_PAGAMENTI/OC_FINANZ_TOT_PUB_NETTO > 0.95 ~ "Eseguito", # "Eseguito+Pagato"
+      DATA_INIZIO_EFF_ESECUZIONE > 0 & DATA_INIZIO_EFF_ESECUZIONE <= data_scarico ~ "In esecuzione",
+      DATA_FINE_EFF_STIP_ATTRIB > 0 & DATA_FINE_EFF_STIP_ATTRIB <= data_scarico ~ "In esecuzione",
+      IMPEGNI/OC_FINANZ_TOT_PUB_NETTO > 0.60 & TOT_PAGAMENTI/OC_FINANZ_TOT_PUB_NETTO > 0.15 ~ "In esecuzione",
+      DATA_INIZIO_EFF_STIP_ATTRIB > 0 & DATA_INIZIO_EFF_STIP_ATTRIB <= data_scarico ~ "In affidamento",
+      DATA_FINE_EFF_PROG_ESEC > 0 & DATA_FINE_EFF_PROG_ESEC <= data_scarico ~ "In affidamento",
+      DATA_INIZIO_EFF_PROG_ESEC > 0 & DATA_INIZIO_EFF_PROG_ESEC <= data_scarico ~ "In progettazione esecutiva", #"In corso di progettazione"
+      DATA_FINE_EFF_PROG_DEF > 0 & DATA_FINE_EFF_PROG_DEF <= data_scarico ~ "In progettazione esecutiva",
+      IMPEGNI/OC_FINANZ_TOT_PUB_NETTO > 0.15 & TOT_PAGAMENTI/OC_FINANZ_TOT_PUB_NETTO > 0.10  ~ "In progettazione esecutiva",
+      DATA_INIZIO_EFF_PROG_DEF > 0 & DATA_INIZIO_EFF_PROG_DEF <= data_scarico ~ "In progettazione FTE", #"In progettazione definitiva" > "In corso di progettazione"
+      DATA_FINE_EFF_PROG_PREL > 0 & DATA_FINE_EFF_PROG_PREL <= data_scarico ~ "In progettazione FTE", 
+      DATA_INIZIO_EFF_PROG_PREL > 0 & DATA_INIZIO_EFF_PROG_PREL <= data_scarico ~ "In progettazione FTE", #"In progettazione preliminare" > "In corso di progettazione"
+      DATA_FINE_EFF_STUDIO_FATT > 0 & DATA_FINE_EFF_STUDIO_FATT <= data_scarico ~ "In progettazione FTE", 
+      DATA_INIZIO_EFF_STUDIO_FATT > 0 & DATA_INIZIO_EFF_STUDIO_FATT <= data_scarico ~ "In progettazione FTE", # "In avvio di progettazione"
+      IMPEGNI/OC_FINANZ_TOT_PUB_NETTO > 0.10 & TOT_PAGAMENTI/OC_FINANZ_TOT_PUB_NETTO > 0.05  ~ "In progettazione FTE",
+      TRUE ~ "Non avviato"))
+  
+  # TODO: inseire trasformazione in versione compatta di x_STATO 
+  
+  return(appo)
+}
+
+
+
+

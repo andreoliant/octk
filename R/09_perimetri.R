@@ -7,7 +7,7 @@
 #'
 #' @return File csv in INPUT
 setup_query <- function() {
-
+  
   write.csv2(categorie_cup, file.path(INPUT, "categorie_cup.csv"), row.names = FALSE)
   write.csv2(categorie_ue, file.path(INPUT, "categorie_ue.csv"), row.names = FALSE)
   write.csv2(po_linee_azioni, file.path(INPUT, "po_linee_azioni.csv"), row.names = FALSE)
@@ -20,11 +20,11 @@ setup_query <- function() {
   write.csv2(keyword, file.path(INPUT, "keyword.csv"), row.names = FALSE)
   write.csv2(aree_temi_psc, file.path(INPUT, "aree_temi_psc.csv"), row.names = FALSE)
   
-
+  
   write.csv2(stoplist, file.path(INPUT, "stoplist.csv"), row.names = FALSE)
   write.csv2(safelist, file.path(INPUT, "safelist.csv"), row.names = FALSE)
   write.csv2(fixlist, file.path(INPUT, "fixlist.csv"), row.names = FALSE)
-
+  
 }
 
 #' Setup query e stoplist in excel
@@ -58,7 +58,7 @@ setup_query_xls <- function() {
   
   
   
-
+  
   # write
   temp0 <- as.character(packageVersion("octk"))
   temp <- data.frame(value = c(bimestre, temp0), var = c("bimestre usato per input", "versione di octk"))
@@ -79,7 +79,7 @@ setup_query_xls <- function() {
   writeData(wb, sheet = "keyword", x = octk::keyword , startCol = 1, startRow = 1, colNames = TRUE)
   writeData(wb, sheet = "aree_temi_psc", x = octk::aree_temi_psc, startCol = 1, startRow = 1, colNames = TRUE)
   
-
+  
   # salva
   saveWorkbook(wb, file = temp_file, overwrite = FALSE)
   
@@ -117,7 +117,7 @@ query_cup <- function(progetti) {
   # CHK: capire perché sono spariti i padding (Mara?)
   matrix_cup <- appo  %>%
     rename(QUERY_CUP = QUERY)
-
+  
   # merge
   peri_cup <- progetti %>%
     select(COD_LOCALE_PROGETTO, CUP_COD_SETTORE, CUP_COD_SOTTOSETTORE, CUP_COD_CATEGORIA) %>%
@@ -131,9 +131,9 @@ query_cup <- function(progetti) {
   peri_cup <- peri_cup %>% 
     group_by(COD_LOCALE_PROGETTO) %>%
     summarise(QUERY_CUP = min(QUERY_CUP))
-
+  
   return(peri_cup)
-
+  
 }
 
 
@@ -144,7 +144,7 @@ query_cup <- function(progetti) {
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_PO.
 query_po <- function(progetti) {
-
+  
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
     appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "po_linee_azioni")
@@ -153,7 +153,7 @@ query_po <- function(progetti) {
   }
   matrix_po <- appo %>%
     rename(QUERY_PO = QUERY)
-
+  
   # merge
   peri_po <- progetti %>%
     select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, OC_COD_ARTICOLAZ_PROGRAMMA, OC_COD_SUBARTICOLAZ_PROGRAMMA) %>%
@@ -168,9 +168,9 @@ query_po <- function(progetti) {
   peri_po <- peri_po %>% 
     group_by(COD_LOCALE_PROGETTO) %>%
     summarise(QUERY_PO = min(QUERY_PO))
-
+  
   return(peri_po)
-
+  
 }
 
 
@@ -181,16 +181,16 @@ query_po <- function(progetti) {
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_UE.
 query_ue <- function(progetti) {
-
+  
   # debug
   # chk <- progetti %>%
   #   count(OC_COD_CICLO, OC_COD_CATEGORIA_SPESA, OC_DESCR_CATEGORIA_SPESA) %>%
   #   separate_rows(OC_COD_CATEGORIA_SPESA, sep = ":::")
-
+  
   # progetti %>%
   #   filter(is.na(OC_COD_CATEGORIA_SPESA)) %>%
   #   count(x_CICLO, x_AMBITO, x_PROGRAMMA)
-
+  
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
     appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "categorie_ue")
@@ -207,7 +207,7 @@ query_ue <- function(progetti) {
   #   mutate(OC_COD_CICLO = case_when(TIPO == "CAMPO" ~ 2,
   #                                   TIPO == "TEMA" ~ 1)) %>%
   #   select(-TIPO)
-
+  
   # merge
   peri_ue <- progetti %>%
     # select(COD_LOCALE_PROGETTO, OC_COD_CICLO, OC_COD_CATEGORIA_SPESA) %>%
@@ -228,9 +228,9 @@ query_ue <- function(progetti) {
   peri_ue <- peri_ue %>% 
     group_by(COD_LOCALE_PROGETTO) %>%
     summarise(QUERY_UE = min(QUERY_UE))
-
+  
   return(peri_ue)
-
+  
 }
 
 
@@ -243,11 +243,11 @@ query_ue <- function(progetti) {
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_STRUM.
 query_strum <- function(progetti) {
-
+  
   # "COD_STRUMENTO"
   # "DESCR_STRUMENTO"
   # "DESCR_TIPO_STRUMENTO"
-
+  
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
     appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "strum_att")
@@ -257,7 +257,7 @@ query_strum <- function(progetti) {
   matrix_strum <- appo %>%
     rename(QUERY_STRUM = QUERY) %>%
     select(-OC_CODICE_PROGRAMMA, -x_CICLO, -x_AMBITO, -x_PROGRAMMA)
-
+  
   # merge
   peri_strum <- progetti %>%
     select(COD_LOCALE_PROGETTO, COD_STRUMENTO) %>%
@@ -271,9 +271,9 @@ query_strum <- function(progetti) {
   peri_strum <- peri_strum %>% 
     group_by(COD_LOCALE_PROGETTO) %>%
     summarise(QUERY_STRUM = min(QUERY_STRUM))
-
+  
   return(peri_strum)
-
+  
 }
 
 
@@ -286,7 +286,7 @@ query_strum <- function(progetti) {
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_PROGCOMP.
 query_progcomp <- function(progetti) {
-
+  
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
     appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "prog_comp")
@@ -296,7 +296,7 @@ query_progcomp <- function(progetti) {
   matrix_progcomp <- appo  %>%
     rename(QUERY_PROGCOMP = QUERY) %>%
     select(-OC_CODICE_PROGRAMMA, -x_CICLO, -x_AMBITO, -x_PROGRAMMA)
-
+  
   # merge
   peri_progcomp <- progetti %>%
     select(COD_LOCALE_PROGETTO, COD_PROGETTO_COMPLESSO) %>%
@@ -310,9 +310,9 @@ query_progcomp <- function(progetti) {
   peri_progcomp <- peri_progcomp %>% 
     group_by(COD_LOCALE_PROGETTO) %>%
     summarise(QUERY_PROGCOMP = min(QUERY_PROGCOMP))
-
+  
   return(peri_progcomp)
-
+  
 }
 
 #' Ricerca progetti per procedura di attivazione
@@ -322,7 +322,7 @@ query_progcomp <- function(progetti) {
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_PATT.
 query_patt <- function(progetti) {
-
+  
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
     appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "patt")
@@ -332,7 +332,7 @@ query_patt <- function(progetti) {
   matrix_patt <- appo  %>%
     rename(QUERY_PATT = QUERY) %>%
     select(-OC_CODICE_PROGRAMMA, -x_CICLO, -x_AMBITO, -x_PROGRAMMA)
-
+  
   # merge
   peri_patt <- progetti %>%
     select(COD_LOCALE_PROGETTO, COD_PROCED_ATTIVAZIONE) %>%
@@ -346,9 +346,9 @@ query_patt <- function(progetti) {
   peri_patt <- peri_patt %>% 
     group_by(COD_LOCALE_PROGETTO) %>%
     summarise(QUERY_PATT = min(QUERY_PATT))
-
+  
   return(peri_patt)
-
+  
 }
 
 
@@ -360,7 +360,7 @@ query_patt <- function(progetti) {
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_CIPE.
 query_cipe <- function(progetti) {
-
+  
   # load finanziamenti
   temp <- paste0("finanziamenti_esteso_", bimestre, ".csv")
   if (file.exists(file.path(DATA, temp))) {
@@ -372,7 +372,7 @@ query_cipe <- function(progetti) {
              ANNO_DEL_CIPE = anno_del_cipe,
              IMPORTO = importo)
   }
-
+  
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
     appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "delib_cipe")
@@ -384,7 +384,7 @@ query_cipe <- function(progetti) {
     # fix per input in excel
     mutate(NUMERO_DEL_CIPE = as.numeric(NUMERO_DEL_CIPE),
            ANNO_DEL_CIPE = as.numeric(ANNO_DEL_CIPE))
-
+  
   # merge
   appo <- progetti %>%
     select(COD_LOCALE_PROGETTO) %>%
@@ -392,14 +392,14 @@ query_cipe <- function(progetti) {
                  filter(IMPORTO > 0) %>%
                  select(COD_LOCALE_PROGETTO, NUMERO_DEL_CIPE, ANNO_DEL_CIPE) %>%
                  inner_join(matrix_cipe %>%
-                             filter(QUERY_CIPE != 0),
-                           by = c("NUMERO_DEL_CIPE", "ANNO_DEL_CIPE")),
+                              filter(QUERY_CIPE != 0),
+                            by = c("NUMERO_DEL_CIPE", "ANNO_DEL_CIPE")),
                by = "COD_LOCALE_PROGETTO") %>%
     distinct(COD_LOCALE_PROGETTO, QUERY_CIPE)
   # MEMO: uso inner_join per tenere QUERY_CIPE
-
+  
   # appo %>% count(COD_LOCALE_PROGETTO) %>% filter(n>1)
-
+  
   # isola min per casi con più delibere (altirmenti duplica in pseudo)
   peri_cipe <- appo %>%
     group_by(COD_LOCALE_PROGETTO) %>%
@@ -410,9 +410,9 @@ query_cipe <- function(progetti) {
   peri_cipe <- peri_cipe %>% 
     group_by(COD_LOCALE_PROGETTO) %>%
     summarise(QUERY_CIPE = min(QUERY_CIPE))
-
+  
   return(peri_cipe)
-
+  
 }
 
 
@@ -423,7 +423,7 @@ query_cipe <- function(progetti) {
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_RA.
 query_ra <- function(progetti) {
-
+  
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
     appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "ra")
@@ -433,7 +433,7 @@ query_ra <- function(progetti) {
   matrix_ra <- appo %>%
     rename(QUERY_RA = QUERY,
            COD_RISULTATO_ATTESO = COD_RIS_ATTESO)
-
+  
   # merge
   peri_ra <- progetti %>%
     # mutate(COD_RIS_ATTESO = COD_RISULTATO_ATTESO) %>%
@@ -455,9 +455,9 @@ query_ra <- function(progetti) {
   peri_ra <- peri_ra %>% 
     group_by(COD_LOCALE_PROGETTO) %>%
     summarise(QUERY_RA = min(QUERY_RA))
-
+  
   return(peri_ra)
-
+  
 }
 
 
@@ -469,14 +469,14 @@ query_ra <- function(progetti) {
 #' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
 #' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_ATP.
 query_atp <- function(progetti) {
-
+  
   # load ambito FSC
   if (file.exists(file.path(DATA, "ambito_FSC1420.csv"))) {
     operazioni <- read_csv2(file.path(DATA, "ambito_FSC1420.csv"), guess_max = 5000) %>%
       distinct(COD_LOCALE_PROGETTO,
                COD_SETTORE_STRATEGICO_FSC, DESCR_SETTORE_STRATEGICO_FSC,
                COD_ASSE_TEMATICO_FSC, DESCR_ASSE_TEMATICO_FSC)
-
+    
   } else {
     operazioni <- read_csv2(file.path(DATA, "oper_pucok_preesteso.csv")) %>%
       rename(COD_LOCALE_PROGETTO = cod_locale_progetto,
@@ -495,8 +495,8 @@ query_atp <- function(progetti) {
       mutate(COD_ASSE_TEMATICO_FSC = as.character(case_when(COD_ASSE_TEMATICO_FSC == "01" ~ 1,
                                                             TRUE ~ COD_ASSE_TEMATICO_FSC)))
   }
-
-
+  
+  
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
     appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "aree_temi_fsc")
@@ -506,7 +506,7 @@ query_atp <- function(progetti) {
   matrix_atp <- appo  %>%
     rename(QUERY_ATP = QUERY) %>%
     mutate(COD_ASSE_TEMATICO_FSC = as.character(COD_ASSE_TEMATICO_FSC))
-
+  
   # merge
   peri_atp <- progetti %>%
     select(COD_LOCALE_PROGETTO) %>%
@@ -525,9 +525,9 @@ query_atp <- function(progetti) {
   peri_atp <- peri_atp %>% 
     group_by(COD_LOCALE_PROGETTO) %>%
     summarise(QUERY_ATP = min(QUERY_ATP))
-
+  
   return(peri_atp)
-
+  
 }
 
 
@@ -541,23 +541,23 @@ query_atsi_psc <- function(progetti) {
   
   # load ambito FSC
   
-    operazioni <- read_csv2(file.path(DATA, "oper_pucok_preesteso.csv")) %>%
-      rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>% 
-      #        COD_SETTORE_STRATEGICO_FSC = fsc_settore_strategico,
-      #        DESCR_SETTORE_STRATEGICO_FSC = fsc_descr_settore_strategico,
-      #        COD_ASSE_TEMATICO_FSC = fsc_asse_tematico,
-      #        DESCR_ASSE_TEMATICO_FSC = fsc_descr_asse_tematico) %>%
-      distinct(COD_LOCALE_PROGETTO,
-               psc_area_tematica,
-               psc_descr_area_tematica,
-               psc_sett_interv,
-               psc_descr_sett_interv) %>%
-      # # fix per matera
-      # mutate(psc_area_tematica = case_when(psc_area_tematica == "4.a" ~ "4",
-      #                                               COD_SETTORE_STRATEGICO_FSC == "4.b" ~ "4",
-      #                                               TRUE ~ COD_SETTORE_STRATEGICO_FSC)) %>%
-      mutate(psc_sett_interv = case_when(psc_area_tematica == "05" & psc_sett_interv == "1" ~ "01",
-                                               TRUE ~ psc_sett_interv))
+  operazioni <- read_csv2(file.path(DATA, "oper_pucok_preesteso.csv")) %>%
+    rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>% 
+    #        COD_SETTORE_STRATEGICO_FSC = fsc_settore_strategico,
+    #        DESCR_SETTORE_STRATEGICO_FSC = fsc_descr_settore_strategico,
+    #        COD_ASSE_TEMATICO_FSC = fsc_asse_tematico,
+    #        DESCR_ASSE_TEMATICO_FSC = fsc_descr_asse_tematico) %>%
+    distinct(COD_LOCALE_PROGETTO,
+             psc_area_tematica,
+             psc_descr_area_tematica,
+             psc_sett_interv,
+             psc_descr_sett_interv) %>%
+    # # fix per matera
+    # mutate(psc_area_tematica = case_when(psc_area_tematica == "4.a" ~ "4",
+    #                                               COD_SETTORE_STRATEGICO_FSC == "4.b" ~ "4",
+    #                                               TRUE ~ COD_SETTORE_STRATEGICO_FSC)) %>%
+    mutate(psc_sett_interv = case_when(psc_area_tematica == "05" & psc_sett_interv == "1" ~ "01",
+                                       TRUE ~ psc_sett_interv))
   
   
   # load matrix
@@ -772,7 +772,54 @@ query_comuni <- function(progetti) {
 
 
 
-
+#' Ricerca progetti per comune
+#'
+#' Ricerca progetti per comune di localizzazione a partire da input in "comuni".
+#' Consente classificazione a tre livelli.
+#'
+#' @param progetti Dataset "progetti_esteso_<BIMESTRE>.csv".
+#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_COMUNI.
+query_comuni_2 <- function(progetti) {
+  
+  # load matrix
+  if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
+    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), 
+                      sheet = "comuni_2", 
+                      col_types = c("numeric", "text", "numeric", 
+                                    "text", "text", "text", "numeric", "text", "text", "text", "text"))
+  } else {
+    appo <- read_csv2(file.path(INPUT, "comuni.csv"))
+  }
+  
+  matrix <- appo  %>%
+    rename(QUERY_COMUNI = QUERY)
+  
+  # merge
+  peri_comuni <- progetti %>%
+    select(COD_LOCALE_PROGETTO, COD_COMUNE) %>%
+    separate_rows(COD_COMUNE, sep = ":::") %>%
+    # allinea codici oc a matrix (senza regione)
+    mutate(chk = nchar(COD_COMUNE)) %>% 
+    filter(chk == 9) %>% 
+    mutate(COD_COMUNE = substr(COD_COMUNE, 4, 9)) %>% 
+    inner_join(matrix %>%
+                 filter(QUERY_COMUNI != 0),
+               by = "COD_COMUNE") %>%
+    # select(COD_LOCALE_PROGETTO, QUERY_COMUNI, AMBITO, AMBITO_SUB)
+    distinct(COD_LOCALE_PROGETTO, QUERY_COMUNI, AMBITO, AMBITO_SUB, AMBITO_SUB_2)
+  # MEMO: uso inner_join per tenere QUERY_COMUNI
+  
+  # fix per duplicati da ":::" che quadruplicano in make_classi
+  peri_comuni <- peri_comuni %>%
+    group_by(COD_LOCALE_PROGETTO) %>%
+    summarise(QUERY_COMUNI = min(QUERY_COMUNI),
+              AMBITO = paste0(AMBITO, collapse = ":::"),
+              AMBITO_SUB = paste0(AMBITO_SUB, collapse = ":::"),
+              AMBITO_SUB_2 = paste0(AMBITO_SUB_2, collapse = ":::"))
+  
+  return(peri_comuni)
+  
+}
 
 
 
@@ -831,7 +878,7 @@ query_keyword <- function(progetti) {
       mutate(QUERY_TEMP = str_detect(BASE_VAR, test_key)) %>%
       select(COD_LOCALE_PROGETTO, QUERY_TEMP) %>%
       filter(QUERY_TEMP)
-
+    
     if (!exists("peri_key", inherits = FALSE)) {
       # print("primo giro..")
       peri_key <- temp  %>%
@@ -853,7 +900,7 @@ query_keyword <- function(progetti) {
   peri_key <- peri_key %>% 
     group_by(COD_LOCALE_PROGETTO) %>%
     summarise(QUERY_KEY = min(QUERY_KEY))
-    
+  
   return(peri_key)
   
 }
@@ -868,12 +915,12 @@ query_keyword <- function(progetti) {
 #' @section Warning:
 #' I dati valori NA sono convertiti in 0.
 make_pseudo_std <- function(progetti, export=TRUE) {
-
+  
   # query
   peri_cup <- query_cup(progetti)
   peri_po <- query_po(progetti)
   peri_ue <- query_ue(progetti)
-
+  
   # merge
   pseudo <- peri_cup %>%
     select(COD_LOCALE_PROGETTO, QUERY_CUP) %>%
@@ -891,7 +938,7 @@ make_pseudo_std <- function(progetti, export=TRUE) {
     mutate(QUERY_CUP = ifelse(is.na(QUERY_CUP), 0, QUERY_CUP),
            QUERY_PO = ifelse(is.na(QUERY_PO), 0, QUERY_PO),
            QUERY_UE = ifelse(is.na(QUERY_UE), 0, QUERY_UE))
-
+  
   if (export == TRUE) {
     write.csv2(pseudo,
                file.path(TEMP, "pseudo.csv"),
@@ -914,9 +961,9 @@ make_pseudo_std <- function(progetti, export=TRUE) {
 #' I valori NA sono convertiti in 0.
 #' Usare 1 per casi certi, 2 per casi dubbi (è scartato solo 2 unico) e 9 per casi da eliminare (ad es. per PATT)
 make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
-
+  
   # chk <- make_pseudo_2(progetti, query_ls=c("query_cup", "query_po"), export=TRUE)
-
+  
   # query
   for (q in query_ls) {
     print(q)
@@ -931,19 +978,19 @@ make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
                   by = "COD_LOCALE_PROGETTO")
     }
   }
-
+  
   # clean NA
   pseudo <- pseudo %>%
     # fix per input excel che trasforma in character
     mutate_at(vars(contains('QUERY')), list(as.numeric)) %>%
     mutate_if(is.numeric, funs(replace(., is.na(.), 0)))
-
-
+  
+  
   # query
   # peri_cup <- query_cup(progetti)
   # peri_po <- query_po(progetti)
   # peri_ue <- query_ue(progetti)
-
+  
   # merge
   # pseudo <- peri_cup %>%
   #   select(COD_LOCALE_PROGETTO, QUERY_CUP) %>%
@@ -961,9 +1008,9 @@ make_pseudo_edit <- function(progetti, query_ls=c("query_cup"), export=TRUE) {
   #   mutate(QUERY_CUP = ifelse(is.na(QUERY_CUP), 0, QUERY_CUP),
   #          QUERY_PO = ifelse(is.na(QUERY_PO), 0, QUERY_PO),
   #          QUERY_UE = ifelse(is.na(QUERY_UE), 0, QUERY_UE))
-
+  
   # https://stackoverflow.com/questions/51644516/dplyr-mutate-new-dynamic-variables-with-case-when
-
+  
   if (export == TRUE) {
     write.csv2(pseudo, file.path(TEMP, "pseudo.csv"), na = "", row.names = FALSE)
   }
@@ -1131,7 +1178,7 @@ add_perimetro_to_pseudo <- function(pseudo, addendum, usa_classi=FALSE, add_name
 #' @param OLD Percorso alla cartella di livello WORK di una specifica elaborazione, anche diversa dal bimestre di riferimento.
 #' @return Prende tutti i csv nel folder indicato e li inserisce in un file excel in format query_input.xlsx
 convert_input_csv_to_xls <- function(OLD) {
-
+  
   # nomi file di input
   appo0 <- list.files(path = file.path(OLD, "input"))
   temp <- c("fixlist.csv", "safelist.csv", "stoplist.csv", 
@@ -1225,7 +1272,7 @@ make_input_delta  <- function(OLD) {
     tab_new <- eval(as.name(input_tab))%>%
       mutate(NOTE = as.character(NOTE))%>%
       mutate(QUERY = as.character(QUERY))
-      
+    
     
     if (input_tab == "delib_cipe") {
       tab_delta <- tab_new %>%
@@ -1240,7 +1287,7 @@ make_input_delta  <- function(OLD) {
         select(NUMERO_DEL_CIPE, ANNO_DEL_CIPE)%>%
         anti_join(tab_new %>%
                     mutate_if(is.numeric, as.character))
-    
+      
     } else if (input_tab == "patt") {
       tab_delta <- tab_new %>%
         mutate_if(is.numeric, as.character) %>%
@@ -1250,14 +1297,14 @@ make_input_delta  <- function(OLD) {
                     select(contains("COD"))) %>% 
         # patch per eliminare caratteri speciali che fanno saltare righe durante la pubblicazione in excel
         mutate(DESCR_PROCED_ATTIVAZIONE = str_remove(DESCR_PROCED_ATTIVAZIONE, "\\u001a"))
-        
+      
       
       chk <- tab %>%
         select(-QUERY, -NOTE) %>%
         select(contains("COD")) %>%
         anti_join(tab_new %>%
                     mutate_if(is.numeric, as.character))
-    
+      
     } else if (input_tab == "flag_beniconf") {
       tab_delta <- tab_new %>%
         mutate_if(is.numeric, as.character) %>%
@@ -1273,7 +1320,7 @@ make_input_delta  <- function(OLD) {
         select(OC_FLAG_BENICONF) %>%
         anti_join(tab_new %>%
                     mutate_if(is.numeric, as.character))
-    
+      
     } else if (input_tab == "keyword") {
       tab_delta <- tab_new %>%
         anti_join(tab %>%
@@ -1288,18 +1335,19 @@ make_input_delta  <- function(OLD) {
         anti_join(tab_new %>%
                     mutate_if(is.numeric, as.character))
       
-          
-    } else {
+      
+    }    
+    else {
       tab_delta <- tab_new %>%
         mutate_if(is.numeric, as.character) %>%
         mutate(NOTE = as.character(NOTE))%>%
         anti_join(tab %>%
-                    select(-QUERY, -NOTE) %>%
-                    select(contains("COD")))
+                    select(-QUERY, -NOTE)%>%
+                    select(contains("COD")|contains("psc")))
       
       chk <- tab %>%
         select(-QUERY, -NOTE) %>%
-        select(contains("COD")) %>%
+        select(contains("COD")|contains("psc")) %>%
         anti_join(tab_new %>%
                     mutate_if(is.numeric, as.character))
     }
@@ -1437,7 +1485,8 @@ update_input_with_delta <- function(OLD) {
         semi_join(tab_new %>%
                     mutate_if(is.numeric, as.character) %>%
                     select(-QUERY, -NOTE) %>%
-                    select(contains("COD")))
+                    select(contains("COD")|contains("psc")))
+      
       
       # chk <- tab %>%
       #   select(-QUERY, -NOTE) %>%
@@ -1487,27 +1536,31 @@ update_input_with_delta <- function(OLD) {
 
 clp_perimetro <- function(progetti, perimetro, export=FALSE) {
   
-    # query
-    clp_duplicati <- load_progetti(bimestre, visualizzati = FALSE, light = FALSE)%>%
-      select(COD_LOCALE_PROGETTO, OC_PROGETTO_AGGREGATO)
-
-    
-    # individuo i CLP finali
-    pseudo <- perimetro %>%
-      select(COD_LOCALE_PROGETTO)%>%
-      left_join(clp_duplicati, by = c("COD_LOCALE_PROGETTO"))%>%
-                  mutate(CLP_PERIMETRO = ifelse(is.na(OC_PROGETTO_AGGREGATO), COD_LOCALE_PROGETTO, OC_PROGETTO_AGGREGATO))%>%
-                  distinct(CLP_PERIMETRO)
-    
-    if (export == TRUE) {
-      write.csv2(pseudo,
-                 file.path(OUTPUT, "perimetro_finale.csv"),
-                 na = "", row.names = FALSE)
-    }
-    return(pseudo)
+  # query
+  clp_duplicati <- load_progetti(bimestre, visualizzati = FALSE, light = FALSE)%>%
+    select(COD_LOCALE_PROGETTO, OC_PROGETTO_AGGREGATO)
+  
+  
+  # individuo i CLP finali
+  pseudo <- perimetro %>%
+    select(COD_LOCALE_PROGETTO)%>%
+    left_join(clp_duplicati, by = c("COD_LOCALE_PROGETTO"))%>%
+    mutate(CLP_PERIMETRO = ifelse(is.na(OC_PROGETTO_AGGREGATO), COD_LOCALE_PROGETTO, OC_PROGETTO_AGGREGATO))%>%
+    distinct(CLP_PERIMETRO)
+  
+  if (export == TRUE) {
+    write.csv2(pseudo,
+               file.path(OUTPUT, "perimetro_finale.csv"),
+               na = "", row.names = FALSE)
+  }
+  return(pseudo)
 }
 
 
+
+
+# OC > Toolkit
+# Loader
 
 #' Definizione del perimetro (versione standard per Turismo)
 #'
@@ -1694,6 +1747,422 @@ make_perimetro_edit <- function(pseudo, export=TRUE,
   return(pseudo)
 }
 
+# ----------------------------------------------------------------------------------- #
+# Preparazione
+
+# MEMO:
+# first: se "chk_tipo_query.csv" non è presente in temp tiene tutto e va oltre
+# next: se "chk_tipo_query.csv" è presente in temp allora esegue il filtro
+# HAND: compilare a mano il csv!!!
+
+# dominio di CHK:
+# 0: elimina
+# 1: perimetro
+# 2: verifica
+
+# verifica e copia "chk"
+# if (file.exists(file.path(tmp_path, "chk_tipo_query.csv"))) {
+#
+#   # copia "chk"
+#   file.copy(from = file.path(tmp_path, "chk_tipo_query.csv"),
+#             to = file.path(src_path, "chk_tipo_query.csv"),
+#             overwrite = TRUE)
+#   # DEV: QUI VA QUALCOSA PER GESTIRE CASO DI SECONDO GIRO... INTANTO TENERE OLD
+#
+#   # load filtro
+#   flt <- read_csv2(file.path(src_path, "chk_tipo_query.csv")) %>%
+#     filter(!(is.na(CHK))) %>%
+#     select(QUERY_CUP, QUERY_PO, QUERY_UE, CHK)
+#
+#   # definisce pseudo-perimetro
+#   pseudo <- pseudo %>%
+#     # MEMO: rimuove precedente versione
+#     select(-CHK, -PERI) %>%
+#     left_join(flt)
+#   rm(flt)
+#   # MEMO: Joining, by = c("QUERY_CUP", "QUERY_PO", "QUERY_UE")
+#
+#   # uniforma
+#   pseudo <- pseudo %>%
+#     mutate(CHK = ifelse(is.na(CHK), 1, CHK))
+#   # MEMO: mette 1 se CHK è NA (per file presente in temp ma non compilato)
+#
+# } else {
+#
+#   print("nessun chk presente... primo giro!")
+#   # uniforma pseudo-perimetro
+#   pseudo <- pseudo %>%
+#     mutate(CHK = 1)
+#   # MEMO: mette 1 sempre (solo per uniformare columns)
+#
+# }
+
+# forzo
+# ...
+
+
+# chk
+# pseudo %>% count(QUERY_CUP, QUERY_PO, QUERY_UE, CHK) %>% filter(CHK == 0)
+
+
+# ----------------------------------------------------------------------------------- #
+# Stoplist
+
+# load stoplist e safelist
+# ...
+
+
+# ----------------------------------------------------------------------------------- #
+# Pseudo-perimetro
+
+# definisce perimetro
+# ...
+
+# chk
+# pseudo %>% count(QUERY_CUP, QUERY_PO, QUERY_UE, CHK, PERI) %>% filter(CHK == 0)
+# CHK: verificare quanta parte di safelist si perde... 45 items ma ne recupero solo 38!
+
+# elenca scarti
+# ...
+
+# aggiunge categorie UE
+# ...
+
+# DEV: qui va messo ordine nell'elenco delle variabili
+
+# count
+# temp <- pseudo %>%
+#   filter(PERI == 1) %>%
+#   count() %>%
+#   .$n
+# print(paste0("obs nel perimetro: ", temp))
+
+
+# definisce perimetro
+# pseudo <- pseudo %>%
+#   filter(TEMP == 1) %>%
+#   select(-TEMP)
+
+# sum(pseudo$OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE)
+# dim(pseudo)[1]
+# sum(pseudo$OC_FINANZ_TOT_PUB_NETTO, na.rm = TRUE)
+
+
+# ----------------------------------------------------------------------------------- #
+# Export
+
+# MEMO:
+# pseudo: contiene tutto, anche scarti - solo chiavi
+# scarti: contiene solo scarti - tutti i dati (compresa CHK per isolare dubbi)
+
+# # export
+# write.csv2(pseudo, file.path(tmp_path, "pseudo.csv"), na = "", row.names = FALSE)
+# write.csv2(scarti, file.path(tmp_path, "scarti.csv"), na = "", row.names = FALSE)
+# # write.table(scarti, file.path(tmp_path, "scarti.csv"), sep = ";", dec = ",", na = "", row.names = FALSE, append = FALSE)
+# # MEMO: con "append" ad ogni giro accoda nuovi scarti
+# # CHK: forse ho perso primo giro... (praticamente solo stop_list)
+# # MEMO: le variabili sono aggiunte a scarti per controlli manuali in "analisi_scarti.R"
+#
+# rm(safelist, stoplist)
+
+
+
+# OC > Explorer > Perimetri
+# Export finale
+
+#' Export per il dataset finale (DEPRECATA)
+#'
+#' Popola pseudo con una lista di variabili.
+#'
+#' @param pseudo Dataset "pseudo".
+#' @param focus Nome file da salvare in OUTPUT.
+#' @param bimestre Bimestre di riferimento (utilizzato per la composizone del nome file in OUTPUT.
+#' @param var_ls Elenco delle variabili di base da esportare. Se nullo usa get_default_vars.
+#' @param var_add Elenco delle ulteriori variabili da esportare oltre a quelle di var_ls (se si usa get_default_vars)).
+#' @param export Vuoi salvare?
+#' @return Un file "[focus]_[bimestre].csv".
+export_data <- function(pseudo, focus, bimestre, var_ls=NULL, var_add=NULL, export=TRUE) {
+  # DEV: aggiungere progetti in scope
+  
+  # merge con progetti
+  perimetro <- pseudo %>%
+    # isola scarti
+    filter(PERI == 1) %>%
+    select(-CHK, -PERI) # %>%
+  # merge variabili anagrafiche (da progetti)
+  # left_join(progetti %>%
+  #             select("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO", "OC_CODICE_PROGRAMMA"),
+  #           by = "COD_LOCALE_PROGETTO")
+  
+  # x_vars
+  # perimetro <- get_x_vars(perimetro, progetti = progetti)
+  
+  # macroarea
+  # perimetro <- get_macroarea(perimetro)
+  
+  # regione
+  # perimetro <- get_regione_simply(perimetro)
+  
+  # var_ls
+  if (is.null(var_ls)) {
+    # var_ls <- c("CUP_COD_SETTORE",  "CUP_DESCR_SETTORE",  "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE", "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA",
+    #             "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA",
+    #             "OC_COD_CATEGORIA_SPESA", "OC_DESCR_CATEGORIA_SPESA",
+    #             "COD_PROCED_ATTIVAZIONE", "DESCR_PROCED_ATTIVAZIONE",
+    #             "CUP_COD_NATURA", "CUP_DESCR_NATURA",
+    #             "COD_REGIONE",
+    #             # "DEN_REGIONE", "COD_PROVINCIA", "DEN_PROVINCIA", "COD_COMUNE", "DEN_COMUNE",
+    #             # "OC_COD_SLL", "OC_DENOMINAZIONE_SLL",
+    #             "OC_FINANZ_TOT_PUB_NETTO", "IMPEGNI", "TOT_PAGAMENTI")
+    var_ls <- get_default_vars()
+  }
+  perimetro <- perimetro %>%
+    left_join(progetti %>%
+                select("COD_LOCALE_PROGETTO", var_ls),
+              by = "COD_LOCALE_PROGETTO") # %>%
+  # fix per case in natura CUP
+  # mutate(CUP_DESCR_NATURA = ifelse(is.na(CUP_DESCR_NATURA), "NON CLASSIFICATO", toupper(CUP_DESCR_NATURA)))
+  
+  # var_add
+  # aggiunge ulteriori spefiche varibili
+  if (!is.null(var_add)) {
+    perimetro <- perimetro %>%
+      left_join(progetti %>%
+                  select("COD_LOCALE_PROGETTO", var_add),
+                by = "COD_LOCALE_PROGETTO")
+  }
+  
+  # Dimensione finanziaria
+  perimetro <- get_dimensione_fin(perimetro)
+  # MEMO: versione più fine rispetto a quella di OC
+  
+  # Stato di attuazione
+  # perimetro <- get_stato_attuazione(df = perimetro, chk_today = "20180531")
+  # perimetro <- perimetro %>%
+  #   left_join(progetti %>%
+  #               select("COD_LOCALE_PROGETTO", "OC_STATO_FASI"),
+  #             by = "COD_LOCALE_PROGETTO")
+  
+  # export
+  if (export == TRUE) {
+    temp <- paste0(paste(focus, bimestre, sep = "_"), ".csv")
+    write.csv2(perimetro, file.path(TEMP, temp), na = "", row.names = FALSE)
+  }
+  
+  return(perimetro)
+}
+
+
+
+#' Export per il dataset finale in formato excel
+#'
+#' Esporta perimetro da export_data() in excel.
+#'
+#' @param perimetro Dataset "perimetro" creato con export_data().
+#' @param focus Nome file da salvare in OUTPUT.
+#' @param bimestre Bimestre di riferimento (utilizzato per la composizone del nome file in OUTPUT.
+#' @param use_template Vuoi usare un template?
+#' @return Un file "[focus]_[bimestre].csv".
+export_data_xls <- function(perimetro, focus, bimestre, use_template=FALSE) {
+  
+  # library("openxlsx")
+  temp <- paste0(paste(focus, bimestre, sep = "_"), ".xlsx")
+  
+  if (use_template == TRUE) {
+    message("DA IMPLEMENTARE")
+    # wb <- loadWorkbook(system.file("extdata", "template.xlsx", package = "oc", mustWork = TRUE))
+    # removeTable(wb = wb, sheet = "dati", table = getTables(wb, sheet = "dati"))
+    # writeDataTable(wb, sheet = "dati", x = perimetro, stack = TRUE)
+    # saveWorkbook(wb, file = file.path(OUTPUT, temp), overwrite = TRUE)
+    
+    # OLD: FORSE DA BUTTARE
+    # for (i in seq_along(tab_ls)) {
+    #   print(names(tab_ls)[i])
+    #   removeTable(wb = wb, sheet = names(tab_ls)[i], table = getTables(wb, sheet = names(tab_ls)[i]))
+    #   writeDataTable(wb, sheet = names(tab_ls)[i], x = tab_ls[[i]], stack = TRUE)
+    # }
+    #
+    
+  } else {
+    tab_ls <- list(perimetro = perimetro)
+    write.xlsx(tab_ls, file = file.path(OUTPUT, temp), asTable = TRUE, firstRow = TRUE, overwrite = TRUE)
+  }
+  
+  
+  
+  # wb <- loadWorkbook(file.path(src_path, "template.xlsx"))
+  # removeTable(wb = wb, sheet = "dati", table = getTables(wb, sheet = "dati"))
+  # writeDataTable(wb, sheet = "dati", x = perimetro, stack = TRUE)
+  # saveWorkbook(wb, file = file.path(dat_path, paste0(paste(this_path, oc_ver, sep = "_"), ".xlsx")), overwrite = TRUE)
+  
+}
+
+
+
+
+
+# ----------------------------------------------------------------------------------- #
+# reload
+reload_perimetro <- function(focus=NULL, bimestre=NULL, livelli_classe) {
+  
+  # load
+  # perimetro <- read_csv2(file.path(OUTPUT, paste0(paste(focus, bimestre, sep = "_"), ".csv")))
+  temp <- paste0(paste(focus, bimestre, sep = "_"), ".csv")
+  if (file.exists(temp)) {
+    perimetro <- read_csv2(file.path(TEMP, temp))
+  } else {
+    perimetro <- read_csv2(file.path(TEMP, "dati.csv"))
+  }
+  
+  
+  # etc
+  # reg_cn <- c("001", "002", "003", "004", "005", "006",
+  #             "007", "008", "009", "010", "011", "012")
+  # names(reg_cn) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
+  #                    "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
+  #
+  # reg_sud <- c("013", "014", "015", "016", "017", "018", "019", "020")
+  # names(reg_sud) <- c("ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA", "SARDEGNA")
+  #
+  # temp <- c(names(reg_cn[1:3]), "PA TRENTO", "PA BOLZANO", names(reg_cn[5:12]), names(reg_sud), "ALTRO TERRITORIO")
+  
+  # refactor
+  out <- perimetro %>%
+    refactor_progetti(.) %>%
+    mutate(# CLASSE_FIN = factor(CLASSE_FIN, levels=c("0-100k", "100k-500k", "500k-1M", "1M-2M", "2M-5M", "5M-10M", "10M-infty")),
+      # MACROAREA = factor(MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
+      # STATO_PROCED = factor(STATO_PROCED, levels = c("Programmazione", "Avvio", "Progettazione", "Affidamento", "Esecuzione", "Esercizio")),
+      # CUP_DESCR_NATURA = factor(CUP_DESCR_NATURA,
+      #                           levels=c("REALIZZAZIONE DI LAVORI PUBBLICI (OPERE ED IMPIANTISTICA)",
+      #                                    "ACQUISTO DI BENI",
+      #                                    "ACQUISTO O REALIZZAZIONE DI SERVIZI",
+      #                                    "CONCESSIONE DI INCENTIVI AD UNITA' PRODUTTIVE",
+      #                                    "CONCESSIONE DI CONTRIBUTI AD ALTRI SOGGETTI (DIVERSI DA UNITA' PRODUTTIVE)",
+      #                                    "NON CLASSIFICATO")),
+      # DEN_REGIONE = factor(DEN_REGIONE, levels = temp),
+      CLASSE = factor(CLASSE, levels = livelli_classe))
+  
+  return(out)
+  
+}
+
+
+
+#' Export perimetro to SAS
+#'
+#' Crea file da passare a SAS per il popolmaneto della variabile FOCUS.
+#'
+#' @param perimetro Dataset "perimetro" da \link[octk]{make_perimetro_edit}o \link[octk]{make_perimetro_std.} 
+#' @param focus Nome del file da salvare.
+#' @param use_drive Logico. Stai salvano in Drive (TRUE) o in locale (FALSE)?
+#' @param keep_classe Logico. Vuoi tenere la variabile CLASSE?
+#' @param split_classe Logico. Vuoi separare N file in base alla variabile CLASSE?
+#' @return Un file di tipo "[focus]_clp.csv". Viene salvato in PERIMETRI/OUTPUT_SAS se use_drive == TRUE.
+export_sas <- function(perimetro, focus="perimetro", use_drive=TRUE, keep_classe=FALSE, split_classe=FALSE) {
+  # funzione di esportazione
+  if (use_drive == TRUE) {
+    export_fun <- function(df, focus) {
+      # salva in WORK
+      temp_filename <- paste0(focus, "_clp.csv")
+      write.csv2(df, file.path(OUTPUT, temp_filename), na = "", row.names = FALSE)
+      
+      # salva copia ridondante per SAS
+      OUTPUT_SAS <- file.path(dirname(dirname(WORK)), "_OUTPUT_SAS")
+      write.csv2(df, file.path(OUTPUT_SAS, temp_filename), na = "", row.names = FALSE)
+      message("Copia salvata anche in OUTPUT_SAS")
+    }
+  } else {
+    export_fun <- function(df, focus) {
+      # salva in WORK locale
+      temp_filename <- paste0(focus, "_clp.csv")
+      write.csv2(df, file.path(OUTPUT, temp_filename), na = "", row.names = FALSE)
+      message("Ricordati di aggiornare anche OUTPUT_SAS!")
+    }
+  }
+  
+  # gestione dei casi
+  if (split_classe == TRUE) {
+    temp <- unique(perimetro$CLASSE)
+    for (x in temp) {
+      appo <- perimetro %>%
+        filter(CLASSE == x) %>%
+        select(COD_LOCALE_PROGETTO)
+      export_fun(df = appo, focus = x)
+    }
+  } else {
+    if (keep_classe == TRUE) {
+      appo <- perimetro %>%
+        select(COD_LOCALE_PROGETTO, CLASSE)
+      export_fun(df = appo, focus = focus)
+    } else {
+      appo <- perimetro %>%
+        select(COD_LOCALE_PROGETTO)
+      export_fun(df = appo, focus = focus)
+    }
+  }
+} 
+
+
+# internal utility to list exported variables
+get_default_vars <- function() {
+  out <- c(
+    'COD_LOCALE_PROGETTO',
+    'CUP',
+    'OC_TITOLO_PROGETTO',
+    'OC_SINTESI_PROGETTO',
+    'x_CICLO',
+    'x_AMBITO',
+    'OC_CODICE_PROGRAMMA',
+    'x_PROGRAMMA',
+    'COD_RISULTATO_ATTESO',
+    'DESCR_RISULTATO_ATTESO',
+    'OC_COD_CATEGORIA_SPESA',
+    'OC_DESCR_CATEGORIA_SPESA',
+    'OC_COD_ARTICOLAZ_PROGRAMMA',
+    'OC_DESCR_ARTICOLAZ_PROGRAMMA',
+    'OC_COD_SUBARTICOLAZ_PROGRAMMA',
+    'OC_DESCR_SUBARTICOLAZ_PROGRAMMA',
+    'COD_STRUMENTO',
+    'DESCR_STRUMENTO',
+    'DESCR_TIPO_STRUMENTO',
+    'COD_PROGETTO_COMPLESSO',
+    'DESCRIZIONE_PROGETTO_COMPLESSO',
+    'COD_TIPO_COMPLESSITA',
+    'DESCR_TIPO_COMPLESSITA',
+    'CUP_COD_NATURA',
+    'CUP_DESCR_NATURA',
+    'CUP_COD_TIPOLOGIA',
+    'CUP_DESCR_TIPOLOGIA',
+    'CUP_COD_SETTORE',
+    'CUP_DESCR_SETTORE',
+    'CUP_COD_SOTTOSETTORE',
+    'CUP_DESCR_SOTTOSETTORE',
+    'CUP_COD_CATEGORIA',
+    'CUP_DESCR_CATEGORIA',
+    'x_REGIONE',
+    'x_MACROAREA',
+    'COD_PROVINCIA',
+    'DEN_PROVINCIA',
+    'COD_COMUNE',
+    'DEN_COMUNE',
+    'OC_FINANZ_UE_NETTO',
+    'OC_FINANZ_TOT_PUB_NETTO',
+    'IMPEGNI',
+    'TOT_PAGAMENTI',
+    'OC_COSTO_COESIONE',
+    'OC_IMPEGNI_COESIONE',
+    'OC_PAGAMENTI_COESIONE',
+    'OC_STATO_PROGETTO',
+    'OC_STATO_PROCEDURALE',
+    'OC_COD_FASE_CORRENTE',
+    'OC_DESCR_FASE_CORRENTE',
+    'COD_PROCED_ATTIVAZIONE',
+    'DESCR_PROCED_ATTIVAZIONE',
+    'OC_CODFISC_BENEFICIARIO',
+    'OC_DENOM_BENEFICIARIO'
+  )
+  return(out)
+}
 
 # inspect delta
 
@@ -1767,6 +2236,9 @@ make_delta_scarti <- function(pseudo, perimetro, path_to_old, debug=FALSE,
   
 }
 
+
+# OC > Explorer > Perimetri
+# Classificazione per tematismi
 
 #' Crea nuova base per riclassificazione lato categorie CUP
 #'
@@ -2266,702 +2738,5 @@ make_classi_comuni <- function (pseudo, progetti, export = TRUE) {
   }
   
   return(out)
-}
-
-
-#' Export per il dataset finale (DEPRECATA)
-#'
-#' Popola pseudo con una lista di variabili.
-#'
-#' @param pseudo Dataset "pseudo".
-#' @param focus Nome file da salvare in OUTPUT.
-#' @param bimestre Bimestre di riferimento (utilizzato per la composizone del nome file in OUTPUT.
-#' @param var_ls Elenco delle variabili di base da esportare. Se nullo usa get_default_vars.
-#' @param var_add Elenco delle ulteriori variabili da esportare oltre a quelle di var_ls (se si usa get_default_vars)).
-#' @param export Vuoi salvare?
-#' @return Un file "[focus]_[bimestre].csv".
-export_data <- function(pseudo, focus, bimestre, var_ls=NULL, var_add=NULL, export=TRUE) {
-  # DEV: aggiungere progetti in scope
-  
-  # merge con progetti
-  perimetro <- pseudo %>%
-    # isola scarti
-    filter(PERI == 1) %>%
-    select(-CHK, -PERI) # %>%
-  # merge variabili anagrafiche (da progetti)
-  # left_join(progetti %>%
-  #             select("COD_LOCALE_PROGETTO", "CUP", "OC_TITOLO_PROGETTO", "OC_CODICE_PROGRAMMA"),
-  #           by = "COD_LOCALE_PROGETTO")
-  
-  # x_vars
-  # perimetro <- get_x_vars(perimetro, progetti = progetti)
-  
-  # macroarea
-  # perimetro <- get_macroarea(perimetro)
-  
-  # regione
-  # perimetro <- get_regione_simply(perimetro)
-  
-  # var_ls
-  if (is.null(var_ls)) {
-    # var_ls <- c("CUP_COD_SETTORE",  "CUP_DESCR_SETTORE",  "CUP_COD_SOTTOSETTORE", "CUP_DESCR_SOTTOSETTORE", "CUP_COD_CATEGORIA", "CUP_DESCR_CATEGORIA",
-    #             "OC_COD_ARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA", "OC_COD_SUBARTICOLAZ_PROGRAMMA", "OC_DESCR_ARTICOLAZ_PROGRAMMA",
-    #             "OC_COD_CATEGORIA_SPESA", "OC_DESCR_CATEGORIA_SPESA",
-    #             "COD_PROCED_ATTIVAZIONE", "DESCR_PROCED_ATTIVAZIONE",
-    #             "CUP_COD_NATURA", "CUP_DESCR_NATURA",
-    #             "COD_REGIONE",
-    #             # "DEN_REGIONE", "COD_PROVINCIA", "DEN_PROVINCIA", "COD_COMUNE", "DEN_COMUNE",
-    #             # "OC_COD_SLL", "OC_DENOMINAZIONE_SLL",
-    #             "OC_FINANZ_TOT_PUB_NETTO", "IMPEGNI", "TOT_PAGAMENTI")
-    var_ls <- get_default_vars()
-  }
-  perimetro <- perimetro %>%
-    left_join(progetti %>%
-                select("COD_LOCALE_PROGETTO", var_ls),
-              by = "COD_LOCALE_PROGETTO") # %>%
-  # fix per case in natura CUP
-  # mutate(CUP_DESCR_NATURA = ifelse(is.na(CUP_DESCR_NATURA), "NON CLASSIFICATO", toupper(CUP_DESCR_NATURA)))
-  
-  # var_add
-  # aggiunge ulteriori spefiche varibili
-  if (!is.null(var_add)) {
-    perimetro <- perimetro %>%
-      left_join(progetti %>%
-                  select("COD_LOCALE_PROGETTO", var_add),
-                by = "COD_LOCALE_PROGETTO")
-  }
-  
-  # Dimensione finanziaria
-  perimetro <- get_dimensione_fin(perimetro)
-  # MEMO: versione più fine rispetto a quella di OC
-  
-  # Stato di attuazione
-  # perimetro <- get_stato_attuazione(df = perimetro, chk_today = "20180531")
-  # perimetro <- perimetro %>%
-  #   left_join(progetti %>%
-  #               select("COD_LOCALE_PROGETTO", "OC_STATO_FASI"),
-  #             by = "COD_LOCALE_PROGETTO")
-  
-  # export
-  if (export == TRUE) {
-    temp <- paste0(paste(focus, bimestre, sep = "_"), ".csv")
-    write.csv2(perimetro, file.path(TEMP, temp), na = "", row.names = FALSE)
-  }
-  
-  return(perimetro)
-}
-
-
-
-#' Export per il dataset finale in formato excel
-#'
-#' Esporta perimetro da export_data() in excel.
-#'
-#' @param perimetro Dataset "perimetro" creato con export_data().
-#' @param focus Nome file da salvare in OUTPUT.
-#' @param bimestre Bimestre di riferimento (utilizzato per la composizone del nome file in OUTPUT.
-#' @param use_template Vuoi usare un template?
-#' @return Un file "[focus]_[bimestre].csv".
-export_data_xls <- function(perimetro, focus, bimestre, use_template=FALSE) {
-  
-  # library("openxlsx")
-  temp <- paste0(paste(focus, bimestre, sep = "_"), ".xlsx")
-  
-  if (use_template == TRUE) {
-    message("DA IMPLEMENTARE")
-    # wb <- loadWorkbook(system.file("extdata", "template.xlsx", package = "oc", mustWork = TRUE))
-    # removeTable(wb = wb, sheet = "dati", table = getTables(wb, sheet = "dati"))
-    # writeDataTable(wb, sheet = "dati", x = perimetro, stack = TRUE)
-    # saveWorkbook(wb, file = file.path(OUTPUT, temp), overwrite = TRUE)
-    
-    # OLD: FORSE DA BUTTARE
-    # for (i in seq_along(tab_ls)) {
-    #   print(names(tab_ls)[i])
-    #   removeTable(wb = wb, sheet = names(tab_ls)[i], table = getTables(wb, sheet = names(tab_ls)[i]))
-    #   writeDataTable(wb, sheet = names(tab_ls)[i], x = tab_ls[[i]], stack = TRUE)
-    # }
-    #
-    
-  } else {
-    tab_ls <- list(perimetro = perimetro)
-    write.xlsx(tab_ls, file = file.path(OUTPUT, temp), asTable = TRUE, firstRow = TRUE, overwrite = TRUE)
-  }
-  
-  
-  
-  # wb <- loadWorkbook(file.path(src_path, "template.xlsx"))
-  # removeTable(wb = wb, sheet = "dati", table = getTables(wb, sheet = "dati"))
-  # writeDataTable(wb, sheet = "dati", x = perimetro, stack = TRUE)
-  # saveWorkbook(wb, file = file.path(dat_path, paste0(paste(this_path, oc_ver, sep = "_"), ".xlsx")), overwrite = TRUE)
-  
-}
-
-
-
-
-
-# ----------------------------------------------------------------------------------- #
-# reload
-reload_perimetro <- function(focus=NULL, bimestre=NULL, livelli_classe) {
-  
-  # load
-  # perimetro <- read_csv2(file.path(OUTPUT, paste0(paste(focus, bimestre, sep = "_"), ".csv")))
-  temp <- paste0(paste(focus, bimestre, sep = "_"), ".csv")
-  if (file.exists(temp)) {
-    perimetro <- read_csv2(file.path(TEMP, temp))
-  } else {
-    perimetro <- read_csv2(file.path(TEMP, "dati.csv"))
-  }
-  
-  
-  # etc
-  # reg_cn <- c("001", "002", "003", "004", "005", "006",
-  #             "007", "008", "009", "010", "011", "012")
-  # names(reg_cn) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
-  #                    "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
-  #
-  # reg_sud <- c("013", "014", "015", "016", "017", "018", "019", "020")
-  # names(reg_sud) <- c("ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA", "SARDEGNA")
-  #
-  # temp <- c(names(reg_cn[1:3]), "PA TRENTO", "PA BOLZANO", names(reg_cn[5:12]), names(reg_sud), "ALTRO TERRITORIO")
-  
-  # refactor
-  out <- perimetro %>%
-    refactor_progetti(.) %>%
-    mutate(# CLASSE_FIN = factor(CLASSE_FIN, levels=c("0-100k", "100k-500k", "500k-1M", "1M-2M", "2M-5M", "5M-10M", "10M-infty")),
-      # MACROAREA = factor(MACROAREA, levels = c("Centro-Nord", "Sud", "Trasversale", "Nazionale", "Estero")),
-      # STATO_PROCED = factor(STATO_PROCED, levels = c("Programmazione", "Avvio", "Progettazione", "Affidamento", "Esecuzione", "Esercizio")),
-      # CUP_DESCR_NATURA = factor(CUP_DESCR_NATURA,
-      #                           levels=c("REALIZZAZIONE DI LAVORI PUBBLICI (OPERE ED IMPIANTISTICA)",
-      #                                    "ACQUISTO DI BENI",
-      #                                    "ACQUISTO O REALIZZAZIONE DI SERVIZI",
-      #                                    "CONCESSIONE DI INCENTIVI AD UNITA' PRODUTTIVE",
-      #                                    "CONCESSIONE DI CONTRIBUTI AD ALTRI SOGGETTI (DIVERSI DA UNITA' PRODUTTIVE)",
-      #                                    "NON CLASSIFICATO")),
-      # DEN_REGIONE = factor(DEN_REGIONE, levels = temp),
-      CLASSE = factor(CLASSE, levels = livelli_classe))
-  
-  return(out)
-  
-}
-
-
-
-#' Export perimetro to SAS
-#'
-#' Crea file da passare a SAS per il popolmaneto della variabile FOCUS.
-#'
-#' @param perimetro Dataset "perimetro" da \link[octk]{make_perimetro_edit}o \link[octk]{make_perimetro_std.} 
-#' @param focus Nome del file da salvare.
-#' @param use_drive Logico. Stai salvano in Drive (TRUE) o in locale (FALSE)?
-#' @param keep_classe Logico. Vuoi tenere la variabile CLASSE?
-#' @param split_classe Logico. Vuoi separare N file in base alla variabile CLASSE?
-#' @return Un file di tipo "[focus]_clp.csv". Viene salvato in PERIMETRI/OUTPUT_SAS se use_drive == TRUE.
-export_sas <- function(perimetro, focus="perimetro", use_drive=TRUE, keep_classe=FALSE, split_classe=FALSE) {
-  # funzione di esportazione
-  if (use_drive == TRUE) {
-    export_fun <- function(df, focus) {
-      # salva in WORK
-      temp_filename <- paste0(focus, "_clp.csv")
-      write.csv2(df, file.path(OUTPUT, temp_filename), na = "", row.names = FALSE)
-      
-      # salva copia ridondante per SAS
-      OUTPUT_SAS <- file.path(dirname(dirname(WORK)), "_OUTPUT_SAS")
-      write.csv2(df, file.path(OUTPUT_SAS, temp_filename), na = "", row.names = FALSE)
-      message("Copia salvata anche in OUTPUT_SAS")
-    }
-  } else {
-    export_fun <- function(df, focus) {
-      # salva in WORK locale
-      temp_filename <- paste0(focus, "_clp.csv")
-      write.csv2(df, file.path(OUTPUT, temp_filename), na = "", row.names = FALSE)
-      message("Ricordati di aggiornare anche OUTPUT_SAS!")
-    }
-  }
-  
-  # gestione dei casi
-  if (split_classe == TRUE) {
-    temp <- unique(perimetro$CLASSE)
-    for (x in temp) {
-      appo <- perimetro %>%
-        filter(CLASSE == x) %>%
-        select(COD_LOCALE_PROGETTO)
-      export_fun(df = appo, focus = x)
-    }
-  } else {
-    if (keep_classe == TRUE) {
-      appo <- perimetro %>%
-        select(COD_LOCALE_PROGETTO, CLASSE)
-      export_fun(df = appo, focus = focus)
-    } else {
-      appo <- perimetro %>%
-        select(COD_LOCALE_PROGETTO)
-      export_fun(df = appo, focus = focus)
-    }
-  }
-} 
-
-
-# internal utility to list exported variables
-get_default_vars <- function() {
-  out <- c(
-    'COD_LOCALE_PROGETTO',
-    'CUP',
-    'OC_TITOLO_PROGETTO',
-    'OC_SINTESI_PROGETTO',
-    'x_CICLO',
-    'x_AMBITO',
-    'OC_CODICE_PROGRAMMA',
-    'x_PROGRAMMA',
-    'COD_RISULTATO_ATTESO',
-    'DESCR_RISULTATO_ATTESO',
-    'OC_COD_CATEGORIA_SPESA',
-    'OC_DESCR_CATEGORIA_SPESA',
-    'OC_COD_ARTICOLAZ_PROGRAMMA',
-    'OC_DESCR_ARTICOLAZ_PROGRAMMA',
-    'OC_COD_SUBARTICOLAZ_PROGRAMMA',
-    'OC_DESCR_SUBARTICOLAZ_PROGRAMMA',
-    'COD_STRUMENTO',
-    'DESCR_STRUMENTO',
-    'DESCR_TIPO_STRUMENTO',
-    'COD_PROGETTO_COMPLESSO',
-    'DESCRIZIONE_PROGETTO_COMPLESSO',
-    'COD_TIPO_COMPLESSITA',
-    'DESCR_TIPO_COMPLESSITA',
-    'CUP_COD_NATURA',
-    'CUP_DESCR_NATURA',
-    'CUP_COD_TIPOLOGIA',
-    'CUP_DESCR_TIPOLOGIA',
-    'CUP_COD_SETTORE',
-    'CUP_DESCR_SETTORE',
-    'CUP_COD_SOTTOSETTORE',
-    'CUP_DESCR_SOTTOSETTORE',
-    'CUP_COD_CATEGORIA',
-    'CUP_DESCR_CATEGORIA',
-    'x_REGIONE',
-    'x_MACROAREA',
-    'COD_PROVINCIA',
-    'DEN_PROVINCIA',
-    'COD_COMUNE',
-    'DEN_COMUNE',
-    'OC_FINANZ_UE_NETTO',
-    'OC_FINANZ_TOT_PUB_NETTO',
-    'IMPEGNI',
-    'TOT_PAGAMENTI',
-    'OC_COSTO_COESIONE',
-    'OC_IMPEGNI_COESIONE',
-    'OC_PAGAMENTI_COESIONE',
-    'OC_STATO_PROGETTO',
-    'OC_STATO_PROCEDURALE',
-    'OC_COD_FASE_CORRENTE',
-    'OC_DESCR_FASE_CORRENTE',
-    'COD_PROCED_ATTIVAZIONE',
-    'DESCR_PROCED_ATTIVAZIONE',
-    'OC_CODFISC_BENEFICIARIO',
-    'OC_DENOM_BENEFICIARIO'
-  )
-  return(out)
-}
-
-
-# REPORT PERIMETRI------
-
-
-
-# ----------------------------------------------------------------------------------- #
-# cicli_temi
-
-report_cicli_temi <- function(perimetro, debug=FALSE) {
-  
-  cicli_temi <- perimetro %>%
-    group_by(x_CICLO, x_TEMA) %>%
-    summarise(N = n(),
-              CP = sum(CP, na.rm = TRUE),
-              PAG = sum(PAG, na.rm = TRUE))
-  # %>%
-  # refactor_ambito(.) %>%
-  # refactor_ciclo(.)
-  
-  if (debug == TRUE) {
-    cicli_temi %>%
-      write.csv2(file.path(TEMP, "cicli_temi.csv"), na = "", row.names = FALSE)
-  }
-  
-  return(cicli_temi)
-  
-}
-
-
-
-# ----------------------------------------------------------------------------------- #
-# cicli_ambiti
-
-report_cicli_ambiti <- function(perimetro, debug=FALSE) {
-  
-  cicli_ambiti <- perimetro %>%
-    group_by(x_CICLO, x_AMBITO) %>%
-    summarise(N = n(),
-              CP = sum(CP, na.rm = TRUE),
-              PAG = sum(PAG, na.rm = TRUE))
-  # %>%
-  #   refactor_ambito(.) %>%
-  #   refactor_ciclo(.)
-  
-  if (debug == TRUE) {
-    cicli_ambiti %>%
-      write.csv2(file.path(TEMP, "cicli_ambiti.csv"), na = "", row.names = FALSE)
-  }
-  
-  return(cicli_ambiti)
-  
-}
-
-
-
-# ----------------------------------------------------------------------------------- #
-# regioni
-
-report_regioni <- function(perimetro, debug=FALSE) {
-  
-  
-  
-  # # OLD:
-  # # # defactor
-  # # perimetro <- perimetro %>%
-  # #   mutate(x_TEMA = as.character(x_TEMA))
-  # # # MEMO: evita warning quando aggiungo "Totale"
-  # #
-  # # # semplifica non-regioni
-  reg_cn <- c("001", "002", "003", "004", "005", "006",
-              "007", "008", "009", "010", "011", "012")
-  names(reg_cn) <- c("PIEMONTE", "VALLE D'AOSTA", "LOMBARDIA", "TRENTINO-ALTO ADIGE", "VENETO", "FRIULI-VENEZIA GIULIA",
-                     "LIGURIA",  "EMILIA-ROMAGNA", "TOSCANA", "UMBRIA", "MARCHE", "LAZIO")
-  
-  reg_sud <- c("013", "014", "015", "016", "017", "018", "019", "020")
-  names(reg_sud) <- c("ABRUZZO", "MOLISE", "CAMPANIA", "PUGLIA", "BASILICATA", "CALABRIA", "SICILIA", "SARDEGNA")
-  # 
-  # # NEW BLOCK
-  # if (!any(names(perimetro) == "COD_REGIONE")) {
-  #   perimetro <- perimetro %>%
-  #     left_join(progetti %>%
-  #                 select(COD_LOCALE_PROGETTO, COD_REGIONE, DEN_REGIONE),
-  #               by = "COD_LOCALE_PROGETTO")
-  # }
-  # 
-  # # regioni
-  # appo <- perimetro %>%
-  #   mutate(DEN_REGIONE = ifelse(COD_REGIONE %in% c(reg_cn, reg_sud), DEN_REGIONE, "ALTRO TERRITORIO"))
-  # # MEMO: semplifica DEN_REGIONE diversi da vera Regione in "ALTRO TERRITORIO"
-  
-  appo <- perimetro
-  
-  regioni <- appo %>%
-    group_by(x_MACROAREA, x_REGIONE) %>%
-    # group_by(x_CICLO, x_AMBITO, x_GRUPPO, x_TEMA, x_MACROAREA, x_REGIONE) %>%
-    summarise(N = n(),
-              CP = sum(CP, na.rm = TRUE),
-              PAG = sum(PAG, na.rm = TRUE)) %>%
-    # totali per ciclo/fondo + classe/macroarea/regione
-    # bind_rows(appo %>%
-    #             group_by(x_CICLO, x_AMBITO, x_GRUPPO = "TOTALE", x_TEMA, x_MACROAREA, x_REGIONE) %>%
-    #             summarise(N = n(),
-    #                       CP = sum(CP, na.rm = TRUE),
-    #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-    # totali per ciclo + classe/macroarea/regione
-    # bind_rows(appo %>%
-    #             group_by(x_CICLO, x_AMBITO = "TOTALE", x_GRUPPO = "TOTALE", x_TEMA, x_MACROAREA, x_REGIONE) %>%
-    #             summarise(N = n(),
-    #                       CP = sum(CP, na.rm = TRUE),
-  #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-  # totali per classe/macroarea/regione
-  # bind_rows(appo %>%
-  #             group_by(x_CICLO = "TOTALE", x_AMBITO = "TOTALE", x_GRUPPO = "TOTALE", x_TEMA, x_MACROAREA, x_REGIONE) %>%
-  #             summarise(N = n(),
-  #                       CP = sum(CP, na.rm = TRUE),
-  #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-  # totali per macroarea/regione
-  # bind_rows(appo %>%
-  #             group_by(x_CICLO = "TOTALE", x_AMBITO = "TOTALE", x_GRUPPO = "TOTALE", x_TEMA = "Totale", x_MACROAREA, x_REGIONE) %>%
-  #             summarise(N = n(),
-  #                       CP = sum(CP, na.rm = TRUE),
-  #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-  as.data.frame() %>%
-    # mutate(x_TEMA = factor(x_TEMA, levels = c(livelli_classe, "Totale"))) %>%
-    # mutate(x_MACROAREA = factor(x_MACROAREA, levels=c("Sud", "Centro-Nord", "Nazionale", "Trasversale", "Estero"))) %>%
-    refactor_macroarea(.) %>%
-    mutate(x_REGIONE = factor(x_REGIONE, levels = c(names(reg_cn), names(reg_sud), "ALTRO TERRITORIO"))) %>%
-    # arrange(x_CICLO, x_AMBITO, x_GRUPPO, x_TEMA, x_MACROAREA, x_REGIONE)
-    arrange(x_MACROAREA, x_REGIONE)
-  
-  
-  if (debug == TRUE) {
-    regioni %>%
-      write.csv2(file.path(TEMP, "regioni.csv"), na = "", row.names = FALSE)
-  }
-  
-  return(regioni)
-  
-}
-
-
-
-# ----------------------------------------------------------------------------------- #
-# dimensioni
-
-report_dimensioni <- function(perimetro, debug=FALSE) {
-  
-  # dimensioni
-  dimensioni <- perimetro %>%
-    group_by(x_DIM_FIN) %>%
-    summarise(N = n(),
-              CP = sum(CP, na.rm = TRUE),
-              PAG = sum(PAG, na.rm = TRUE)) # %>%
-  # totali per ciclo/fondo + classe/dimensione
-  # bind_rows(perimetro %>%
-  #             group_by(x_CICLO, x_AMBITO, x_GRUPPO = "TOTALE", x_TEMA, x_TEMA_FIN) %>%
-  #             summarise(N = n(),
-  #                       CP = sum(CP, na.rm = TRUE),
-  #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-  # totali per ciclo + classe/dimensione
-  # bind_rows(perimetro %>%
-  #             group_by(x_CICLO, x_AMBITO = "TOTALE", x_GRUPPO = "TOTALE", x_TEMA, x_TEMA_FIN) %>%
-  #             summarise(N = n(),
-  #                       CP = sum(CP, na.rm = TRUE),
-  #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-  # totali per classe/dimensione
-  # bind_rows(perimetro %>%
-  #             group_by(x_CICLO = "TOTALE", x_AMBITO = "TOTALE", x_GRUPPO = "TOTALE", x_TEMA, x_TEMA_FIN) %>%
-  #             summarise(N = n(),
-  #                       CP = sum(CP, na.rm = TRUE),
-  #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-  # totali per dimensione
-  # bind_rows(perimetro %>%
-  #             group_by(x_CICLO = "TOTALE", x_AMBITO = "TOTALE", x_GRUPPO = "TOTALE", x_TEMA = "Totale", x_TEMA_FIN) %>%
-  #             summarise(N = n(),
-  #                       CP = sum(CP, na.rm = TRUE),
-  #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-  # as.data.frame() %>%
-  # mutate(x_TEMA = factor(x_TEMA, levels = c(livelli_classe, "Totale"))) %>%
-  # mutate(x_DIM_FIN = factor(x_TEMA_FIN, levels = c("0-100k", "100k-500k", "500k-1M", "1M-2M", "2M-5M", "5M-10M", "10M-infty"))) %>%
-  # arrange(x_CICLO, x_AMBITO, x_GRUPPO, x_TEMA, x_TEMA_FIN)
-  
-  if (debug == TRUE) {
-    dimensioni %>%
-      write.csv2(file.path(TEMP, "dimensioni.csv"), na = "", row.names = FALSE)
-  }
-  
-  return(dimensioni)
-  
-  
-}
-
-
-# ----------------------------------------------------------------------------------- #
-# stati procedurali
-# MEMO: nuova variabile usata per IDRICO e DISSESTO
-
-
-report_stati <- function(perimetro, debug=FALSE) {
-  
-  # stato per CP
-  stati <- perimetro %>%
-    group_by(OC_STATO_PROCEDURALE) %>%
-    summarise(N = n(),
-              CP = sum(CP, na.rm = TRUE),
-              PAG = sum(PAG, na.rm = TRUE)) %>%
-    # totali per ciclo/fondo + classe/stato
-    # bind_rows(perimetro %>%
-    #             group_by(x_CICLO, x_AMBITO, x_GRUPPO = "TOTALE", x_TEMA, OC_STATO_PROCEDURALE) %>%
-    #             summarise(N = n(),
-    #                       CP = sum(CP, na.rm = TRUE),
-    #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-    # totali per ciclo + classe/stato
-    # bind_rows(perimetro %>%
-    #             group_by(x_CICLO, x_AMBITO = "TOTALE", x_GRUPPO = "TOTALE", x_TEMA, OC_STATO_PROCEDURALE) %>%
-    #             summarise(N = n(),
-    #                       CP = sum(CP, na.rm = TRUE),
-  #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-  # totali per classe/stato
-  # bind_rows(perimetro %>%
-  #             group_by(x_CICLO = "TOTALE", x_AMBITO = "TOTALE", x_GRUPPO = "TOTALE", x_TEMA, OC_STATO_PROCEDURALE) %>%
-  #             summarise(N = n(),
-  #                       CP = sum(CP, na.rm = TRUE),
-  #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-  # totali per stato
-  # bind_rows(perimetro %>%
-  #             group_by(x_CICLO = "TOTALE", x_AMBITO = "TOTALE", x_GRUPPO = "TOTALE", x_TEMA = "Totale", OC_STATO_PROCEDURALE) %>%
-  #             summarise(N = n(),
-  #                       CP = sum(CP, na.rm = TRUE),
-  #                       PAG = sum(PAG, na.rm = TRUE))) %>%
-  # as.data.frame() %>%
-  # mutate(x_TEMA = factor(x_TEMA, levels = c(livelli_classe, "Totale"))) %>%
-  mutate(OC_STATO_PROCEDURALE = factor(OC_STATO_PROCEDURALE,
-                                       levels =  c("Non avviato",
-                                                   "In avvio di progettazione",
-                                                   "In corso di progettazione",
-                                                   "In affidamento",
-                                                   "In esecuzione",
-                                                   "Eseguito",
-                                                   "Non determinabile"))) %>%
-    arrange(OC_STATO_PROCEDURALE)
-  
-  
-  if (debug == TRUE) {
-    stati %>%
-      write.csv2(file.path(TEMP, "stati.csv"), na = "", row.names = FALSE)
-  }
-  
-  return(stati)
-  
-  
-  
-}
-
-
-# ----------------------------------------------------------------------------------------- #
-#workflow
-
-
-workflow_report <- function(clp_csv, report_ls=NULL, progetti=NULL, use_coe=TRUE, operazioni=NULL, 
-                            tema=NULL, livelli_tema=NULL, nome_file=NULL, use_template=FALSE, debug=FALSE) {
-  
-  # DEBUG:
-  # livelli_tema <- c("Cultura", "Natura", "Turismo")
-  
-  if (is.null(report_ls)) {
-    report_ls <- c("report_cicli_temi", "report_cicli_ambiti", "report_regioni", "report_dimensioni", "report_stati")
-  }
-  
-  # switch per variabili finanziarie
-  if (use_coe == TRUE) {
-    if (is.null(operazioni)) {
-      operazioni <- load_operazioni(bimestre) 
-    }
-    
-    appo <- clp_csv %>%
-      left_join(operazioni %>%
-                  select(COD_LOCALE_PROGETTO, OC_TITOLO_PROGETTO,
-                         x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ, x_MACROAREA, x_REGIONE,
-                         COE, COE_IMP, COE_PAG,
-                         OC_STATO_PROCEDURALE,
-                         OC_COD_TEMA_SINTETICO),
-                by = "COD_LOCALE_PROGETTO") %>%
-      rename(CP = COE, 
-             IMP = COE_IMP, 
-             PAG = COE_PAG)
-  } else {
-    
-    
-    if (is.null(progetti)) {
-      progetti <- load_progetti(bimestre, light=TRUE)
-    }
-    
-    appo <- clp_csv %>%
-      left_join(progetti %>%
-                  select(COD_LOCALE_PROGETTO, OC_TITOLO_PROGETTO,
-                         x_CICLO, x_AMBITO, x_GRUPPO, x_PROGRAMMA, x_REGNAZ, x_MACROAREA, x_REGIONE,
-                         OC_FINANZ_TOT_PUB_NETTO, IMPEGNI, TOT_PAGAMENTI,
-                         OC_STATO_PROCEDURALE,
-                         # DEV: aggiungere beneficiario
-                         OC_COD_TEMA_SINTETICO),
-                by = "COD_LOCALE_PROGETTO") %>%
-      rename(CP = OC_FINANZ_TOT_PUB_NETTO, 
-             IMP = IMPEGNI, 
-             PAG = TOT_PAGAMENTI)
-  }
-  
-  # DEV: qui potrebbe essere necessario aggiungere campi da "progetti" a "operazioni", quindi "progetti" andrebbe importato prima di if
-  
-  # switch per tema
-  if (is.null(tema)) {
-    appo1 <- appo %>%
-      rename(x_TEMA = OC_COD_TEMA_SINTETICO)
-    
-    if (is.null(livelli_tema)) {
-      livelli_tema <- unique(appo$OC_COD_TEMA_SINTETICO)
-    }
-    
-    # TODO: qui va ricodificato codice con descrizione
-    # TODO: qui va iserito factor
-  } else if (tema == "CLASSE") {
-    
-    if (is.null(livelli_tema)) {
-      livelli_tema <- unique(appo$CLASSE)
-    }
-    
-    appo1 <- appo %>%
-      rename(x_TEMA = CLASSE) %>%
-      mutate(x_TEMA = factor(x_TEMA, levels = livelli_tema))
-  } 
-  
-  # dimensione finanziaria
-  appo2 <- get_dim_fin(df = appo1, debug_mode=FALSE) 
-  
-  
-  # export
-  export_report_edit(perimetro = appo2, report_ls = report_ls, nome_file, debug, use_template) 
-  
-}
-
-
-
-
-
-
-
-
-
-
-
-
-#' Wrapper per report con lista di contenuti editabile
-#'
-#' Wrapper per report con lista di contenuti editabile.
-#'
-#' @param perimetro Dataset da workflow_report
-#' @param report_ls Elenco dei report da generare
-#' @return Un dataframe con COD_LOCALE_PROGETTO, QUERY_[1], QUERY_[2], QUERY_[N] e TIPO_QUERY.
-export_report_edit <- function(perimetro, report_ls, nome_file=NULL, debug=FALSE, use_template=FALSE) {
-  
-  # report_ls <- c("report_cicli_temi", "report_cicli_ambiti", "report_regioni", "report_dimensioni", "report_stati")
-  tab_list <- list()
-  
-  appo <- perimetro
-  # appo <- appo2
-  
-  # query
-  for (q in report_ls) {
-    print(q)
-    tab_list[[q]] <- do.call(q, list(appo, debug))
-  }
-  
-  # libs
-  library("openxlsx")
-  
-  if (is.null(nome_file)) {
-    nome_file <- "elaborazione.xlsx"
-  }
-  
-  if (use_template == FALSE) {
-    # write all tables
-    # MEMO: usato al primo giro per creare template (poi integrato a mano)
-    write.xlsx(tab_list, file = file.path(OUTPUT, nome_file), asTable = TRUE, firstRow = TRUE, overwrite = TRUE)
-    # CHK: verificare numero righe con formato...
-  } else {
-    
-    # edit template
-    # wb <- loadWorkbook(file.path(src_path, "elab_template.xlsx"))
-    # wb <- loadWorkbook(system.file("extdata", "elab_template.xlsx", package = "oc", mustWork = TRUE))
-    wb <- loadWorkbook(system.file("extdata", "elab_template.xlsx", package = "octk", mustWork = TRUE))
-    for (i in seq_along(tab_list)) {
-      print(names(tab_list)[i])
-      removeTable(wb = wb, sheet = names(tab_list)[i], table = getTables(wb, sheet = names(tab_list)[i]))
-      writeDataTable(wb, sheet = names(tab_list)[i], x = tab_list[[i]], stack = TRUE)
-    }
-    saveWorkbook(wb, file = file.path(OUTPUT, nome_file), overwrite = TRUE)
-    
-    # DEV: inserire formati
-    
-  }
 }
 
