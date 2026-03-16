@@ -201,6 +201,10 @@ convert_preesteso_to_parquet <- function(DATA) {
   progetti <- read_csv2(file.path(DATA, "PROGETTI_PREESTESO.csv"), col_types = col_types)
   
   arrow::write_parquet(progetti, file.path(DATA, paste0("PROGETTI_PREESTESO.parquet")))
+  
+  # memory mgm
+  rm(progetti)
+  gc()
 }
 
 
@@ -495,6 +499,9 @@ setup_progetti <- function(bimestre, progetti, operazioni_713, fix = FALSE, expo
     message("Non hai definito il folder DATA. Carica 'oc' ed inizializza 'oc_init()'.")
   }
   
+  # memory mgm
+  rm(progetti_light)
+  gc()
 }
 
 

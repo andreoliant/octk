@@ -388,11 +388,11 @@ setup_operazioni_evo_macro <- function(bimestre, progetti,
                                        operazioni_713_raw, operazioni_1420_raw, operazioni_extra_raw, 
                                        export=TRUE, export_pqt=FALSE, debug=FALSE) {
   
-  appo <- workflow_macroaree(bimestre, progetti, operazioni_713=operazioni_713_raw, 
+  out <- workflow_macroaree(bimestre, progetti, operazioni_713=operazioni_713_raw, 
                              operazioni_1420=operazioni_1420_raw, operazioni_extra=operazioni_extra_raw, 
                              debug=debug)
   
-  out <- appo %>% 
+  out <- out %>% 
     # fix ambito fdr
     mutate(x_AMBITO = case_when(x_AMBITO == "FDR" ~ "POC",
                                 TRUE ~ x_AMBITO)) %>% 
@@ -418,6 +418,10 @@ setup_operazioni_evo_macro <- function(bimestre, progetti,
   }
   
   # return(out)
+  
+  # memory mgm
+  rm(out)
+  gc()
 }
 
 
@@ -964,8 +968,7 @@ workflow_macroaree <- function(bimestre, progetti,
   sum(operazioni_713$COE_IMP, na.rm = TRUE) - sum(operazioni_713_4$COE_IMP, na.rm = TRUE)
   sum(operazioni_713$COE_PAG, na.rm = TRUE) - sum(operazioni_713_4$COE_PAG, na.rm = TRUE)
   # CHK: vedo delta su impegni e pagamenti
-  
-  
+
   # ----------------------------------------------------------------------------------- #
   # bind----
   
@@ -979,6 +982,12 @@ workflow_macroaree <- function(bimestre, progetti,
                 select(OC_CODICE_PROGRAMMA, x_GRUPPO, x_PROGRAMMA),
               by = "OC_CODICE_PROGRAMMA")
   
+  # memory mgm
+  rm(operazioni_extra_raw, operazioni_1420_raw, operazioni_713_raw,
+     operazioni_extra_1, operazioni_1420_1, operazioni_713_1,
+     operazioni_extra_2, operazioni_1420_2, operazioni_713_2,
+     operazioni_extra_3, operazioni_1420_3, operazioni_713_3)
+  gc()
   
   # ----------------------------------------------------------------------------------- #
   # chk vari----
@@ -1018,6 +1027,11 @@ workflow_macroaree <- function(bimestre, progetti,
   msg <- paste0("Delta coe_pag per 713 ante trasformazione: ", temp)
   message(msg)
   
+  
+  # memory mgm
+  rm(operazioni_extra_4, operazioni_1420_4, operazioni_713_4,
+     operazioni_extra, operazioni_1420, operazioni_713)
+  gc()
   
   # ----------------------------------------------------------------------------------- #
   # debug----
@@ -1118,6 +1132,10 @@ workflow_macroaree <- function(bimestre, progetti,
   # export----
   
   return(out)
+  
+  # memory mgm
+  rm(operazioni_1, progetti)
+  gc()
 }
 
 
