@@ -317,7 +317,7 @@ load_operazioni_713 <- function() {
     oc_tot_pagamenti_coesione = col_double(),
     QSN_AREA_OBIETTIVO_UE = col_character(),
     QSN_FONDO_COMUNITARIO = col_character(),
-    qsn_cod_priorita = col_double(),
+    qsn_cod_priorita = col_character(),
     qsn_descrizione_priorita = col_character(),
     qsn_cod_obiettivo_generale = col_number(),
     qsn_descr_obiettivo_generale = col_character(),
@@ -406,7 +406,46 @@ setup_operazioni_evo_macro <- function(bimestre, progetti,
                                  x_GRUPPO == "ACCORDI" & grepl("Ord", x_LIVELLO_0) ~ "ORD",
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCSTRCAMPANIA" ~ "STRAL2",
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCBAGNCAMPANIA" ~ "STRAL3",
-                                 TRUE ~ NA_character_)) 
+                                 TRUE ~ NA_character_)) %>% 
+    # crea stato
+    left_join(progetti %>% 
+                select(COD_LOCALE_PROGETTO, 
+                       IMPEGNI,
+                       TOT_PAGAMENTI,
+                       OC_FINANZ_TOT_PUB_NETTO, 
+                       DATA_FINE_EFF_COLLAUDO,
+                       DATA_INIZIO_EFF_COLLAUDO,
+                       DATA_FINE_EFF_ESECUZIONE,
+                       DATA_INIZIO_EFF_ESECUZIONE,
+                       DATA_FINE_EFF_STIP_ATTRIB,
+                       DATA_INIZIO_EFF_STIP_ATTRIB,
+                       DATA_FINE_EFF_PROG_ESEC,
+                       DATA_INIZIO_EFF_PROG_ESEC, 
+                       DATA_FINE_EFF_PROG_DEF,
+                       DATA_INIZIO_EFF_PROG_DEF,
+                       DATA_FINE_EFF_PROG_PREL, 
+                       DATA_INIZIO_EFF_PROG_PREL, 
+                       DATA_FINE_EFF_STUDIO_FATT, 
+                       DATA_INIZIO_EFF_STUDIO_FATT),
+              by = "COD_LOCALE_PROGETTO") %>% 
+    get_x_stato(., data_scarico=bimestre) %>% 
+    select(-IMPEGNI,
+           -TOT_PAGAMENTI,
+           -OC_FINANZ_TOT_PUB_NETTO, 
+           -DATA_FINE_EFF_COLLAUDO,
+           -DATA_INIZIO_EFF_COLLAUDO,
+           -DATA_FINE_EFF_ESECUZIONE,
+           -DATA_INIZIO_EFF_ESECUZIONE,
+           -DATA_FINE_EFF_STIP_ATTRIB,
+           -DATA_INIZIO_EFF_STIP_ATTRIB,
+           -DATA_FINE_EFF_PROG_ESEC,
+           -DATA_INIZIO_EFF_PROG_ESEC, 
+           -DATA_FINE_EFF_PROG_DEF,
+           -DATA_INIZIO_EFF_PROG_DEF,
+           -DATA_FINE_EFF_PROG_PREL, 
+           -DATA_INIZIO_EFF_PROG_PREL, 
+           -DATA_FINE_EFF_STUDIO_FATT, 
+           -DATA_INIZIO_EFF_STUDIO_FATT)
   
   
   if (export == TRUE) {
@@ -1113,19 +1152,24 @@ workflow_macroaree <- function(bimestre, progetti,
                        DEN_PROVINCIA,
                        COD_COMUNE,
                        DEN_COMUNE,
-                       OC_STATO_PROGETTO,
-                       OC_STATO_PROCEDURALE,
-                       OC_COD_FASE_CORRENTE,
-                       OC_DESCR_FASE_CORRENTE,
+                       # OC_STATO_PROGETTO,
+                       # OC_STATO_PROCEDURALE,
+                       # OC_COD_FASE_CORRENTE,
+                       # OC_DESCR_FASE_CORRENTE,
                        COD_PROCED_ATTIVAZIONE,
                        DESCR_PROCED_ATTIVAZIONE,
                        OC_CODFISC_BENEFICIARIO,
                        OC_DENOM_BENEFICIARIO,
                        OC_FLAG_VISUALIZZAZIONE,
                        OC_FLAG_AGGREGATO,
-                       x_STATO
+                       # x_STATO #MEMO: vedi nota sotto
                        ),
               by = "COD_LOCALE_PROGETTO")
+  
+  # NOTA:
+  # x_STATO viene ricalcolato fuori da workflow in setup_operazioni perché:
+  # 1) qui non ho variabili date nel select, sono troppe
+  # 2) in progetti light ho calcolato x_STATO, ma qui uso preesteso
   
   
   # ----------------------------------------------------------------------------------- #
