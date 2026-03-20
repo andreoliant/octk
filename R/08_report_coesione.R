@@ -15,7 +15,7 @@
 #' @param export_xls Vuoi salvare i file xlsx per ciclo e ambito in OUTPUT?
 #' @param progetti dataset di tipo "progetti" che serve per integrare CP, impegni e pagamenti totali.
 #' @return Un file csv con apertura per programma, con RISORSE, COE, COE_IMPe, COE_PAG e con COE per fase procedurale.
-make_report_programmi_coesione_evo_macro <- function(perimetro, usa_meuro=FALSE, show_cp=FALSE, use_eu=FALSE, use_flt=TRUE, 
+make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=FALSE, use_eu=FALSE, use_flt=TRUE, 
                                                      use_cicli_psc=FALSE, use_fix_siepoc=FALSE, stime_fix_siepoc=FALSE,
                                                      export=FALSE, export_xls=FALSE, progetti=NULL, DB) {
   
@@ -118,9 +118,9 @@ make_report_programmi_coesione_evo_macro <- function(perimetro, usa_meuro=FALSE,
   appo <- spalla %>%
     full_join(appo %>%
                 left_join(perimetro %>%
-                            group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_SEZIONE, OC_STATO_PROCEDURALE) %>%
+                            group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_SEZIONE, x_STATO) %>%
                             summarise(COE = sum(COE, na.rm = TRUE)) %>%
-                            spread(OC_STATO_PROCEDURALE, COE, fill = 0, drop = FALSE),
+                            spread(x_STATO, COE, fill = 0, drop = FALSE),
                           by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_SEZIONE")),
               by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_SEZIONE")) %>%
     as_tibble(.) %>%
@@ -128,12 +128,12 @@ make_report_programmi_coesione_evo_macro <- function(perimetro, usa_meuro=FALSE,
     mutate_if(is.numeric, replace_na, replace=0) %>%
     select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_SEZIONE, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
            `Non avviato`,
-           `In avvio di progettazione`,
-           `In corso di progettazione`,
+           `In progettazione FTE`,
+           `In progettazione esecutiva`,
            `In affidamento`,
            `In esecuzione`,
            `Eseguito`)
-  
+
   out <- appo %>%
     filter(RISORSE > 0)
   
@@ -151,8 +151,8 @@ make_report_programmi_coesione_evo_macro <- function(perimetro, usa_meuro=FALSE,
              IMP = round(IMP/1000000, 1),
              PAG = round(PAG/1000000, 1),
              `Non avviato` = round(`Non avviato` / 1000000, 1),
-             `In avvio di progettazione` = round(`In avvio di progettazione` / 1000000, 1),
-             `In corso di progettazione` = round(`In corso di progettazione` / 1000000, 1),
+             `In progettazione FTE` = round(`In progettazione FTE` / 1000000, 1),
+             `In progettazione esecutiva` = round(`In progettazione esecutiva` / 1000000, 1),
              `In affidamento` = round(`In affidamento` / 1000000, 1),
              `In esecuzione` = round(`In esecuzione` / 1000000, 1),
              `Eseguito` = round(`Eseguito` / 1000000, 1))
