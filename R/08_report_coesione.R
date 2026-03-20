@@ -207,8 +207,9 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
 #' @param export_sum Vuoi salvare il file con la sintesi per ciclo/ambito?
 #' @return Un dataframe per programma, ciclo e ambito.
 chk_variazione_programmi_coesione <- function(programmi=NULL, dati_new=NULL, dbcoe_new=NULL, dati_old, dbcoe_old, 
-                                                        usa_meuro = FALSE, show_cp = FALSE, use_eu = FALSE,
-                                                        use_cicli_psc=FALSE, use_fix_siepoc=FALSE, stime_fix_siepoc=FALSE, use_flt=TRUE, export=FALSE, export_sum=FALSE){
+                                              usa_meuro = FALSE, show_cp = FALSE, use_eu = FALSE,
+                                              use_cicli_psc=FALSE, use_fix_siepoc=FALSE, stime_fix_siepoc=FALSE, use_flt=TRUE, use_pqt=FALSE,
+                                              export=FALSE, export_sum=FALSE) {
   
   # DEBUG:
   # dati_new = "20251031"
@@ -232,7 +233,7 @@ chk_variazione_programmi_coesione <- function(programmi=NULL, dati_new=NULL, dbc
   
   if (is.null(programmi)) {
     DATA1 <- file.path(dirname(DATA), dati_new)
-    macroaree1 <- load_operazioni(bimestre=dati_new, visualizzati=TRUE, DATA=DATA1)
+    macroaree1 <- load_operazioni(bimestre=dati_new, visualizzati=TRUE, use_pqt=use_pqt, DATA=DATA1)
     DB1 <- file.path(DRIVE, "PROGRAMMAZIONE", dbcoe_new)
     programmi_new <- make_report_programmi_coesione(macroaree1, usa_meuro=usa_meuro, use_eu=use_eu, use_flt=use_flt, show_cp=show_cp, 
                                                               use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc,
@@ -242,7 +243,7 @@ chk_variazione_programmi_coesione <- function(programmi=NULL, dati_new=NULL, dbc
   }
   
   DATA2 <- file.path(dirname(DATA), dati_old)
-  macroaree2 <- load_operazioni(bimestre=dati_old, visualizzati=TRUE, DATA=DATA2)
+  macroaree2 <- load_operazioni(bimestre=dati_old, visualizzati=TRUE, use_pqt=use_pqt, DATA=DATA2)
   DB2 <- file.path(DRIVE, "PROGRAMMAZIONE", dbcoe_old)
   programmi_old <- make_report_programmi_coesione(macroaree2, usa_meuro=usa_meuro, use_eu=use_eu, use_flt=use_flt, show_cp=show_cp, 
                                                             use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc,
