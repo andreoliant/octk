@@ -1,0 +1,619 @@
+---
+title: "Inizializzazione dell'ambiente OCTK con oc_init()"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Inizializzazione dell'ambiente OCTK con oc_init()}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduzione
+
+La funzione `oc_init()` inizializza l'ambiente di lavoro di OCTK definendo i principali path standard usati nelle elaborazioni.
+
+I path storici valorizzati nel Global Environment sono:
+
+- `DRIVE`
+- `DATA`
+- `DB`
+- `WORK`
+- `INPUT`
+- `TEMP`
+- `OUTPUT`
+
+A questi si aggiungono:
+
+- `LOCAL`
+- `CONFIG`
+
+In modalità `hybrid` vengono inoltre valorizzati:
+
+- `SYNC_WORK`
+- `SYNC_INPUT`
+- `SYNC_TEMP`
+- `SYNC_OUTPUT`
+
+L'obiettivo è mantenere la retrocompatibilità con il comportamento storico del package, introducendo al tempo stesso una gestione più robusta dei profili utente e delle modalità operative.
+
+# Obiettivi
+
+`oc_init()` deve supportare:
+
+- uso interattivo standard su workstation del gruppo di lavoro;
+- uso locale con workarea sul file system locale;
+- uso ibrido su server, con workarea locale e struttura parallela su Drive per backup o sync;
+- mantenimento dei path standard nel Global Environment per compatibilità con il codice esistente.
+
+# Principi generali
+
+## Retrocompatibilità
+
+La funzione mantiene la logica storica di OCTK:
+
+- `oc_init()` resta la funzione unica di inizializzazione;
+- `DRIVE`, `DATA`, `DB`, `WORK`, `INPUT`, `TEMP`, `OUTPUT` restano disponibili nel Global Environment;
+- `focus` e `bimestre` restano disponibili nel Global Environment;
+- i nomi dei path standard non cambiano.
+
+In parallelo viene creato anche un oggetto `CONFIG` che contiene la configurazione runtime completa.
+
+## Distinzione tra Drive e locale
+
+Nel modello corrente:
+
+- `DRIVE` è sempre valorizzato;
+- `DB` è sempre valorizzato e si intende collocato su Drive;
+- `DATA` è di default locale, ma può essere sovrascritto tramite parametro;
+- `LOCAL` punta sempre a `getwd()`.
+
+I path di lavoro standard (`WORK`, `INPUT`, `TEMP`, `OUTPUT`) dipendono dalla modalità selezionata.
+
+## Configurazione utente esterna
+
+Le informazioni specifiche per utente e postazione non sono hardcoded nella funzione, ma sono lette da un file esterno:
+
+`inst/config/developers.yml`
+
+Ogni record contiene, per ora, i campi:
+
+- `user`
+- `os`
+- `drive_root`
+- `data_root`
+
+# Firma della funzione
+
+La firma pubblica di `oc_init()` è la seguente:
+
+```{r eval = FALSE}
+oc_init(
+  bimestre,
+  db_ver,
+  data_path = NULL,
+  db_path = NULL,
+  elab = NULL,
+  focus = NULL,
+  ver = NULL,
+  use_drive = TRUE,
+  drive_root = NULL,
+  user = NULL,
+  mode = NULL
+)
+```
+
+# Parametri
+
+## Parametri obbligatori
+
+### `bimestre`
+
+Versione dei dati di attuazione, in formato stringa `YYYYMMDD`.
+
+Esempio:
+
+```{r eval = FALSE}
+bimestre = "20251231"
+```
+
+### `db_ver`
+
+Versione dei dati di programmazione, in formato stringa `YYYYMMDD`.
+
+Esempio:
+
+```{r eval = FALSE}
+db_ver = "20251231"
+```
+
+## Parametri opzionali
+
+### `data_path`
+
+Percorso alla fonte dati di attuazione.
+
+Se `NULL`, il path viene ricavato dal file di configurazione dell'utente (`data_root`) e completato con `bimestre`.
+
+### `db_path`
+
+Percorso al database di programmazione.
+
+Se `NULL`, viene ricavato in modo standard come:
+
+```{r eval = FALSE}
+file.path(DRIVE, "PROGRAMMAZIONE", db_ver)
+```
+
+### `elab`
+
+Nome della cartella di elaborazione.
+
+### `focus`
+
+Nome della sotto-cartella di elaborazione.
+
+Se non specificato, viene derivato da `basename(getwd())`.
+
+### `ver`
+
+Nome della sotto-sotto-cartella di versione dell'elaborazione.
+
+### `use_drive`
+
+Parametro mantenuto per retrocompatibilità.
+
+Regola:
+
+- se `mode` non è specificato, `use_drive = TRUE` implica `mode = "drive"`;
+- se `mode` non è specificato, `use_drive = FALSE` implica `mode = "local"`.
+
+### `drive_root`
+
+Override esplicito del path di root di Drive.
+
+### `user`
+
+Utente o postazione usato per recuperare `drive_root` e `data_root` dal file `developers.yml`.
+
+### `mode`
+
+Modalità operativa.
+
+Valori ammessi:
+
+- `"drive"`
+- `"local"`
+- `"hybrid"`
+
+# Modalità operative
+
+## Modalità `drive`
+
+Questa è la modalità standard e predefinita del package.
+
+### Logica generale
+
+In modalità `drive`:
+
+- `DRIVE` punta al Drive montato nel file system;
+- `DB` è collocato su Drive;
+- `DATA` è locale;
+- `LOCAL` punta a `getwd()`;
+- `WORK`, `INPUT`, `TEMP`, `OUTPUT` sono su Drive.
+
+### Struttura dei path
+
+In questa modalità, il path base di lavoro è:
+
+```{r eval = FALSE}
+WORK = file.path(DRIVE, "ELAB", bimestre, elab, focus, ver)
+```
+
+e i path derivati sono:
+
+```{r eval = FALSE}
+INPUT  = file.path(WORK, "input")
+TEMP   = file.path(WORK, "temp")
+OUTPUT = file.path(WORK, "output")
+```
+
+### Quando usarla
+
+È la modalità da usare quando:
+
+- si lavora secondo la struttura storica del gruppo;
+- si vuole mantenere la workarea direttamente nell'albero condiviso di Drive;
+- gli script esistenti si aspettano che `WORK` sia sotto `DRIVE/ELAB/...`.
+
+### Esempio
+
+```{r eval = FALSE}
+oc_init(
+  bimestre = "20251231",
+  db_ver = "20251231",
+  elab = "monitoraggio",
+  focus = "temi",
+  ver = "v01",
+  user = "Antonio2",
+  mode = "drive"
+)
+```
+
+## Modalità `local`
+
+Questa modalità usa una workarea locale pur mantenendo valorizzati `DRIVE` e `DB`.
+
+### Logica generale
+
+In modalità `local`:
+
+- `DRIVE` è comunque valorizzato;
+- `DB` è comunque valorizzato;
+- `DATA` è locale;
+- `LOCAL` punta a `getwd()`;
+- `WORK`, `INPUT`, `TEMP`, `OUTPUT` sono locali.
+
+### Struttura dei path
+
+In questa modalità il path base di lavoro è:
+
+```{r eval = FALSE}
+WORK = file.path(LOCAL, bimestre, elab, focus, ver)
+```
+
+e i path derivati sono:
+
+```{r eval = FALSE}
+INPUT  = file.path(WORK, "input")
+TEMP   = file.path(WORK, "temp")
+OUTPUT = file.path(WORK, "output")
+```
+
+### Quando usarla
+
+È la modalità da usare quando:
+
+- si vuole lavorare localmente;
+- si vuole evitare di collocare la workarea standard dentro Drive;
+- si vuole mantenere compatibilità con funzioni che continuano a usare `DRIVE` o `DB`.
+
+### Esempio
+
+```{r eval = FALSE}
+oc_init(
+  bimestre = "20251231",
+  db_ver = "20251231",
+  elab = "monitoraggio",
+  focus = "temi",
+  ver = "v01",
+  user = "Antonio2",
+  mode = "local"
+)
+```
+
+## Modalità `hybrid`
+
+Questa modalità è pensata soprattutto per uso server o per esecuzioni locali con workarea primaria sul file system locale e struttura parallela di backup o sync su Drive.
+
+### Logica generale
+
+In modalità `hybrid`:
+
+- `DRIVE` è valorizzato;
+- `DB` è valorizzato su Drive;
+- `DATA` è locale;
+- `LOCAL` punta a `getwd()`;
+- `WORK`, `INPUT`, `TEMP`, `OUTPUT` sono locali;
+- vengono inoltre valorizzati i path `SYNC_*` sotto Drive.
+
+### Struttura dei path locali
+
+Il path di lavoro locale è:
+
+```{r eval = FALSE}
+WORK = file.path(LOCAL, bimestre, elab, focus, ver)
+```
+
+e i path derivati:
+
+```{r eval = FALSE}
+INPUT  = file.path(WORK, "input")
+TEMP   = file.path(WORK, "temp")
+OUTPUT = file.path(WORK, "output")
+```
+
+### Struttura dei path di sync
+
+Il path di sync parallelo è:
+
+```{r eval = FALSE}
+SYNC_WORK = file.path(DRIVE, "ELAB", bimestre, elab, focus, ver)
+```
+
+e i path derivati sono:
+
+```{r eval = FALSE}
+SYNC_INPUT  = file.path(SYNC_WORK, "input")
+SYNC_TEMP   = file.path(SYNC_WORK, "temp")
+SYNC_OUTPUT = file.path(SYNC_WORK, "output")
+```
+
+### Significato operativo
+
+La modalità `hybrid` non implementa necessariamente una sincronizzazione automatica.
+
+Il suo scopo è valorizzare i path paralleli che potranno essere usati, a seconda dell'evoluzione futura, per:
+
+- backup;
+- export;
+- sincronizzazione tramite mount;
+- sincronizzazione tramite `rsync`;
+- altra strategia di replica.
+
+In altre parole, la modalità `hybrid` definisce il contratto dei path, non il meccanismo di sincronizzazione.
+
+### Quando usarla
+
+È la modalità da usare quando:
+
+- l'esecuzione avviene su server;
+- si vuole una workarea primaria locale;
+- si vuole mantenere una struttura speculare su Drive per backup o sync;
+- si vuole preparare un refactoring futuro senza alterare i nomi storici dei path.
+
+### Esempio
+
+```{r eval = FALSE}
+oc_init(
+  bimestre = "20251231",
+  db_ver = "20251231",
+  elab = "runner",
+  focus = "setup_progetti",
+  ver = "run01",
+  user = "Antonio3",
+  drive_root = "/mnt/oc_drive",
+  data_path = "/srv/dati/oc",
+  mode = "hybrid"
+)
+```
+
+# Regole di risoluzione dei path
+
+## `DRIVE`
+
+Ordine di precedenza:
+
+1. `drive_root` passato come parametro;
+2. `drive_root` letto dal file `developers.yml` in base a `user`;
+3. errore se non risolvibile.
+
+## `DATA`
+
+Ordine di precedenza:
+
+1. `data_path` passato come parametro;
+2. `data_root` letto dal file `developers.yml` in base a `user`.
+
+Il path finale viene composto, in modo standard, aggiungendo `bimestre`.
+
+## `DB`
+
+Ordine di precedenza:
+
+1. `db_path` passato come parametro;
+2. `file.path(DRIVE, "PROGRAMMAZIONE", db_ver)`.
+
+## `focus`
+
+Se `focus` non è specificato, viene derivato da:
+
+```{r eval = FALSE}
+basename(getwd())
+```
+
+## `WORK`
+
+Dipende dalla modalità:
+
+- `drive` -> sotto `DRIVE/ELAB/...`
+- `local` -> sotto `LOCAL/...`
+- `hybrid` -> sotto `LOCAL/...`
+
+# Globali create da `oc_init()`
+
+## Sempre create
+
+Dopo l'esecuzione della funzione, sono disponibili nel Global Environment:
+
+- `DRIVE`
+- `LOCAL`
+- `DATA`
+- `DB`
+- `WORK`
+- `INPUT`
+- `TEMP`
+- `OUTPUT`
+- `focus`
+- `bimestre`
+- `CONFIG`
+
+## Create solo in modalità `hybrid`
+
+In più, in modalità `hybrid`, vengono create:
+
+- `SYNC_WORK`
+- `SYNC_INPUT`
+- `SYNC_TEMP`
+- `SYNC_OUTPUT`
+
+# Oggetto `CONFIG`
+
+Oltre alle globali storiche, `oc_init()` costruisce un oggetto `CONFIG` che riassume la configurazione runtime della sessione.
+
+In generale `CONFIG` contiene:
+
+- modalità operativa;
+- utente;
+- sistema operativo;
+- path standard;
+- path di sync;
+- parametri di inizializzazione.
+
+Esempio di accesso:
+
+```{r eval = FALSE}
+CONFIG$mode
+CONFIG$WORK
+CONFIG$SYNC_WORK
+```
+
+Questo oggetto è pensato per futuri sviluppi del package, pur mantenendo nel frattempo la compatibilità con il codice esistente.
+
+# File di configurazione `developers.yml`
+
+La configurazione utente è letta da:
+
+```{r eval = FALSE}
+inst/config/developers.yml
+```
+
+## Struttura prevista
+
+Il file contiene una sezione `developers`, con un record per ogni utente o postazione.
+
+Esempio:
+
+```{r eval = FALSE}
+developers:
+  - user: "Antonio2"
+    os: "linux"
+    drive_root: "/home/aa/oc_drive"
+    data_root: "/media/aa/22F70AE20061C7C8/dati/oc"
+
+  - user: "Antonio3"
+    os: "linux"
+    drive_root: "/mnt/oc_drive"
+    data_root: "/srv/dati/oc"
+```
+
+## Utente come profilo runtime
+
+Nel modello attuale, `user` non identifica soltanto una persona, ma una specifica postazione di lavoro o runtime.
+
+Ad esempio:
+
+- `Antonio1` = PC A
+- `Antonio2` = PC B
+- `Antonio3` = server
+
+Questa scelta consente di differenziare in modo semplice i path di esecuzione senza introdurre ulteriori concetti di profilo.
+
+# Esempi d'uso
+
+## Uso standard storico
+
+```{r eval = FALSE}
+oc_init(
+  bimestre = "20251231",
+  db_ver = "20251231",
+  elab = "monitoraggio",
+  focus = "temi",
+  ver = "v01",
+  user = "Antonio2"
+)
+```
+
+Se `mode` non è specificato e `use_drive = TRUE`, la modalità effettiva è `drive`.
+
+## Workarea locale
+
+```{r eval = FALSE}
+oc_init(
+  bimestre = "20251231",
+  db_ver = "20251231",
+  elab = "monitoraggio",
+  focus = "temi",
+  ver = "v01",
+  user = "Antonio2",
+  mode = "local"
+)
+```
+
+## Esecuzione ibrida su server
+
+```{r eval = FALSE}
+oc_init(
+  bimestre = "20251231",
+  db_ver = "20251231",
+  elab = "runner",
+  focus = "setup_operazioni",
+  ver = "run01",
+  user = "Antonio3",
+  drive_root = "/mnt/oc_drive",
+  data_path = "/srv/dati/oc",
+  mode = "hybrid"
+)
+```
+
+# Note di retrocompatibilità
+
+La revisione di `oc_init()` è progettata per non rompere il codice esistente.
+
+In particolare:
+
+- i nomi dei path standard non cambiano;
+- i path continuano a essere assegnati nel Global Environment;
+- `use_drive` resta disponibile;
+- `user` resta il parametro usato per selezionare la configurazione;
+- `oc_init()` resta l'unica funzione pubblica di inizializzazione.
+
+Le differenze principali rispetto alla versione storica sono:
+
+- eliminazione della logica `DEV_MODE`;
+- eliminazione del parametro `workarea`;
+- introduzione di `LOCAL`;
+- introduzione di `CONFIG`;
+- introduzione dei path `SYNC_*` in modalità `hybrid`;
+- spostamento della configurazione utente in un file esterno YAML.
+
+# Comportamento atteso in caso di errore
+
+`oc_init()` deve andare in errore in modo esplicito nei seguenti casi:
+
+- `user` non trovato nel file di configurazione, in assenza di override sufficienti;
+- `DRIVE` non risolvibile;
+- `DATA` non risolvibile;
+- `mode` non valido;
+- file di configurazione utente assente o malformato.
+
+La mancata esistenza delle cartelle di lavoro (`INPUT`, `TEMP`, `OUTPUT`, ed eventualmente `SYNC_*`) non è un errore: tali cartelle vengono create automaticamente se mancanti.
+
+# Sviluppi futuri
+
+La struttura attuale prepara il package a evoluzioni successive, senza rompere il comportamento storico.
+
+Possibili sviluppi futuri includono:
+
+- validazione più rigorosa dei parametri;
+- supporto più esplicito a esecuzioni server-only;
+- sincronizzazione automatica dei path `SYNC_*`;
+- riduzione progressiva della dipendenza da path sotto `DRIVE`;
+- passaggio graduale dalle globali storiche a `CONFIG`.
+
+# Conclusioni
+
+`oc_init()` continua a essere il punto di ingresso unico per l'inizializzazione dell'ambiente OCTK, ma con una struttura più robusta e più chiara.
+
+I principi chiave sono:
+
+- retrocompatibilità totale con i path standard;
+- distinzione esplicita tra modalità `drive`, `local` e `hybrid`;
+- configurazione utente esterna al codice;
+- introduzione di `CONFIG` come base per futuri refactoring;
+- mantenimento di `DRIVE` e `DB` come elementi sempre disponibili nel runtime.

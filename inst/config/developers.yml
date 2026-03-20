@@ -1,0 +1,40 @@
+developers:
+  - user: "Flora"
+    os: "win"
+    drive_root: "H:/Drive condivisi"
+    data_root: ""
+
+  - user: "Andrea"
+    os: "win"
+    drive_root: "G:/Drive condivisi"
+    data_root: ""
+
+  - user: "Nicola"
+    os: "mac"
+    drive_root: "/Users/nicoladechiara/Library/CloudStorage/GoogleDrive-nicola.dechiara@opencoesione.team/Drive condivisi"
+    data_root: ""
+
+  - user: "Antonio"
+    os: "linux"
+    drive_root: "/home/antonio/ExpanDrive/OC/Shared Drives"
+    data_root: ""
+
+  - user: "Antonio2"
+    os: "linux"
+    drive_root: "/home/aa/oc_drive"
+    data_root: "/media/aa/22F70AE20061C7C8/dati/oc"
+
+  - user: "Antonio3"
+    os: "linux"
+    drive_root: ""
+    data_root: ""
+
+  - user: "Daniela"
+    os: "win"
+    drive_root: "G:/Shared drives"
+    data_root: ""
+
+  - user: "Daniela2"
+    os: "win"
+    drive_root: "G:/Drive condivisi"
+    data_root: ""
