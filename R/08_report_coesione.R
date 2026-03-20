@@ -194,7 +194,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
 #'
 #' Verifica variazione variabili coesione per programma. Confronta RISORSE per due versioni del DBCOE e COE, COE_IMP e COE_PAG pert due bimestri.
 #'
-#' @param programmi Report da make_report_programmi_coesione_evo_macro()
+#' @param programmi Report da make_report_programmi_coesione()
 #' @param dati_new Versione attuale dei dati. Di default è quella configurata in oc_init(), coincide con "bimestre".
 #' @param dbcoe_new Versione attuale del DBCOE. Di default è quella configurata in oc_init().
 #' @param dati_old Versione precedente dei dati (espressa come bimestre).
@@ -206,7 +206,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
 #' @param export Vuoi salvare il file?
 #' @param export_sum Vuoi salvare il file con la sintesi per ciclo/ambito?
 #' @return Un dataframe per programma, ciclo e ambito.
-chk_variazione_programmi_coesione_evo_macro <- function(programmi=NULL, dati_new=NULL, dbcoe_new=NULL, dati_old, dbcoe_old, 
+chk_variazione_programmi_coesione <- function(programmi=NULL, dati_new=NULL, dbcoe_new=NULL, dati_old, dbcoe_old, 
                                                         usa_meuro = FALSE, show_cp = FALSE, use_eu = FALSE,
                                                         use_cicli_psc=FALSE, use_fix_siepoc=FALSE, stime_fix_siepoc=FALSE, use_flt=TRUE, export=FALSE, export_sum=FALSE){
   
@@ -232,9 +232,9 @@ chk_variazione_programmi_coesione_evo_macro <- function(programmi=NULL, dati_new
   
   if (is.null(programmi)) {
     DATA1 <- file.path(dirname(DATA), dati_new)
-    macroaree1 <- load_operazioni_evo_macro(bimestre=dati_new, visualizzati=TRUE, DATA=DATA1)
+    macroaree1 <- load_operazioni(bimestre=dati_new, visualizzati=TRUE, DATA=DATA1)
     DB1 <- file.path(DRIVE, "PROGRAMMAZIONE", dbcoe_new)
-    programmi_new <- make_report_programmi_coesione_evo_macro(macroaree1, usa_meuro=usa_meuro, use_eu=use_eu, use_flt=use_flt, show_cp=show_cp, 
+    programmi_new <- make_report_programmi_coesione(macroaree1, usa_meuro=usa_meuro, use_eu=use_eu, use_flt=use_flt, show_cp=show_cp, 
                                                               use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc,
                                                               export=FALSE, export_xls=FALSE, progetti=progetti, DB=DB1)
   } else {
@@ -242,9 +242,9 @@ chk_variazione_programmi_coesione_evo_macro <- function(programmi=NULL, dati_new
   }
   
   DATA2 <- file.path(dirname(DATA), dati_old)
-  macroaree2 <- load_operazioni_evo_macro(bimestre=dati_old, visualizzati=TRUE, DATA=DATA2)
+  macroaree2 <- load_operazioni(bimestre=dati_old, visualizzati=TRUE, DATA=DATA2)
   DB2 <- file.path(DRIVE, "PROGRAMMAZIONE", dbcoe_old)
-  programmi_old <- make_report_programmi_coesione_evo_macro(macroaree2, usa_meuro=usa_meuro, use_eu=use_eu, use_flt=use_flt, show_cp=show_cp, 
+  programmi_old <- make_report_programmi_coesione(macroaree2, usa_meuro=usa_meuro, use_eu=use_eu, use_flt=use_flt, show_cp=show_cp, 
                                                             use_cicli_psc=use_cicli_psc, use_fix_siepoc=use_fix_siepoc, stime_fix_siepoc=stime_fix_siepoc,
                                                             export=FALSE, export_xls=FALSE, progetti=progetti, DB=DB2)
   
