@@ -175,7 +175,7 @@ load_db_info <- function(DB, ciclo, ambito) {
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
 load_db_accordi_ordinarie <- function(DB) {
-  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_ordinarie.xlsx"), guess_max=100000)
+  interventi <- readxl::read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_ordinarie.xlsx"), guess_max=100000)
   return(interventi)
 }
 
@@ -186,7 +186,7 @@ load_db_accordi_ordinarie <- function(DB) {
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
 load_db_accordi_anticipazioni <- function(DB) {
-  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_anticipazioni.xlsx"))
+  interventi <- readxl::read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_anticipazioni.xlsx"))
   return(interventi)
 }
 
@@ -197,7 +197,7 @@ load_db_accordi_anticipazioni <- function(DB) {
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
 load_db_accordi_complementari <- function(DB) {
-  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_complementari.xlsx"))
+  interventi <- readxl::read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_complementari.xlsx"))
   return(interventi)
 }
 
@@ -208,7 +208,7 @@ load_db_accordi_complementari <- function(DB) {
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
 load_db_accordi_completamenti <- function(DB) {
-  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_completamenti.xlsx"))
+  interventi <- readxl::read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_completamenti.xlsx"))
   return(interventi)
 }
 
@@ -219,7 +219,7 @@ load_db_accordi_completamenti <- function(DB) {
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
 load_db_accordi_cofinanziamenti <- function(DB) {
-  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_cofinanziamenti_por.xlsx"))
+  interventi <- readxl::read_xlsx(file.path(DB, "Interventi_DBCOE_accordi_cofinanziamenti_por.xlsx"))
   return(interventi)
 }
 
@@ -285,7 +285,7 @@ load_db_altro_fsc <- function(DB) {
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Dataframe
 load_db_cis <- function(DB) {
-  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_CIS.xlsx"), guess_max=100000)
+  interventi <- readxl::read_xlsx(file.path(DB, "Interventi_DBCOE_CIS.xlsx"), guess_max=100000)
   return(interventi)
 }
 
@@ -297,7 +297,7 @@ load_db_cis <- function(DB) {
 #' @details I progetti privi di OGV rientrano tra gli interventi monitorabili se la delibera di definanziamento non è ancora intervenuta a fronte di istruttoria OGV chiusa.
 #' @return Dataframe
 load_db_psc <- function(DB, use_flt=FALSE) {
-  interventi <- read_xlsx(file.path(DB, "Interventi_DBCOE_PSC.xlsx"), 
+  interventi <- readxl::read_xlsx(file.path(DB, "Interventi_DBCOE_PSC.xlsx"), 
                           col_types = c("text", "text", "text", "text", "text", "text",
                                         "text", "text", "text", "text", "text", "text", "text",
                                         "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
@@ -321,7 +321,7 @@ load_db_psc <- function(DB, use_flt=FALSE) {
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Il dataset "correzioni".
 load_correzioni_siepoc1420 <- function(DB) {
-  out <- read_xlsx(file.path(DB, "Correzioni_DBCOE_SIEPOC.xlsx")) %>%
+  out <- readxl::read_xlsx(file.path(DB, "Correzioni_DBCOE_SIEPOC.xlsx")) %>%
     filter(FLAG_FONTE_FORMALE == "SI") %>% 
     mutate(CODICE_MORONI = NA_character_)
   return(out)
@@ -334,7 +334,7 @@ load_correzioni_siepoc1420 <- function(DB) {
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Il dataset "stime".
 load_stime_siepoc1420 <- function(DB) {
-  out <- read_xlsx(file.path(DB, "Stime_DBCOE_SIEPOC.xlsx")) %>% 
+  out <- readxl::read_xlsx(file.path(DB, "Stime_DBCOE_SIEPOC.xlsx")) %>% 
     mutate(CODICE_MORONI = NA_character_)
   return(out)
 }
@@ -346,7 +346,7 @@ load_stime_siepoc1420 <- function(DB) {
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Il dataset con i nomi ufficiali.
 load_nomi_ufficiali <- function(DB) {
-  out <- read_xlsx(file.path(DB, "Elenco_ufficiale_nomi.xlsx"))
+  out <- readxl::read_xlsx(file.path(DB, "Elenco_ufficiale_nomi.xlsx"))
   return(out)
 }
 
@@ -357,7 +357,7 @@ load_nomi_ufficiali <- function(DB) {
 #' @param DB Percorso al database generato con oc_init() o sovrascritto.
 #' @return Il dataset con i totali di riferimento.
 load_totali_dbcoe <- function(DB) {
-  out <- read_xlsx(file.path(DB, "Totali.xlsx"))
+  out <- readxl::read_xlsx(file.path(DB, "Totali.xlsx"))
   return(out)
 }
 
@@ -378,7 +378,7 @@ update_lista_programmi_en <- function(db_old, progetti=NULL) {
     progetti <- load_progetti(bimestre, visualizzati=TRUE, light=TRUE)
   }
   
-  appo <- read_xlsx(file.path(dirname(DB), db_old, "label_programmi_en.xlsx")) %>% 
+  appo <- readxl::read_xlsx(file.path(dirname(DB), db_old, "label_programmi_en.xlsx")) %>% 
     mutate(NUOVI = 0) # %>% 
   # filter(!(x_AMBITO %in% c("FEAMP", "FEASR")))
   # mutate(toupper(LABEL_PROGRAMMA_IT)) # DEV: primo giro
@@ -440,7 +440,7 @@ update_lista_programmi_sitiweb <- function(db_old) {
   # db_new="20230630.00"
   # db_old="20230430.00"
   
-  appo <- read_xlsx(file.path(dirname(DB), db_old, "link_sito_programmi.xlsx")) %>% 
+  appo <- readxl::read_xlsx(file.path(dirname(DB), db_old, "link_sito_programmi.xlsx")) %>% 
     mutate(NUOVI = 0) # %>%
   # filter(!(x_AMBITO %in% c("FEAMP", "FEASR")))
   # mutate(toupper(DENOM_PROGRAMMA)) # DEV: primo giro
@@ -792,7 +792,7 @@ init_programmazione_info <- function() {
     as.data.frame(.) 
 
   # add LINK_SITO
-  link_sito <- read_xlsx(file.path(DB, "link_sito_programmi.xlsx"))
+  link_sito <- readxl::read_xlsx(file.path(DB, "link_sito_programmi.xlsx"))
   
   info <- info %>%
     left_join(link_sito %>% 
@@ -1119,9 +1119,9 @@ make_pagina_programmi <- function(programmi=NULL, progetti=NULL, use_fix_siepoc=
   dim(appo)[1] == dim(programmi)[1]
   
   # label programmi in inglese
-  # programmi_en <- read_xlsx(file.path(DB, "label_programmi_en.xlsx")) %>% 
+  # programmi_en <- readxl::read_xlsx(file.path(DB, "label_programmi_en.xlsx")) %>% 
   #   distinct(OC_CODICE_PROGRAMMA, LABEL_PROGRAMMA_EN)
-  programmi_en <- read_xlsx(file.path(DB, "Elenco_ufficiale_nomi.xlsx")) %>% 
+  programmi_en <- readxl::read_xlsx(file.path(DB, "Elenco_ufficiale_nomi.xlsx")) %>% 
     distinct(OC_CODICE_PROGRAMMA, LABEL_PROGRAMMA_EN)
 
   # integrazioni
@@ -1731,7 +1731,7 @@ chk_variazione_risorse_ciclo_ambito <- function(risorse_new=NULL, risorse_old=NU
       message("Indica un file da confrontare")
     } else {
       # risorse_old <- read_csv2(path_to_old)
-      risorse_old <- read_xlsx(path_to_old)
+      risorse_old <- readxl::read_xlsx(path_to_old)
     }
   }
   
