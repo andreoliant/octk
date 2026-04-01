@@ -77,18 +77,19 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
   # integra sezione attuazione
   # perimetro %>% filter(x_GRUPPO == "ACCORDI") %>% count(x_CICLO, x_GRUPPO, x_LIVELLO_0)
   # perimetro %>% filter(x_GRUPPO == "PSC") %>% count(x_CICLO, x_GRUPPO, x_LIVELLO_0)
-  if (!("X_SEZIONE" %in% names(perimetro))) {
-    perimetro <- perimetro%>% 
-      mutate(x_SEZIONE = case_when(x_GRUPPO == "PSC" & grepl("SOCIS", x_LIVELLO_0) ~ "SO_CIS",
-                                   x_GRUPPO == "PSC" & grepl("SO", x_LIVELLO_0) & x_CICLO == "2021-2027" ~ "ANT",
-                                   x_GRUPPO == "PSC" & grepl("SO", x_LIVELLO_0) ~ "SO",
-                                   x_GRUPPO == "PSC" & grepl("SS_1", x_LIVELLO_0) ~ "SS_1",
-                                   x_GRUPPO == "PSC" & grepl("SS_2", x_LIVELLO_0) ~ "SS_2",
-                                   x_GRUPPO == "ACCORDI" & grepl("Comp", x_LIVELLO_0) ~ "COMP",
-                                   x_GRUPPO == "ACCORDI" & grepl("Ord", x_LIVELLO_0) ~ "ORD",
-                                   x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCSTRCAMPANIA" ~ "STRAL2",
-                                   x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCBAGNCAMPANIA" ~ "STRAL3",
-                                   TRUE ~ NA_character_))
+  if (!("x_SEZIONE" %in% names(perimetro))) {
+    # perimetro <- perimetro%>% 
+    #   mutate(x_SEZIONE = case_when(x_GRUPPO == "PSC" & grepl("SOCIS", x_LIVELLO_0) ~ "SO_CIS",
+    #                                x_GRUPPO == "PSC" & grepl("SO", x_LIVELLO_0) & x_CICLO == "2021-2027" ~ "ANT",
+    #                                x_GRUPPO == "PSC" & grepl("SO", x_LIVELLO_0) ~ "SO",
+    #                                x_GRUPPO == "PSC" & grepl("SS_1", x_LIVELLO_0) ~ "SS_1",
+    #                                x_GRUPPO == "PSC" & grepl("SS_2", x_LIVELLO_0) ~ "SS_2",
+    #                                x_GRUPPO == "ACCORDI" & grepl("Comp", x_LIVELLO_0) ~ "COMP",
+    #                                x_GRUPPO == "ACCORDI" & grepl("Ord", x_LIVELLO_0) ~ "ORD",
+    #                                x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCSTRCAMPANIA" ~ "STRAL2",
+    #                                x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCBAGNCAMPANIA" ~ "STRAL3",
+    #                                TRUE ~ NA_character_))
+    message("Errore, manca x_SEZIONE lato attuazione")
   }
   
   # programmazione
@@ -98,13 +99,13 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
               RISORSE_UE = sum(FINANZ_UE, na.rm = TRUE))
   
   # integra totali
-  appo0 <- perimetro %>%
+  appo00 <- perimetro %>%
     left_join(progetti %>% 
                 select(COD_LOCALE_PROGETTO, CP=OC_FINANZ_TOT_PUB_NETTO, IMP=IMPEGNI, PAG=TOT_PAGAMENTI),
               by = "COD_LOCALE_PROGETTO")
   
   # attuazione
-  appo <- appo0 %>%
+  appo0 <- appo00 %>%
     group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_SEZIONE) %>%
     summarise(N = n(),
               COE = sum(COE, na.rm = TRUE),
@@ -112,17 +113,16 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
               COE_PAG = sum(COE_PAG, na.rm = TRUE),
               CP = sum(CP, na.rm = TRUE),
               IMP = sum(IMP, na.rm = TRUE),
-              PAG = sum(PAG, na.rm = TRUE))
+              PAG = sum(PAG, na.rm = TRUE)) %>%
+    left_join(perimetro %>%
+                group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_SEZIONE, x_STATO) %>%
+                summarise(COE = sum(COE, na.rm = TRUE)) %>%
+                spread(x_STATO, COE, fill = 0, drop = FALSE),
+              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_SEZIONE"))
   
   # report
   appo <- spalla %>%
-    full_join(appo %>%
-                left_join(perimetro %>%
-                            group_by(OC_CODICE_PROGRAMMA, x_CICLO, x_AMBITO, x_SEZIONE, x_STATO) %>%
-                            summarise(COE = sum(COE, na.rm = TRUE)) %>%
-                            spread(x_STATO, COE, fill = 0, drop = FALSE),
-                          by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_SEZIONE")),
-              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_SEZIONE")) %>%
+    full_join(appo0, by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_SEZIONE")) %>%
     as_tibble(.) %>%
     # riempie NA con 0
     mutate_if(is.numeric, replace_na, replace=0) %>%

@@ -388,6 +388,9 @@ setup_operazioni_evo_macro <- function(bimestre, progetti,
                                        operazioni_713_raw, operazioni_1420_raw, operazioni_extra_raw, 
                                        export=TRUE, export_pqt=FALSE, debug=FALSE) {
   
+  # DEBUG: 
+  # debug=FALSE
+  
   out <- workflow_macroaree(bimestre, progetti, operazioni_713=operazioni_713_raw, 
                              operazioni_1420=operazioni_1420_raw, operazioni_extra=operazioni_extra_raw, 
                              debug=debug)
@@ -399,6 +402,7 @@ setup_operazioni_evo_macro <- function(bimestre, progetti,
     # crea sezione
     mutate(x_SEZIONE = case_when(x_GRUPPO == "PSC" & grepl("SOCIS", x_LIVELLO_0) ~ "SO_CIS",
                                  x_GRUPPO == "PSC" & grepl("SO", x_LIVELLO_0) & x_CICLO == "2021-2027" ~ "ANT",
+                                 x_GRUPPO == "PSC" & grepl("ANT", x_LIVELLO_0) & x_CICLO == "2021-2027" ~ "ANT",
                                  x_GRUPPO == "PSC" & grepl("SO", x_LIVELLO_0) ~ "SO",
                                  x_GRUPPO == "PSC" & grepl("SS_1", x_LIVELLO_0) ~ "SS_1",
                                  x_GRUPPO == "PSC" & grepl("SS_2", x_LIVELLO_0) ~ "SS_2",
@@ -407,6 +411,18 @@ setup_operazioni_evo_macro <- function(bimestre, progetti,
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCSTRCAMPANIA" ~ "STRAL2",
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCBAGNCAMPANIA" ~ "STRAL3",
                                  TRUE ~ NA_character_)) %>% 
+    # fix livello 0 (come sezione ma serve per temi)
+    mutate(x_LIVELLO_0 = case_when(x_CICLO == "2021-2027" & x_GRUPPO == "PSC" ~ "Anticipazioni",
+                                   x_CICLO == "2021-2027" & x_LIVELLO_0 == "Comp" ~ "Complementare",
+                                   x_CICLO == "2021-2027" & x_LIVELLO_0 == "0" ~ "Ordinaria",
+                                   x_CICLO == "2021-2027" & x_LIVELLO_0 == "Ord" ~ "Ordinaria",
+                                   x_CICLO == "2021-2027" & x_LIVELLO_0 == "Stral2" ~ "Stralcio 2 (delibera CIPESS n. 57/2024)",
+                                   x_CICLO == "2021-2027" & x_LIVELLO_0 == "Stral3" ~ "Stralcio 3 (delibera CIPESS n. 55/2024)",
+                                   x_CICLO == "2021-2027" & x_LIVELLO_0 == "FdR ex art. 51" ~ "FdR ex art. 51",
+                                   OC_CODICE_PROGRAMMA == "LINEARMPE" ~ "Stralcio 1",
+                                   OC_CODICE_PROGRAMMA == "MITSIBARICZ" ~ "Stralcio 2",
+                                   OC_CODICE_PROGRAMMA == "PIANOPERIFERIE" ~ "Assegnazioni dirette",
+                                   TRUE ~ x_LIVELLO_0)) %>% 
     # crea stato
     left_join(progetti %>% 
                 select(COD_LOCALE_PROGETTO, 
