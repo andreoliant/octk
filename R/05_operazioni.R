@@ -421,7 +421,7 @@ setup_operazioni_evo_macro <- function(bimestre, progetti,
                                    x_CICLO == "2021-2027" & x_LIVELLO_0 == "FdR ex art. 51" ~ "FdR ex art. 51",
                                    OC_CODICE_PROGRAMMA == "LINEARMPE" ~ "Stralcio 1",
                                    OC_CODICE_PROGRAMMA == "MITSIBARICZ" ~ "Stralcio 2",
-                                   OC_CODICE_PROGRAMMA == "PIANOPERIFERIE" ~ "Assegnazioni dirette",
+                                   OC_CODICE_PROGRAMMA == "PIANOPERIFERIE" ~ "Stralcio Commissario Periferie", # "Assegnazioni dirette"
                                    TRUE ~ x_LIVELLO_0)) %>% 
     # crea stato
     left_join(progetti %>% 
