@@ -101,7 +101,7 @@ query_cup <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "categorie_cup")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "categorie_cup")
   } else {
     appo <- read_csv2(file.path(INPUT, "categorie_cup.csv")) %>%
       # fix padding su csv (in xls sono sanati a monte)
@@ -147,7 +147,7 @@ query_po <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "po_linee_azioni")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "po_linee_azioni")
   } else {
     appo <- read_csv2(file.path(INPUT, "po_linee_azioni.csv")) 
   }
@@ -193,7 +193,7 @@ query_ue <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "categorie_ue")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "categorie_ue")
   } else {
     appo <- read_csv2(file.path(INPUT, "categorie_ue.csv")) 
   }
@@ -250,7 +250,7 @@ query_strum <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "strum_att")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "strum_att")
   } else {
     appo <- read_csv2(file.path(INPUT, "strum_att.csv")) 
   }
@@ -289,7 +289,7 @@ query_progcomp <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "prog_comp")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "prog_comp")
   } else {
     appo <- read_csv2(file.path(INPUT, "prog_comp.csv")) 
   }
@@ -325,7 +325,7 @@ query_patt <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "patt")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "patt")
   } else {
     appo <- read_csv2(file.path(INPUT, "patt.csv")) 
   }
@@ -375,7 +375,7 @@ query_cipe <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "delib_cipe")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "delib_cipe")
   } else {
     appo <- read_csv2(file.path(INPUT, "delib_cipe.csv")) 
   }
@@ -426,7 +426,7 @@ query_ra <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "ra")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "ra")
   } else {
     appo <- read_csv2(file.path(INPUT, "ra.csv")) 
   }
@@ -499,7 +499,7 @@ query_atp <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "aree_temi_fsc")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "aree_temi_fsc")
   } else {
     appo <- read_csv2(file.path(INPUT, "aree_temi_fsc.csv")) 
   }
@@ -562,7 +562,7 @@ query_atsi_psc <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "aree_temi_psc")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "aree_temi_psc")
   } else {
     appo <- read_csv2(file.path(INPUT, "aree_temi_psc")) 
   }
@@ -606,7 +606,7 @@ query_tipo_cup <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "tipologie_cup")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "tipologie_cup")
   } else {
     appo <- read_csv2(file.path(INPUT, "tipologie_cup.csv")) %>%
       # fix padding su csv (in xls sono sanati a monte)
@@ -651,7 +651,7 @@ query_qsn <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "qsn")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "qsn")
   } else {
     appo <- read_csv2(file.path(INPUT, "qsn.csv"))
   }
@@ -692,7 +692,7 @@ query_beniconf <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "flag_beniconf")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "flag_beniconf")
   } else {
     appo <- read_csv2(file.path(INPUT, "flag_beniconf.csv"))
   }
@@ -733,7 +733,7 @@ query_comuni <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), 
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), 
                       sheet = "comuni", 
                       col_types = c("numeric", "text", "numeric", 
                                     "text", "text", "text", "numeric", "text", "text", "text"))
@@ -783,7 +783,7 @@ query_comuni_2 <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), 
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), 
                       sheet = "comuni_2", 
                       col_types = c("numeric", "text", "numeric", 
                                     "text", "text", "text", "numeric", "text", "text", "text", "text"))
@@ -838,7 +838,7 @@ query_keyword <- function(progetti) {
   
   # load matrix
   if (file.exists(file.path(INPUT, paste0("input_query.xlsx")))) {
-    appo <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "keyword")
+    appo <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "keyword")
   } else {
     appo <- read_csv2(file.path(INPUT, "keyword.csv"))
   }
@@ -1266,7 +1266,7 @@ make_input_delta  <- function(OLD) {
     print(input_tab)
     
     # read data from input xls in OLD
-    tab <- read_xlsx(temp_file, sheet = input_tab, col_types = "text", )
+    tab <- readxl::read_xlsx(temp_file, sheet = input_tab, col_types = "text", )
     
     # read new input data from octk
     tab_new <- eval(as.name(input_tab))%>%
@@ -1405,7 +1405,7 @@ update_input_with_delta <- function(OLD) {
     tab_new <- eval(as.name(input_tab))
     
     # read data from input xls in OLD
-    tab <- read_xlsx(temp_file, sheet = input_tab, col_types = "text")
+    tab <- readxl::read_xlsx(temp_file, sheet = input_tab, col_types = "text")
     
     
     
@@ -1507,7 +1507,7 @@ update_input_with_delta <- function(OLD) {
     
     
     # read data from delta
-    tab_delta <- read_xlsx(temp_file_delta, sheet = input_tab, col_types = "text")
+    tab_delta <- readxl::read_xlsx(temp_file_delta, sheet = input_tab, col_types = "text")
     
     tab_new <- tab %>%
       mutate_if(is.numeric, as.character) %>%
@@ -2650,7 +2650,7 @@ make_classi_soggetti <- function (pseudo, livelli_classe=NULL, progetti, export 
 make_classi_comuni <- function (pseudo, progetti, export = TRUE) {
   
   # load matrix
-  comuni <- read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "comuni") %>% 
+  comuni <- readxl::read_xlsx(file.path(INPUT, paste0("input_query.xlsx")), sheet = "comuni") %>% 
     filter(QUERY == 1) %>% 
     select(COD_COMUNE, DEN_COMUNE, AMBITO, AMBITO_SUB)
   
