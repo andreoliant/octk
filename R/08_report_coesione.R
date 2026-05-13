@@ -63,11 +63,19 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
                                  x_GRUPPO == "PSC" & COD_LIVELLO_1 == "SEZ_SPEC_1_COVID" ~ "SS_1",
                                  x_GRUPPO == "PSC" & COD_LIVELLO_1 == "SEZ_SPEC_2_FS" ~ "SS_2",
                                  x_GRUPPO == "PSC" & COD_LIVELLO_1 == "CIS" ~ "SO_CIS",
+                                 
+                                 x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCOESCAMPANIA" & AMBITO == "FSC" ~ "ORD",
+                                 x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCOESCAMPANIA" & AMBITO == "POC" & grepl("FDR ART.51", x_PROGRAMMA) ~ "ART51",
+                                 x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCOESCAMPANIA" & AMBITO == "POC" & grepl("FDR", x_PROGRAMMA) ~ "COMP",
+                                 
                                  x_GRUPPO == "ACCORDI" & grepl("Anticipazioni", x_PROGRAMMA) ~ "ANT",
-                                 x_GRUPPO == "ACCORDI" & grepl("FDR", x_PROGRAMMA) ~ "COMP",
                                  x_GRUPPO == "ACCORDI" & grepl("Ordinario", x_PROGRAMMA) ~ "ORD",
+                                 x_GRUPPO == "ACCORDI" & grepl("FDR", x_PROGRAMMA) ~ "COMP",
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCSTRCAMPANIA" ~ "STRAL2",
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCBAGNCAMPANIA" ~ "STRAL3",
+                                 x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "LINEARMPE" ~ "STRAL1",
+                                 x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "MITSIBARICZ" ~ "STRAL2",
+                                 x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "PIANOPERIFERIE" ~ "STRAL",
                                  TRUE ~ NA_character_))
   
   # filtro attuazione
@@ -126,7 +134,7 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
     as_tibble(.) %>%
     # riempie NA con 0
     mutate_if(is.numeric, replace_na, replace=0) %>%
-    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_SEZIONE, x_AMBITO, x_GRUPPO, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
+    select(OC_CODICE_PROGRAMMA, x_PROGRAMMA, x_CICLO, x_AMBITO, x_GRUPPO, x_SEZIONE, RISORSE, RISORSE_UE, N, COE, COE_IMP, COE_PAG, CP, IMP, PAG,
            `Non avviato`,
            `In progettazione FTE`,
            `In progettazione esecutiva`,
@@ -212,10 +220,10 @@ chk_variazione_programmi_coesione <- function(programmi=NULL, dati_new=NULL, dbc
                                               export=FALSE, export_sum=FALSE) {
   
   # DEBUG:
-  # dati_new = "20251031"
-  # dbcoe_new="20251031.00"
-  # dati_old = "20250831"
-  # dbcoe_old="20250831.00"
+  # dati_new = "20260228"
+  # dbcoe_new = "20260228.00"
+  # dati_old = "20251231"
+  # dbcoe_old = "20251231.01"
   # use_cicli_psc=TRUE
   # use_fix_siepoc=TRUE
   # stime_fix_siepoc=TRUE
@@ -223,6 +231,7 @@ chk_variazione_programmi_coesione <- function(programmi=NULL, dati_new=NULL, dbc
   # show_cp=FALSE
   # usa_meuro=FALSE
   # use_eu=FALSE
+  # use_pqt=TRUE
   
   # print(DB)
   

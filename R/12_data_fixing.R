@@ -382,7 +382,107 @@ fix_riparto_cn_mz_programmi_nazionali_marche_umbria <- function(df, progetti, po
 }
 
 # fix sezioni accordi----
-chk_sezione_accordi <- function(df, export=FALSE) {
+
+# OLD:
+# chk_sezione_accordi <- function(df, export=FALSE) {
+#   fun_name <- "chk_accordi_sezione_extra"
+#   
+#   chk_fsc_fdr <- df %>%
+#     dplyr::filter(oc_ambito %in% c("FSC", "FDR")) %>%
+#     dplyr::count(oc_ambito, oc_cod_fonte, psc_sezione, name = "n") %>%
+#     dplyr::arrange(oc_ambito, oc_cod_fonte, psc_sezione)
+#   
+#   chk_comp_fsc <- df %>%
+#     dplyr::filter(
+#       oc_ambito == "FSC",
+#       as.character(psc_sezione) == "Comp"
+#     ) %>%
+#     dplyr::count(
+#       oc_ambito,
+#       oc_cod_fonte,
+#       oc_cod_programma,
+#       cod_locale_progetto,
+#       name = "n"
+#     ) %>%
+#     dplyr::mutate(
+#       coperto_da_fix = case_when(
+#         oc_cod_programma == "ACCOESPUGLIA" & oc_cod_fonte == "FSC2127" ~ TRUE,
+#         oc_cod_programma == "ACCOESMARCHE" & oc_cod_fonte == "FSC2127" ~ TRUE,
+#         TRUE ~ FALSE)
+#     ) %>%
+#     dplyr::arrange(
+#       coperto_da_fix,
+#       oc_cod_programma,
+#       cod_locale_progetto
+#     )
+#   
+#   chk_zero_fsc_fdr <- df %>%
+#     dplyr::filter(
+#       oc_ambito %in% c("FSC", "FDR"),
+#       as.character(psc_sezione) == "0"
+#     ) %>%
+#     dplyr::count(
+#       oc_ambito,
+#       oc_cod_fonte,
+#       oc_cod_programma,
+#       name = "n"
+#     ) %>%
+#     dplyr::mutate(
+#       coperto_da_fix = FALSE
+#     ) %>%
+#     dplyr::arrange(
+#       coperto_da_fix,
+#       oc_ambito,
+#       oc_cod_fonte,
+#       oc_cod_programma
+#     )
+#   
+#   out <- list(
+#     chk_fsc_fdr = chk_fsc_fdr,
+#     chk_comp_fsc = chk_comp_fsc,
+#     chk_zero_fsc_fdr = chk_zero_fsc_fdr
+#   )
+#   
+#   if (export == TRUE) {
+#     openxlsx::write.xlsx(
+#       x = out,
+#       file = file.path(TEMP, paste0(fun_name, ".xlsx")),
+#       overwrite = TRUE
+#     )
+#   }
+#   
+#   return(out)
+# }
+# 
+# fix_sezione_accordi <- function(df) {
+#   
+#   out <- df %>%
+#     dplyr::mutate(
+#       oc_ambito = dplyr::case_when(
+#         oc_ambito == "FSC" &
+#           as.character(psc_sezione) == "Comp" &
+#           oc_cod_programma == "ACCOESPUGLIA" ~ "FDR",
+#         oc_ambito == "FSC" &
+#           as.character(psc_sezione) == "Comp" &
+#           oc_cod_programma == "ACCOESMARCHE" ~ "FDR",
+#         TRUE ~ oc_ambito
+#       ),
+#       oc_cod_fonte = dplyr::case_when(
+#         oc_cod_fonte == "FSC2127" &
+#           as.character(psc_sezione) == "Comp" &
+#           oc_cod_programma == "ACCOESPUGLIA" ~ "FDR2127",
+#         oc_cod_fonte == "FSC2127" &
+#           as.character(psc_sezione) == "Comp" &
+#           oc_cod_programma == "ACCOESMARCHE" ~ "FDR2127",
+#         TRUE ~ oc_cod_fonte
+#       )
+#     )
+#   
+#   return(out)
+# }
+
+# NEW:
+chk_sezione_accordi <- function(df, export = FALSE) {
   fun_name <- "chk_accordi_sezione_extra"
   
   chk_fsc_fdr <- df %>%
@@ -403,8 +503,13 @@ chk_sezione_accordi <- function(df, export=FALSE) {
       name = "n"
     ) %>%
     dplyr::mutate(
-      coperto_da_fix = oc_cod_programma == "ACCOESPUGLIA" &
-        oc_cod_fonte == "FSC2127"
+      coperto_da_fix = dplyr::case_when(
+        oc_cod_programma == "ACCOESPUGLIA" &
+          oc_cod_fonte == "FSC2127" ~ TRUE,
+        oc_cod_programma == "ACCOESMARCHE" &
+          oc_cod_fonte == "FSC2127" ~ TRUE,
+        TRUE ~ FALSE
+      )
     ) %>%
     dplyr::arrange(
       coperto_da_fix,
@@ -420,23 +525,55 @@ chk_sezione_accordi <- function(df, export=FALSE) {
     dplyr::count(
       oc_ambito,
       oc_cod_fonte,
+      CODICE_TIPOLOGIA_PROGRAMMA,
       oc_cod_programma,
       name = "n"
     ) %>%
     dplyr::mutate(
-      coperto_da_fix = FALSE
+      coperto_da_fix = dplyr::case_when(
+        oc_cod_fonte == "FSC1420" &
+          CODICE_TIPOLOGIA_PROGRAMMA == "PSC" ~ TRUE,
+        TRUE ~ FALSE
+      )
     ) %>%
     dplyr::arrange(
       coperto_da_fix,
       oc_ambito,
       oc_cod_fonte,
+      CODICE_TIPOLOGIA_PROGRAMMA,
+      oc_cod_programma
+    )
+  
+  chk_zero_fsc1420_psc <- df %>%
+    dplyr::filter(
+      oc_cod_fonte == "FSC1420",
+      CODICE_TIPOLOGIA_PROGRAMMA == "PSC",
+      as.character(psc_sezione) == "0"
+    ) %>%
+    dplyr::count(
+      oc_ambito,
+      oc_cod_fonte,
+      CODICE_TIPOLOGIA_PROGRAMMA,
+      oc_cod_programma,
+      psc_sezione,
+      name = "n"
+    ) %>%
+    dplyr::mutate(
+      psc_sezione_fix = "SS_2",
+      coperto_da_fix = TRUE
+    ) %>%
+    dplyr::arrange(
+      oc_ambito,
+      oc_cod_fonte,
+      CODICE_TIPOLOGIA_PROGRAMMA,
       oc_cod_programma
     )
   
   out <- list(
     chk_fsc_fdr = chk_fsc_fdr,
     chk_comp_fsc = chk_comp_fsc,
-    chk_zero_fsc_fdr = chk_zero_fsc_fdr
+    chk_zero_fsc_fdr = chk_zero_fsc_fdr,
+    chk_zero_fsc1420_psc = chk_zero_fsc1420_psc
   )
   
   if (export == TRUE) {
@@ -454,22 +591,35 @@ fix_sezione_accordi <- function(df) {
   
   out <- df %>%
     dplyr::mutate(
+      psc_sezione = dplyr::case_when(
+        oc_cod_fonte == "FSC1420" &
+          CODICE_TIPOLOGIA_PROGRAMMA == "PSC" &
+          as.character(psc_sezione) == "0" ~ "SS_2",
+        TRUE ~ as.character(psc_sezione)
+      ),
       oc_ambito = dplyr::case_when(
         oc_ambito == "FSC" &
           as.character(psc_sezione) == "Comp" &
           oc_cod_programma == "ACCOESPUGLIA" ~ "FDR",
+        oc_ambito == "FSC" &
+          as.character(psc_sezione) == "Comp" &
+          oc_cod_programma == "ACCOESMARCHE" ~ "FDR",
         TRUE ~ oc_ambito
       ),
       oc_cod_fonte = dplyr::case_when(
         oc_cod_fonte == "FSC2127" &
           as.character(psc_sezione) == "Comp" &
           oc_cod_programma == "ACCOESPUGLIA" ~ "FDR2127",
+        oc_cod_fonte == "FSC2127" &
+          as.character(psc_sezione) == "Comp" &
+          oc_cod_programma == "ACCOESMARCHE" ~ "FDR2127",
         TRUE ~ oc_cod_fonte
       )
     )
   
   return(out)
 }
+
 
 # fix sezioni psc----
 chk_sezione_psc <- function(df, export=FALSE) {

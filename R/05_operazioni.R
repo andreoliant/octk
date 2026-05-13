@@ -384,7 +384,7 @@ load_operazioni_713 <- function() {
 #' @param export_pqt Vuoi esportare il file in formato operazioni in formato parquet?
 #' @param debug_mode Vuoi esportare i file di debug?
 #' @return Il dataset operazioni.
-setup_operazioni_evo_macro <- function(bimestre, progetti, 
+setup_operazioni <- function(bimestre, progetti, 
                                        operazioni_713_raw, operazioni_1420_raw, operazioni_extra_raw, 
                                        export=TRUE, export_pqt=FALSE, debug=FALSE) {
   
@@ -410,6 +410,10 @@ setup_operazioni_evo_macro <- function(bimestre, progetti,
                                  x_GRUPPO == "ACCORDI" & grepl("Ord", x_LIVELLO_0) ~ "ORD",
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCSTRCAMPANIA" ~ "STRAL2",
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCBAGNCAMPANIA" ~ "STRAL3",
+                                 x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCOESCAMPANIA"  & x_LIVELLO_0 == "exart51" ~ "ART51",
+                                 OC_CODICE_PROGRAMMA == "LINEARMPE" ~ "STRAL1",
+                                 OC_CODICE_PROGRAMMA == "MITSIBARICZ" ~ "STRAL2",
+                                 OC_CODICE_PROGRAMMA == "PIANOPERIFERIE" ~ "STRAL",
                                  TRUE ~ NA_character_)) %>% 
     # fix livello 0 (come sezione ma serve per temi)
     mutate(x_LIVELLO_0 = case_when(x_CICLO == "2021-2027" & x_GRUPPO == "PSC" ~ "Anticipazioni",
@@ -418,7 +422,7 @@ setup_operazioni_evo_macro <- function(bimestre, progetti,
                                    x_CICLO == "2021-2027" & x_LIVELLO_0 == "Ord" ~ "Ordinaria",
                                    x_CICLO == "2021-2027" & x_LIVELLO_0 == "Stral2" ~ "Stralcio 2 (delibera CIPESS n. 57/2024)",
                                    x_CICLO == "2021-2027" & x_LIVELLO_0 == "Stral3" ~ "Stralcio 3 (delibera CIPESS n. 55/2024)",
-                                   x_CICLO == "2021-2027" & x_LIVELLO_0 == "FdR ex art. 51" ~ "FdR ex art. 51",
+                                   x_CICLO == "2021-2027" & x_LIVELLO_0 == "exart51" ~ "FdR ex art. 51",
                                    OC_CODICE_PROGRAMMA == "LINEARMPE" ~ "Stralcio 1",
                                    OC_CODICE_PROGRAMMA == "MITSIBARICZ" ~ "Stralcio 2",
                                    OC_CODICE_PROGRAMMA == "PIANOPERIFERIE" ~ "Stralcio Commissario Periferie", # "Assegnazioni dirette"
@@ -511,9 +515,11 @@ workflow_macroaree <- function(bimestre, progetti,
   message("Preparazione dati extra...")
   
   # DEBUG:
-  # operazioni_extra %>% 
+  # operazioni_extra_raw %>%
+  #   count(oc_cod_fonte, oc_ambito)
+  # operazioni_extra %>%
   #   count(oc_cod_fonte, ue_descr_fondo, CODICE_TIPOLOGIA_PROGRAMMA, oc_ambito)
-  # chk <- operazioni_extra %>%
+  # chk <- operazioni_extra_0 %>%
   #   count(x_AMBITO, psc_sezione, ue_asse_prioritario, psc_area_tematica, fsc_settore_strategico, pac_asse_tematico, cod_misura_feasr)
   # chk <- operazioni_extra %>%
   #   count(x_AMBITO, ue_ob_specifico, psc_sett_interv, fsc_asse_tematico, pac_lineazione, cod_submisura_feasr)
@@ -527,11 +533,12 @@ workflow_macroaree <- function(bimestre, progetti,
     # fix per anomalie (cambiano nei diversi bimestri ma sono abbastanza generiche)
     fix_extra_2127(.) %>%
     # creo ambito
-    mutate(x_AMBITO = case_when(oc_cod_fonte == "FS2127" ~ oc_ambito,
-                                oc_cod_fonte == "FDR2127" ~ oc_ambito,
-                                oc_cod_fonte == "FSC2127" ~ oc_ambito,
-                                oc_cod_fonte == "FS1420" &  oc_ambito == "FEASR" ~ oc_ambito,
-                                oc_cod_fonte == "FS1420" &  oc_ambito == "FSE" ~ oc_ambito)) %>%
+    # mutate(x_AMBITO = case_when(oc_cod_fonte == "FS2127" ~ oc_ambito,
+    #                             oc_cod_fonte == "FDR2127" ~ oc_ambito,
+    #                             oc_cod_fonte == "FSC2127" ~ oc_ambito,
+    #                             oc_cod_fonte == "FS1420" &  oc_ambito == "FEASR" ~ oc_ambito,
+    #                             oc_cod_fonte == "FS1420" &  oc_ambito == "FSE" ~ oc_ambito)) %>%
+    mutate(x_AMBITO = oc_ambito) %>% 
     # articolazioni
     mutate(x_LIVELLO_0 = case_when(x_AMBITO == "FSC" & !is.na(psc_sezione) ~ psc_sezione,
                                    x_AMBITO == "FDR" & !is.na(psc_sezione) ~ psc_sezione,
@@ -544,7 +551,10 @@ workflow_macroaree <- function(bimestre, progetti,
                                    x_AMBITO == "CTE" ~ ue_asse_prioritario,
                                    x_AMBITO == "JTF" ~ ue_asse_prioritario,
                                    x_AMBITO == "FSC" ~ psc_area_tematica,
-                                   x_AMBITO == "FDR" ~ psc_area_tematica),
+                                   x_AMBITO == "FDR" ~ psc_area_tematica,
+                                   x_AMBITO == "FEASR" ~ descr_misura_feasr,
+                                   x_AMBITO == "POC" ~ pac_descr_asse_tematico,
+                                   x_AMBITO == "SNAI" ~ pac_descr_asse_tematico),
            # x_DES_LIVELLO_1 = case_when(x_AMBITO == "FESR" ~ ue_descr_asse_prioritario,
            #                             x_AMBITO == "FSE" ~ ue_descr_asse_prioritario,
            #                             x_AMBITO == "YEI" ~ ue_descr_asse_prioritario,
@@ -563,7 +573,10 @@ workflow_macroaree <- function(bimestre, progetti,
                                    x_AMBITO == "CTE" ~ ue_ob_specifico,
                                    x_AMBITO == "JTF" ~ ue_ob_specifico,
                                    x_AMBITO == "FSC" ~ psc_sett_interv,
-                                   x_AMBITO == "FDR" ~ psc_sett_interv) #,
+                                   x_AMBITO == "FDR" ~ psc_sett_interv,
+                                   x_AMBITO == "FEASR" ~ descr_submisura_feasr,
+                                   x_AMBITO == "POC" ~ pac_descr_lineazione,
+                                   x_AMBITO == "SNAI" ~ pac_descr_lineazione) #,
            # x_DES_LIVELLO_2 = case_when(x_AMBITO == "FESR" ~ ue_descr_ob_specifico,
            #                             x_AMBITO == "FSE" ~ ue_descr_ob_specifico,
            #                             x_AMBITO == "YEI" ~ ue_descr_ob_specifico,
@@ -619,14 +632,15 @@ workflow_macroaree <- function(bimestre, progetti,
            COE_PAG_CN)
   
   # chk
-  # operazioni_extra %>%
+  # chk <- operazioni_extra %>%
   #   group_by(x_AMBITO) %>%
   #   summarise_if(is.numeric, sum, na.rm=TRUE)
+  # write.xlsx(chk, file.path(TEMP, "chk.xlsx"))
   
   # integra ciclo
   operazioni_extra <- workflow_macroaree_sub_ciclo(operazioni_extra_0, po)
   # MEMO: anticipato perché serve in workflow_macroaree_sub_programmazione() per x_CATREG
-  
+
   
   # ----------------------------------------------------------------------------------- #
   # macroaree extra----
@@ -648,13 +662,24 @@ workflow_macroaree <- function(bimestre, progetti,
   # chk <- workflow_macroaree_sub_studio(operazioni_1420_1, debug=FALSE)
   
   # mapping variabili
-  operazioni_extra_2 <- workflow_macroaree_sub_mapping(operazioni_extra_1)
+  operazioni_extra_2 <- workflow_macroaree_sub_mapping(operazioni_extra_1, fix_negativi=FALSE)
   
   # DEBUG:
   # sum(operazioni_extra$COE, na.rm = TRUE) - sum(operazioni_extra_2$COE, na.rm = TRUE)
   # sum(operazioni_extra_1$COE, na.rm = TRUE) - sum(operazioni_extra_2$COE, na.rm = TRUE)
   
-  # chk
+  # chk <- operazioni_extra_2 %>% filter(chk2 != 0)
+  # write.xlsx(chk, file.path(TEMP, "chk.xlsx")) 
+  # progetti %>% semi_join(chk, by = "COD_LOCALE_PROGETTO") %>% select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, SNAI)
+  # 4 progetto BUL
+  # 3 
+  # operazioni_extra %>% semi_join(chk, by = "COD_LOCALE_PROGETTO") %>% select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, COE, COE_SUD, COE_CN)
+  # operazioni_extra_0 %>% semi_join(chk, by = "COD_LOCALE_PROGETTO") %>% select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, COE, COE_SUD, COE_CN)
+  # operazioni_extra_raw %>% semi_join(chk, by = "COD_LOCALE_PROGETTO") %>% select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, COE, COE_SUD, COE_CN)
+  # operazioni_extra_raw %>% rename(COD_LOCALE_PROGETTO=cod_locale_progetto) %>% semi_join(chk, by = "COD_LOCALE_PROGETTO") %>% select(COD_LOCALE_PROGETTO, oc_cod_programma, oc_costo_coesione, costo_ammesso_MZ, costo_ammesso_CN)
+  
+  
+  ## chk
   # operazioni_extra_2 %>%
   #   group_by(x_AMBITO) %>%
   #   summarise(COE = sum(COE, na.rm = TRUE),
@@ -668,8 +693,8 @@ workflow_macroaree <- function(bimestre, progetti,
   operazioni_extra_3 <- workflow_macroaree_sub_pivot(operazioni_extra_2) 
   
   # DEBUG:
-  # sum(operazioni_extra$COE, na.rm = TRUE) - sum(operazioni_extra_3$COE, na.rm = TRUE)
-  # sum(operazioni_extra_2$COE, na.rm = TRUE) - sum(operazioni_extra_3$COE, na.rm = TRUE) #CHK
+  sum(operazioni_extra$COE, na.rm = TRUE) - sum(operazioni_extra_3$COE, na.rm = TRUE)
+  sum(operazioni_extra_2$COE, na.rm = TRUE) - sum(operazioni_extra_3$COE, na.rm = TRUE) #CHK
   
   # fix
   operazioni_extra_4 <- workflow_macroaree_sub_fixing(operazioni_extra_3)
@@ -826,7 +851,7 @@ workflow_macroaree <- function(bimestre, progetti,
   # chk <- workflow_macroaree_sub_studio(operazioni_1420_1, debug=FALSE)
   
   # mapping  
-  operazioni_1420_2 <- workflow_macroaree_sub_mapping(operazioni_1420_1)
+  operazioni_1420_2 <- workflow_macroaree_sub_mapping(operazioni_1420_1, fix_negativi=TRUE)
   
   # chk
   operazioni_1420_2 %>%
@@ -848,13 +873,14 @@ workflow_macroaree <- function(bimestre, progetti,
   #          chk2 = COE - tot2) %>% 
   #   filter(chk2 > 0)
   
-  # chk <- operazioni_1420_2 %>%
-  #   mutate(tot2 = COE_SUD + COE_CN + COE_ND,
-  #          chk2 = COE - tot2) %>% 
-  #   filter(round(chk2, 2) > 0) %>% 
-  #   select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_AMBITO, x_CICLO, x_MACROAREA, x_CATREG, x_REGIONE,
-  #          x_LIVELLO_0, x_LIVELLO_1, x_LIVELLO_2, x_REGNAZ,
-  #          COE, COE_SUD, COE_CN, COE_ND, chk_coe, tot2, chk2)
+  chk <- operazioni_1420_2 %>%
+    mutate(tot2 = COE_SUD + COE_CN + COE_ND,
+           chk2 = COE - tot2) %>%
+    # filter(round(chk2, 2) > 0) %>%
+    filter(round(chk2, 2) < 0) %>%
+    select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_AMBITO, x_CICLO, x_MACROAREA, x_CATREG, x_REGIONE,
+           x_LIVELLO_0, x_LIVELLO_1, x_LIVELLO_2, x_REGNAZ,
+           COE, COE_SUD, COE_CN, COE_ND, chk_coe, tot2, chk2)
   
   # pivot
   operazioni_1420_3 <- workflow_macroaree_sub_pivot(operazioni_1420_2) 
@@ -977,7 +1003,7 @@ workflow_macroaree <- function(bimestre, progetti,
   # write.xlsx(chk, file.path(TEMP, "chk_macroarea_caterg_regione_713.xlsx"))
   
   # mapping
-  operazioni_713_2 <- workflow_macroaree_sub_mapping(operazioni_713_1)
+  operazioni_713_2 <- workflow_macroaree_sub_mapping(operazioni_713_1, fix_negativi=TRUE)
   
   # operazioni_713_2 %>%
   #   group_by(x_AMBITO) %>%
@@ -1734,17 +1760,36 @@ workflow_macroaree_sub_programmazione <- function(df, df_raw, progetti) {
   }
   
   if (!any(names(df) == "ue_categ_regione")) {
+    
+    # DEBUG:
+    # df_debug <- df %>%
+    #   left_join(df_raw %>%
+    #               select(COD_LOCALE_PROGETTO = cod_locale_progetto, OC_CODICE_PROGRAMMA=oc_cod_programma, x_AMBITO=oc_ambito, ue_categ_regione),
+    #             by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_AMBITO"))
+    
+    # NEW:
     df <- df %>%
       left_join(df_raw %>%
-                  select(COD_LOCALE_PROGETTO = cod_locale_progetto, OC_CODICE_PROGRAMMA=oc_cod_programma, ue_categ_regione),
-                by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA"))
+                  select(COD_LOCALE_PROGETTO = cod_locale_progetto, OC_CODICE_PROGRAMMA=oc_cod_programma, x_AMBITO=oc_ambito, ue_categ_regione),
+                by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA", "x_AMBITO"))
+    
+    # OLD:
+    # df <- df %>%
+    #   left_join(df_raw %>%
+    #               select(COD_LOCALE_PROGETTO = cod_locale_progetto, OC_CODICE_PROGRAMMA=oc_cod_programma, ue_categ_regione),
+    #             by = c("COD_LOCALE_PROGETTO", "OC_CODICE_PROGRAMMA"))
   }
+  # ATTENZIONE: qui duplica per ambito
   
-  # sum(df1$COE, na.rm = TRUE) - sum(df$COE, na.rm = TRUE) #CHK
-  # dim(df1)[1] - dim(df)[1]
-  # 
+  # DEBUG:
+  # sum(df_debug$COE, na.rm = TRUE) - sum(df$COE, na.rm = TRUE) #CHK
+  # dim(df_debug)[1] - dim(df)[1]
   # df %>% count(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA) %>% filter(n>1)
-  # df1 %>% count(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA) %>% filter(n>1)
+  # df_debug %>% count(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA) %>% filter(n>1)
+  # df_debug %>% count(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_AMBITO) %>% filter(n>1)
+  # temp <- df_debug %>% count(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA) %>% filter(n>1)
+  # df_raw %>% rename(COD_LOCALE_PROGETTO = cod_locale_progetto) %>% semi_join(temp, by = "COD_LOCALE_PROGETTO") %>% select(COD_LOCALE_PROGETTO, oc_ambito)
+  # df %>% semi_join(temp, by = "COD_LOCALE_PROGETTO") %>% select(COD_LOCALE_PROGETTO, x_AMBITO)
   
   df1 <- df %>%
     left_join(appo, by = "OC_CODICE_PROGRAMMA") %>%
@@ -2223,44 +2268,34 @@ workflow_macroaree_sub_studio <- function(df, debug=FALSE) {
   
 }
 
-workflow_macroaree_sub_mapping <- function(df) {
+workflow_macroaree_sub_mapping <- function(df, fix_negativi=TRUE) {
+  
+  # MEMO:
+  # fix_negativi=TRUE azzera le differenze negative tra coe e i valori di coe aperti per macroarea
+  # va posto a FALSE per extrasistema
   
   # DEBUG:
+  # df <- operazioni_extra_1
   # df <- operazioni_1420_1
   
-  df2 <- df %>%
+  df1 <- df %>%
     mutate_if(is.numeric, replace_na, replace=0) %>% 
-    # fix per anomalie floating
-    # mutate_if(is.numeric, round, digits=2) %>% 
-    # mutate(COE = round(COE, 2),
-    #        COE_SUD = round(COE_SUD, 2),
-    #        COE_CN = round(COE_CN, 2),
-    #        
-    #        COE_IMP = round(COE_IMP, 2),
-    #        COE_IMP_SUD = round(COE_IMP_SUD, 2),
-    #        COE_IMP_CN = round(COE_IMP_CN, 2),
-    #        
-    #        COE_PAG = round(COE_PAG, 2),
-  #        COE_PAG_SUD = round(COE_PAG_SUD, 2),
-  #        COE_PAG_CN = round(COE_PAG_CN, 2)) %>% 
-  mutate(chk_coe = COE - COE_SUD - COE_CN,
-         chk_coe_imp = COE_IMP - COE_IMP_SUD - COE_IMP_CN,
-         chk_coe_pag = COE_PAG - COE_PAG_SUD - COE_PAG_CN) %>%
-    # fix casi anomali con delta negativo
-    mutate(chk_coe = if_else(chk_coe < 0, 0, chk_coe),
-           chk_coe_imp = if_else(chk_coe_imp < 0, 0, chk_coe_imp),
-           chk_coe_pag = if_else(chk_coe_pag < 0, 0, chk_coe_pag)) %>% 
-    # mutate(chk_coe = round(chk_coe, 2),
-    #        chk_coe_imp = round(chk_coe_imp, 2),
-    #        chk_coe_pag = round(chk_coe_pag, 2)) %>% 
-    # mutate(CLASSE = case_when(OC_CODICE_PROGRAMMA %in% po_react & COE_SUD == 0 & COE_CN == 0 ~ "react", #MEMO: altrimenti prende anche assi non react
-    #                           OC_CODICE_PROGRAMMA %in% po_yei ~ "yei",
-    #                           OC_CODICE_PROGRAMMA %in% po_psc ~ "psc",
-    #                           OC_CODICE_PROGRAMMA %in% po_ant ~ "ant",
-    #                           TRUE ~ "")) %>% 
+    mutate(chk_coe = COE - COE_SUD - COE_CN,
+           chk_coe_imp = COE_IMP - COE_IMP_SUD - COE_IMP_CN,
+           chk_coe_pag = COE_PAG - COE_PAG_SUD - COE_PAG_CN)
+  
+  if (isTRUE(fix_negativi)) {
+    df1 <- df1 %>%
+      mutate(chk_coe = if_else(chk_coe < 0, 0, chk_coe),
+             chk_coe_imp = if_else(chk_coe_imp < 0, 0, chk_coe_imp),
+             chk_coe_pag = if_else(chk_coe_pag < 0, 0, chk_coe_pag)) 
+  }
+  
+  df2 <- df1 %>%
     mutate(COE_SUD = case_when(
       COE_SUD > 0 & COE_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe == 0 ~ COE_SUD, #"tutto sud localizzazioni e livelli"
       COE_SUD > 0 & COE_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe > 0 ~ COE_SUD + chk_coe, #"tutto sud ma manca una parte da livelli"
+      COE_SUD > 0 & COE_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe < 0 ~ COE_SUD + chk_coe, #"tutto sud ma con duplicazione" #NEW
       COE_SUD == 0 & COE_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe > 0 ~ chk_coe, #"tutto sud solo localizzazioni"
       
       COE_SUD == 0 & COE_CN > 0 & x_MACROAREA == "Mezzogiorno" & chk_coe == 0 ~ 0, #"divergenza livelli vs localizzazioni (no delta)"
@@ -2298,6 +2333,7 @@ workflow_macroaree_sub_mapping <- function(df) {
         
         COE_SUD == 0 & COE_CN > 0 & x_MACROAREA == "Centro-Nord" & chk_coe == 0 ~ COE_CN, #"tutto cn localizzazioni e livelli"
         COE_SUD == 0 & COE_CN > 0 & x_MACROAREA == "Centro-Nord" & chk_coe > 0 ~ COE_CN + chk_coe, #"tutto cn ma manca una parte da livelli"
+        COE_SUD == 0 & COE_CN > 0 & x_MACROAREA == "Centro-Nord" & chk_coe < 0 ~ COE_CN + chk_coe, #"tutto cn ma con duplicazione" #NEW
         COE_SUD == 0 & COE_CN == 0 & x_MACROAREA == "Centro-Nord" & chk_coe > 0 ~ chk_coe, #"tutto cn solo localizzazioni"
         
         COE_SUD > 0 & COE_CN == 0 & x_MACROAREA == "Centro-Nord" & chk_coe == 0 ~ 0, #"divergenza livelli vs localizzazioni (no delta)"
@@ -2345,6 +2381,7 @@ workflow_macroaree_sub_mapping <- function(df) {
     #impegni  
     mutate(COE_IMP_SUD = case_when(COE_IMP_SUD > 0 & COE_IMP_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe_imp == 0 ~ COE_IMP_SUD, #"tutto sud localizzazioni e livelli"
                                    COE_IMP_SUD > 0 & COE_IMP_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe_imp > 0 ~ COE_IMP_SUD + chk_coe_imp, #"tutto sud ma manca una parte da livelli"
+                                   COE_IMP_SUD > 0 & COE_IMP_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe_imp < 0 ~ COE_IMP_SUD + chk_coe_imp, #"tutto sud ma con duplicazione" #NEW
                                    COE_IMP_SUD == 0 & COE_IMP_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe_imp > 0 ~ chk_coe_imp, #"tutto sud solo localizzazioni"
                                    
                                    COE_IMP_SUD == 0 & COE_IMP_CN > 0 & x_MACROAREA == "Mezzogiorno" & chk_coe_imp == 0 ~ 0, #"divergenza livelli vs localizzazioni (no delta)"
@@ -2381,6 +2418,7 @@ workflow_macroaree_sub_mapping <- function(df) {
                                   
                                   COE_IMP_SUD == 0 & COE_IMP_CN > 0 & x_MACROAREA == "Centro-Nord" & chk_coe_imp == 0 ~ COE_IMP_CN, #"tutto cn localizzazioni e livelli"
                                   COE_IMP_SUD == 0 & COE_IMP_CN > 0 & x_MACROAREA == "Centro-Nord" & chk_coe_imp > 0 ~ COE_IMP_CN + chk_coe_imp, #"tutto cn ma manca una parte da livelli"
+                                  COE_IMP_SUD == 0 & COE_IMP_CN > 0 & x_MACROAREA == "Centro-Nord" & chk_coe_imp < 0 ~ COE_IMP_CN + chk_coe_imp, #"tutto cn ma con duplicazione" #NEW
                                   COE_IMP_SUD == 0 & COE_IMP_CN == 0 & x_MACROAREA == "Centro-Nord" & chk_coe_imp > 0 ~ chk_coe_imp, #"tutto cn solo localizzazioni"
                                   
                                   COE_IMP_SUD > 0 & COE_IMP_CN == 0 & x_MACROAREA == "Centro-Nord" & chk_coe_imp == 0 ~ 0, #"divergenza livelli vs localizzazioni (no delta)"
@@ -2427,6 +2465,7 @@ workflow_macroaree_sub_mapping <- function(df) {
     # pagamenti 
     mutate(COE_PAG_SUD = case_when(COE_PAG_SUD > 0 & COE_PAG_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe_pag == 0 ~ COE_PAG_SUD, #"tutto sud localizzazioni e livelli"
                                    COE_PAG_SUD > 0 & COE_PAG_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe_pag > 0 ~ COE_PAG_SUD + chk_coe_pag, #"tutto sud ma manca una parte da livelli"
+                                   COE_PAG_SUD > 0 & COE_PAG_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe_pag < 0 ~ COE_PAG_SUD + chk_coe_pag, #"tutto sud ma con duplicazione" #NEW
                                    COE_PAG_SUD == 0 & COE_PAG_CN == 0 & x_MACROAREA == "Mezzogiorno" & chk_coe_pag > 0 ~ chk_coe_pag, #"tutto sud solo localizzazioni"
                                    
                                    COE_PAG_SUD == 0 & COE_PAG_CN > 0 & x_MACROAREA == "Mezzogiorno" & chk_coe_pag == 0 ~ 0, #"divergenza livelli vs localizzazioni (no delta)"
@@ -2463,6 +2502,7 @@ workflow_macroaree_sub_mapping <- function(df) {
                                   
                                   COE_PAG_SUD == 0 & COE_PAG_CN > 0 & x_MACROAREA == "Centro-Nord" & chk_coe_pag == 0 ~ COE_PAG_CN, #"tutto cn localizzazioni e livelli"
                                   COE_PAG_SUD == 0 & COE_PAG_CN > 0 & x_MACROAREA == "Centro-Nord" & chk_coe_pag > 0 ~ COE_PAG_CN + chk_coe_pag, #"tutto cn ma manca una parte da livelli"
+                                  COE_PAG_SUD == 0 & COE_PAG_CN > 0 & x_MACROAREA == "Centro-Nord" & chk_coe_pag < 0 ~ COE_PAG_CN + chk_coe_pag, #"tutto cn ma con duplicazione" #NEW
                                   COE_PAG_SUD == 0 & COE_PAG_CN == 0 & x_MACROAREA == "Centro-Nord" & chk_coe_pag > 0 ~ chk_coe_pag, #"tutto cn solo localizzazioni"
                                   
                                   COE_PAG_SUD > 0 & COE_PAG_CN == 0 & x_MACROAREA == "Centro-Nord" & chk_coe_pag == 0 ~ 0, #"divergenza livelli vs localizzazioni (no delta)"
@@ -2511,6 +2551,14 @@ workflow_macroaree_sub_mapping <- function(df) {
     # fix per anomalie floating
     mutate_if(is.numeric, round, digits=2) 
   
+  # DEBUG:
+  df2 %>% filter(chk2 != 0) %>% select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_MACROAREA, COD_REGIONE, COE, COE_SUD, COE_CN, COE_ND, chk_coe, tot2, chk2)
+  df2 %>% filter(chk2 < 0) %>% select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_MACROAREA, COD_REGIONE, COE, COE_SUD, COE_CN, COE_ND, chk_coe, tot2, chk2)
+  df2 %>% filter(chk2 != 0) %>% count(x_AMBITO, OC_CODICE_PROGRAMMA, x_MACROAREA, COD_REGIONE)
+                                       
+  df1 %>% filter(COD_LOCALE_PROGETTO == "G78E20000580002---1MISEAB1-290-01-04") %>% select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_MACROAREA, COE, COE_SUD, COE_CN, chk_coe)
+  df1 %>% filter(COD_LOCALE_PROGETTO == "16PUITALME127//614") %>% select(COD_LOCALE_PROGETTO, OC_CODICE_PROGRAMMA, x_MACROAREA, COE, COE_SUD, COE_CN, chk_coe)
+
   return(df2)
 }
 
@@ -2544,6 +2592,8 @@ workflow_macroaree_sub_pivot <- function(df) {
            COE_SUD,
            COE_CN,
            COE_ND)
+  
+  # appo_costo %>% summarise_if(is.numeric, sum) %>% mutate(CHK = COE - COE_SUD - COE_CN - COE_ND)
   
   # chk
   appo_costo %>% 
@@ -2683,7 +2733,7 @@ workflow_macroaree_sub_ciclo <- function(df, po) {
   if (!("OC_COD_CICLO" %in% names(df))) {
     # print("aggiungo OC_COD_CICLO standard")
     df <- df %>% 
-      mutate(OC_COD_CICLO = 1) #forzo 713 -> PERCHE?
+      mutate(OC_COD_CICLO = 2) #forzo 1420
   }
   
   df1 <- df %>% 
