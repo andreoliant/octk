@@ -7,12 +7,12 @@ developers:
   - user: "Andrea"
     os: "win"
     drive_root: "G:/Drive condivisi"
-    data_root: ""
+    data_root: "C:/Users/VK1/Documents/OPEN COESIONE/Dati"
 
   - user: "Nicola"
     os: "mac"
     drive_root: "/Users/nicoladechiara/Library/CloudStorage/GoogleDrive-nicola.dechiara@opencoesione.team/Drive condivisi"
-    data_root: ""
+    data_root: "/Users/nicoladechiara/Bimestri"
 
   - user: "Antonio"
     os: "linux"
