@@ -321,6 +321,10 @@ chk_bimestre_sub_x_vars <- function(progetti, export=FALSE) {
   if (export==TRUE) {
     write_csv2(chk6, file.path(TEMP, "chk_mismatch_x_vars_macroaree_regioni.csv"))
   }
+  
+  # memory mgm
+  rm(appo)
+  gc()
 }
 
 
@@ -421,7 +425,10 @@ delta_bimestre_sub_progetti <- function(progetti, progetti_old) {
   
   message("Controlla le variazioni tra bimestri per progetti nel file (vedi 'chk_delta_BIMESTRE.xlsx' in TEMP con variazioni sopra 1 Meuro).")
   write.xlsx(chk2, file.path(TEMP, paste0("chk_delta_", bimestre, "_progetti.xlsx")), rowNames = FALSE)
-  
+ 
+  # memory mgm
+  rm(chk2)
+  gc() 
 }
 
 
