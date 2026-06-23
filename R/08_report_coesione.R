@@ -69,8 +69,11 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCOESCAMPANIA" & AMBITO == "POC" & grepl("FDR", x_PROGRAMMA) ~ "COMP",
                                  
                                  x_GRUPPO == "ACCORDI" & grepl("Anticipazioni", x_PROGRAMMA) ~ "ANT",
-                                 x_GRUPPO == "ACCORDI" & grepl("Ordinario", x_PROGRAMMA) ~ "ORD",
-                                 x_GRUPPO == "ACCORDI" & grepl("FDR", x_PROGRAMMA) ~ "COMP",
+                                 # x_GRUPPO == "ACCORDI" & grepl("Ordinario", x_PROGRAMMA) ~ "ORD",
+                                 # x_GRUPPO == "ACCORDI" & grepl("FDR", x_PROGRAMMA) ~ "COMP",
+                                 x_GRUPPO == "ACCORDI" & grepl("Ordinario", x_PROGRAMMA) & AMBITO == "FSC" ~ "ORD",
+                                 x_GRUPPO == "ACCORDI" & grepl("FDR", x_PROGRAMMA) & AMBITO == "POC" ~ "COMP",
+                                 
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCSTRCAMPANIA" ~ "STRAL2",
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "ACCBAGNCAMPANIA" ~ "STRAL3",
                                  x_GRUPPO == "ACCORDI" & OC_CODICE_PROGRAMMA == "LINEARMPE" ~ "STRAL1",
@@ -142,8 +145,10 @@ make_report_programmi_coesione <- function(perimetro, usa_meuro=FALSE, show_cp=F
            `In esecuzione`,
            `Eseguito`)
 
-  out <- appo %>%
-    filter(RISORSE > 0)
+  # out <- appo %>%
+  #   filter(RISORSE > 0)
+  out <- appo
+  # MEMO: eliminato perché 
   
   chk <- appo %>%
     filter(RISORSE <= 0 | is.na(RISORSE))
@@ -273,7 +278,8 @@ chk_variazione_programmi_coesione <- function(programmi=NULL, dati_new=NULL, dbc
                           COE = sum(COE, na.rm = TRUE),
                           COE_IMP = sum(COE_IMP, na.rm = TRUE),
                           COE_PAG = sum(COE_PAG, na.rm = TRUE)),
-              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_GRUPPO", "x_PROGRAMMA", "x_SEZIONE"),
+              # by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_GRUPPO", "x_PROGRAMMA", "x_SEZIONE"),
+              by = c("OC_CODICE_PROGRAMMA", "x_CICLO", "x_AMBITO", "x_GRUPPO", "x_SEZIONE"),
               suffix = c(".new", ".old")) %>%
     mutate_if(is.numeric, replace_na, replace=0) %>% 
     mutate(CHK_RISORSE = RISORSE.new - RISORSE.old,
