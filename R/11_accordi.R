@@ -58,11 +58,13 @@ crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
     filter(TIPOLOGIA == "Intervento") %>% 
     mutate_if(is.numeric, replace_na, replace=0) %>% 
     # mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR) %>% 
-    mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR + FINANZ_REG) %>% #NEW: modifica introdotta per FdR Puglia con risorse regionali
+    #mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR + FINANZ_REG) %>% #NEW: modifica introdotta per FdR Puglia con risorse regionali
+    mutate(FINANZ_FSC = FINANZ_FSC) %>% 
+    mutate(FINANZ_FDR = FINANZ_FDR + FINANZ_REG) %>% #NEW: modifica introdotta per FdR Puglia con risorse regionali
     select(ID, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, 
            AREA_TEMATICA, SETTORE_INTERVENTO, 
            CUP, TITOLO_PROGETTO,
-           FINANZ_TOT, FINANZ_COE)
+           FINANZ_TOT, FINANZ_FSC, FINANZ_FDR)
   
   appo2 <- interventi %>% 
     filter(AMMINISTRAZIONE_TITOLARE == regione) %>% 
@@ -72,11 +74,13 @@ crea_report_accordi_monitoraggio <- function(regione, interventi, template) {
     filter(TIPOLOGIA == "Linea") %>% 
     mutate_if(is.numeric, replace_na, replace=0) %>% 
     # mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR) %>% 
-    mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR + FINANZ_REG) %>% #NEW: modifica introdotta per FdR Puglia con risorse regionali
+    #mutate(FINANZ_COE = FINANZ_FSC + FINANZ_FDR + FINANZ_REG) %>% #NEW: modifica introdotta per FdR Puglia con risorse regionali
+    mutate(FINANZ_FSC = FINANZ_FSC) %>% 
+    mutate(FINANZ_FDR = FINANZ_FDR + FINANZ_REG) %>% #NEW: modifica introdotta per FdR Puglia con risorse regionali
     select(ID, SEZIONE, TIPOLOGIA, AMMINISTRAZIONE_BENEFICIARIA, 
            AREA_TEMATICA, SETTORE_INTERVENTO, 
            TITOLO_PROGETTO,
-           FINANZ_TOT, FINANZ_COE)
+           FINANZ_TOT, FINANZ_FSC, FINANZ_FDR)
   
   writeData(wb, sheet = "progetti", x = appo1, startCol = 1, startRow = 3, colNames = FALSE)
   
