@@ -2263,7 +2263,7 @@ fix_dbcoe_sie <- function(DB, backup=FALSE, debug=FALSE) {
   # MEMO: usa dbsie normale per domini perché é  più completo
   
   if (isTRUE(backup)) {
-    write.xlsx(appo, file.path(DB, "Dati_DBCOE_SIE2127_CI_bkp.xlsx"))
+    write.xlsx(db_sie, file.path(DB, "Dati_DBCOE_SIE2127_CI_bkp.xlsx"))
   }
   
   # domini
@@ -2487,12 +2487,14 @@ fix_dbcoe_sie <- function(DB, backup=FALSE, debug=FALSE) {
         COD_SETTORE_INTERVENTO == "180" ~ "12.02", # Preparation, implementation, monitoring and control
         COD_SETTORE_INTERVENTO == "181" ~ "12.02", # Evaluation and studies, data collection
         COD_SETTORE_INTERVENTO == "182" ~ "12.01", # Reinforcement of the capacity of Member State authorities, beneficiaries and relevant partners
+        COD_SETTORE_INTERVENTO == "187" ~ "01.01", # Productive investment in large enterprises linked to the low-carbon economy
         COD_SETTORE_INTERVENTO == "188" ~ "01.01", # Productive investments in large enterprises linked primarily to clean and resource-efficient technologies
         COD_SETTORE_INTERVENTO == "189" ~ "01.01", # Productive investments in SMEs linked primarily to clean and resource-efficient technologies
         COD_SETTORE_INTERVENTO == "190" ~ "01.01", # Productive investments in large enterprises linked primarily to biotechnologies
         COD_SETTORE_INTERVENTO == "191" ~ "01.01", # Productive investments in SMEs linked primarily to biotechnologies
         COD_SETTORE_INTERVENTO == "192" ~ "01.01", # Productive investments in large enterprises linked primarily to digital technologies and deep tech innovation
         COD_SETTORE_INTERVENTO == "193" ~ "01.01", # Productive investments in SMEs linked primarily to digital technologies and deep tech innovation
+        COD_SETTORE_INTERVENTO == "197" ~ "12.01", # -> NEW: Azioni a tutela dell'uguaglianza, dell'inclusione e della non discriminazione
         COD_SETTORE_INTERVENTO == "198" ~ "12.01", # -> NEW: Defence infrastructure and infrastructure construction and upgrades for dual use, including military mobility
         TRUE ~ NA_character_)) %>% 
     # integra 
@@ -2503,6 +2505,7 @@ fix_dbcoe_sie <- function(DB, backup=FALSE, debug=FALSE) {
         COD_RISULTATO_ATTESO == "RSO5.2" ~ TEMP,
         COD_RISULTATO_ATTESO == "JSO8.1" ~ TEMP,
         COD_RISULTATO_ATTESO == "RSO5.3" ~ TEMP, #MEMO: contiene alloggi e energia 
+        COD_RISULTATO_ATTESO == "RSO5.4" ~ TEMP, #MEMO: civil preparedness
         
         COD_RISULTATO_ATTESO == "RSO1.1" & COD_SETTORE_INTERVENTO == "001" ~ "01.01", # Investment in fixed assets, including research infrastructure, in micro enterprises directly linked to research and innovation activities
         COD_RISULTATO_ATTESO == "RSO1.1" & COD_SETTORE_INTERVENTO == "002" ~ "01.01", # Investment in fixed assets, including research infrastructure, in small and medium-sized enterprises (including private research centres) directly linked to research and innovation activities
