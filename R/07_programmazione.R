@@ -2270,15 +2270,10 @@ fix_dbcoe_sie <- function(DB, backup=FALSE, debug=FALSE,
     write.xlsx(db_sie, file.path(DB, "Dati_DBCOE_SIE2127_CI_bkp.xlsx"))
   }
   
-<<<<<<< HEAD
-  # 0. Normalizzazione iniziale e fonti locali (INPUT). Nessun aggiornamento
-  #    a octk: le matrici PSC / TEMI sono lette dai file di INPUT.
-=======
   # -------------------------------------------------------------------------
   # 0. Normalizzazione iniziale e fonti locali (INPUT). Nessun aggiornamento
   #    a octk: le matrici PSC / TEMI sono lette dai file di INPUT.
   # -------------------------------------------------------------------------
->>>>>>> fbbd45a58d19db8bbd1eb69853de4af54a7bef4f
   pul_descr <- function(x) {
     x <- stringr::str_squish(as.character(x))
     dplyr::na_if(x, "")
@@ -2427,7 +2422,6 @@ fix_dbcoe_sie <- function(DB, backup=FALSE, debug=FALSE,
   verifica_chiave(temi, "COD_SETTORE_INTERVENTO_PSC", "Matrice PSC")
   
   
-<<<<<<< HEAD
   # matrix_temi_2834.xlsx: COD_TEMA_2 nel file e' il codice locale
   # (es. "02"); nel DBCOE e nei mapping si usa il codice composto "01.02".
   info_temi_matrix <- readxl::read_excel(temi_file,
@@ -2438,16 +2432,6 @@ fix_dbcoe_sie <- function(DB, backup=FALSE, debug=FALSE,
                 stringr::str_pad(stringr::str_trim(COD_TEMA_1), 2, pad = "0"), ".",
                 stringr::str_pad(stringr::str_trim(COD_TEMA_2), 2, pad = "0")),
               DESCR_TEMA_2 = stringr::str_squish(DESCR_TEMA_2))
-=======
-  info_temi_matrix <- readxl::read_excel(temi_file,
-                                         sheet = "info_psc_matrix_temi", col_types = "text") %>%
-    transmute(COD_TEMA_1 = stringr::str_pad(COD_AREA_TEMATICA, 2, pad = "0"),
-              DESCR_TEMA_1 = DES_AREA_TEMATICA,
-              COD_TEMA_2 = paste0(
-                stringr::str_pad(COD_AREA_TEMATICA, 2, pad = "0"), ".",
-                stringr::str_pad(COD_SETTORE_INTERVENTO, 2, pad = "0")),
-              DESCR_TEMA_2 = DES_SETTORE_INTERVENTO)
->>>>>>> fbbd45a58d19db8bbd1eb69853de4af54a7bef4f
   verifica_chiave(info_temi_matrix, "COD_TEMA_2", "Matrice TEMI")
   if (anyNA(info_temi_matrix$COD_TEMA_1) ||
       anyNA(info_temi_matrix$DESCR_TEMA_1) ||
@@ -2635,19 +2619,12 @@ fix_dbcoe_sie <- function(DB, backup=FALSE, debug=FALSE,
   }
   
   
-<<<<<<< HEAD
-
-  # 4. Controlli di qualità e reportistica unificata (V.04).
-  #    Le verifiche di integrità e le tassonomie incoerenti hanno già
-  #    generato stop() prima di arrivare qui.
-=======
   # -------------------------------------------------------------------------
   # 4. Controlli di qualità e reportistica unificata (V.04).
   #    Le verifiche di integrità e le tassonomie incoerenti hanno già
   #    generato stop() prima di arrivare qui.
   # -------------------------------------------------------------------------
   
->>>>>>> fbbd45a58d19db8bbd1eb69853de4af54a7bef4f
   # Registra le anomalie dei dati, senza duplicare file o riepiloghi.
   # Granularità: tipo anomalia x programma x asse x OS x CI x PSC x TEMA_2.
   # Le anomalie PSC e TEMI non si compensano mai tra loro.
